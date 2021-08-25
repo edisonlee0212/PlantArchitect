@@ -7,14 +7,10 @@
 #include <Utilities.hpp>
 #include <ProjectManager.hpp>
 #include <PhysicsManager.hpp>
-#include <PlantSystem.hpp>
 #include <PostProcessing.hpp>
 #include <RayTracerManager.hpp>
-#include <TreeSystem.hpp>
-#include <TreeLeaves.hpp>
 #include <CubeVolume.hpp>
 #include <RayTracedRenderer.hpp>
-#include <RadialBoundingVolume.hpp>
 #include <ClassRegistry.hpp>
 #include <ObjectRotator.hpp>
 using namespace PlantArchitect;
@@ -23,28 +19,8 @@ using namespace RayTracerFacility;
 void EngineSetup(bool enableRayTracing);
 
 int main() {
-    ClassRegistry::RegisterDataComponent<TreeLeavesTag>("TreeLeavesTag");
-    ClassRegistry::RegisterDataComponent<RbvTag>("RbvTag");
-    ClassRegistry::RegisterDataComponent<PlantInfo>("PlantInfo");
-    ClassRegistry::RegisterDataComponent<BranchCylinder>("BranchCylinder");
-    ClassRegistry::RegisterDataComponent<BranchCylinderWidth>("BranchCylinderWidth");
-    ClassRegistry::RegisterDataComponent<BranchPointer>("BranchPointer");
-    ClassRegistry::RegisterDataComponent<Illumination>("Illumination");
-    ClassRegistry::RegisterDataComponent<BranchColor>("BranchColor");
-    ClassRegistry::RegisterDataComponent<InternodeInfo>("InternodeInfo");
-    ClassRegistry::RegisterDataComponent<InternodeGrowth>("InternodeGrowth");
-    ClassRegistry::RegisterDataComponent<InternodeStatistics>("InternodeStatistics");
-
     ClassRegistry::RegisterPrivateComponent<ObjectRotator>("ObjectRotator");
-    ClassRegistry::RegisterPrivateComponent<TreeData>("TreeData");
-    ClassRegistry::RegisterPrivateComponent<TreeLeaves>("TreeLeaves");
-    ClassRegistry::RegisterPrivateComponent<RadialBoundingVolume>("RadialBoundingVolume");
     ClassRegistry::RegisterPrivateComponent<CubeVolume>("CubeVolume");
-
-    ClassRegistry::RegisterPrivateComponent<InternodeData>("InternodeData");
-
-    ClassRegistry::RegisterSystem<PlantSystem>("PlantSystem");
-    ClassRegistry::RegisterSystem<TreeSystem>("TreeSystem");
 
     ClassRegistry::RegisterPrivateComponent<RayTracedRenderer>(
             "RayTracedRenderer");
@@ -70,12 +46,9 @@ void EngineSetup(bool enableRayTracing) {
         RenderManager::GetInstance().m_stableFit = false;
         RenderManager::GetInstance().m_maxShadowDistance = 100;
         RenderManager::SetSplitRatio(0.15f, 0.3f, 0.5f, 1.0f);
-
 #pragma endregion
-
         Transform transform;
         transform.SetEulerRotation(glm::radians(glm::vec3(150, 30, 0)));
-
 #pragma region Preparations
         Application::Time().SetTimeStep(0.016f);
         transform = Transform();
@@ -107,11 +80,5 @@ void EngineSetup(bool enableRayTracing) {
         */
         if (enableRayTracing)
             RayTracerManager::Init();
-
-        auto plantSystem =
-                EntityManager::GetOrCreateSystem<PlantSystem>(
-                        EntityManager::GetCurrentScene(), SystemGroup::SimulationSystemGroup);
-        auto treeSystem = EntityManager::GetOrCreateSystem<TreeSystem>(
-                EntityManager::GetCurrentScene(), SystemGroup::SimulationSystemGroup + 0.1f);
     });
 }
