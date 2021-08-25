@@ -1,2 +1,2 @@
-# PlantArchitect-dev
-A new iteration of PlantArchitect, with complete particle based approach inspired by the PBD in physics based simulation.
+# PlantArchitect
+PlantArchitect is an interactive application developed for my research purposes based on UniEngine. 

@@ -1,0 +1,35 @@
+<!DOCTYPE Parameters>
+<Parameters>
+	<LateralBudPerNode value="2"/>
+	<ApicalAngleMean value="0.000000"/>
+	<ApicalAngleVariance value="5.000000"/>
+	<BranchingAngleMean value="30.000000"/>
+	<BranchingAngleVariance value="2.000000"/>
+	<RollAngleMean value="60.000000"/>
+	<RollAngleVariance value="1.000000"/>
+	<InternodeLengthBase value="1.000000"/>
+	<ApicalIlluminationRequirement value="1.000000"/>
+	<LateralIlluminationRequirement value="1.000000"/>
+	<InhibitorBase value="0.900000"/>
+	<InhibitorDistanceFactor value="0.800000"/>
+	<ResourceWeightApical value="1.000000"/>
+	<ResourceWeightVariance value="0.000000"/>
+	<ApicalControlLevelFactor value="0.900000"/>
+	<AvoidanceAngle value="15.000000"/>
+	<HeightResourceHeightDecreaseMin value="0.000000"/>
+	<HeightResourceHeightDecreaseBase value="0.000000"/>
+	<HeightResourceHeightDecreaseFactor value="1.000000"/>
+	<Phototropism value="0.100000"/>
+	<Gravitropism value="0.150000"/>
+	<RandomCutOff value="-0.020000"/>
+	<RandomCutOffAgeFactor value="0.002000"/>
+	<RandomCutOffMax value="0.030000"/>
+	<LowBranchCutOff value="0.100000"/>
+	<EndNodeThickness value="0.010000"/>
+	<ThicknessControlFactor value="1.000000"/>
+	<GravityBendingFactor value="0.800000"/>
+	<GravityBendingThicknessFactor value="1.750000"/>
+	<GravityBendingMax value="1.000000"/>
+	<TreeType value="0"/>
+</Parameters>
+

@@ -1,0 +1,33 @@
+Material = ./02btfbase/fabric01/
+ORIG = ncolour=2 nview=81 nillu=81 tileSize=32
+Mode = 0, bits=8
+PDF6Dscale - AvgAbsErr=1.54e-04, AvgRelErr=1.55e-04, maxAbsErr=3.11e-04, maxRelErr=3.29e-04 min/max=0.92 1.08
+Mode = 0, bits=8
+PDF1Dslice - AvgAbsErr=2.29e-04, AvgRelErr=2.98e-03, maxAbsErr=4.57e-04, maxRelErr=2.59e-02 min/max=0.01 0.25
+Mode = 0, bits=8
+AB colours - AvgAbsErr=4.14e-02, AvgRelErr=3.25e-04, maxAbsErr=7.90e-02, maxRelErr=5.87e-04 min/max=104.25 145.54
+Mode = 0, bits=8
+PDF2Dscale - AvgAbsErr=1.32e+00, AvgRelErr=2.17e-03, maxAbsErr=2.65e+00, maxRelErr=1.05e-02 min/max=228.44 1583.85
+Mode = 0, bits=8
+PDF3Dscale - AvgAbsErr=7.23e-04, AvgRelErr=7.25e-04, maxAbsErr=1.50e-03, maxRelErr=2.48e-03 min/max=0.55 1.32
+Mode = 0, bits=8
+PDF4Dscale - AvgAbsErr=0.00e+00, AvgRelErr=0.00e+00, maxAbsErr=0.00e+00, maxRelErr=0.00e+00 min/max=1.00 1.00
+The database was quantized successfully
+sizeReadInt32 = 5599836  sizeReadFloat32 = 5407104 sum = 11006940
+sizeWriteInt = 2320800  sizeWriteFloat = 1237988 sum = 3558788 ratio = 362.468
+sizeReadInt = 5599836  sizeWriteFloat = 1237988 sum = 6837824 ratio = 188.648
+The size data uncompressed = 1289945088 compressed = 7120417  ratio = 181.161
+The size data compressed quantized = 3558788  ratio = 362.468
+---------------------------------------------------------------------------------
+1D PDF       -      16592    mem=0000730048  perc=10.253  | mem=0000182528  perc= 5.129
+colours      -         16    mem=0000004929  perc= 0.069  | mem=0000004940  perc= 0.139
+index slices -        896    mem=0000000128  perc= 0.002  | mem=0000000048  perc= 0.001
+2D PDF Lums  -      74716    mem=0004725788  perc=66.370  | mem=0002362920  perc=66.397
+2D PDF ABs   -        650    mem=0000008044  perc= 0.113  | mem=0000008948  perc= 0.251
+2D PDFs      -      76261    mem=0000305045  perc= 4.284  | mem=0000324120  perc= 9.108
+3D PDFs      -      20992    mem=0000881665  perc=12.382  | mem=0000459228  perc=12.904
+4D PDFs      -       1312    mem=0000120705  perc= 1.695  | mem=0000060380  perc= 1.697
+6D PDFs      -      65536    mem=0000344065  perc= 4.832  | mem=0000155676  perc= 4.374
+---------------------------------------------------------------------------------
+Sums                         mem=0007120417               | mem=0003558788
+Compression NoQuantization ratio=   181.161               | ratio=   362.468 (quantization)

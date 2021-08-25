@@ -1,0 +1,1 @@
+wool ./indata/wool/ ./outdata01/wool/ ./tmp11/wool/ 0 0 256 256 0.000000

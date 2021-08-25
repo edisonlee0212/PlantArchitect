@@ -1,0 +1,3 @@
+[submodule "3rdParty/UniEngine"]
+	path = 3rdParty/UniEngine
+	url = https://github.com/edisonlee0212/UniEngine.git
