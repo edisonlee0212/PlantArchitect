@@ -163,6 +163,7 @@ target_include_directories(PlantArchitect
         PUBLIC
         ${RAY_TRACER_FACILITY_INCLUDES_LOCAL}
         ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeBehaviours
         ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/quickhull
         )
 target_link_libraries(PlantArchitect
