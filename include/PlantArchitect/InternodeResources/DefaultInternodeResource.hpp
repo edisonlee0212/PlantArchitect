@@ -8,5 +8,6 @@ namespace PlantArchitect {
         void Collect(float deltaTime, const Entity& self) override;
         void DownStream(float deltaTime, const Entity& self, const Entity& target) override;
         void UpStream(float deltaTime, const Entity& self, const Entity& target) override;
+        void Reset() override;
     };
 }

@@ -6,41 +6,6 @@
 #include "DefaultInternodeBehaviour.hpp"
 using namespace PlantArchitect;
 
-void InternodeSystem::OnInspect() {
-    if(ImGui::Button("Test")){
-        Simulate(1.0f);
-    }
-
-    if(ImGui::TreeNode("Internode Behaviours")){
-        BehaviourSlotButton();
-        int index = 0;
-        bool skip = false;
-        for(auto& i : m_internodeBehaviours){
-            if(EditorManager::DragAndDropButton<IAsset>(i, "Slot " + std::to_string(index++))){
-                skip = true;
-                break;
-            }
-        }
-        if(skip){
-            int index = 0;
-            for(auto& i : m_internodeBehaviours){
-                if(!i.Get<IInternodeBehaviour>()){
-                    m_internodeBehaviours.erase(m_internodeBehaviours.begin() + index);
-                    break;
-                }
-                index++;
-            }
-        }
-        ImGui::TreePop();
-    }
-}
-
-void InternodeSystem::OnCreate() {
-    m_internodesQuery = EntityManager::CreateEntityQuery();
-    m_internodesQuery.SetAllFilters(InternodeTag());
-    Enable();
-}
-
 void InternodeSystem::Simulate(float deltaTime) {
     //0. Pre processing
     for (auto &i: m_internodeBehaviours) {
@@ -80,6 +45,42 @@ void InternodeSystem::Simulate(float deltaTime) {
     }
 }
 
+#pragma region Methods
+void InternodeSystem::OnInspect() {
+    if(ImGui::Button("Test")){
+        Simulate(1.0f);
+    }
+
+    if(ImGui::TreeNode("Internode Behaviours")){
+        BehaviourSlotButton();
+        int index = 0;
+        bool skip = false;
+        for(auto& i : m_internodeBehaviours){
+            if(EditorManager::DragAndDropButton<IAsset>(i, "Slot " + std::to_string(index++))){
+                skip = true;
+                break;
+            }
+        }
+        if(skip){
+            int index = 0;
+            for(auto& i : m_internodeBehaviours){
+                if(!i.Get<IInternodeBehaviour>()){
+                    m_internodeBehaviours.erase(m_internodeBehaviours.begin() + index);
+                    break;
+                }
+                index++;
+            }
+        }
+        ImGui::TreePop();
+    }
+}
+
+void InternodeSystem::OnCreate() {
+    m_internodesQuery = EntityManager::CreateEntityQuery();
+    m_internodesQuery.SetAllFilters(InternodeTag());
+    Enable();
+}
+
 void InternodeSystem::BehaviourSlotButton() {
     ImGui::Text("Drop Behaviour");
     ImGui::SameLine();
@@ -105,5 +106,5 @@ void InternodeSystem::BehaviourSlotButton() {
         ImGui::EndDragDropTarget();
     }
 }
-
+#pragma endregion
 

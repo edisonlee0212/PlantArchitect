@@ -24,5 +24,9 @@ namespace PlantArchitect {
          * @param target The internode that receive the resource.
          */
         virtual void UpStream(float deltaTime, const Entity& self, const Entity& target) = 0;
+        /**
+         * Clear all resources.
+         */
+        virtual void Reset() = 0;
     };
 }

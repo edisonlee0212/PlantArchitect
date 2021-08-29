@@ -17,7 +17,7 @@ void PlantArchitect::Internode::OnRetrieve() {
 }
 
 void PlantArchitect::Internode::OnRecycle() {
-
+    m_resource->Reset();
 }
 
 void PlantArchitect::Internode::DownStreamResource(float deltaTime) {

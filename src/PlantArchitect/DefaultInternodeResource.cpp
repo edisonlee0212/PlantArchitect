@@ -15,3 +15,7 @@ void PlantArchitect::DefaultInternodeResource::DownStream(float deltaTime, const
 void PlantArchitect::DefaultInternodeResource::Collect(float deltaTime, const Entity &self) {
 
 }
+
+void PlantArchitect::DefaultInternodeResource::Reset() {
+
+}

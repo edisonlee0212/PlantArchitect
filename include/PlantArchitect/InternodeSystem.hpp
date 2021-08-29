@@ -17,8 +17,6 @@ namespace PlantArchitect {
          */
         EntityQuery m_internodesQuery;
         friend class Internode;
-
-        int m_internodeBehavioursSize = 0;
         std::vector<AssetRef> m_internodeBehaviours;
         void BehaviourSlotButton();
     };

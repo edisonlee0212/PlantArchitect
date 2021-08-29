@@ -6,19 +6,7 @@
 #include "Internode.hpp"
 using namespace PlantArchitect;
 
-Entity IInternodeBehaviour::Retrieve() {
-    Entity retVal;
-    std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
-    if (!m_recycledInternodes.empty()) {
-        retVal = m_recycledInternodes.back();
-        m_recycledInternodes.pop_back();
-        retVal.SetEnabled(true);
-    } else {
-        retVal = EntityManager::CreateEntity(m_internodeArchetype, "Internode");
-    }
-    retVal.GetOrSetPrivateComponent<Internode>().lock()->OnRetrieve();
-    return retVal;
-}
+
 
 void IInternodeBehaviour::Recycle(const Entity &internode) {
     auto children = internode.GetChildren();
@@ -37,3 +25,6 @@ void IInternodeBehaviour::RecycleSingle(const Entity &internode) {
     internode.SetEnabled(false);
     m_recycledInternodes.emplace_back(internode);
 }
+
+
+
