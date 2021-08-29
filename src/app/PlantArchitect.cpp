@@ -13,6 +13,11 @@
 #include <RayTracedRenderer.hpp>
 #include <ClassRegistry.hpp>
 #include <ObjectRotator.hpp>
+#include "DefaultInternodeBehaviour.hpp"
+#include "DefaultInternodeResource.hpp"
+#include "Internode.hpp"
+#include <InternodeSystem.hpp>
+
 using namespace PlantArchitect;
 using namespace RayTracerFacility;
 
@@ -21,9 +26,15 @@ void EngineSetup(bool enableRayTracing);
 int main() {
     ClassRegistry::RegisterPrivateComponent<ObjectRotator>("ObjectRotator");
     ClassRegistry::RegisterPrivateComponent<CubeVolume>("CubeVolume");
+    ClassRegistry::RegisterPrivateComponent<RayTracedRenderer>("RayTracedRenderer");
 
-    ClassRegistry::RegisterPrivateComponent<RayTracedRenderer>(
-            "RayTracedRenderer");
+    ClassRegistry::RegisterAsset<DefaultInternodeBehaviour>("DefaultInternodeBehaviour", ".defaultbehaviour");
+    ClassRegistry::RegisterSerializable<DefaultInternodeResource>("DefaultInternodeResource");
+    ClassRegistry::RegisterSerializable<Bud>("Bud");
+    ClassRegistry::RegisterPrivateComponent<Internode>("Internode");
+    ClassRegistry::RegisterSystem<InternodeSystem>("InternodeSystem");
+    ClassRegistry::RegisterDataComponent<DefaultInternodeTag>("DefaultInternodeTag");
+    ClassRegistry::RegisterDataComponent<InternodeTag>("InternodeTag");
 
     const bool enableRayTracing = true;
     EngineSetup(enableRayTracing);
@@ -39,8 +50,8 @@ int main() {
 }
 
 void EngineSetup(bool enableRayTracing) {
-    ProjectManager::SetScenePostLoadActions([=](){
-    #pragma region Engine Setup
+    ProjectManager::SetScenePostLoadActions([=]() {
+#pragma region Engine Setup
 #pragma region Global light settings
         RenderManager::GetInstance().m_lightSettings.m_ambientLight = 0.2f;
         RenderManager::GetInstance().m_stableFit = false;
@@ -80,5 +91,7 @@ void EngineSetup(bool enableRayTracing) {
         */
         if (enableRayTracing)
             RayTracerManager::Init();
+        auto internodeSystem = EntityManager::GetOrCreateSystem<InternodeSystem>(0.0f);
+
     });
 }
