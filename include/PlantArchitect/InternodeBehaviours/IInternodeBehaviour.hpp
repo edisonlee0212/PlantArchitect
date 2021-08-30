@@ -30,18 +30,25 @@ namespace PlantArchitect {
         /**
          * What to do before the growth, and before the resource collection. Mesh, graph calculation...
          */
-        virtual void PreProcess() = 0;
+        virtual void PreProcess() {};
 
         /**
          * Handle main growth here.
          */
-        virtual void Grow() = 0;
+        virtual void Grow() {};
 
         /**
          * What to do after the growth. Mesh, graph calculation...
          */
-        virtual void PostProcess() = 0;
+        virtual void PostProcess() {};
+        /**
+         * Generate branch skinned mesh for internodes.
+         * @param entities
+         */
+        virtual void GenerateBranchSkinnedMeshes(const std::vector<Entity> &entities);
     };
+
+
     template<typename T>
     Entity IInternodeBehaviour::Retrieve(const Entity &parent) {
         Entity retVal;
@@ -79,4 +86,6 @@ namespace PlantArchitect {
         }
         return retVal;
     }
+
+
 }

@@ -5,9 +5,6 @@
 #include "IInternodeBehaviour.hpp"
 #include "Internode.hpp"
 using namespace PlantArchitect;
-
-
-
 void IInternodeBehaviour::Recycle(const Entity &internode) {
     auto children = internode.GetChildren();
     if (children.empty()) RecycleSingle(internode);
@@ -26,5 +23,8 @@ void IInternodeBehaviour::RecycleSingle(const Entity &internode) {
     m_recycledInternodes.emplace_back(internode);
 }
 
+void IInternodeBehaviour::GenerateBranchSkinnedMeshes(const std::vector<Entity> &entities) {
+    for(const auto& entity : entities){
 
-
+    }
+}

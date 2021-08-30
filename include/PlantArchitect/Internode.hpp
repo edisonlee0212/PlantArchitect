@@ -24,6 +24,10 @@ namespace PlantArchitect {
         std::weak_ptr<InternodeSystem> m_internodeSystem;
     public:
         /**
+         * Whether this internode is formed from a apical bud.
+         */
+        bool m_fromApicalBud = true;
+        /**
          * The resource storage for the internode.
          */
         std::unique_ptr<IInternodeResource> m_resource;

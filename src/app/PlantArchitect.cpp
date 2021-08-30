@@ -17,28 +17,40 @@
 #include "DefaultInternodeResource.hpp"
 #include "Internode.hpp"
 #include <InternodeSystem.hpp>
-
+#include <SpaceColonizationBehaviour.hpp>
 using namespace PlantArchitect;
 using namespace RayTracerFacility;
 
 void EngineSetup(bool enableRayTracing);
-
+void RegisterDataComponentMenus();
 int main() {
+    ClassRegistry::RegisterDataComponent<BranchCylinder>("BranchCylinder");
+    ClassRegistry::RegisterDataComponent<BranchCylinderWidth>("BranchCylinderWidth");
+    ClassRegistry::RegisterDataComponent<BranchPointer>("BranchPointer");
+    ClassRegistry::RegisterDataComponent<BranchColor>("BranchColor");
+
     ClassRegistry::RegisterPrivateComponent<ObjectRotator>("ObjectRotator");
     ClassRegistry::RegisterPrivateComponent<CubeVolume>("CubeVolume");
     ClassRegistry::RegisterPrivateComponent<RayTracedRenderer>("RayTracedRenderer");
 
+    ClassRegistry::RegisterDataComponent<DefaultInternodeTag>("DefaultInternodeTag");
     ClassRegistry::RegisterAsset<DefaultInternodeBehaviour>("DefaultInternodeBehaviour", ".defaultbehaviour");
+
+    ClassRegistry::RegisterDataComponent<SpaceColonizationTag>("SpaceColonizationTag");
+    ClassRegistry::RegisterDataComponent<SpaceColonizationIncentive>("SpaceColonizationIncentive");
+    ClassRegistry::RegisterAsset<SpaceColonizationBehaviour>("SpaceColonizationBehaviour", ".scbehaviour");
+
+
     ClassRegistry::RegisterSerializable<DefaultInternodeResource>("DefaultInternodeResource");
     ClassRegistry::RegisterSerializable<Bud>("Bud");
     ClassRegistry::RegisterPrivateComponent<Internode>("Internode");
+
+    ClassRegistry::RegisterDataComponent<InternodeInfo>("InternodeInfo");
     ClassRegistry::RegisterSystem<InternodeSystem>("InternodeSystem");
-    ClassRegistry::RegisterDataComponent<DefaultInternodeTag>("DefaultInternodeTag");
-    ClassRegistry::RegisterDataComponent<InternodeTag>("InternodeTag");
 
     const bool enableRayTracing = true;
     EngineSetup(enableRayTracing);
-
+    RegisterDataComponentMenus();
     Application::Init();
 
 #pragma region Engine Loop
@@ -93,5 +105,13 @@ void EngineSetup(bool enableRayTracing) {
             RayTracerManager::Init();
         auto internodeSystem = EntityManager::GetOrCreateSystem<InternodeSystem>(0.0f);
 
+    });
+}
+
+void RegisterDataComponentMenus() {
+    EditorManager::RegisterComponentDataInspector<InternodeInfo>([](Entity entity, IDataComponent *data, bool isRoot) {
+        auto *ltw = reinterpret_cast<InternodeInfo *>(data);
+        ImGui::DragFloat("Thickness", &ltw->m_thickness, 0.01f);
+        ImGui::DragFloat("Length", &ltw->m_length, 0.01f);
     });
 }
