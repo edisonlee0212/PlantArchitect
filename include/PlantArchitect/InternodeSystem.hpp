@@ -48,6 +48,7 @@ namespace PlantArchitect {
 
         void OnInspect() override;
 
+        std::shared_ptr<Camera> m_internodeDebuggingCamera;
     private:
         /**
          * The EntityQuery for filtering all internodes.
@@ -61,7 +62,7 @@ namespace PlantArchitect {
         void BehaviourSlotButton();
 
 #pragma region Internode debugging camera
-        std::shared_ptr<Camera> m_internodeDebuggingCamera;
+
         int m_internodeDebuggingCameraResolutionX = 1;
         int m_internodeDebuggingCameraResolutionY = 1;
         float m_lastX = 0;

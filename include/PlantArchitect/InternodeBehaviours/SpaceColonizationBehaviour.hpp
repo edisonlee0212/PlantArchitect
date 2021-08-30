@@ -6,7 +6,7 @@
 using namespace UniEngine;
 namespace PlantArchitect {
     struct PLANT_ARCHITECT_API SpaceColonizationTag : public IDataComponent {
-
+        bool m_truck = false;
     };
     struct PLANT_ARCHITECT_API SpaceColonizationIncentive : public IDataComponent {
         glm::vec3 m_direction;
@@ -17,9 +17,9 @@ namespace PlantArchitect {
     public:
         std::vector<PrivateComponentRef> m_volumes;
 
-        float m_removeDistance;
-        float m_attractDistance;
-        float m_internodeLength;
+        float m_removeDistance = 0.8f;
+        float m_attractDistance = 3.0f;
+        float m_internodeLength = 1.0f;
         std::vector<glm::vec3> m_attractionPoints;
         glm::vec3 m_center;
 
@@ -32,5 +32,7 @@ namespace PlantArchitect {
         void PostProcess() override;
 
         void Grow() override;
+
+        void VolumeSlotButton();
     };
 }

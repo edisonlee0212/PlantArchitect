@@ -54,7 +54,7 @@ void InternodeSystem::OnInspect() {
         Simulate(1.0f);
     }
 
-    if (ImGui::TreeNode("Internode Behaviours")) {
+    if (ImGui::TreeNodeEx("Internode Behaviours", ImGuiTreeNodeFlags_DefaultOpen)) {
         BehaviourSlotButton();
         int index = 0;
         bool skip = false;
@@ -412,9 +412,9 @@ void InternodeSystem::UpdateBranchColors() {
             false);
     BranchColor color;
     color.m_value = glm::vec4(1, 1, 1, 1);
-    if (focusingInternode.IsValid()) focusingInternode.SetDataComponent(color);
+    if (focusingInternode.IsValid() && focusingInternode.HasDataComponent<BranchColor>()) focusingInternode.SetDataComponent(color);
     color.m_value = glm::vec4(1, 0, 0, 1);
-    if (selectedEntity.IsValid()) selectedEntity.SetDataComponent(color);
+    if (selectedEntity.IsValid() && selectedEntity.HasDataComponent<BranchColor>()) selectedEntity.SetDataComponent(color);
 }
 
 void InternodeSystem::UpdateBranchCylinder(const float &width) {
@@ -430,9 +430,9 @@ void InternodeSystem::UpdateBranchCylinder(const float &width) {
                 glm::vec4 perspective;
                 glm::decompose(ltw.m_value, scale, rotation, translation, skew,
                                perspective);
+                const auto direction = glm::normalize(rotation * glm::vec3(0, 0, -1));
                 const glm::vec3 position2 =
-                        translation + internodeInfo.m_length * glm::normalize(ltw.GetRotation() * glm::vec3(0, 0, -1));
-                const auto direction = glm::normalize(position2 - translation);
+                        translation + internodeInfo.m_length * direction;
                 rotation = glm::quatLookAt(
                         direction, glm::vec3(direction.y, direction.z, direction.x));
                 rotation *= glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f));
