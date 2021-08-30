@@ -15,7 +15,7 @@ void SpaceColonizationBehaviour::OnCreate() {
     }
     m_internodeArchetype =
             EntityManager::CreateEntityArchetype("Space Colonization Internode", InternodeInfo(),
-                                                 SpaceColonizationTag(), SpaceColonizationIncentive(), SpaceColonizationParameters(), 
+                                                 SpaceColonizationTag(), SpaceColonizationIncentive(), SpaceColonizationParameters(),
                                                  BranchColor(), BranchCylinder(), BranchCylinderWidth(),
                                                  BranchPointer());
     m_internodesQuery = EntityManager::CreateEntityQuery();
@@ -144,13 +144,13 @@ void SpaceColonizationBehaviour::Grow() {
         InternodeInfo newInfo;
         newInfo.m_length = parameter.m_internodeLength;
         newInfo.m_thickness = parameter.m_internodeLength / 10.0f;
+        if (entity.GetChildrenAmount() > 0) {
+            newInfo.m_fromApicalBud = false;
+        } else {
+            newInfo.m_fromApicalBud = true;
+        }
         newNode.SetDataComponent(newInfo);
         auto newInternode = newNode.GetOrSetPrivateComponent<Internode>().lock();
-        if (entity.GetChildrenAmount() > 0) {
-            newInternode->m_fromApicalBud = false;
-        } else {
-            newInternode->m_fromApicalBud = true;
-        }
     }
 }
 

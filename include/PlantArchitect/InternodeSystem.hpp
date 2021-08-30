@@ -6,8 +6,18 @@
 using namespace UniEngine;
 namespace PlantArchitect {
     struct PLANT_ARCHITECT_API InternodeInfo : public IDataComponent {
+        /**
+         * The thickness of the internode
+         */
         float m_thickness = 1.0f;
+        /**
+         * The length of the internode
+         */
         float m_length = 0;
+        /**
+         * Whether this internode is formed from a apical bud.
+         */
+        bool m_fromApicalBud = true;
     };
 
     struct PLANT_ARCHITECT_API BranchColor : IDataComponent {

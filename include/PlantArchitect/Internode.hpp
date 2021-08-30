@@ -23,10 +23,7 @@ namespace PlantArchitect {
     class PLANT_ARCHITECT_API Internode : public IPrivateComponent {
         std::weak_ptr<InternodeSystem> m_internodeSystem;
     public:
-        /**
-         * Whether this internode is formed from a apical bud.
-         */
-        bool m_fromApicalBud = true;
+
         /**
          * The resource storage for the internode.
          */
