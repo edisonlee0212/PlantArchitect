@@ -28,3 +28,4 @@ void IInternodeBehaviour::GenerateBranchSkinnedMeshes(const std::vector<Entity> 
 
     }
 }
+

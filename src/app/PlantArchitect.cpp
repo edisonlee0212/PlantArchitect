@@ -38,6 +38,7 @@ int main() {
     ClassRegistry::RegisterAsset<DefaultInternodeBehaviour>("DefaultInternodeBehaviour", ".defaultbehaviour");
 
     ClassRegistry::RegisterDataComponent<SpaceColonizationTag>("SpaceColonizationTag");
+    ClassRegistry::RegisterDataComponent<SpaceColonizationParameters>("SpaceColonizationParameters");
     ClassRegistry::RegisterDataComponent<SpaceColonizationIncentive>("SpaceColonizationIncentive");
     ClassRegistry::RegisterAsset<SpaceColonizationBehaviour>("SpaceColonizationBehaviour", ".scbehaviour");
 
@@ -114,5 +115,12 @@ void RegisterDataComponentMenus() {
         auto *ltw = reinterpret_cast<InternodeInfo *>(data);
         ImGui::DragFloat("Thickness", &ltw->m_thickness, 0.01f);
         ImGui::DragFloat("Length", &ltw->m_length, 0.01f);
+    });
+
+    EditorManager::RegisterComponentDataInspector<SpaceColonizationParameters>([](Entity entity, IDataComponent *data, bool isRoot) {
+        auto *ltw = reinterpret_cast<SpaceColonizationParameters *>(data);
+        ImGui::DragFloat("Remove Distance", &ltw->m_removeDistance);
+        ImGui::DragFloat("Attract Distance", &ltw->m_attractDistance);
+        ImGui::DragFloat("Internode Length", &ltw->m_internodeLength);
     });
 }

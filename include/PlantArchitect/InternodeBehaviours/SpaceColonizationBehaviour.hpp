@@ -12,17 +12,16 @@ namespace PlantArchitect {
         glm::vec3 m_direction;
         int m_pointAmount;
     };
-
-    class PLANT_ARCHITECT_API SpaceColonizationBehaviour : public IInternodeBehaviour {
-    public:
-        std::vector<PrivateComponentRef> m_volumes;
-
+    struct PLANT_ARCHITECT_API SpaceColonizationParameters : public IDataComponent {
         float m_removeDistance = 0.8f;
         float m_attractDistance = 3.0f;
         float m_internodeLength = 1.0f;
+    };
+    class PLANT_ARCHITECT_API SpaceColonizationBehaviour : public IInternodeBehaviour {
+    public:
+        std::vector<PrivateComponentRef> m_volumes;
         std::vector<glm::vec3> m_attractionPoints;
         glm::vec3 m_center;
-
         void OnInspect() override;
 
         void OnCreate() override;

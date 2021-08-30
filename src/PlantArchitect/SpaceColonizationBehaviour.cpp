@@ -6,6 +6,7 @@
 #include "DefaultInternodeResource.hpp"
 #include "CubeVolume.hpp"
 #include "InternodeSystem.hpp"
+
 using namespace PlantArchitect;
 
 void SpaceColonizationBehaviour::OnCreate() {
@@ -14,7 +15,7 @@ void SpaceColonizationBehaviour::OnCreate() {
     }
     m_internodeArchetype =
             EntityManager::CreateEntityArchetype("Space Colonization Internode", InternodeInfo(),
-                                                 SpaceColonizationTag(), SpaceColonizationIncentive(),
+                                                 SpaceColonizationTag(), SpaceColonizationIncentive(), SpaceColonizationParameters(), 
                                                  BranchColor(), BranchCylinder(), BranchCylinderWidth(),
                                                  BranchPointer());
     m_internodesQuery = EntityManager::CreateEntityQuery();
@@ -27,16 +28,18 @@ void SpaceColonizationBehaviour::PreProcess() {
     removeMarks.resize(m_attractionPoints.size());
     memset(removeMarks.data(), 0, removeMarks.size() * sizeof(bool));
     //1. Check and remove points.
-    EntityManager::ForEach<InternodeInfo, GlobalTransform>
+    EntityManager::ForEach<InternodeInfo, GlobalTransform, SpaceColonizationParameters>
             (JobManager::PrimaryWorkers(), m_internodesQuery,
-             [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &globalTransform) {
+             [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &globalTransform,
+                 SpaceColonizationParameters &spaceColonizationParameters) {
                  glm::vec3 position = globalTransform.GetPosition() +
                                       internodeInfo.m_length * (globalTransform.GetRotation() * glm::vec3(0, 0, -1));
                  int index = 0;
                  for (const auto &point: m_attractionPoints) {
                      const glm::vec3 diff = position - point;
                      const float distance2 = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
-                     if (distance2 < m_removeDistance * m_removeDistance) {
+                     if (distance2 <
+                         spaceColonizationParameters.m_removeDistance * spaceColonizationParameters.m_removeDistance) {
                          removeMarks[index] = 1;
                      }
                      index++;
@@ -67,10 +70,11 @@ void SpaceColonizationBehaviour::Grow() {
         i.first = Entity();
         i.second = 999999;
     }
-    EntityManager::ForEach<InternodeInfo, GlobalTransform, SpaceColonizationIncentive>
+    EntityManager::ForEach<InternodeInfo, GlobalTransform, SpaceColonizationIncentive, SpaceColonizationParameters>
             (JobManager::PrimaryWorkers(), m_internodesQuery,
              [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &globalTransform,
-                 SpaceColonizationIncentive &spaceColonizationIncentive) {
+                 SpaceColonizationIncentive &spaceColonizationIncentive,
+                 SpaceColonizationParameters &spaceColonizationParameters) {
                  glm::vec3 position = globalTransform.GetPosition() +
                                       internodeInfo.m_length * (globalTransform.GetRotation() * glm::vec3(0, 0, -1));
                  spaceColonizationIncentive.m_direction = glm::vec3(0.0f);
@@ -79,7 +83,8 @@ void SpaceColonizationBehaviour::Grow() {
                      auto &point = m_attractionPoints[index];
                      const glm::vec3 diff = position - point;
                      const float distance2 = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
-                     if (distance2 < m_attractDistance * m_attractDistance) {
+                     if (distance2 < spaceColonizationParameters.m_attractDistance *
+                                     spaceColonizationParameters.m_attractDistance) {
                          std::lock_guard<std::mutex> lock(distanceMutex);
                          if (distance2 < minDistance[index].second) {
                              minDistance[index].first = entity;
@@ -92,9 +97,10 @@ void SpaceColonizationBehaviour::Grow() {
         auto entity = minDistance[i].first;
         if (entity.IsNull()) continue;
         auto globalTransform = entity.GetDataComponent<GlobalTransform>();
+        auto parameter = entity.GetDataComponent<SpaceColonizationParameters>();
         auto position = globalTransform.GetPosition();
         auto front = globalTransform.GetRotation() * glm::vec3(0, 0, -1);
-        glm::vec3 newPosition = position + m_internodeLength * front;
+        glm::vec3 newPosition = position + parameter.m_internodeLength * front;
         auto incentive = entity.GetDataComponent<SpaceColonizationIncentive>();
         incentive.m_direction += m_attractionPoints[i] - newPosition;
         incentive.m_pointAmount++;
@@ -105,6 +111,7 @@ void SpaceColonizationBehaviour::Grow() {
     m_internodesQuery.ToEntityArray(entities);
     for (const auto &entity: entities) {
         if (!entity.IsEnabled()) continue;
+        auto parameter = entity.GetDataComponent<SpaceColonizationParameters>();
         auto globalTransform = entity.GetDataComponent<GlobalTransform>();
         auto tag = entity.GetDataComponent<SpaceColonizationTag>();
         auto position = globalTransform.GetPosition();
@@ -112,7 +119,7 @@ void SpaceColonizationBehaviour::Grow() {
         auto up = globalTransform.GetRotation() * glm::vec3(0, 1, 0);
         auto spaceColonizationIncentive = entity.GetDataComponent<SpaceColonizationIncentive>();
         Entity newNode;
-        glm::vec3 newPosition = position + m_internodeLength * front;
+        glm::vec3 newPosition = position + parameter.m_internodeLength * front;
         glm::vec3 newFront;
         if (spaceColonizationIncentive.m_pointAmount != 0) {
             newNode = Retrieve<DefaultInternodeResource>(entity);
@@ -120,28 +127,28 @@ void SpaceColonizationBehaviour::Grow() {
             tag.m_truck = false;
             newNode.SetDataComponent(tag);
             entity.SetDataComponent(tag);
-        }else if(tag.m_truck){
+        } else if (tag.m_truck) {
             newNode = Retrieve<DefaultInternodeResource>(entity);
             newFront = glm::normalize(m_center - newPosition);
             newNode.SetDataComponent(tag);
             tag.m_truck = false;
             entity.SetDataComponent(tag);
-        }else continue;
+        } else continue;
         glm::vec3 newUp = glm::cross(glm::cross(newFront, up), newFront);
         GlobalTransform newNodeGlobalTransform;
         newNodeGlobalTransform.m_value =
                 glm::translate(newPosition) * glm::mat4_cast(glm::quatLookAt(newFront, newUp)) *
                 glm::scale(glm::vec3(1.0f));
         newNode.SetDataComponent(newNodeGlobalTransform);
-
+        newNode.SetDataComponent(parameter);
         InternodeInfo newInfo;
-        newInfo.m_length = m_internodeLength;
-        newInfo.m_thickness = m_internodeLength / 10.0f;
+        newInfo.m_length = parameter.m_internodeLength;
+        newInfo.m_thickness = parameter.m_internodeLength / 10.0f;
         newNode.SetDataComponent(newInfo);
         auto newInternode = newNode.GetOrSetPrivateComponent<Internode>().lock();
-        if(entity.GetChildrenAmount() > 0){
+        if (entity.GetChildrenAmount() > 0) {
             newInternode->m_fromApicalBud = false;
-        }else{
+        } else {
             newInternode->m_fromApicalBud = true;
         }
     }
@@ -152,22 +159,43 @@ void SpaceColonizationBehaviour::PostProcess() {
 }
 
 void SpaceColonizationBehaviour::OnInspect() {
-    if (ImGui::Button("Create new plant...")) {
-        auto entity = Retrieve<DefaultInternodeResource>();
-        Transform internodeTransform;
-        internodeTransform.m_value =
-                glm::translate(glm::vec3(0.0f)) *
-                glm::mat4_cast(glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f))) *
-                glm::scale(glm::vec3(1.0f));
-        entity.SetDataComponent(internodeTransform);
-        SpaceColonizationTag tag;
-        tag.m_truck = true;
-        entity.SetDataComponent(tag);
-        InternodeInfo newInfo;
-        newInfo.m_length = m_internodeLength;
-        newInfo.m_thickness = m_internodeLength / 10.0f;
-        entity.SetDataComponent(newInfo);
-    }
+    CreateInternodeMenu<SpaceColonizationParameters>
+            ("New Space Colonization Plant Wizard",
+             ".scparams",
+             [](SpaceColonizationParameters &params) {
+                 ImGui::DragFloat("Remove Distance", &params.m_removeDistance);
+                 ImGui::DragFloat("Attract Distance", &params.m_attractDistance);
+                 ImGui::DragFloat("Internode Length", &params.m_internodeLength);
+             },
+             [](SpaceColonizationParameters &params,
+                const std::filesystem::path &path) {
+
+             },
+             [](const SpaceColonizationParameters &params,
+                const std::filesystem::path &path) {
+
+             },
+             [&](const SpaceColonizationParameters &params,
+                 const Transform &transform) {
+                 auto entity = Retrieve<DefaultInternodeResource>();
+                 Transform internodeTransform;
+                 internodeTransform.m_value =
+                         glm::translate(glm::vec3(0.0f)) *
+                         glm::mat4_cast(glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f))) *
+                         glm::scale(glm::vec3(1.0f));
+                 internodeTransform.m_value = transform.m_value * internodeTransform.m_value;
+                 entity.SetDataComponent(internodeTransform);
+                 SpaceColonizationTag tag;
+                 tag.m_truck = true;
+                 entity.SetDataComponent(tag);
+                 InternodeInfo newInfo;
+                 newInfo.m_length = params.m_internodeLength;
+                 newInfo.m_thickness = params.m_internodeLength / 10.0f;
+                 entity.SetDataComponent(newInfo);
+                 entity.SetDataComponent(params);
+                 return entity;
+             }
+            );
     if (ImGui::Button("Generate branch mesh")) {
         std::vector<Entity> entities;
         m_internodesQuery.ToEntityArray(entities);
@@ -175,7 +203,7 @@ void SpaceColonizationBehaviour::OnInspect() {
     }
 
     if (ImGui::TreeNodeEx("Attraction Points", ImGuiTreeNodeFlags_DefaultOpen)) {
-        if(ImGui::Button("Clear")){
+        if (ImGui::Button("Clear")) {
             m_attractionPoints.clear();
         }
         VolumeSlotButton();
@@ -226,7 +254,8 @@ void SpaceColonizationBehaviour::OnInspect() {
             }
             RenderManager::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube, renderColor,
                                                   displayMatrices, glm::mat4(1.0f), renderSize);
-            RenderManager::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube, EntityManager::GetSystem<InternodeSystem>()->m_internodeDebuggingCamera,
+            RenderManager::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube,
+                                                  EntityManager::GetSystem<InternodeSystem>()->m_internodeDebuggingCamera,
                                                   EditorManager::GetInstance().m_sceneCameraPosition,
                                                   EditorManager::GetInstance().m_sceneCameraRotation, renderColor,
                                                   displayMatrices, glm::mat4(1.0f), renderSize);
