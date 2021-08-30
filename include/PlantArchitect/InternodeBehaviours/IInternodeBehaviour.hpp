@@ -32,6 +32,15 @@ namespace PlantArchitect {
         void RecycleSingle(const Entity &internode);
 
 #pragma endregion
+#pragma region Helpers
+        void TreeNodeWalker(std::vector<Entity> &boundEntities,
+                                        std::vector<int> &parentIndices,
+                                        const int &parentIndex, const Entity &node);
+        void TreeSkinnedMeshGenerator(std::vector<Entity> &internodes,
+                                      std::vector<int> &parentIndices,
+                                      std::vector<SkinnedVertex> &vertices,
+                                      std::vector<unsigned> &indices);
+#pragma endregion
     public:
         /**
          * What to do before the growth, and before the resource collection. Mesh, graph calculation...
@@ -52,7 +61,7 @@ namespace PlantArchitect {
          * Generate branch skinned mesh for internodes.
          * @param entities
          */
-        virtual void GenerateBranchSkinnedMeshes(const std::vector<Entity> &entities);
+        virtual void GenerateBranchSkinnedMeshes(const EntityQuery& internodeQuery);
 
         template<typename T>
         void CreateInternodeMenu(const std::string& menuTitle,

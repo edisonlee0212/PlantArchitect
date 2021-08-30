@@ -18,6 +18,10 @@ namespace PlantArchitect {
          * Whether this internode is formed from a apical bud.
          */
         bool m_fromApicalBud = true;
+        /**
+         * The index of current internode within a plant, start from the root.
+         */
+        int m_index = -1;
     };
 
     struct PLANT_ARCHITECT_API BranchColor : IDataComponent {

@@ -62,6 +62,6 @@ void DefaultInternodeBehaviour::OnInspect() {
     if (ImGui::Button("Generate branch mesh")) {
         std::vector<Entity> entities;
         m_internodesQuery.ToEntityArray(entities);
-        GenerateBranchSkinnedMeshes(entities);
+        GenerateBranchSkinnedMeshes(m_internodesQuery);
     }
 }

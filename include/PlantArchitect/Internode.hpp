@@ -1,5 +1,5 @@
 #pragma once
-
+#include "InternodeRingSegment.hpp"
 #include <plant_architect_export.h>
 #include <IInternodeResource.hpp>
 #include "InternodeSystem.hpp"
@@ -23,6 +23,14 @@ namespace PlantArchitect {
     class PLANT_ARCHITECT_API Internode : public IPrivateComponent {
         std::weak_ptr<InternodeSystem> m_internodeSystem;
     public:
+        AssetRef m_branchMesh;
+        AssetRef m_skinnedBranchMesh;
+        glm::vec3 m_normalDir = glm::vec3(0, 0, 1);
+        bool m_meshGenerated = false;
+        bool m_foliageGenerated = false;
+        int m_step;
+
+        std::vector<InternodeRingSegment> m_rings;
 
         /**
          * The resource storage for the internode.

@@ -199,7 +199,7 @@ void SpaceColonizationBehaviour::OnInspect() {
     if (ImGui::Button("Generate branch mesh")) {
         std::vector<Entity> entities;
         m_internodesQuery.ToEntityArray(entities);
-        GenerateBranchSkinnedMeshes(entities);
+        GenerateBranchSkinnedMeshes(m_internodesQuery);
     }
 
     if (ImGui::TreeNodeEx("Attraction Points", ImGuiTreeNodeFlags_DefaultOpen)) {

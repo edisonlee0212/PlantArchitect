@@ -165,6 +165,7 @@ target_include_directories(PlantArchitect
         ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect
         ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeBehaviours
         ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeResources
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/MeshFormation
         ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/quickhull
         )
 target_link_libraries(PlantArchitect
