@@ -119,11 +119,14 @@ void SpaceColonizationBehaviour::Grow() {
             newFront = glm::normalize(spaceColonizationIncentive.m_direction);
             tag.m_truck = false;
             newNode.SetDataComponent(tag);
+            entity.SetDataComponent(tag);
         }else if(tag.m_truck){
             newNode = Retrieve<DefaultInternodeResource>(entity);
             newFront = glm::normalize(m_center - newPosition);
             newNode.SetDataComponent(tag);
-        }else return;
+            tag.m_truck = false;
+            entity.SetDataComponent(tag);
+        }else continue;
         glm::vec3 newUp = glm::cross(glm::cross(newFront, up), newFront);
         GlobalTransform newNodeGlobalTransform;
         newNodeGlobalTransform.m_value =
@@ -160,6 +163,10 @@ void SpaceColonizationBehaviour::OnInspect() {
         SpaceColonizationTag tag;
         tag.m_truck = true;
         entity.SetDataComponent(tag);
+        InternodeInfo newInfo;
+        newInfo.m_length = m_internodeLength;
+        newInfo.m_thickness = m_internodeLength / 10.0f;
+        entity.SetDataComponent(newInfo);
     }
     if (ImGui::Button("Generate branch mesh")) {
         std::vector<Entity> entities;
@@ -167,7 +174,10 @@ void SpaceColonizationBehaviour::OnInspect() {
         GenerateBranchSkinnedMeshes(entities);
     }
 
-    if (ImGui::TreeNodeEx("Volumes", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::TreeNodeEx("Attraction Points", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if(ImGui::Button("Clear")){
+            m_attractionPoints.clear();
+        }
         VolumeSlotButton();
         int index = 0;
         bool skip = false;
