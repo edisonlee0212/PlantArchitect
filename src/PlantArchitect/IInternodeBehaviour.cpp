@@ -27,7 +27,7 @@ void IInternodeBehaviour::RecycleSingle(const Entity &internode) {
 }
 
 void
-IInternodeBehaviour::GenerateBranchSkinnedMeshes(const EntityQuery &internodeQuery, int subdivision, int resolution) {
+IInternodeBehaviour::GenerateBranchSkinnedMeshes(const EntityQuery &internodeQuery, float subdivision, float resolution) {
     std::vector<Entity> plants;
     CollectRoots(internodeQuery, plants);
 

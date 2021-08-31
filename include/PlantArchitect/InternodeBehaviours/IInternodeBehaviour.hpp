@@ -67,7 +67,7 @@ namespace PlantArchitect {
          * @param entities
          */
         virtual void
-        GenerateBranchSkinnedMeshes(const EntityQuery &internodeQuery, int subdivision = 4, int resolution = 4);
+        GenerateBranchSkinnedMeshes(const EntityQuery &internodeQuery, float subdivision, float resolution);
 
         /**
          * Collect roots with target kind of internodes.

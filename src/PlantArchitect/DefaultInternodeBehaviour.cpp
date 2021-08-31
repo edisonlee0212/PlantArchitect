@@ -59,9 +59,12 @@ void DefaultInternodeBehaviour::OnInspect() {
     if (ImGui::Button("Create new internode...")) {
         auto entity = Retrieve<DefaultInternodeResource>();
     }
+    static float resolution = 0.02f;
+    static float subdivision = 4.0f;
+    ImGui::DragFloat("Resolution", &resolution, 0.001f);
+    ImGui::DragFloat("Subdivision", &subdivision, 0.001f);
     if (ImGui::Button("Generate branch mesh")) {
-        std::vector<Entity> entities;
-        m_internodesQuery.ToEntityArray(entities);
-        GenerateBranchSkinnedMeshes(m_internodesQuery);
+        GenerateBranchSkinnedMeshes(m_internodesQuery, subdivision, resolution);
     }
+
 }
