@@ -69,6 +69,7 @@ IInternodeBehaviour::GenerateBranchSkinnedMeshes(const EntityQuery &internodeQue
                                       Transform &transform, InternodeInfo &internodeInfo) {
                 auto internode =
                         entity.GetOrSetPrivateComponent<Internode>().lock();
+                internode->m_rings.clear();
                 auto rootGlobalTransform = globalTransform;
                 if (internodeInfo.m_currentRoot != entity) {
                     rootGlobalTransform = internodeInfo.m_currentRoot.GetDataComponent<GlobalTransform>();
@@ -201,10 +202,12 @@ void IInternodeBehaviour::TreeSkinnedMeshGenerator(std::vector<Entity> &internod
                                                    std::vector<SkinnedVertex> &vertices,
                                                    std::vector<unsigned int> &indices) {
     int parentStep = -1;
-    for (int internodeIndex = 1; internodeIndex < internodes.size();
+    for (int internodeIndex = 0; internodeIndex < internodes.size();
          internodeIndex++) {
+        int parentIndex = 0;
+        if(internodeIndex != 0) parentIndex = parentIndices[internodeIndex];
         auto &internode = internodes[internodeIndex];
-        glm::vec3 newNormalDir = internodes[parentIndices[internodeIndex]]
+        glm::vec3 newNormalDir = internodes[parentIndex]
                 .GetOrSetPrivateComponent<Internode>()
                 .lock()
                 ->m_normalDir;
@@ -235,7 +238,7 @@ void IInternodeBehaviour::TreeSkinnedMeshGenerator(std::vector<Entity> &internod
             float distanceToStart = 0;
             float distanceToEnd = 1;
             archetype.m_bondId =
-                    glm::ivec4(internodeIndex, parentIndices[internodeIndex], -1, -1);
+                    glm::ivec4(internodeIndex, parentIndex, -1, -1);
             archetype.m_bondId2 = glm::ivec4(-1, -1, -1, -1);
             archetype.m_weight = glm::vec4(
                     distanceToStart / (distanceToStart + distanceToEnd),
@@ -316,7 +319,7 @@ void IInternodeBehaviour::TreeSkinnedMeshGenerator(std::vector<Entity> &internod
                 float distanceToEnd = glm::distance(
                         list->m_rings.at(ringIndex).m_endPosition, endPosition);
                 archetype.m_bondId =
-                        glm::ivec4(internodeIndex, parentIndices[internodeIndex], -1, -1);
+                        glm::ivec4(internodeIndex, parentIndex, -1, -1);
                 archetype.m_bondId2 = glm::ivec4(-1, -1, -1, -1);
                 archetype.m_weight = glm::vec4(
                         distanceToStart / (distanceToStart + distanceToEnd),
