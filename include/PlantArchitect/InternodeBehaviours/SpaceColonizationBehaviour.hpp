@@ -15,9 +15,15 @@ namespace PlantArchitect {
     struct PLANT_ARCHITECT_API SpaceColonizationParameters : public IDataComponent {
         float m_removeDistance = 0.8f;
         float m_attractDistance = 3.0f;
-        float m_internodeLength = 1.0f;
+        float m_internodeLength = 0.5f;
+
+        float m_thicknessFactor = 0.5f;
+        float m_endNodeThickness = 0.01f;
     };
+
+    class Volume;
     class PLANT_ARCHITECT_API SpaceColonizationBehaviour : public IInternodeBehaviour {
+        void VolumeSlotButton();
     public:
         std::vector<PrivateComponentRef> m_volumes;
         std::vector<glm::vec3> m_attractionPoints;
@@ -32,6 +38,6 @@ namespace PlantArchitect {
 
         void Grow() override;
 
-        void VolumeSlotButton();
+        void PushVolume(const std::shared_ptr<Volume>& volume);
     };
 }

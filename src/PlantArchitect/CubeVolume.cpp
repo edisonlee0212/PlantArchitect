@@ -9,8 +9,8 @@ void CubeVolume::ApplyMeshRendererBounds() {
 }
 
 void CubeVolume::OnCreate() {
-    m_minMaxBound.m_min = glm::vec3(-5, 0, -5);
-    m_minMaxBound.m_max = glm::vec3(5, 10, 5);
+    m_minMaxBound.m_min = glm::vec3(-5, -5, -5);
+    m_minMaxBound.m_max = glm::vec3(5, 5, 5);
     SetEnabled(true);
 }
 

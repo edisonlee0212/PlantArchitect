@@ -55,7 +55,7 @@ namespace PlantArchitect {
             return other.m_value == m_value;
         }
     };
-
+    class IInternodeBehaviour;
     class PLANT_ARCHITECT_API InternodeSystem : public ISystem {
     public:
         void LateUpdate() override;
@@ -67,6 +67,8 @@ namespace PlantArchitect {
         void OnInspect() override;
 
         std::shared_ptr<Camera> m_internodeDebuggingCamera;
+
+        void PushInternodeBehaviour(const std::shared_ptr<IInternodeBehaviour>& behaviour);
     private:
         /**
          * The EntityQuery for filtering all internodes.

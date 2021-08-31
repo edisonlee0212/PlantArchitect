@@ -79,9 +79,11 @@ void SpaceColonizationBehaviour::Grow() {
                                       internodeInfo.m_length * (globalTransform.GetRotation() * glm::vec3(0, 0, -1));
                  spaceColonizationIncentive.m_direction = glm::vec3(0.0f);
                  spaceColonizationIncentive.m_pointAmount = 0;
+                 glm::vec3 front = globalTransform.GetRotation() * glm::vec3(0, 0, -1);
                  for (int index = 0; index < m_attractionPoints.size(); index++) {
                      auto &point = m_attractionPoints[index];
-                     const glm::vec3 diff = position - point;
+                     const glm::vec3 diff = point - position;
+                     if(glm::dot(diff, front) <= 0) continue;
                      const float distance2 = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
                      if (distance2 < spaceColonizationParameters.m_attractDistance *
                                      spaceColonizationParameters.m_attractDistance) {
@@ -122,8 +124,16 @@ void SpaceColonizationBehaviour::Grow() {
         glm::vec3 newPosition = position + parameter.m_internodeLength * front;
         glm::vec3 newFront;
         if (spaceColonizationIncentive.m_pointAmount != 0) {
-            newNode = Retrieve<DefaultInternodeResource>(entity);
+            if(glm::all(glm::equal(spaceColonizationIncentive.m_direction, glm::vec3(0)))){
+                continue;
+            }
             newFront = glm::normalize(spaceColonizationIncentive.m_direction);
+            bool duplicate = false;
+            entity.ForEachChild([&](Entity child){
+                if(glm::dot(child.GetDataComponent<GlobalTransform>().GetRotation() * glm::vec3(0, 0, -1), newFront) > 0.95f) duplicate = true;
+            });
+            if(duplicate) continue;
+            newNode = Retrieve<DefaultInternodeResource>(entity);
             tag.m_truck = false;
             newNode.SetDataComponent(tag);
             entity.SetDataComponent(tag);
@@ -166,17 +176,18 @@ void SpaceColonizationBehaviour::PostProcess() {
             TreeGraphWalkerEndToRoot(plants[plantIndex], plants[plantIndex], [&](Entity parent){
                 float thicknessCollection = 0.0f;
                 auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
+                auto parameters = parent.GetDataComponent<SpaceColonizationParameters>();
                 parent.ForEachChild([&](Entity child){
                     if(!InternodeCheck(child)) return;
                     auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
-                    thicknessCollection += glm::pow(childInternodeInfo.m_thickness, 2.0f);
+                    thicknessCollection += glm::pow(childInternodeInfo.m_thickness, 1.0f / parameters.m_thicknessFactor);
                 });
-                parentInternodeInfo.m_thickness = glm::pow(thicknessCollection, 0.5f);
+                parentInternodeInfo.m_thickness = glm::pow(thicknessCollection, parameters.m_thicknessFactor);
                 parent.SetDataComponent(parentInternodeInfo);
             }, [](Entity endNode){
                 auto internodeInfo = endNode.GetDataComponent<InternodeInfo>();
                 auto parameters = endNode.GetDataComponent<SpaceColonizationParameters>();
-                internodeInfo.m_thickness = parameters.m_internodeLength / 10.0f;
+                internodeInfo.m_thickness = parameters.m_endNodeThickness;
                 endNode.SetDataComponent(internodeInfo);
             });
         }).share());
@@ -296,20 +307,23 @@ void SpaceColonizationBehaviour::VolumeSlotButton() {
     if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("CubeVolume")) {
             IM_ASSERT(payload->DataSize == sizeof(std::shared_ptr<IPrivateComponent>));
-            std::shared_ptr<CubeVolume> payload_n =
-                    std::dynamic_pointer_cast<CubeVolume>(
+            std::shared_ptr<Volume> payload_n =
+                    std::dynamic_pointer_cast<Volume>(
                             *static_cast<std::shared_ptr<IPrivateComponent> *>(payload->Data));
-            if (payload_n.get()) {
-                bool search = false;
-                for (auto &i: m_volumes) {
-                    if (i.Get<Volume>()->GetTypeName() == "CubeVolume") search = true;
-                }
-                if (!search) {
-                    m_volumes.emplace_back(payload_n);
-                }
-            }
+            PushVolume(payload_n);
         }
         ImGui::EndDragDropTarget();
+    }
+}
+
+void SpaceColonizationBehaviour::PushVolume(const std::shared_ptr<Volume>& volume) {
+    if(!volume.get()) return;
+    bool search = false;
+    for (auto &i: m_volumes) {
+        if (i.Get<Volume>()->GetTypeName() == volume->GetTypeName()) search = true;
+    }
+    if (!search) {
+        m_volumes.emplace_back(volume);
     }
 }
 

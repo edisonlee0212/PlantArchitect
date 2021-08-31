@@ -194,6 +194,28 @@ target_link_libraries(Application
         PlantArchitect
         )
 
+add_executable(SpaceColonizationExample
+        "src/app/SpaceColonizationExample.cpp"
+        )
+
+target_include_directories(SpaceColonizationExample
+        PRIVATE
+        ${RAY_TRACER_FACILITY_INCLUDES_LOCAL}
+        )
+
+target_precompile_headers(SpaceColonizationExample
+        PRIVATE
+        ${PLANT_ARCHITECT_PCH_LOCAL}
+        )
+target_compile_definitions(SpaceColonizationExample
+        PRIVATE
+        ${PLANT_ARCHITECT_RESOURCE_DEF}
+        )
+target_link_libraries(SpaceColonizationExample
+        RayTracerFacility
+        PlantArchitect
+        )
+
 file(COPY src/app/imgui.ini DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 if (NOT ${CMAKE_BINARY_DIR} STREQUAL ${PROJECT_BINARY_DIR})

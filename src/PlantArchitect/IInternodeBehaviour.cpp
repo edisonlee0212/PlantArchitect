@@ -197,15 +197,20 @@ void IInternodeBehaviour::TreeSkinnedMeshGenerator(std::vector<Entity> &internod
         int parentIndex = 0;
         if (internodeIndex != 0) parentIndex = parentIndices[internodeIndex];
         auto &internode = internodes[internodeIndex];
-        glm::vec3 newNormalDir = internodes[parentIndex]
-                .GetOrSetPrivateComponent<Internode>()
-                .lock()
-                ->m_normalDir;
+        auto internodeGlobalTransform = internode.GetDataComponent<GlobalTransform>();
+        glm::vec3 newNormalDir;
+        if (internodeIndex != 0) {
+            newNormalDir = internodes[parentIndex].GetOrSetPrivateComponent<Internode>().lock()->m_normalDir;
+        } else {
+            newNormalDir = internodeGlobalTransform.GetRotation() *
+                           glm::vec3(0.0f, 1.0f, 0.0f);
+        }
         const glm::vec3 front =
-                internode.GetDataComponent<GlobalTransform>().GetRotation() *
+                internodeGlobalTransform.GetRotation() *
                 glm::vec3(0.0f, 0.0f, -1.0f);
         newNormalDir = glm::cross(glm::cross(front, newNormalDir), front);
         auto list = internode.GetOrSetPrivateComponent<Internode>().lock();
+        list->m_normalDir = newNormalDir;
         if (list->m_rings.empty()) {
             continue;
         }
@@ -213,7 +218,7 @@ void IInternodeBehaviour::TreeSkinnedMeshGenerator(std::vector<Entity> &internod
         // For stitching
         const int pStep = parentStep > 0 ? parentStep : step;
         parentStep = step;
-        list->m_normalDir = newNormalDir;
+
         float angleStep = 360.0f / static_cast<float>(pStep);
         int vertexIndex = vertices.size();
         SkinnedVertex archetype;

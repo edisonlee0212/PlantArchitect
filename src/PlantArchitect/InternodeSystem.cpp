@@ -85,33 +85,17 @@ void InternodeSystem::BehaviourSlotButton() {
     if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("DefaultInternodeBehaviour")) {
             IM_ASSERT(payload->DataSize == sizeof(std::shared_ptr<IAsset>));
-            std::shared_ptr<DefaultInternodeBehaviour> payload_n =
-                    std::dynamic_pointer_cast<DefaultInternodeBehaviour>(
+            std::shared_ptr<IInternodeBehaviour> payload_n =
+                    std::dynamic_pointer_cast<IInternodeBehaviour>(
                             *static_cast<std::shared_ptr<IAsset> *>(payload->Data));
-            if (payload_n.get()) {
-                bool search = false;
-                for (auto &i: m_internodeBehaviours) {
-                    if (i.Get<IInternodeBehaviour>()->GetTypeName() == "DefaultInternodeBehaviour") search = true;
-                }
-                if (!search) {
-                    m_internodeBehaviours.emplace_back(payload_n);
-                }
-            }
+            PushInternodeBehaviour(payload_n);
         }
         if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("SpaceColonizationBehaviour")) {
             IM_ASSERT(payload->DataSize == sizeof(std::shared_ptr<IAsset>));
-            std::shared_ptr<SpaceColonizationBehaviour> payload_n =
-                    std::dynamic_pointer_cast<SpaceColonizationBehaviour>(
+            std::shared_ptr<IInternodeBehaviour> payload_n =
+                    std::dynamic_pointer_cast<IInternodeBehaviour>(
                             *static_cast<std::shared_ptr<IAsset> *>(payload->Data));
-            if (payload_n.get()) {
-                bool search = false;
-                for (auto &i: m_internodeBehaviours) {
-                    if (i.Get<IInternodeBehaviour>()->GetTypeName() == "SpaceColonizationBehaviour") search = true;
-                }
-                if (!search) {
-                    m_internodeBehaviours.emplace_back(payload_n);
-                }
-            }
+            PushInternodeBehaviour(payload_n);
         }
         ImGui::EndDragDropTarget();
     }
@@ -483,6 +467,17 @@ void InternodeSystem::RenderBranchPointers() {
                 EditorManager::GetInstance().m_sceneCameraRotation, m_pointerColor,
                 *reinterpret_cast<std::vector<glm::mat4> *>(&branchPointers),
                 glm::mat4(1.0f), 1.0f);
+}
+
+void InternodeSystem::PushInternodeBehaviour(const std::shared_ptr<IInternodeBehaviour>& behaviour) {
+    if(!behaviour.get()) return;
+    bool search = false;
+    for (auto &i: m_internodeBehaviours) {
+        if (i.Get<IInternodeBehaviour>()->GetTypeName() == behaviour->GetTypeName()) search = true;
+    }
+    if (!search) {
+        m_internodeBehaviours.emplace_back(behaviour);
+    }
 }
 
 #pragma endregion
