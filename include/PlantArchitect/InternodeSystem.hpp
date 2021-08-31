@@ -22,6 +22,10 @@ namespace PlantArchitect {
          * The index of current internode within a plant, start from the root.
          */
         int m_index = -1;
+        /**
+         * The current root of the internode.
+         */
+        Entity m_currentRoot;
     };
 
     struct PLANT_ARCHITECT_API BranchColor : IDataComponent {

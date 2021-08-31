@@ -4,6 +4,7 @@
 
 #include "IInternodeBehaviour.hpp"
 #include "Internode.hpp"
+#include "Curve.hpp"
 
 using namespace PlantArchitect;
 
@@ -25,11 +26,13 @@ void IInternodeBehaviour::RecycleSingle(const Entity &internode) {
     m_recycledInternodes.emplace_back(internode);
 }
 
-void IInternodeBehaviour::GenerateBranchSkinnedMeshes(const EntityQuery &internodeQuery) {
+void
+IInternodeBehaviour::GenerateBranchSkinnedMeshes(const EntityQuery &internodeQuery, int subdivision, int resolution) {
     std::mutex plantCollectionMutex;
     std::vector<Entity> plants;
     EntityManager::ForEach<InternodeInfo>(JobManager::PrimaryWorkers(), internodeQuery,
                                           [&](int index, Entity entity, InternodeInfo &internodeInfo) {
+                                              internodeInfo.m_currentRoot = entity;
                                               if (!entity.HasPrivateComponent<Internode>()) return;
                                               auto parent = entity.GetParent();
                                               if (parent.IsNull() || !parent.HasPrivateComponent<Internode>()) {
@@ -49,22 +52,98 @@ void IInternodeBehaviour::GenerateBranchSkinnedMeshes(const EntityQuery &interno
     //Use internal JobSystem to dispatch job for entity collection.
     std::vector<std::shared_future<void>> results;
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
-        results.push_back(JobManager::PrimaryWorkers().Push([&](int id) {
+        results.push_back(JobManager::PrimaryWorkers().Push([&, plantIndex](int id) {
             TreeNodeWalker(boundEntitiesLists[plantIndex],
-                           parentIndicesLists[plantIndex], -1, plants[plantIndex]);
+                           parentIndicesLists[plantIndex], -1, plants[plantIndex], plants[plantIndex]);
         }).share());
     }
     for (const auto &i: results)
         i.wait();
 
+#pragma region Prepare rings for branch mesh.
+    EntityManager::ForEach<GlobalTransform, Transform,
+            InternodeInfo>(
+            JobManager::PrimaryWorkers(),
+            internodeQuery,
+            [resolution, subdivision](int i, Entity entity, GlobalTransform &globalTransform,
+                                      Transform &transform, InternodeInfo &internodeInfo) {
+                auto internode =
+                        entity.GetOrSetPrivateComponent<Internode>().lock();
+                auto rootGlobalTransform = globalTransform;
+                if (internodeInfo.m_currentRoot != entity) {
+                    rootGlobalTransform = internodeInfo.m_currentRoot.GetDataComponent<GlobalTransform>();
+                }
+                GlobalTransform relativeGlobalTransform;
+                relativeGlobalTransform.m_value = glm::inverse(rootGlobalTransform.m_value) * globalTransform.m_value;
+                glm::vec3 directionStart = relativeGlobalTransform.GetRotation() * glm::vec3(0, 0, -1);
+                glm::vec3 directionEnd = directionStart;
+                glm::vec3 positionStart = relativeGlobalTransform.GetPosition();
+                glm::vec3 positionEnd = positionStart + internodeInfo.m_length * directionStart;
+                float thicknessStart = internodeInfo.m_thickness;
+                if (internodeInfo.m_currentRoot != entity) {
+                    auto parent = entity.GetParent();
+                    if (!parent.IsNull()) {
+                        if (parent.HasDataComponent<InternodeInfo>()) {
+                            auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
+                            auto parentGlobalTransform = parent.GetDataComponent<GlobalTransform>();
+                            thicknessStart = parentInternodeInfo.m_thickness;
+                            GlobalTransform parentRelativeGlobalTransform;
+                            parentRelativeGlobalTransform.m_value =
+                                    glm::inverse(rootGlobalTransform.m_value) * parentGlobalTransform.m_value;
+                            directionStart = parentRelativeGlobalTransform.GetRotation() * glm::vec3(0, 0, -1);
+                        }
+                    }
+                }
+#pragma region Subdivision internode here.
+                auto distance = glm::distance(positionStart, positionEnd);
+                int step = thicknessStart / resolution;
+                if (step < 4)
+                    step = 4;
+                if (step % 2 != 0)
+                    step++;
+                internode->m_step = step;
+                int amount = static_cast<int>(0.5f + distance * subdivision);
+                if (amount % 2 != 0)
+                    amount++;
+                BezierCurve curve = BezierCurve(
+                        positionStart, positionStart + distance / 3.0f * directionStart,
+                        positionEnd - distance / 3.0f * directionEnd, positionEnd);
+                float posStep = 1.0f / static_cast<float>(amount);
+                glm::vec3 dirStep = (directionEnd - directionStart) / static_cast<float>(amount);
+                float radiusStep = (internodeInfo.m_thickness - thicknessStart) /
+                                   static_cast<float>(amount);
+
+                for (int i = 1; i < amount; i++) {
+                    float startThickness = static_cast<float>(i - 1) * radiusStep;
+                    float endThickness = static_cast<float>(i) * radiusStep;
+                    internode->m_rings.emplace_back(
+                            curve.GetPoint(posStep * (i - 1)), curve.GetPoint(posStep * i),
+                            directionStart + static_cast<float>(i - 1) * dirStep,
+                            directionStart + static_cast<float>(i) * dirStep,
+                            thicknessStart + startThickness, thicknessStart + endThickness);
+                }
+                if (amount > 1)
+                    internode->m_rings.emplace_back(
+                            curve.GetPoint(1.0f - posStep), positionStart, directionEnd - dirStep, directionEnd,
+                            internodeInfo.m_thickness - radiusStep,
+                            internodeInfo.m_thickness);
+                else
+                    internode->m_rings.emplace_back(positionEnd, positionStart,
+                                                    directionStart, directionEnd, thicknessStart,
+                                                    internodeInfo.m_thickness);
+#pragma endregion
+
+            }
+
+    );
+#pragma endregion
+
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
         const auto &plant = plants[plantIndex];
+        PrepareInternodeForSkeletalAnimation(plant);
         auto animator = plant.GetOrSetPrivateComponent<Animator>().lock();
         auto skinnedMeshRenderer = plant.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
         skinnedMeshRenderer->SetEnabled(true);
-        if (plant.HasPrivateComponent<MeshRenderer>()) {
-            plant.GetOrSetPrivateComponent<MeshRenderer>().lock()->SetEnabled(false);
-        }
         auto treeData = plant.GetOrSetPrivateComponent<Internode>().lock();
         const auto plantGlobalTransform =
                 plant.GetDataComponent<GlobalTransform>();
@@ -105,16 +184,17 @@ void IInternodeBehaviour::GenerateBranchSkinnedMeshes(const EntityQuery &interno
 }
 
 void IInternodeBehaviour::TreeNodeWalker(std::vector<Entity> &boundEntities, std::vector<int> &parentIndices,
-                                         const int &parentIndex, const Entity &node) {
+                                         const int &parentIndex, const Entity &node, const Entity &root) {
     if (!node.HasDataComponent<InternodeInfo>() || !node.HasPrivateComponent<Internode>()) return;
     boundEntities.push_back(node);
     parentIndices.push_back(parentIndex);
     const size_t currentIndex = boundEntities.size() - 1;
-    auto info = node.GetDataComponent<InternodeInfo>();
-    info.m_index = currentIndex;
-    node.SetDataComponent(info);
+    auto internodeInfo = node.GetDataComponent<InternodeInfo>();
+    internodeInfo.m_index = currentIndex;
+    internodeInfo.m_currentRoot = root;
+    node.SetDataComponent(internodeInfo);
     node.ForEachChild([&](Entity child) {
-        TreeNodeWalker(boundEntities, parentIndices, currentIndex, child);
+        TreeNodeWalker(boundEntities, parentIndices, currentIndex, child, root);
     });
 }
 
@@ -272,5 +352,25 @@ void IInternodeBehaviour::TreeSkinnedMeshGenerator(std::vector<Entity> &internod
             }
         }
     }
+}
+
+void IInternodeBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity) {
+    auto animator = entity.GetOrSetPrivateComponent<Animator>().lock();
+    animator->Setup(AssetManager::CreateAsset<Animation>());
+    auto skinnedMeshRenderer =
+            entity.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
+    skinnedMeshRenderer->m_skinnedMesh = AssetManager::CreateAsset<SkinnedMesh>();
+    auto animation =
+            entity.GetOrSetPrivateComponent<Animator>().lock()->GetAnimation();
+    skinnedMeshRenderer->m_skinnedMesh.Get<SkinnedMesh>()->m_animation =
+            animation;
+    auto skinnedMat = AssetManager::LoadMaterial(
+            DefaultResources::GLPrograms::StandardSkinnedProgram);
+    skinnedMeshRenderer->m_material = skinnedMat;
+    skinnedMat->m_albedoColor = glm::vec3(0.7f, 0.3f, 0.0f);
+    skinnedMat->m_roughness = 1.0f;
+    skinnedMat->m_metallic = 0.0f;
+    skinnedMeshRenderer->AttachAnimator(
+            entity.GetOrSetPrivateComponent<Animator>().lock());
 }
 

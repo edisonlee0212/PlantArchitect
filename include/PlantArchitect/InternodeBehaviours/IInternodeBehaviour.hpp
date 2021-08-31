@@ -35,11 +35,13 @@ namespace PlantArchitect {
 #pragma region Helpers
         void TreeNodeWalker(std::vector<Entity> &boundEntities,
                                         std::vector<int> &parentIndices,
-                                        const int &parentIndex, const Entity &node);
+                                        const int &parentIndex, const Entity &node, const Entity& root);
         void TreeSkinnedMeshGenerator(std::vector<Entity> &internodes,
                                       std::vector<int> &parentIndices,
                                       std::vector<SkinnedVertex> &vertices,
                                       std::vector<unsigned> &indices);
+        void PrepareInternodeForSkeletalAnimation(const Entity& entity);
+
 #pragma endregion
     public:
         /**
@@ -61,7 +63,7 @@ namespace PlantArchitect {
          * Generate branch skinned mesh for internodes.
          * @param entities
          */
-        virtual void GenerateBranchSkinnedMeshes(const EntityQuery& internodeQuery);
+        virtual void GenerateBranchSkinnedMeshes(const EntityQuery& internodeQuery, int subdivision = 4, int resolution = 4);
 
         template<typename T>
         void CreateInternodeMenu(const std::string& menuTitle,
@@ -252,6 +254,7 @@ namespace PlantArchitect {
             m_recycledInternodes.pop_back();
             retVal.SetEnabled(true);
             retVal.GetOrSetPrivateComponent<Internode>().lock()->OnRetrieve();
+
         } else {
             retVal = EntityManager::CreateEntity(m_internodeArchetype, "Internode");
             retVal.SetParent(parent);

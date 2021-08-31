@@ -10,6 +10,9 @@ void PlantArchitect::Internode::Clone(const std::shared_ptr<IPrivateComponent> &
 
 void PlantArchitect::Internode::OnCreate() {
     m_internodeSystem = EntityManager::GetSystem<InternodeSystem>();
+    m_branchMesh = AssetManager::CreateAsset<Mesh>();
+    m_skinnedBranchMesh = AssetManager::CreateAsset<SkinnedMesh>();
+    m_meshGenerated = false;
 }
 
 void PlantArchitect::Internode::OnRetrieve() {
