@@ -155,7 +155,34 @@ void SpaceColonizationBehaviour::Grow() {
 }
 
 void SpaceColonizationBehaviour::PostProcess() {
+    std::vector<Entity> plants;
+    CollectRoots(m_internodesQuery, plants);
+    int plantSize = plants.size();
 
+    //Use internal JobSystem to dispatch job for entity collection.
+    std::vector<std::shared_future<void>> results;
+    for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
+        results.push_back(JobManager::PrimaryWorkers().Push([&, plantIndex](int id) {
+            TreeGraphWalkerEndToRoot(plants[plantIndex], plants[plantIndex], [&](Entity parent){
+                float thicknessCollection = 0.0f;
+                auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
+                parent.ForEachChild([&](Entity child){
+                    if(!InternodeCheck(child)) return;
+                    auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
+                    thicknessCollection += glm::pow(childInternodeInfo.m_thickness, 2.0f);
+                });
+                parentInternodeInfo.m_thickness = glm::pow(thicknessCollection, 0.5f);
+                parent.SetDataComponent(parentInternodeInfo);
+            }, [](Entity endNode){
+                auto internodeInfo = endNode.GetDataComponent<InternodeInfo>();
+                auto parameters = endNode.GetDataComponent<SpaceColonizationParameters>();
+                internodeInfo.m_thickness = parameters.m_internodeLength / 10.0f;
+                endNode.SetDataComponent(internodeInfo);
+            });
+        }).share());
+    }
+    for (const auto &i: results)
+        i.wait();
 }
 
 void SpaceColonizationBehaviour::OnInspect() {

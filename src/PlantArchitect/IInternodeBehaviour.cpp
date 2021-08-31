@@ -28,18 +28,8 @@ void IInternodeBehaviour::RecycleSingle(const Entity &internode) {
 
 void
 IInternodeBehaviour::GenerateBranchSkinnedMeshes(const EntityQuery &internodeQuery, int subdivision, int resolution) {
-    std::mutex plantCollectionMutex;
     std::vector<Entity> plants;
-    EntityManager::ForEach<InternodeInfo>(JobManager::PrimaryWorkers(), internodeQuery,
-                                          [&](int index, Entity entity, InternodeInfo &internodeInfo) {
-                                              internodeInfo.m_currentRoot = entity;
-                                              if (!entity.HasPrivateComponent<Internode>()) return;
-                                              auto parent = entity.GetParent();
-                                              if (parent.IsNull() || !parent.HasPrivateComponent<Internode>()) {
-                                                  std::lock_guard<std::mutex> lock(plantCollectionMutex);
-                                                  plants.push_back(entity);
-                                              }
-                                          });
+    CollectRoots(internodeQuery, plants);
 
     int plantSize = plants.size();
     std::vector<std::vector<Entity>> boundEntitiesLists;
@@ -53,8 +43,8 @@ IInternodeBehaviour::GenerateBranchSkinnedMeshes(const EntityQuery &internodeQue
     std::vector<std::shared_future<void>> results;
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
         results.push_back(JobManager::PrimaryWorkers().Push([&, plantIndex](int id) {
-            TreeNodeWalker(boundEntitiesLists[plantIndex],
-                           parentIndicesLists[plantIndex], -1, plants[plantIndex], plants[plantIndex]);
+            TreeNodeCollector(boundEntitiesLists[plantIndex],
+                              parentIndicesLists[plantIndex], -1, plants[plantIndex], plants[plantIndex]);
         }).share());
     }
     for (const auto &i: results)
@@ -183,8 +173,8 @@ IInternodeBehaviour::GenerateBranchSkinnedMeshes(const EntityQuery &internodeQue
     }
 }
 
-void IInternodeBehaviour::TreeNodeWalker(std::vector<Entity> &boundEntities, std::vector<int> &parentIndices,
-                                         const int &parentIndex, const Entity &node, const Entity &root) {
+void IInternodeBehaviour::TreeNodeCollector(std::vector<Entity> &boundEntities, std::vector<int> &parentIndices,
+                                            const int &parentIndex, const Entity &node, const Entity &root) {
     if (!node.HasDataComponent<InternodeInfo>() || !node.HasPrivateComponent<Internode>()) return;
     boundEntities.push_back(node);
     parentIndices.push_back(parentIndex);
@@ -194,7 +184,7 @@ void IInternodeBehaviour::TreeNodeWalker(std::vector<Entity> &boundEntities, std
     internodeInfo.m_currentRoot = root;
     node.SetDataComponent(internodeInfo);
     node.ForEachChild([&](Entity child) {
-        TreeNodeWalker(boundEntities, parentIndices, currentIndex, child, root);
+        TreeNodeCollector(boundEntities, parentIndices, currentIndex, child, root);
     });
 }
 
@@ -205,7 +195,7 @@ void IInternodeBehaviour::TreeSkinnedMeshGenerator(std::vector<Entity> &internod
     for (int internodeIndex = 0; internodeIndex < internodes.size();
          internodeIndex++) {
         int parentIndex = 0;
-        if(internodeIndex != 0) parentIndex = parentIndices[internodeIndex];
+        if (internodeIndex != 0) parentIndex = parentIndices[internodeIndex];
         auto &internode = internodes[internodeIndex];
         glm::vec3 newNormalDir = internodes[parentIndex]
                 .GetOrSetPrivateComponent<Internode>()
@@ -376,3 +366,118 @@ void IInternodeBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &ent
             entity.GetOrSetPrivateComponent<Animator>().lock());
 }
 
+void IInternodeBehaviour::CollectRoots(const EntityQuery &internodeQuery, std::vector<Entity> &roots) {
+    std::mutex plantCollectionMutex;
+    EntityManager::ForEach<InternodeInfo>(JobManager::PrimaryWorkers(), internodeQuery,
+                                          [&](int index, Entity entity, InternodeInfo &internodeInfo) {
+                                              internodeInfo.m_currentRoot = entity;
+                                              if (!entity.HasPrivateComponent<Internode>()) return;
+                                              auto parent = entity.GetParent();
+                                              if (parent.IsNull() || !parent.HasPrivateComponent<Internode>()) {
+                                                  std::lock_guard<std::mutex> lock(plantCollectionMutex);
+                                                  roots.push_back(entity);
+                                              }
+                                          });
+}
+
+void
+IInternodeBehaviour::TreeGraphWalker(const Entity &root, const Entity &node,
+                                     const std::function<void(Entity, Entity)> &rootToEndAction,
+                                     const std::function<void(Entity)> &endToRootAction,
+                                     const std::function<void(Entity)> &endNodeAction) {
+    auto currentNode = node;
+    while (currentNode.GetChildrenAmount() == 1) {
+        Entity child = currentNode.GetChildren()[0];
+        rootToEndAction(currentNode, child);
+        if (child.IsValid()) {
+            currentNode = child;
+        }
+    }
+    int trueChildAmount = 0;
+    if (currentNode.GetChildrenAmount() != 0) {
+        auto children = currentNode.GetChildren();
+        for (const auto &child: children) {
+            rootToEndAction(currentNode, child);
+            if (InternodeCheck(child)) {
+                TreeGraphWalker(root, child, rootToEndAction, endToRootAction, endNodeAction);
+                if (InternodeCheck(child)) {
+                    trueChildAmount++;
+                }
+            }
+        }
+    }
+    if (trueChildAmount == 0) {
+        endNodeAction(currentNode);
+    } else {
+        endToRootAction(currentNode);
+    }
+    while (currentNode != node) {
+        auto parent = currentNode.GetParent();
+        endToRootAction(parent);
+        if (!InternodeCheck(currentNode)) {
+            endNodeAction(parent);
+        }
+        currentNode = parent;
+    }
+}
+
+bool IInternodeBehaviour::InternodeCheck(const Entity &target) {
+    return target.IsValid() && target.HasDataComponent<InternodeInfo>() && target.HasPrivateComponent<Internode>();
+}
+
+void IInternodeBehaviour::TreeGraphWalkerRootToEnd(const Entity &root, const Entity &node,
+                                                   const std::function<void(Entity, Entity)> &rootToEndAction) {
+    auto currentNode = node;
+    while (currentNode.GetChildrenAmount() == 1) {
+        Entity child = currentNode.GetChildren()[0];
+        rootToEndAction(currentNode, child);
+        if (child.IsValid()) {
+            currentNode = child;
+        }
+    }
+    if (currentNode.GetChildrenAmount() != 0) {
+        auto children = currentNode.GetChildren();
+        for (const auto &child: children) {
+            rootToEndAction(currentNode, child);
+            if (InternodeCheck(child))
+                TreeGraphWalkerRootToEnd(root, child, rootToEndAction);
+        }
+    }
+}
+
+void IInternodeBehaviour::TreeGraphWalkerEndToRoot(const Entity &root, const Entity &node,
+                                                   const std::function<void(Entity)> &endToRootAction,
+                                                   const std::function<void(Entity)> &endNodeAction) {
+    auto currentNode = node;
+    while (currentNode.GetChildrenAmount() == 1) {
+        Entity child = currentNode.GetChildren()[0];
+        if (child.IsValid()) {
+            currentNode = child;
+        }
+    }
+    int trueChildAmount = 0;
+    if (currentNode.GetChildrenAmount() != 0) {
+        auto children = currentNode.GetChildren();
+        for (const auto &child: children) {
+            if (InternodeCheck(child)) {
+                TreeGraphWalkerEndToRoot(root, child, endToRootAction, endNodeAction);
+                if (InternodeCheck(child)) {
+                    trueChildAmount++;
+                }
+            }
+        }
+    }
+    if (trueChildAmount == 0) {
+        endNodeAction(currentNode);
+    } else {
+        endToRootAction(currentNode);
+    }
+    while (currentNode != node) {
+        auto parent = currentNode.GetParent();
+        endToRootAction(parent);
+        if (!InternodeCheck(currentNode)) {
+            endNodeAction(parent);
+        }
+        currentNode = parent;
+    }
+}

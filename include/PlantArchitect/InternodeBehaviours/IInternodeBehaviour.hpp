@@ -6,6 +6,7 @@
 using namespace UniEngine;
 namespace PlantArchitect {
     struct SpaceColonizationParameters;
+
     class PLANT_ARCHITECT_API IInternodeBehaviour : public IAsset {
     protected:
 #pragma region InternodeFactory
@@ -33,14 +34,16 @@ namespace PlantArchitect {
 
 #pragma endregion
 #pragma region Helpers
-        void TreeNodeWalker(std::vector<Entity> &boundEntities,
-                                        std::vector<int> &parentIndices,
-                                        const int &parentIndex, const Entity &node, const Entity& root);
+        void TreeNodeCollector(std::vector<Entity> &boundEntities,
+                               std::vector<int> &parentIndices,
+                               const int &parentIndex, const Entity &node, const Entity &root);
+
         void TreeSkinnedMeshGenerator(std::vector<Entity> &internodes,
                                       std::vector<int> &parentIndices,
                                       std::vector<SkinnedVertex> &vertices,
                                       std::vector<unsigned> &indices);
-        void PrepareInternodeForSkeletalAnimation(const Entity& entity);
+
+        void PrepareInternodeForSkeletalAnimation(const Entity &entity);
 
 #pragma endregion
     public:
@@ -63,11 +66,54 @@ namespace PlantArchitect {
          * Generate branch skinned mesh for internodes.
          * @param entities
          */
-        virtual void GenerateBranchSkinnedMeshes(const EntityQuery& internodeQuery, int subdivision = 4, int resolution = 4);
+        virtual void
+        GenerateBranchSkinnedMeshes(const EntityQuery &internodeQuery, int subdivision = 4, int resolution = 4);
 
+        /**
+         * Collect roots with target kind of internodes.
+         * @param internodeQuery The query for collecting specific kind of internodes.
+         * @param roots Where to store the results.
+         */
+        void CollectRoots(const EntityQuery &internodeQuery, std::vector<Entity> &roots);
+        /**
+         * A helper method that traverse target plant from root internode to end internodes, and come back from end to root.
+         * @param root The start internode. It's your responsibility to make sure the root is valid.
+         * @param node Walker node, should be same as root. It's your responsibility to make sure the root is valid.
+         * @param rootToEndAction The action to take during traversal from root to end. You must not delete the parent during the action.
+         * @param endToRootAction The action to take during traversal from end to root. You must not delete the parent during the action.
+         * @param endNodeAction The action to take for end nodes. You must not delete the end node during the action.
+         */
+        void TreeGraphWalker(const Entity& root, const Entity &node,
+                             const std::function<void(Entity parent, Entity child)> &rootToEndAction,
+                             const std::function<void(Entity parent)> &endToRootAction,
+                             const std::function<void(Entity endNode)> &endNodeAction);
+        /**
+         * A helper method that traverse target plant from root internode to end internodes.
+         * @param root The start internode. It's your responsibility to make sure the root is valid.
+         * @param node Walker node, should be same as root. It's your responsibility to make sure the root is valid.
+         * @param rootToEndAction The action to take during traversal from root to end.
+         */
+        void TreeGraphWalkerRootToEnd(const Entity& root, const Entity &node,
+                             const std::function<void(Entity parent, Entity child)> &rootToEndAction);
+        /**
+         * A helper method that traverse target plant from end internodes to root internode.
+         * @param root The start internode. It's your responsibility to make sure the root is valid.
+         * @param node Walker node, should be same as root. It's your responsibility to make sure the root is valid.
+         * @param endToRootAction The action to take during traversal from end to root. You must not delete the parent during the action.
+         * @param endNodeAction The action to take for end nodes. You must not delete the end node during the action.
+         */
+        void TreeGraphWalkerEndToRoot(const Entity& root, const Entity &node,
+                                      const std::function<void(Entity parent)> &endToRootAction,
+                                      const std::function<void(Entity endNode)> &endNodeAction);
+        /**
+         * Check if the entity is valid internode.
+         * @param target Target for check.
+         * @return True if the entity is valid and contains [InternodeInfo] and [Internode], false otherwise.
+         */
+        bool InternodeCheck(const Entity& target);
         template<typename T>
-        void CreateInternodeMenu(const std::string& menuTitle,
-                const std::string &parameterExtension,
+        void CreateInternodeMenu(const std::string &menuTitle,
+                                 const std::string &parameterExtension,
                                  const std::function<void(T &params)> &parameterInspector,
                                  const std::function<void(T &params,
                                                           const std::filesystem::path &path)> &parameterDeserializer,
@@ -80,7 +126,7 @@ namespace PlantArchitect {
     };
 
     template<typename T>
-    void IInternodeBehaviour::CreateInternodeMenu(const std::string& menuTitle,
+    void IInternodeBehaviour::CreateInternodeMenu(const std::string &menuTitle,
                                                   const std::string &parameterExtension,
                                                   const std::function<void(T &params)> &parameterInspector,
                                                   const std::function<void(T &params,
