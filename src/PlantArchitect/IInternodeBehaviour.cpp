@@ -95,19 +95,18 @@ IInternodeBehaviour::GenerateBranchSkinnedMeshes(const EntityQuery &internodeQue
                     }
                 }
 #pragma region Subdivision internode here.
-                auto distance = glm::distance(positionStart, positionEnd);
                 int step = thicknessStart / resolution;
                 if (step < 4)
                     step = 4;
                 if (step % 2 != 0)
                     step++;
                 internode->m_step = step;
-                int amount = static_cast<int>(0.5f + distance * subdivision);
+                int amount = static_cast<int>(0.5f + internodeInfo.m_length * subdivision);
                 if (amount % 2 != 0)
                     amount++;
                 BezierCurve curve = BezierCurve(
-                        positionStart, positionStart + distance / 3.0f * directionStart,
-                        positionEnd - distance / 3.0f * directionEnd, positionEnd);
+                        positionStart, positionStart + internodeInfo.m_length / 3.0f * directionStart,
+                        positionEnd - internodeInfo.m_length / 3.0f * directionEnd, positionEnd);
                 float posStep = 1.0f / static_cast<float>(amount);
                 glm::vec3 dirStep = (directionEnd - directionStart) / static_cast<float>(amount);
                 float radiusStep = (internodeInfo.m_thickness - thicknessStart) /
@@ -124,11 +123,11 @@ IInternodeBehaviour::GenerateBranchSkinnedMeshes(const EntityQuery &internodeQue
                 }
                 if (amount > 1)
                     internode->m_rings.emplace_back(
-                            curve.GetPoint(1.0f - posStep), positionStart, directionEnd - dirStep, directionEnd,
+                            curve.GetPoint(1.0f - posStep), positionEnd, directionEnd - dirStep, directionEnd,
                             internodeInfo.m_thickness - radiusStep,
                             internodeInfo.m_thickness);
                 else
-                    internode->m_rings.emplace_back(positionEnd, positionStart,
+                    internode->m_rings.emplace_back(positionStart, positionEnd,
                                                     directionStart, directionEnd, thicknessStart,
                                                     internodeInfo.m_thickness);
 #pragma endregion
