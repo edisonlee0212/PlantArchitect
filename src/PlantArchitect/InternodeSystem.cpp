@@ -97,6 +97,13 @@ void InternodeSystem::BehaviourSlotButton() {
                             *static_cast<std::shared_ptr<IAsset> *>(payload->Data));
             PushInternodeBehaviour(payload_n);
         }
+        if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("LSystemBehaviour")) {
+            IM_ASSERT(payload->DataSize == sizeof(std::shared_ptr<IAsset>));
+            std::shared_ptr<IInternodeBehaviour> payload_n =
+                    std::dynamic_pointer_cast<IInternodeBehaviour>(
+                            *static_cast<std::shared_ptr<IAsset> *>(payload->Data));
+            PushInternodeBehaviour(payload_n);
+        }
         ImGui::EndDragDropTarget();
     }
 }

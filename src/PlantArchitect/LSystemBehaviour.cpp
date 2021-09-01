@@ -5,41 +5,20 @@
 #include "LSystemBehaviour.hpp"
 #include "InternodeSystem.hpp"
 #include "EmptyInternodeResource.hpp"
-void PlantArchitect::LSystemBehaviour::OnInspect() {
-    CreateInternodeMenu<LSystemParameters>
-            ("New Space Colonization Plant Wizard",
-             ".scparams",
-             [](LSystemParameters &params) {
-                 params.OnInspect();
-             },
-             [](LSystemParameters &params,
-                const std::filesystem::path &path) {
 
-             },
-             [](const LSystemParameters &params,
-                const std::filesystem::path &path) {
+using namespace PlantArchitect;
 
-             },
-             [&](const LSystemParameters &params,
-                 const Transform &transform) {
-                 auto entity = Retrieve<EmptyInternodeResource>();
-                 Transform internodeTransform;
-                 internodeTransform.m_value =
-                         glm::translate(glm::vec3(0.0f)) *
-                         glm::mat4_cast(glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f))) *
-                         glm::scale(glm::vec3(1.0f));
-                 internodeTransform.m_value = transform.m_value * internodeTransform.m_value;
-                 entity.SetDataComponent(internodeTransform);
-                 LSystemTag tag;
-                 entity.SetDataComponent(tag);
-                 InternodeInfo newInfo;
-                 newInfo.m_length = params.m_internodeLength;
-                 newInfo.m_thickness = params.m_internodeLength / 10.0f;
-                 entity.SetDataComponent(newInfo);
-                 entity.SetDataComponent(params);
-                 return entity;
-             }
-            );
+void LSystemBehaviour::OnInspect() {
+    static LSystemParameters parameters;
+    parameters.OnInspect();
+    FileUtils::OpenFile("Load L-String", "L-String", {".txt"}, [&](const std::filesystem::path &path) {
+        auto string = FileUtils::LoadFileAsString(path);
+        std::vector<LSystemCommand> commands;
+        ParseLString(string, commands);
+        if (!commands.empty()) {
+            Entity entity = FormPlant(commands, parameters);
+        }
+    });
 
     static float resolution = 0.02;
     static float subdivision = 4.0;
@@ -51,7 +30,7 @@ void PlantArchitect::LSystemBehaviour::OnInspect() {
 
 }
 
-void PlantArchitect::LSystemBehaviour::OnCreate() {
+void LSystemBehaviour::OnCreate() {
     if (m_recycleStorageEntity.Get().IsNull()) {
         m_recycleStorageEntity = EntityManager::CreateEntity("Recycled Space Colonization Internodes");
     }
@@ -61,18 +40,10 @@ void PlantArchitect::LSystemBehaviour::OnCreate() {
                                                  BranchColor(), BranchCylinder(), BranchCylinderWidth(),
                                                  BranchPointer());
     m_internodesQuery = EntityManager::CreateEntityQuery();
-    m_internodesQuery.SetAllFilters(InternodeInfo());
+    m_internodesQuery.SetAllFilters(LSystemTag());
 }
 
-void PlantArchitect::LSystemBehaviour::PreProcess() {
-
-}
-
-void PlantArchitect::LSystemBehaviour::Grow() {
-
-}
-
-void PlantArchitect::LSystemBehaviour::PostProcess() {
+void LSystemBehaviour::PostProcess() {
     std::vector<Entity> plants;
     CollectRoots(m_internodesQuery, plants);
     int plantSize = plants.size();
@@ -81,18 +52,30 @@ void PlantArchitect::LSystemBehaviour::PostProcess() {
     std::vector<std::shared_future<void>> results;
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
         results.push_back(JobManager::PrimaryWorkers().Push([&, plantIndex](int id) {
-            TreeGraphWalkerEndToRoot(plants[plantIndex], plants[plantIndex], [&](Entity parent){
+            auto root = plants[plantIndex];
+            TreeGraphWalkerRootToEnd(root, root, [](Entity parent, Entity child) {
+                auto parentGlobalTransform = parent.GetDataComponent<GlobalTransform>();
+                auto parentPosition = parentGlobalTransform.GetPosition();
+                auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
+                auto childPosition = parentPosition + parentInternodeInfo.m_length * (parentGlobalTransform.GetRotation() * glm::vec3(0, 0, -1));
+                auto childGlobalTransform = child.GetDataComponent<GlobalTransform>();
+                childGlobalTransform.SetPosition(childPosition);
+                child.SetDataComponent(childGlobalTransform);
+            });
+
+            TreeGraphWalkerEndToRoot(root, root, [&](Entity parent) {
                 float thicknessCollection = 0.0f;
                 auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
                 auto parameters = parent.GetDataComponent<LSystemParameters>();
-                parent.ForEachChild([&](Entity child){
-                    if(!InternodeCheck(child)) return;
+                parent.ForEachChild([&](Entity child) {
+                    if (!InternodeCheck(child)) return;
                     auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
-                    thicknessCollection += glm::pow(childInternodeInfo.m_thickness, 1.0f / parameters.m_thicknessFactor);
+                    thicknessCollection += glm::pow(childInternodeInfo.m_thickness,
+                                                    1.0f / parameters.m_thicknessFactor);
                 });
                 parentInternodeInfo.m_thickness = glm::pow(thicknessCollection, parameters.m_thicknessFactor);
                 parent.SetDataComponent(parentInternodeInfo);
-            }, [](Entity endNode){
+            }, [](Entity endNode) {
                 auto internodeInfo = endNode.GetDataComponent<InternodeInfo>();
                 auto parameters = endNode.GetDataComponent<LSystemParameters>();
                 internodeInfo.m_thickness = parameters.m_endNodeThickness;
@@ -104,7 +87,141 @@ void PlantArchitect::LSystemBehaviour::PostProcess() {
         i.wait();
 }
 
-void PlantArchitect::LSystemParameters::OnInspect() {
+void LSystemBehaviour::ParseLString(const std::string &string, std::vector<LSystemCommand> &commands) {
+    std::istringstream iss(string);
+    std::string line;
+    int stackCheck = 0;
+    while (std::getline(iss, line)) {
+        LSystemCommand command;
+        switch (line[0]) {
+            case 'F': {
+                command.m_type = LSystemCommandType::Forward;
+            }
+                break;
+            case '+': {
+                command.m_type = LSystemCommandType::TurnLeft;
+            }
+                break;
+            case '-': {
+                command.m_type = LSystemCommandType::TurnRight;
+            }
+                break;
+            case '^': {
+                command.m_type = LSystemCommandType::PitchUp;
+            }
+                break;
+            case '&': {
+                command.m_type = LSystemCommandType::PitchDown;
+            }
+                break;
+            case '\\': {
+                command.m_type = LSystemCommandType::RollLeft;
+            }
+                break;
+            case '/': {
+                command.m_type = LSystemCommandType::RollRight;
+            }
+                break;
+            case '[': {
+                command.m_type = LSystemCommandType::Push;
+                stackCheck++;
+            }
+                break;
+            case ']': {
+                command.m_type = LSystemCommandType::Pop;
+                stackCheck--;
+            }
+                break;
+        }
+        if (command.m_type != LSystemCommandType::Push && command.m_type != LSystemCommandType::Pop) {
+            command.m_value = std::stof(line.substr(2));
+            if (command.m_type == LSystemCommandType::Forward && command.m_value > 2.0f) {
+                command.m_value = 3.0f;
+            }
+        }
+        commands.push_back(command);
+    }
+    if (stackCheck != 0) {
+        UNIENGINE_ERROR("Stack check failed! Something wrong with the string!");
+        commands.clear();
+    }
+}
+
+Entity LSystemBehaviour::FormPlant(std::vector<LSystemCommand> &commands, const LSystemParameters &parameters) {
+    if (commands.empty()) return Entity();
+    Entity currentNode = Retrieve<EmptyInternodeResource>();
+    Entity root = currentNode;
+    currentNode.SetDataComponent(parameters);
+    InternodeInfo newInfo;
+    newInfo.m_length = 0;
+    newInfo.m_thickness = 0.1f;
+    currentNode.SetDataComponent(newInfo);
+    for (const auto &command: commands) {
+        Transform transform = currentNode.GetDataComponent<Transform>();
+        InternodeInfo internodeInfo = currentNode.GetDataComponent<InternodeInfo>();
+        switch (command.m_type) {
+            case LSystemCommandType::Forward: {
+                internodeInfo.m_length += command.m_value;
+                currentNode.SetDataComponent(internodeInfo);
+            }
+                continue;
+            case LSystemCommandType::TurnLeft: {
+                auto currentEulerRotation = transform.GetEulerRotation();
+                currentEulerRotation.x += command.m_value;
+                transform.SetEulerRotation(currentEulerRotation);
+            }
+                break;
+            case LSystemCommandType::TurnRight: {
+                auto currentEulerRotation = transform.GetEulerRotation();
+                currentEulerRotation.x -= command.m_value;
+                transform.SetEulerRotation(currentEulerRotation);
+            }
+                break;
+            case LSystemCommandType::PitchUp: {
+                auto currentEulerRotation = transform.GetEulerRotation();
+                currentEulerRotation.y += command.m_value;
+                transform.SetEulerRotation(currentEulerRotation);
+            }
+                break;
+            case LSystemCommandType::PitchDown: {
+                auto currentEulerRotation = transform.GetEulerRotation();
+                currentEulerRotation.y -= command.m_value;
+                transform.SetEulerRotation(currentEulerRotation);
+            }
+                break;
+            case LSystemCommandType::RollLeft: {
+                auto currentEulerRotation = transform.GetEulerRotation();
+                currentEulerRotation.z += command.m_value;
+                transform.SetEulerRotation(currentEulerRotation);
+            }
+                break;
+            case LSystemCommandType::RollRight: {
+                auto currentEulerRotation = transform.GetEulerRotation();
+                currentEulerRotation.z -= command.m_value;
+                transform.SetEulerRotation(currentEulerRotation);
+            }
+                break;
+            case LSystemCommandType::Push: {
+                currentNode = Retrieve<EmptyInternodeResource>(currentNode);
+                currentNode.SetDataComponent(parameters);
+                InternodeInfo newInfo;
+                newInfo.m_length = 0;
+                newInfo.m_thickness = 0.1f;
+                currentNode.SetDataComponent(newInfo);
+                continue;
+            }
+            case LSystemCommandType::Pop: {
+                currentNode = currentNode.GetParent();
+                continue;
+            }
+        }
+        currentNode.SetDataComponent(transform);
+    }
+    return root;
+}
+
+
+void LSystemParameters::OnInspect() {
     ImGui::DragFloat("Internode Length", &m_internodeLength);
     ImGui::DragFloat("Thickness Factor", &m_thicknessFactor);
     ImGui::DragFloat("End node thickness", &m_endNodeThickness);

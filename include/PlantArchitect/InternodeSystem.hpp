@@ -15,10 +15,6 @@ namespace PlantArchitect {
          */
         float m_length = 0;
         /**
-         * Whether this internode is formed from a apical bud.
-         */
-        bool m_fromApicalBud = true;
-        /**
          * The index of current internode within a plant, start from the root.
          */
         int m_index = -1;

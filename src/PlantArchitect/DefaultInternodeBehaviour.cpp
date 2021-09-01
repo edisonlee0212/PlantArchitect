@@ -52,7 +52,7 @@ void DefaultInternodeBehaviour::OnCreate() {
                                                  BranchColor(), BranchCylinder(), BranchCylinderWidth(),
                                                  BranchPointer());
     m_internodesQuery = EntityManager::CreateEntityQuery();
-    m_internodesQuery.SetAllFilters(InternodeInfo());
+    m_internodesQuery.SetAllFilters(DefaultInternodeTag());
 }
 
 void DefaultInternodeBehaviour::OnInspect() {

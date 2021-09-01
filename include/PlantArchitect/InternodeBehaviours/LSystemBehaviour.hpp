@@ -15,12 +15,56 @@ namespace PlantArchitect {
         void OnInspect();
     };
 
+    enum class PLANT_ARCHITECT_API LSystemCommandType{
+        /**
+         * Command F
+         */
+        Forward,
+        /**
+         * Command +
+         */
+        TurnLeft,
+        /**
+         * Command -
+         */
+        TurnRight,
+        /**
+         * Command ^
+         */
+        PitchUp,
+        /**
+         * Command &
+         */
+        PitchDown,
+        /**
+         * Command \
+         */
+        RollLeft,
+        /**
+         * Command /
+         */
+        RollRight,
+        /**
+         * Command [
+         */
+        Push,
+        /**
+         * Command ]
+         */
+        Pop
+    };
+
+    struct LSystemCommand{
+        LSystemCommandType m_type;
+        float m_value;
+    };
+
     class PLANT_ARCHITECT_API LSystemBehaviour : public IInternodeBehaviour {
     public:
+        Entity FormPlant(std::vector<LSystemCommand>& commands, const LSystemParameters& parameters);
+        void ParseLString(const std::string& string, std::vector<LSystemCommand>& commands);
         void OnInspect() override;
         void OnCreate() override;
-        void PreProcess() override;
-        void Grow() override;
         void PostProcess() override;
     };
 }

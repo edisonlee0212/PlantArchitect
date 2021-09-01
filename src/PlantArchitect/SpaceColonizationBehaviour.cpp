@@ -19,7 +19,7 @@ void SpaceColonizationBehaviour::OnCreate() {
                                                  BranchColor(), BranchCylinder(), BranchCylinderWidth(),
                                                  BranchPointer());
     m_internodesQuery = EntityManager::CreateEntityQuery();
-    m_internodesQuery.SetAllFilters(InternodeInfo());
+    m_internodesQuery.SetAllFilters(SpaceColonizationTag());
 }
 
 void SpaceColonizationBehaviour::PreProcess() {
@@ -153,12 +153,7 @@ void SpaceColonizationBehaviour::Grow() {
         newNode.SetDataComponent(parameter);
         InternodeInfo newInfo;
         newInfo.m_length = parameter.m_internodeLength;
-        newInfo.m_thickness = parameter.m_internodeLength / 10.0f;
-        if (entity.GetChildrenAmount() > 0) {
-            newInfo.m_fromApicalBud = false;
-        } else {
-            newInfo.m_fromApicalBud = true;
-        }
+        newInfo.m_thickness = parameter.m_endNodeThickness;
         newNode.SetDataComponent(newInfo);
         auto newInternode = newNode.GetOrSetPrivateComponent<Internode>().lock();
     }
@@ -226,7 +221,7 @@ void SpaceColonizationBehaviour::OnInspect() {
                  entity.SetDataComponent(tag);
                  InternodeInfo newInfo;
                  newInfo.m_length = params.m_internodeLength;
-                 newInfo.m_thickness = params.m_internodeLength / 10.0f;
+                 newInfo.m_thickness = params.m_endNodeThickness;
                  entity.SetDataComponent(newInfo);
                  entity.SetDataComponent(params);
                  return entity;
