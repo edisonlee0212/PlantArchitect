@@ -50,8 +50,10 @@ void InternodeSystem::Simulate(float deltaTime) {
 #pragma region Methods
 
 void InternodeSystem::OnInspect() {
-    if (ImGui::Button("Test")) {
-        Simulate(1.0f);
+    static float deltaTime = 1.0f;
+    ImGui::DragFloat("Delta time", &deltaTime);
+    if (ImGui::Button("Simulate")) {
+        Simulate(deltaTime);
     }
 
     if (ImGui::TreeNodeEx("Internode Behaviours", ImGuiTreeNodeFlags_DefaultOpen)) {
