@@ -75,7 +75,7 @@ namespace PlantArchitect {
         void DownStreamResource(float deltaTime);
 
         /**
-         * Up strea the resources.
+         * Up stream the resources.
          * @param deltaTime How much time the action takes.
          */
         void UpStreamResource(float deltaTime);

@@ -138,6 +138,9 @@ endif ()
 # ------------------------------------------------------------------
 # PlantArchitect
 # ------------------------------------------------------------------
+
+
+
 file(GLOB PLANT_ARCHITECT_SOURCES_LOCAL "src/PlantArchitect/*.cpp")
 add_library(PlantArchitect
         ${PLANT_ARCHITECT_SOURCES_LOCAL}
@@ -159,19 +162,52 @@ target_precompile_headers(PlantArchitect
         PRIVATE
         ${PLANT_ARCHITECT_PCH_LOCAL}
         )
-target_include_directories(PlantArchitect
-        PUBLIC
+set(PLANT_ARCHITECT_INCLUDES_LOCAL
         ${RAY_TRACER_FACILITY_INCLUDES_LOCAL}
         ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect
         ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeBehaviours
         ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeResources
         ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/MeshFormation
         ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/Volumes
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/Utilities
         ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/quickhull
+        )
+
+target_include_directories(PlantArchitect
+        PUBLIC
+        ${PLANT_ARCHITECT_INCLUDES_LOCAL}
         )
 target_link_libraries(PlantArchitect
         RayTracerFacility
         )
+# ------------------------------------------------------------------
+# Scripts
+# ------------------------------------------------------------------
+file(GLOB SCRIPTS_SOURCES_LOCAL "src/Scripts/*.cpp")
+add_library(Scripts
+        ${SCRIPTS_SOURCES_LOCAL}
+        )
+target_precompile_headers(Scripts
+        PRIVATE
+        ${UNIENGINE_PCH_LOCAL}
+        ${PLANT_ARCHITECT_PCH_LOCAL}
+        )
+set(SCRIPTS_INCLUDES_LOCAL
+        ${PLANT_ARCHITECT_INCLUDES_LOCAL}
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/Scripts
+        )
+target_include_directories(Scripts
+        PUBLIC
+        ${SCRIPTS_INCLUDES_LOCAL}
+        )
+target_link_libraries(Scripts
+        RayTracerFacility
+        PlantArchitect
+        )
+
+# ------------------------------------------------------------------
+# Example program
+# ------------------------------------------------------------------
 
 add_executable(Application
         "src/app/PlantArchitect.cpp"
@@ -179,7 +215,7 @@ add_executable(Application
 
 target_include_directories(Application
         PRIVATE
-        ${RAY_TRACER_FACILITY_INCLUDES_LOCAL}
+        ${SCRIPTS_INCLUDES_LOCAL}
         )
 
 target_precompile_headers(Application
@@ -193,6 +229,7 @@ target_compile_definitions(Application
 target_link_libraries(Application
         RayTracerFacility
         PlantArchitect
+        Scripts
         )
 
 add_executable(InternodeBehavioursExample
@@ -201,7 +238,7 @@ add_executable(InternodeBehavioursExample
 
 target_include_directories(InternodeBehavioursExample
         PRIVATE
-        ${RAY_TRACER_FACILITY_INCLUDES_LOCAL}
+        ${SCRIPTS_INCLUDES_LOCAL}
         )
 
 target_precompile_headers(InternodeBehavioursExample
@@ -215,6 +252,7 @@ target_compile_definitions(InternodeBehavioursExample
 target_link_libraries(InternodeBehavioursExample
         RayTracerFacility
         PlantArchitect
+        Scripts
         )
 
 file(COPY src/app/imgui.ini DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

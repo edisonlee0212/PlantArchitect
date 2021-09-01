@@ -5,7 +5,7 @@
 #include "LSystemBehaviour.hpp"
 #include "InternodeSystem.hpp"
 #include "EmptyInternodeResource.hpp"
-
+#include "TransformManager.hpp"
 using namespace PlantArchitect;
 
 void LSystemBehaviour::OnInspect() {
@@ -45,49 +45,6 @@ void LSystemBehaviour::OnCreate() {
     m_internodesQuery.SetAllFilters(LSystemTag());
 }
 
-void LSystemBehaviour::PostProcess() {
-    std::vector<Entity> plants;
-    CollectRoots(m_internodesQuery, plants);
-    int plantSize = plants.size();
-
-    //Use internal JobSystem to dispatch job for entity collection.
-    std::vector<std::shared_future<void>> results;
-    for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
-        results.push_back(JobManager::PrimaryWorkers().Push([&, plantIndex](int id) {
-            auto root = plants[plantIndex];
-            TreeGraphWalkerRootToEnd(root, root, [](Entity parent, Entity child) {
-                auto parentGlobalTransform = parent.GetDataComponent<GlobalTransform>();
-                auto parentPosition = parentGlobalTransform.GetPosition();
-                auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
-                auto childPosition = parentPosition + parentInternodeInfo.m_length * (parentGlobalTransform.GetRotation() * glm::vec3(0, 0, -1));
-                auto childGlobalTransform = child.GetDataComponent<GlobalTransform>();
-                childGlobalTransform.SetPosition(childPosition);
-                child.SetDataComponent(childGlobalTransform);
-            });
-
-            TreeGraphWalkerEndToRoot(root, root, [&](Entity parent) {
-                float thicknessCollection = 0.0f;
-                auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
-                auto parameters = parent.GetDataComponent<LSystemParameters>();
-                parent.ForEachChild([&](Entity child) {
-                    if (!InternodeCheck(child)) return;
-                    auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
-                    thicknessCollection += glm::pow(childInternodeInfo.m_thickness,
-                                                    1.0f / parameters.m_thicknessFactor);
-                });
-                parentInternodeInfo.m_thickness = glm::pow(thicknessCollection, parameters.m_thicknessFactor);
-                parent.SetDataComponent(parentInternodeInfo);
-            }, [](Entity endNode) {
-                auto internodeInfo = endNode.GetDataComponent<InternodeInfo>();
-                auto parameters = endNode.GetDataComponent<LSystemParameters>();
-                internodeInfo.m_thickness = parameters.m_endNodeThickness;
-                endNode.SetDataComponent(internodeInfo);
-            });
-        }).share());
-    }
-    for (const auto &i: results)
-        i.wait();
-}
 
 void LSystemBehaviour::ParseLString(const std::string &string, std::vector<LSystemCommand> &commands) {
     std::istringstream iss(string);
@@ -218,7 +175,41 @@ Entity LSystemBehaviour::FormPlant(std::vector<LSystemCommand> &commands, const 
             }
         }
         currentNode.SetDataComponent(transform);
+        if(currentNode == root){
+            GlobalTransform globalTransform;
+            globalTransform.m_value = transform.m_value;
+            currentNode.SetDataComponent(globalTransform);
+        }
     }
+    TransformManager::CalculateTransformGraphForDescendents(root);
+    TreeGraphWalkerRootToEnd(root, root, [](Entity parent, Entity child) {
+        auto parentGlobalTransform = parent.GetDataComponent<GlobalTransform>();
+        auto parentPosition = parentGlobalTransform.GetPosition();
+        auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
+        auto childPosition = parentPosition + parentInternodeInfo.m_length * (parentGlobalTransform.GetRotation() * glm::vec3(0, 0, -1));
+        auto childGlobalTransform = child.GetDataComponent<GlobalTransform>();
+        childGlobalTransform.SetPosition(childPosition);
+        child.SetDataComponent(childGlobalTransform);
+    });
+
+    TreeGraphWalkerEndToRoot(root, root, [&](Entity parent) {
+        float thicknessCollection = 0.0f;
+        auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
+        auto parameters = parent.GetDataComponent<LSystemParameters>();
+        parent.ForEachChild([&](Entity child) {
+            if (!InternodeCheck(child)) return;
+            auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
+            thicknessCollection += glm::pow(childInternodeInfo.m_thickness,
+                                            1.0f / parameters.m_thicknessFactor);
+        });
+        parentInternodeInfo.m_thickness = glm::pow(thicknessCollection, parameters.m_thicknessFactor);
+        parent.SetDataComponent(parentInternodeInfo);
+    }, [](Entity endNode) {
+        auto internodeInfo = endNode.GetDataComponent<InternodeInfo>();
+        auto parameters = endNode.GetDataComponent<LSystemParameters>();
+        internodeInfo.m_thickness = parameters.m_endNodeThickness;
+        endNode.SetDataComponent(internodeInfo);
+    });
     return root;
 }
 

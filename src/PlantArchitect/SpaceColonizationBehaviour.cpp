@@ -6,7 +6,7 @@
 #include "EmptyInternodeResource.hpp"
 #include "CubeVolume.hpp"
 #include "InternodeSystem.hpp"
-
+#include "TransformManager.hpp"
 using namespace PlantArchitect;
 
 void SpaceColonizationBehaviour::OnCreate() {
@@ -157,6 +157,30 @@ void SpaceColonizationBehaviour::Grow() {
         newNode.SetDataComponent(newInfo);
         auto newInternode = newNode.GetOrSetPrivateComponent<Internode>().lock();
     }
+
+
+    std::vector<Entity> plants;
+    CollectRoots(m_internodesQuery, plants);
+    int plantSize = plants.size();
+
+    //Use internal JobSystem to dispatch job for entity collection.
+    std::vector<std::shared_future<void>> results;
+    for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
+        results.push_back(JobManager::PrimaryWorkers().Push([&, plantIndex](int id) {
+            auto root = plants[plantIndex];
+            auto parent = root.GetParent();
+            if(!parent.IsNull()) {
+                auto globalTransform = root.GetDataComponent<GlobalTransform>();
+                auto parentGlobalTransform = parent.GetDataComponent<GlobalTransform>();
+                Transform rootLocalTransform;
+                rootLocalTransform.m_value = glm::inverse(parentGlobalTransform.m_value) * globalTransform.m_value;
+                root.SetDataComponent(rootLocalTransform);
+            }
+            TransformManager::CalculateTransformGraphForDescendents(root);
+        }).share());
+    }
+    for (const auto &i: results)
+        i.wait();
 }
 
 void SpaceColonizationBehaviour::PostProcess() {
