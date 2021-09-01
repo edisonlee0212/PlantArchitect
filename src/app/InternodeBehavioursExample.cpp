@@ -25,7 +25,9 @@ using namespace PlantArchitect;
 using namespace RayTracerFacility;
 
 void EngineSetup(bool enableRayTracing);
+
 void RegisterDataComponentMenus();
+
 int main() {
     ClassRegistry::RegisterDataComponent<BranchCylinder>("BranchCylinder");
     ClassRegistry::RegisterDataComponent<BranchCylinderWidth>("BranchCylinderWidth");
@@ -119,7 +121,10 @@ void EngineSetup(bool enableRayTracing) {
         cubeVolumeTransform.SetPosition(glm::vec3(0, 10, 0));
         cubeVolumeEntity.SetDataComponent(cubeVolumeTransform);
         auto spaceColonizationBehaviour = AssetManager::CreateAsset<SpaceColonizationBehaviour>();
-        internodeSystem->PushInternodeBehaviour(std::dynamic_pointer_cast<IInternodeBehaviour>(spaceColonizationBehaviour));
+        auto lSystemBehaviour = AssetManager::CreateAsset<LSystemBehaviour>();
+        internodeSystem->PushInternodeBehaviour(
+                std::dynamic_pointer_cast<IInternodeBehaviour>(spaceColonizationBehaviour));
+        internodeSystem->PushInternodeBehaviour(std::dynamic_pointer_cast<IInternodeBehaviour>(lSystemBehaviour));
         auto cubeVolume = cubeVolumeEntity.GetOrSetPrivateComponent<CubeVolume>().lock();
         spaceColonizationBehaviour->PushVolume(std::dynamic_pointer_cast<Volume>(cubeVolume));
     });
@@ -132,10 +137,11 @@ void RegisterDataComponentMenus() {
         ImGui::DragFloat("Length", &ltw->m_length, 0.01f);
     });
 
-    EditorManager::RegisterComponentDataInspector<SpaceColonizationParameters>([](Entity entity, IDataComponent *data, bool isRoot) {
-        auto *ltw = reinterpret_cast<SpaceColonizationParameters *>(data);
-        ImGui::DragFloat("Remove Distance", &ltw->m_removeDistance);
-        ImGui::DragFloat("Attract Distance", &ltw->m_attractDistance);
-        ImGui::DragFloat("Internode Length", &ltw->m_internodeLength);
-    });
+    EditorManager::RegisterComponentDataInspector<SpaceColonizationParameters>(
+            [](Entity entity, IDataComponent *data, bool isRoot) {
+                auto *ltw = reinterpret_cast<SpaceColonizationParameters *>(data);
+                ImGui::DragFloat("Remove Distance", &ltw->m_removeDistance);
+                ImGui::DragFloat("Attract Distance", &ltw->m_attractDistance);
+                ImGui::DragFloat("Internode Length", &ltw->m_internodeLength);
+            });
 }

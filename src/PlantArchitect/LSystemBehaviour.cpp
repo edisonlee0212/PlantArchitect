@@ -9,6 +9,8 @@
 using namespace PlantArchitect;
 
 void LSystemBehaviour::OnInspect() {
+    RecycleButton();
+
     static LSystemParameters parameters;
     parameters.OnInspect();
     FileUtils::OpenFile("Load L-String", "L-String", {".txt"}, [&](const std::filesystem::path &path) {
@@ -32,10 +34,10 @@ void LSystemBehaviour::OnInspect() {
 
 void LSystemBehaviour::OnCreate() {
     if (m_recycleStorageEntity.Get().IsNull()) {
-        m_recycleStorageEntity = EntityManager::CreateEntity("Recycled Space Colonization Internodes");
+        m_recycleStorageEntity = EntityManager::CreateEntity("Recycled L-System Internodes");
     }
     m_internodeArchetype =
-            EntityManager::CreateEntityArchetype("LSystem Internode", InternodeInfo(),
+            EntityManager::CreateEntityArchetype("L-System Internode", InternodeInfo(),
                                                  LSystemTag(), LSystemParameters(),
                                                  BranchColor(), BranchCylinder(), BranchCylinderWidth(),
                                                  BranchPointer());
@@ -218,6 +220,10 @@ Entity LSystemBehaviour::FormPlant(std::vector<LSystemCommand> &commands, const 
         currentNode.SetDataComponent(transform);
     }
     return root;
+}
+
+bool LSystemBehaviour::InternalInternodeCheck(const Entity &target) {
+    return target.HasDataComponent<LSystemTag>();
 }
 
 

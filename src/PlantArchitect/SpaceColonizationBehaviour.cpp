@@ -192,6 +192,8 @@ void SpaceColonizationBehaviour::PostProcess() {
 }
 
 void SpaceColonizationBehaviour::OnInspect() {
+    RecycleButton();
+
     CreateInternodeMenu<SpaceColonizationParameters>
             ("New Space Colonization Plant Wizard",
              ".scparams",
@@ -323,6 +325,10 @@ void SpaceColonizationBehaviour::PushVolume(const std::shared_ptr<Volume>& volum
     if (!search) {
         m_volumes.emplace_back(volume);
     }
+}
+
+bool SpaceColonizationBehaviour::InternalInternodeCheck(const Entity &target) {
+    return target.HasDataComponent<SpaceColonizationTag>();
 }
 
 

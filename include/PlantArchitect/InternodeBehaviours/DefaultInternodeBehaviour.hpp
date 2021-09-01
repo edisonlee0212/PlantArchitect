@@ -10,6 +10,8 @@ namespace PlantArchitect {
     };
 
     class PLANT_ARCHITECT_API DefaultInternodeBehaviour : public IInternodeBehaviour {
+    protected:
+        bool InternalInternodeCheck(const Entity &target) override;
     public:
         void OnInspect() override;
         void OnCreate() override;

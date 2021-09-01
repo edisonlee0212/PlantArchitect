@@ -60,6 +60,8 @@ namespace PlantArchitect {
     };
 
     class PLANT_ARCHITECT_API LSystemBehaviour : public IInternodeBehaviour {
+    protected:
+        bool InternalInternodeCheck(const Entity &target) override;
     public:
         Entity FormPlant(std::vector<LSystemCommand>& commands, const LSystemParameters& parameters);
         void ParseLString(const std::string& string, std::vector<LSystemCommand>& commands);

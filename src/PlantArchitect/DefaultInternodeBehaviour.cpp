@@ -56,6 +56,8 @@ void DefaultInternodeBehaviour::OnCreate() {
 }
 
 void DefaultInternodeBehaviour::OnInspect() {
+    RecycleButton();
+
     if (ImGui::Button("Create new internode...")) {
         auto entity = Retrieve<DefaultInternodeResource>();
     }
@@ -67,4 +69,8 @@ void DefaultInternodeBehaviour::OnInspect() {
         GenerateBranchSkinnedMeshes(m_internodesQuery, subdivision, resolution);
     }
 
+}
+
+bool DefaultInternodeBehaviour::InternalInternodeCheck(const Entity &target) {
+    return target.HasDataComponent<DefaultInternodeTag>();
 }

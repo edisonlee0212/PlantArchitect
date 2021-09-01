@@ -25,6 +25,9 @@ namespace PlantArchitect {
     class Volume;
     class PLANT_ARCHITECT_API SpaceColonizationBehaviour : public IInternodeBehaviour {
         void VolumeSlotButton();
+
+    protected:
+        bool InternalInternodeCheck(const Entity &target) override;
     public:
         std::vector<PrivateComponentRef> m_volumes;
         std::vector<glm::vec3> m_attractionPoints;

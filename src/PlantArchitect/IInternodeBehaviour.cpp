@@ -9,13 +9,14 @@
 using namespace PlantArchitect;
 
 void IInternodeBehaviour::Recycle(const Entity &internode) {
+    if (!InternodeCheck(internode)) return;
     auto children = internode.GetChildren();
-    if (children.empty()) RecycleSingle(internode);
-    else {
+    if (!children.empty()) {
         for (const auto &child: children) {
             Recycle(child);
         }
     }
+    RecycleSingle(internode);
 }
 
 void IInternodeBehaviour::RecycleSingle(const Entity &internode) {
@@ -27,7 +28,8 @@ void IInternodeBehaviour::RecycleSingle(const Entity &internode) {
 }
 
 void
-IInternodeBehaviour::GenerateBranchSkinnedMeshes(const EntityQuery &internodeQuery, float subdivision, float resolution) {
+IInternodeBehaviour::GenerateBranchSkinnedMeshes(const EntityQuery &internodeQuery, float subdivision,
+                                                 float resolution) {
     std::vector<Entity> plants;
     CollectRoots(internodeQuery, plants);
 
@@ -427,7 +429,8 @@ IInternodeBehaviour::TreeGraphWalker(const Entity &root, const Entity &node,
 }
 
 bool IInternodeBehaviour::InternodeCheck(const Entity &target) {
-    return target.IsValid() && target.HasDataComponent<InternodeInfo>() && target.HasPrivateComponent<Internode>();
+    return target.IsValid() && target.HasDataComponent<InternodeInfo>() && target.HasPrivateComponent<Internode>() &&
+           InternalInternodeCheck(target);
 }
 
 void IInternodeBehaviour::TreeGraphWalkerRootToEnd(const Entity &root, const Entity &node,
@@ -485,4 +488,13 @@ void IInternodeBehaviour::TreeGraphWalkerEndToRoot(const Entity &root, const Ent
         }
         currentNode = parent;
     }
+}
+
+void IInternodeBehaviour::RecycleButton() {
+    static Entity target;
+    ImGui::Text("Recycle here: ");
+    ImGui::SameLine();
+    EditorManager::DragAndDropButton(target);
+    Recycle(target);
+    target = Entity();
 }

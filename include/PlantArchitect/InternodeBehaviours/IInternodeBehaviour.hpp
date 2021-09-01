@@ -45,7 +45,7 @@ namespace PlantArchitect {
          * @param internode
          */
         void RecycleSingle(const Entity &internode);
-
+        void RecycleButton();
 #pragma endregion
 #pragma region Helpers
         void TreeNodeCollector(std::vector<Entity> &boundEntities,
@@ -60,6 +60,8 @@ namespace PlantArchitect {
         void PrepareInternodeForSkeletalAnimation(const Entity &entity);
 
 #pragma endregion
+
+        virtual bool InternalInternodeCheck(const Entity &target) = 0;
     public:
         /**
          * What to do before the growth, and before the resource collection. Mesh, graph calculation...

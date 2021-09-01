@@ -194,24 +194,24 @@ target_link_libraries(Application
         PlantArchitect
         )
 
-add_executable(SpaceColonizationExample
-        "src/app/SpaceColonizationExample.cpp"
+add_executable(InternodeBehavioursExample
+        "src/app/InternodeBehavioursExample.cpp"
         )
 
-target_include_directories(SpaceColonizationExample
+target_include_directories(InternodeBehavioursExample
         PRIVATE
         ${RAY_TRACER_FACILITY_INCLUDES_LOCAL}
         )
 
-target_precompile_headers(SpaceColonizationExample
+target_precompile_headers(InternodeBehavioursExample
         PRIVATE
         ${PLANT_ARCHITECT_PCH_LOCAL}
         )
-target_compile_definitions(SpaceColonizationExample
+target_compile_definitions(InternodeBehavioursExample
         PRIVATE
         ${PLANT_ARCHITECT_RESOURCE_DEF}
         )
-target_link_libraries(SpaceColonizationExample
+target_link_libraries(InternodeBehavioursExample
         RayTracerFacility
         PlantArchitect
         )
