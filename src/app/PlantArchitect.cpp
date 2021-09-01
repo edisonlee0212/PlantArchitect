@@ -33,7 +33,7 @@ int main() {
     ClassRegistry::RegisterDataComponent<BranchColor>("BranchColor");
 
     ClassRegistry::RegisterPrivateComponent<ObjectRotator>("ObjectRotator");
-    ClassRegistry::RegisterPrivateComponent<Volume>("Volume");
+    ClassRegistry::RegisterPrivateComponent<IVolume>("IVolume");
     ClassRegistry::RegisterPrivateComponent<CubeVolume>("CubeVolume");
     ClassRegistry::RegisterPrivateComponent<RayTracedRenderer>("RayTracedRenderer");
 

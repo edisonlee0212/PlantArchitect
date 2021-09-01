@@ -489,5 +489,9 @@ void InternodeSystem::PushInternodeBehaviour(const std::shared_ptr<IInternodeBeh
     }
 }
 
+bool InternodeSystem::InternodeCheck(const Entity &target) {
+    return target.IsValid() && target.HasDataComponent<InternodeInfo>() && target.HasPrivateComponent<Internode>();
+}
+
 #pragma endregion
 

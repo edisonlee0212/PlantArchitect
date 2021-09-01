@@ -22,7 +22,7 @@ namespace PlantArchitect {
         void OnInspect();
     };
 
-    class Volume;
+    class IVolume;
     class PLANT_ARCHITECT_API SpaceColonizationBehaviour : public IInternodeBehaviour {
         void VolumeSlotButton();
 
@@ -42,6 +42,6 @@ namespace PlantArchitect {
 
         void Grow() override;
 
-        void PushVolume(const std::shared_ptr<Volume>& volume);
+        void PushVolume(const std::shared_ptr<IVolume>& volume);
     };
 }

@@ -35,7 +35,7 @@ int main() {
     ClassRegistry::RegisterDataComponent<BranchColor>("BranchColor");
 
     ClassRegistry::RegisterPrivateComponent<ObjectRotator>("ObjectRotator");
-    ClassRegistry::RegisterPrivateComponent<Volume>("Volume");
+    ClassRegistry::RegisterPrivateComponent<IVolume>("IVolume");
     ClassRegistry::RegisterPrivateComponent<CubeVolume>("CubeVolume");
     ClassRegistry::RegisterPrivateComponent<RayTracedRenderer>("RayTracedRenderer");
 
@@ -126,7 +126,7 @@ void EngineSetup(bool enableRayTracing) {
                 std::dynamic_pointer_cast<IInternodeBehaviour>(spaceColonizationBehaviour));
         internodeSystem->PushInternodeBehaviour(std::dynamic_pointer_cast<IInternodeBehaviour>(lSystemBehaviour));
         auto cubeVolume = cubeVolumeEntity.GetOrSetPrivateComponent<CubeVolume>().lock();
-        spaceColonizationBehaviour->PushVolume(std::dynamic_pointer_cast<Volume>(cubeVolume));
+        spaceColonizationBehaviour->PushVolume(std::dynamic_pointer_cast<IVolume>(cubeVolume));
     });
 }
 

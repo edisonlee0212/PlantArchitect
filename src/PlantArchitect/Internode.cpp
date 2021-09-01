@@ -4,31 +4,33 @@
 
 #include "Internode.hpp"
 #include "InternodeSystem.hpp"
-void PlantArchitect::Internode::Clone(const std::shared_ptr<IPrivateComponent> &target) {
+
+using namespace PlantArchitect;
+void Internode::Clone(const std::shared_ptr<IPrivateComponent> &target) {
 
 }
 
-void PlantArchitect::Internode::OnCreate() {
+void Internode::OnCreate() {
     m_internodeSystem = EntityManager::GetSystem<InternodeSystem>();
     m_branchMesh = AssetManager::CreateAsset<Mesh>();
     m_skinnedBranchMesh = AssetManager::CreateAsset<SkinnedMesh>();
     m_meshGenerated = false;
 }
 
-void PlantArchitect::Internode::OnRetrieve() {
+void Internode::OnRetrieve() {
 
 }
 
-void PlantArchitect::Internode::OnRecycle() {
+void Internode::OnRecycle() {
     m_resource->Reset();
 }
 
-void PlantArchitect::Internode::DownStreamResource(float deltaTime) {
+void Internode::DownStreamResource(float deltaTime) {
     auto owner = GetOwner();
     m_resource->DownStream(deltaTime, owner, owner.GetParent());
 }
 
-void PlantArchitect::Internode::UpStreamResource(float deltaTime) {
+void Internode::UpStreamResource(float deltaTime) {
     auto owner = GetOwner();
     auto children = owner.GetChildren();
     for(const auto& child : children){
@@ -36,6 +38,18 @@ void PlantArchitect::Internode::UpStreamResource(float deltaTime) {
     }
 }
 
-void PlantArchitect::Internode::CollectResource(float deltaTime) {
+void Internode::CollectResource(float deltaTime) {
     m_resource->Collect(deltaTime, GetOwner());
+}
+void Internode::CollectInternodesHelper(const Entity &target, std::vector<Entity> &results) {
+    if(target.IsValid() && target.HasDataComponent<InternodeInfo>() && target.HasPrivateComponent<Internode>()){
+        results.push_back(target);
+        target.ForEachChild([&](Entity child){
+            CollectInternodesHelper(child, results);
+        });
+    }
+}
+
+void Internode::CollectInternodes(std::vector<Entity> &results) {
+    CollectInternodesHelper(GetOwner(), results);
 }

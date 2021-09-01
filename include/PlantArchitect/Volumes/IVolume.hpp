@@ -4,7 +4,7 @@
 
 using namespace UniEngine;
 namespace PlantArchitect {
-    class PLANT_ARCHITECT_API Volume : public IPrivateComponent {
+    class PLANT_ARCHITECT_API IVolume : public IPrivateComponent {
     public:
         bool m_asObstacle = false;
 

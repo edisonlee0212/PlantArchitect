@@ -20,7 +20,6 @@ namespace PlantArchitect {
         EntityArchetype m_internodeArchetype;
         EntityRef m_recycleStorageEntity;
         std::mutex m_internodeFactoryLock;
-        std::vector<Entity> m_recycledInternodes;
         /**
          * Get or create an internode from the pool.
          * @tparam T The type of resource that will be added to the internode.
@@ -320,13 +319,12 @@ namespace PlantArchitect {
     Entity IInternodeBehaviour::Retrieve(const Entity &parent) {
         Entity retVal;
         std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
-        if (!m_recycledInternodes.empty()) {
-            retVal = m_recycledInternodes.back();
-            retVal.SetParent(parent);
-            m_recycledInternodes.pop_back();
+        retVal = m_recycleStorageEntity.Get().GetChild(0);
+        if (!retVal.IsNull()) {
+             retVal.SetParent(parent);
+            retVal.SetDataComponent(Transform());
             retVal.SetEnabled(true);
             retVal.GetOrSetPrivateComponent<Internode>().lock()->OnRetrieve();
-
         } else {
             retVal = EntityManager::CreateEntity(m_internodeArchetype, "Internode");
             retVal.SetParent(parent);
@@ -341,10 +339,10 @@ namespace PlantArchitect {
     Entity IInternodeBehaviour::Retrieve() {
         Entity retVal;
         std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
-        if (!m_recycledInternodes.empty()) {
-            retVal = m_recycledInternodes.back();
+        retVal = m_recycleStorageEntity.Get().GetChild(0);
+        if (!retVal.IsNull()) {
             m_recycleStorageEntity.Get().RemoveChild(retVal);
-            m_recycledInternodes.pop_back();
+            retVal.SetDataComponent(Transform());
             retVal.SetEnabled(true);
             retVal.GetOrSetPrivateComponent<Internode>().lock()->OnRetrieve();
         } else {

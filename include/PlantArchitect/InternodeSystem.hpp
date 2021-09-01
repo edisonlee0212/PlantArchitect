@@ -65,6 +65,13 @@ namespace PlantArchitect {
         std::shared_ptr<Camera> m_internodeDebuggingCamera;
 
         void PushInternodeBehaviour(const std::shared_ptr<IInternodeBehaviour>& behaviour);
+
+        /**
+         * Check if the entity is valid internode.
+         * @param target Target for check.
+         * @return True if the entity is valid and contains [InternodeInfo] and [Internode], false otherwise.
+         */
+        bool InternodeCheck(const Entity& target);
     private:
         /**
          * The EntityQuery for filtering all internodes.

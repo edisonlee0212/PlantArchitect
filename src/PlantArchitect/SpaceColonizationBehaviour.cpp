@@ -248,14 +248,14 @@ void SpaceColonizationBehaviour::OnInspect() {
         static int amount = 1000;
         ImGui::DragInt("Amount", &amount);
         for (auto &volume: m_volumes) {
-            if (EditorManager::DragAndDropButton<Volume>(volume, "Slot " + std::to_string(index++))) {
+            if (EditorManager::DragAndDropButton<IVolume>(volume, "Slot " + std::to_string(index++))) {
                 skip = true;
                 break;
             }
             ImGui::TreePush();
             if (ImGui::Button("Add attraction points")) {
                 for (int i = 0; i < amount; i++) {
-                    m_attractionPoints.push_back(volume.Get<Volume>()->GetRandomPoint());
+                    m_attractionPoints.push_back(volume.Get<IVolume>()->GetRandomPoint());
                 }
             }
             ImGui::TreePop();
@@ -263,7 +263,7 @@ void SpaceColonizationBehaviour::OnInspect() {
         if (skip) {
             int index = 0;
             for (auto &i: m_volumes) {
-                if (!i.Get<Volume>()) {
+                if (!i.Get<IVolume>()) {
                     m_volumes.erase(m_volumes.begin() + index);
                     break;
                 }
@@ -307,8 +307,8 @@ void SpaceColonizationBehaviour::VolumeSlotButton() {
     if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("CubeVolume")) {
             IM_ASSERT(payload->DataSize == sizeof(std::shared_ptr<IPrivateComponent>));
-            std::shared_ptr<Volume> payload_n =
-                    std::dynamic_pointer_cast<Volume>(
+            std::shared_ptr<IVolume> payload_n =
+                    std::dynamic_pointer_cast<IVolume>(
                             *static_cast<std::shared_ptr<IPrivateComponent> *>(payload->Data));
             PushVolume(payload_n);
         }
@@ -316,11 +316,11 @@ void SpaceColonizationBehaviour::VolumeSlotButton() {
     }
 }
 
-void SpaceColonizationBehaviour::PushVolume(const std::shared_ptr<Volume>& volume) {
+void SpaceColonizationBehaviour::PushVolume(const std::shared_ptr<IVolume>& volume) {
     if(!volume.get()) return;
     bool search = false;
     for (auto &i: m_volumes) {
-        if (i.Get<Volume>()->GetTypeName() == volume->GetTypeName()) search = true;
+        if (i.Get<IVolume>()->GetTypeName() == volume->GetTypeName()) search = true;
     }
     if (!search) {
         m_volumes.emplace_back(volume);

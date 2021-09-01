@@ -22,7 +22,10 @@ namespace PlantArchitect {
 
     class PLANT_ARCHITECT_API Internode : public IPrivateComponent {
         std::weak_ptr<InternodeSystem> m_internodeSystem;
+        void CollectInternodesHelper(const Entity& target, std::vector<Entity>& results);
     public:
+        void CollectInternodes(std::vector<Entity>& results);
+
         AssetRef m_branchMesh;
         AssetRef m_skinnedBranchMesh;
         glm::vec3 m_normalDir = glm::vec3(0, 0, 1);
