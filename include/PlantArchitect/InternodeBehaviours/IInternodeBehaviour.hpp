@@ -21,15 +21,29 @@ namespace PlantArchitect {
         EntityRef m_recycleStorageEntity;
         std::mutex m_internodeFactoryLock;
         std::vector<Entity> m_recycledInternodes;
-
+        /**
+         * Get or create an internode from the pool.
+         * @tparam T The type of resource that will be added to the internode.
+         * @param parent The parent of the internode.
+         * @return An entity represent the internode.
+         */
         template<typename T>
         Entity Retrieve(const Entity &parent);
-
+        /**
+         * Get or create a root internode from the pool.
+         * @tparam T The type of resource that will be added to the internode.
+         * @return An entity represent the internode.
+         */
         template<typename T>
         Entity Retrieve();
-
+        /*
+         * Disable and recycle the internode and all its descendents to the pool.
+         */
         void Recycle(const Entity &internode);
-
+        /**
+         * Disable and recycle the internode to the pool.
+         * @param internode
+         */
         void RecycleSingle(const Entity &internode);
 
 #pragma endregion
@@ -111,6 +125,16 @@ namespace PlantArchitect {
          * @return True if the entity is valid and contains [InternodeInfo] and [Internode], false otherwise.
          */
         bool InternodeCheck(const Entity& target);
+        /**
+         * The GUI menu template for creating an specific kind of internode.
+         * @tparam T The target parameter of the internode.
+         * @param menuTitle The title of the menu, the the button to start the menu.
+         * @param parameterExtension The extension of the parameter file.
+         * @param parameterInspector User-configurable GUI for inspecting the parameter.
+         * @param parameterDeserializer The deserializer of the parameter.
+         * @param parameterSerializer The serializer of the parameter.
+         * @param internodeCreator User-configurable internode creation function with parameters given.
+         */
         template<typename T>
         void CreateInternodeMenu(const std::string &menuTitle,
                                  const std::string &parameterExtension,

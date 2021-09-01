@@ -18,6 +18,9 @@
 #include "Internode.hpp"
 #include <InternodeSystem.hpp>
 #include <SpaceColonizationBehaviour.hpp>
+#include "EmptyInternodeResource.hpp"
+#include "LSystemBehaviour.hpp"
+
 using namespace PlantArchitect;
 using namespace RayTracerFacility;
 
@@ -42,7 +45,11 @@ int main() {
     ClassRegistry::RegisterDataComponent<SpaceColonizationIncentive>("SpaceColonizationIncentive");
     ClassRegistry::RegisterAsset<SpaceColonizationBehaviour>("SpaceColonizationBehaviour", ".scbehaviour");
 
+    ClassRegistry::RegisterDataComponent<LSystemTag>("LSystemTag");
+    ClassRegistry::RegisterDataComponent<LSystemParameters>("LSystemParameters");
+    ClassRegistry::RegisterAsset<LSystemBehaviour>("LSystemBehaviour", ".lsbehaviour");
 
+    ClassRegistry::RegisterSerializable<EmptyInternodeResource>("EmptyInternodeResource");
     ClassRegistry::RegisterSerializable<DefaultInternodeResource>("DefaultInternodeResource");
     ClassRegistry::RegisterSerializable<Bud>("Bud");
     ClassRegistry::RegisterPrivateComponent<Internode>("Internode");

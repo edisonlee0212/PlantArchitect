@@ -3,19 +3,19 @@
 //
 
 #include "DefaultInternodeResource.hpp"
-
-void PlantArchitect::DefaultInternodeResource::UpStream(float deltaTime, const Entity& self, const Entity& target) {
-
-}
-
-void PlantArchitect::DefaultInternodeResource::DownStream(float deltaTime, const Entity& self, const Entity& target) {
+using namespace PlantArchitect;
+void DefaultInternodeResource::UpStream(float deltaTime, const Entity& self, const Entity& target) {
 
 }
 
-void PlantArchitect::DefaultInternodeResource::Collect(float deltaTime, const Entity &self) {
+void DefaultInternodeResource::DownStream(float deltaTime, const Entity& self, const Entity& target) {
 
 }
 
-void PlantArchitect::DefaultInternodeResource::Reset() {
+void DefaultInternodeResource::Collect(float deltaTime, const Entity &self) {
+
+}
+
+void DefaultInternodeResource::Reset() {
 
 }

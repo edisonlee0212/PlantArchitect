@@ -3,7 +3,7 @@
 //
 
 #include "SpaceColonizationBehaviour.hpp"
-#include "DefaultInternodeResource.hpp"
+#include "EmptyInternodeResource.hpp"
 #include "CubeVolume.hpp"
 #include "InternodeSystem.hpp"
 
@@ -133,12 +133,12 @@ void SpaceColonizationBehaviour::Grow() {
                 if(glm::dot(child.GetDataComponent<GlobalTransform>().GetRotation() * glm::vec3(0, 0, -1), newFront) > 0.95f) duplicate = true;
             });
             if(duplicate) continue;
-            newNode = Retrieve<DefaultInternodeResource>(entity);
+            newNode = Retrieve<EmptyInternodeResource>(entity);
             tag.m_truck = false;
             newNode.SetDataComponent(tag);
             entity.SetDataComponent(tag);
         } else if (tag.m_truck) {
-            newNode = Retrieve<DefaultInternodeResource>(entity);
+            newNode = Retrieve<EmptyInternodeResource>(entity);
             newFront = glm::normalize(m_center - newPosition);
             newNode.SetDataComponent(tag);
             tag.m_truck = false;
@@ -201,9 +201,7 @@ void SpaceColonizationBehaviour::OnInspect() {
             ("New Space Colonization Plant Wizard",
              ".scparams",
              [](SpaceColonizationParameters &params) {
-                 ImGui::DragFloat("Remove Distance", &params.m_removeDistance);
-                 ImGui::DragFloat("Attract Distance", &params.m_attractDistance);
-                 ImGui::DragFloat("Internode Length", &params.m_internodeLength);
+                 params.OnInspect();
              },
              [](SpaceColonizationParameters &params,
                 const std::filesystem::path &path) {
@@ -215,7 +213,7 @@ void SpaceColonizationBehaviour::OnInspect() {
              },
              [&](const SpaceColonizationParameters &params,
                  const Transform &transform) {
-                 auto entity = Retrieve<DefaultInternodeResource>();
+                 auto entity = Retrieve<EmptyInternodeResource>();
                  Transform internodeTransform;
                  internodeTransform.m_value =
                          glm::translate(glm::vec3(0.0f)) *
@@ -333,3 +331,10 @@ void SpaceColonizationBehaviour::PushVolume(const std::shared_ptr<Volume>& volum
 }
 
 
+void SpaceColonizationParameters::OnInspect() {
+    ImGui::DragFloat("Remove Distance", &m_removeDistance);
+    ImGui::DragFloat("Attract Distance", &m_attractDistance);
+    ImGui::DragFloat("Internode Length", &m_internodeLength);
+    ImGui::DragFloat("Thickness Factor", &m_thicknessFactor);
+    ImGui::DragFloat("End node thickness", &m_endNodeThickness);
+}
