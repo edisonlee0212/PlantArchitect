@@ -1,4 +1,5 @@
 #pragma once
+
 #include "InternodeRingSegment.hpp"
 #include <plant_architect_export.h>
 #include <IInternodeResource.hpp>
@@ -19,12 +20,17 @@ namespace PlantArchitect {
         float m_branchingAngle;
         float m_rollAngle;
     };
+    struct LSystemCommand;
 
     class PLANT_ARCHITECT_API Internode : public IPrivateComponent {
         std::weak_ptr<InternodeSystem> m_internodeSystem;
-        void CollectInternodesHelper(const Entity& target, std::vector<Entity>& results);
+
+        void ExportLSystemCommandsHelper(const Entity &target, std::vector<LSystemCommand> &commands);
+
+        void CollectInternodesHelper(const Entity &target, std::vector<Entity> &results);
+
     public:
-        void CollectInternodes(std::vector<Entity>& results);
+        void CollectInternodes(std::vector<Entity> &results);
 
         AssetRef m_branchMesh;
         AssetRef m_skinnedBranchMesh;
@@ -32,9 +38,7 @@ namespace PlantArchitect {
         bool m_meshGenerated = false;
         bool m_foliageGenerated = false;
         int m_step;
-
         std::vector<InternodeRingSegment> m_rings;
-
         /**
          * The resource storage for the internode.
          */
@@ -79,9 +83,13 @@ namespace PlantArchitect {
         void OnCreate() override;
 
         void Clone(const std::shared_ptr<IPrivateComponent> &target);
+
+        /*
+         * Parse the structure of the internodes and set up commands.
+         */
+        void ExportLSystemCommands(std::vector<LSystemCommand> &commands);
+
+        void OnGui() override;
     };
-
-
-
 
 }

@@ -54,7 +54,7 @@ namespace PlantArchitect {
         Pop
     };
 
-    struct LSystemCommand{
+    struct PLANT_ARCHITECT_API LSystemCommand{
         LSystemCommandType m_type;
         float m_value;
     };

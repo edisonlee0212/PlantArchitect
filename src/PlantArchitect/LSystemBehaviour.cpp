@@ -167,25 +167,25 @@ Entity LSystemBehaviour::FormPlant(std::vector<LSystemCommand> &commands, const 
                 currentNode.SetDataComponent(internodeInfo);
             }
                 continue;
-            case LSystemCommandType::TurnLeft: {
+            case LSystemCommandType::PitchUp: {
                 auto currentEulerRotation = transform.GetEulerRotation();
                 currentEulerRotation.x += command.m_value;
                 transform.SetEulerRotation(currentEulerRotation);
             }
                 break;
-            case LSystemCommandType::TurnRight: {
+            case LSystemCommandType::PitchDown: {
                 auto currentEulerRotation = transform.GetEulerRotation();
                 currentEulerRotation.x -= command.m_value;
                 transform.SetEulerRotation(currentEulerRotation);
             }
                 break;
-            case LSystemCommandType::PitchUp: {
+            case LSystemCommandType::TurnLeft: {
                 auto currentEulerRotation = transform.GetEulerRotation();
                 currentEulerRotation.y += command.m_value;
                 transform.SetEulerRotation(currentEulerRotation);
             }
                 break;
-            case LSystemCommandType::PitchDown: {
+            case LSystemCommandType::TurnRight: {
                 auto currentEulerRotation = transform.GetEulerRotation();
                 currentEulerRotation.y -= command.m_value;
                 transform.SetEulerRotation(currentEulerRotation);
