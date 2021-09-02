@@ -272,7 +272,7 @@ namespace RayTracerFacility {
         DefaultRenderingRadianceRayData &prd = *GetRayDataPointer<DefaultRenderingRadianceRayData>();
         const float3 rayDir = optixGetWorldRayDirection();
         float4 environmentalLightColor = make_float4(1.0f, 1.0f, 1.0f, 1.0f);
-        if (defaultRenderingLaunchParams.m_defaultRenderingProperties.m_useEnvironmentalMap)
+        if (defaultRenderingLaunchParams.m_defaultRenderingProperties.m_useEnvironmentalMap && defaultRenderingLaunchParams.m_defaultRenderingProperties.m_environmentalMapId != 0)
             environmentalLightColor = SampleCubeMap<float4>(defaultRenderingLaunchParams.m_skylight.m_environmentalMaps,
                                                             rayDir);
         prd.m_pixelAlbedo = prd.m_energy = glm::vec3(environmentalLightColor.x, environmentalLightColor.y,

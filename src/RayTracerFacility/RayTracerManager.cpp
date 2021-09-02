@@ -175,14 +175,6 @@ void RayTracerManager::Init() {
     CudaModule::Init();
 
     manager.m_defaultWindow.Init("Ray:Default");
-#pragma region Environmental map
-    {
-        manager.m_environmentalMap = AssetManager::Import<Cubemap>(
-                AssetManager::GetResourceFolderPath() /
-                "Textures/Cubemaps/GrandCanyon/GCanyon_C_YumaPoint_3k.hdr");
-    }
-#pragma endregion
-
     Application::RegisterUpdateFunction([]() {
         Update();
         OnGui();
@@ -210,8 +202,10 @@ void RayTracerManager::Update() {
                 EditorManager::GetInstance().m_sceneCameraRotation,
                 EditorManager::GetInstance().m_sceneCameraPosition,
                 EditorManager::GetInstance().m_sceneCamera->m_fov, size);
-        manager.m_defaultRenderingProperties.m_environmentalMapId =
-                manager.m_environmentalMap->Texture()->Id();
+        if(manager.m_environmentalMap) {
+            manager.m_defaultRenderingProperties.m_environmentalMapId =
+                    manager.m_environmentalMap->Texture()->Id();
+        }
         manager.m_defaultRenderingProperties.m_frameSize = size;
         manager.m_defaultRenderingProperties.m_outputTextureId =
                 manager.m_defaultWindow.m_output->Id();
