@@ -1,1 +1,0 @@
-walkwayHDR ./indata/walkway_hdr/ ./outdata01/walkway_hdr/ ./tmp11/walkway_hdr/ 0 0 256 256 1000.000000

@@ -1,1 +1,0 @@
-pinktileHDR ./indata/pinktile_hdr/ ./outdata01/pinktile_hdr/ ./tmp11/pinktile_hdr/ 0 0 256 256 450.000000

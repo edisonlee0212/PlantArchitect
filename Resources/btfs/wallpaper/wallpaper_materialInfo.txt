@@ -1,1 +1,0 @@
-wallpaper ./indata/wallpaper/ ./outdata01/wallpaper/ ./tmp11/wallpaper/ 0 0 256 256 0.000000
