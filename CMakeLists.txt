@@ -45,9 +45,6 @@ include_directories(${OptiX_INCLUDE})
 # RayTracer
 # ------------------------------------------------------------------
 
-set(PLANT_ARCHITECT_RESOURCE_DIR_LOCAL ${CMAKE_CURRENT_SOURCE_DIR}/Resources/)
-set(PLANT_ARCHITECT_RESOURCE_DEF PLANT_ARCHITECT_RESOURCE_FOLDER=\"${PLANT_ARCHITECT_RESOURCE_DIR_LOCAL}\")
-
 set(CMAKE_CXX_STANDARD 17)
 
 enable_language(CUDA)
@@ -77,11 +74,6 @@ add_library(RayTracerFacility
         ${RAY_TRACER_FACILITY_CUDA_SOURCES_LOCAL}
         ${CMAKE_MODULE_PATH}/configure_optix.cmake
         ${CMAKE_MODULE_PATH}/FindOptiX.cmake
-        )
-
-target_compile_definitions(RayTracerFacility
-        PRIVATE
-        ${PLANT_ARCHITECT_RESOURCE_DEF}
         )
 
 set_property(TARGET RayTracerFacility PROPERTY CUDA_ARCHITECTURES 75-real 75-virtual)
@@ -138,8 +130,6 @@ endif ()
 # ------------------------------------------------------------------
 # PlantArchitect
 # ------------------------------------------------------------------
-
-
 
 file(GLOB PLANT_ARCHITECT_SOURCES_LOCAL "src/PlantArchitect/*.cpp")
 add_library(PlantArchitect
