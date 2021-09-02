@@ -45,7 +45,7 @@ void SpaceColonizationTreeToLString::OnAfterGrowth(AutoTreeGenerationPipeline& p
     auto lString = AssetManager::CreateAsset<LString>();
     m_currentGrowingTree.GetOrSetPrivateComponent<Internode>().lock()->ExportLString(lString);
     //path here
-    lString->Save(m_currentExportFolder / "abc.lstring");
+    lString->Save(m_currentExportFolder / (std::to_string(m_generationAmount - m_remainingInstanceAmount) + ".lstring"));
     auto behaviour = m_spaceColonizationTreeBehaviour.lock();
     behaviour->Recycle(m_currentGrowingTree);
     behaviour->m_attractionPoints.clear();

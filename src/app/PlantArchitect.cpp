@@ -43,7 +43,7 @@ int main() {
     ClassRegistry::RegisterDataComponent<DefaultInternodeTag>("DefaultInternodeTag");
     ClassRegistry::RegisterAsset<DefaultInternodeBehaviour>("DefaultInternodeBehaviour", ".defaultbehaviour");
 
-    ClassRegistry::RegisterAsset<LString>("LString", ",lstring");
+    ClassRegistry::RegisterAsset<LString>("LString", ".lstring");
     ClassRegistry::RegisterDataComponent<SpaceColonizationTag>("SpaceColonizationTag");
     ClassRegistry::RegisterDataComponent<SpaceColonizationParameters>("SpaceColonizationParameters");
     ClassRegistry::RegisterDataComponent<SpaceColonizationIncentive>("SpaceColonizationIncentive");

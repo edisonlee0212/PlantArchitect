@@ -50,7 +50,7 @@ int main() {
     ClassRegistry::RegisterDataComponent<SpaceColonizationIncentive>("SpaceColonizationIncentive");
     ClassRegistry::RegisterAsset<SpaceColonizationBehaviour>("SpaceColonizationBehaviour", ".scbehaviour");
 
-    ClassRegistry::RegisterAsset<LString>("LString", ",lstring");
+    ClassRegistry::RegisterAsset<LString>("LString", ".lstring");
     ClassRegistry::RegisterDataComponent<LSystemTag>("LSystemTag");
     ClassRegistry::RegisterDataComponent<LSystemParameters>("LSystemParameters");
     ClassRegistry::RegisterAsset<LSystemBehaviour>("LSystemBehaviour", ".lsbehaviour");
