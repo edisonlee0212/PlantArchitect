@@ -12,9 +12,6 @@ void AutoTreeGenerationPipeline::Update() {
     auto behaviour = m_pipelineBehaviour.Get<IAutoTreeGenerationPipelineBehaviour>();
     if(behaviour){
         switch (m_status) {
-            case AutoTreeGenerationPipelineStatus::Idle:
-                behaviour->OnIdle(*this);
-                break;
             case AutoTreeGenerationPipelineStatus::BeforeGrowth:
                 behaviour->OnBeforeGrowth(*this);
                 break;
@@ -29,10 +26,6 @@ void AutoTreeGenerationPipeline::Update() {
 }
 
 void IAutoTreeGenerationPipelineBehaviour::OnBeforeGrowth(AutoTreeGenerationPipeline& pipeline) {
-
-}
-
-void IAutoTreeGenerationPipelineBehaviour::OnIdle(AutoTreeGenerationPipeline& pipeline) {
 
 }
 

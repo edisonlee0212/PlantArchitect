@@ -27,9 +27,9 @@ void DefaultInternodeBehaviour::Grow() {
     for (const auto &entity: entities) {
         if (!entity.IsEnabled()) continue;
         auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
-        auto newNode1 = Retrieve<DefaultInternodeResource>(entity);
-        auto newNode2 = Retrieve<DefaultInternodeResource>(entity);
-        auto newNode3 = Retrieve<DefaultInternodeResource>(entity);
+        auto newNode1 = Retrieve(entity);
+        auto newNode2 = Retrieve(entity);
+        auto newNode3 = Retrieve(entity);
     }
 }
 
@@ -59,7 +59,7 @@ void DefaultInternodeBehaviour::OnInspect() {
     RecycleButton();
 
     if (ImGui::Button("Create new internode...")) {
-        auto entity = Retrieve<DefaultInternodeResource>();
+        auto entity = Retrieve();
     }
     static float resolution = 0.02f;
     static float subdivision = 4.0f;
@@ -73,4 +73,12 @@ void DefaultInternodeBehaviour::OnInspect() {
 
 bool DefaultInternodeBehaviour::InternalInternodeCheck(const Entity &target) {
     return target.HasDataComponent<DefaultInternodeTag>();
+}
+
+Entity DefaultInternodeBehaviour::Retrieve() {
+    return RetrieveHelper<DefaultInternodeResource>();
+}
+
+Entity DefaultInternodeBehaviour::Retrieve(const Entity &parent) {
+    return RetrieveHelper<DefaultInternodeResource>(parent);
 }

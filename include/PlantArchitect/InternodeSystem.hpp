@@ -2,7 +2,7 @@
 
 #include <plant_architect_export.h>
 #include <Internode.hpp>
-
+#include <IInternodeBehaviour.hpp>
 using namespace UniEngine;
 namespace PlantArchitect {
     struct PLANT_ARCHITECT_API InternodeInfo : public IDataComponent {
@@ -64,8 +64,10 @@ namespace PlantArchitect {
 
         std::shared_ptr<Camera> m_internodeDebuggingCamera;
 
-        void PushInternodeBehaviour(const std::shared_ptr<IInternodeBehaviour>& behaviour);
-
+        template<typename T>
+        void PushInternodeBehaviour(const std::shared_ptr<T>& behaviour);
+        template<typename T>
+        std::shared_ptr<T> GetInternodeBehaviour();
         /**
          * Check if the entity is valid internode.
          * @param target Target for check.
@@ -121,4 +123,25 @@ namespace PlantArchitect {
 #pragma endregion
 #pragma endregion
     };
+    template <typename T>
+    void InternodeSystem::PushInternodeBehaviour(const std::shared_ptr<T>& behaviour) {
+        if(!behaviour.get()) return;
+        bool search = false;
+        for (auto &i: m_internodeBehaviours) {
+            if (i.Get<IInternodeBehaviour>()->GetTypeName() == std::dynamic_pointer_cast<IInternodeBehaviour>(behaviour)->GetTypeName()) search = true;
+        }
+        if (!search) {
+            m_internodeBehaviours.emplace_back(std::dynamic_pointer_cast<IInternodeBehaviour>(behaviour));
+        }
+    }
+
+    template<typename T>
+    std::shared_ptr<T> InternodeSystem::GetInternodeBehaviour() {
+        for (auto &i: m_internodeBehaviours) {
+            if (i.Get<IInternodeBehaviour>()->GetTypeName() == SerializationManager::GetSerializableTypeName<T>()) {
+                return i.Get<T>();
+            }
+        }
+        return nullptr;
+    }
 }

@@ -12,6 +12,7 @@ namespace PlantArchitect {
         glm::vec3 m_direction;
         int m_pointAmount;
     };
+
     struct PLANT_ARCHITECT_API SpaceColonizationParameters : public IDataComponent {
         float m_removeDistance = 0.8f;
         float m_attractDistance = 3.0f;
@@ -19,19 +20,23 @@ namespace PlantArchitect {
 
         float m_thicknessFactor = 0.5f;
         float m_endNodeThickness = 0.01f;
+
         void OnInspect();
     };
 
     class IVolume;
+
     class PLANT_ARCHITECT_API SpaceColonizationBehaviour : public IInternodeBehaviour {
         void VolumeSlotButton();
 
     protected:
         bool InternalInternodeCheck(const Entity &target) override;
+
     public:
         std::vector<PrivateComponentRef> m_volumes;
         std::vector<glm::vec3> m_attractionPoints;
         glm::vec3 m_center;
+
         void OnInspect() override;
 
         void OnCreate() override;
@@ -42,6 +47,10 @@ namespace PlantArchitect {
 
         void Grow() override;
 
-        void PushVolume(const std::shared_ptr<IVolume>& volume);
+        void PushVolume(const std::shared_ptr<IVolume> &volume);
+
+        Entity Retrieve() override;
+
+        Entity Retrieve(const Entity &parent) override;
     };
 }

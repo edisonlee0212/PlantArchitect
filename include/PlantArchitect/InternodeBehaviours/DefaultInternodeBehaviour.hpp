@@ -18,5 +18,7 @@ namespace PlantArchitect {
         void PreProcess() override;
         void Grow() override;
         void PostProcess() override;
+        Entity Retrieve() override;
+        Entity Retrieve(const Entity &parent) override;
     };
 }

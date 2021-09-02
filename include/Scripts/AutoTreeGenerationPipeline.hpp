@@ -19,7 +19,6 @@ namespace Scripts {
 
     class IAutoTreeGenerationPipelineBehaviour : public IAsset{
     public:
-        virtual void OnIdle(AutoTreeGenerationPipeline& pipeline);
         virtual void OnBeforeGrowth(AutoTreeGenerationPipeline& pipeline);
         virtual void OnGrowth(AutoTreeGenerationPipeline& pipeline);
         virtual void OnAfterGrowth(AutoTreeGenerationPipeline& pipeline);

@@ -67,5 +67,7 @@ namespace PlantArchitect {
         void ParseLString(const std::string& string, std::vector<LSystemCommand>& commands);
         void OnInspect() override;
         void OnCreate() override;
+        Entity Retrieve() override;
+        Entity Retrieve(const Entity &parent) override;
     };
 }

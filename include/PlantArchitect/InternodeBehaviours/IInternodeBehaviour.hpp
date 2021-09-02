@@ -21,29 +21,27 @@ namespace PlantArchitect {
         EntityRef m_recycleStorageEntity;
         std::mutex m_internodeFactoryLock;
         /**
+         * Disable and recycle the internode to the pool.
+         * @param internode
+         */
+        void RecycleSingle(const Entity &internode);
+
+        /**
          * Get or create an internode from the pool.
          * @tparam T The type of resource that will be added to the internode.
          * @param parent The parent of the internode.
          * @return An entity represent the internode.
          */
         template<typename T>
-        Entity Retrieve(const Entity &parent);
+        Entity RetrieveHelper(const Entity &parent);
         /**
          * Get or create a root internode from the pool.
          * @tparam T The type of resource that will be added to the internode.
          * @return An entity represent the internode.
          */
         template<typename T>
-        Entity Retrieve();
-        /*
-         * Disable and recycle the internode and all its descendents to the pool.
-         */
-        void Recycle(const Entity &internode);
-        /**
-         * Disable and recycle the internode to the pool.
-         * @param internode
-         */
-        void RecycleSingle(const Entity &internode);
+        Entity RetrieveHelper();
+
         void RecycleButton();
 #pragma endregion
 #pragma region Helpers
@@ -62,6 +60,12 @@ namespace PlantArchitect {
 
         virtual bool InternalInternodeCheck(const Entity &target) = 0;
     public:
+        virtual Entity Retrieve() = 0;
+        virtual Entity Retrieve(const Entity &parent) = 0;
+        /*
+         * Disable and recycle the internode and all its descendents to the pool.
+         */
+        void Recycle(const Entity &internode);
         /**
          * What to do before the growth, and before the resource collection. Mesh, graph calculation...
          */
@@ -316,7 +320,7 @@ namespace PlantArchitect {
     }
 
     template<typename T>
-    Entity IInternodeBehaviour::Retrieve(const Entity &parent) {
+    Entity IInternodeBehaviour::RetrieveHelper(const Entity &parent) {
         Entity retVal;
         std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
         retVal = m_recycleStorageEntity.Get().GetChild(0);
@@ -336,7 +340,7 @@ namespace PlantArchitect {
     }
 
     template<typename T>
-    Entity IInternodeBehaviour::Retrieve() {
+    Entity IInternodeBehaviour::RetrieveHelper() {
         Entity retVal;
         std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
         retVal = m_recycleStorageEntity.Get().GetChild(0);

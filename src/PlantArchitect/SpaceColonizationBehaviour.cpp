@@ -133,12 +133,12 @@ void SpaceColonizationBehaviour::Grow() {
                 if(glm::dot(child.GetDataComponent<GlobalTransform>().GetRotation() * glm::vec3(0, 0, -1), newFront) > 0.95f) duplicate = true;
             });
             if(duplicate) continue;
-            newNode = Retrieve<EmptyInternodeResource>(entity);
+            newNode = Retrieve(entity);
             tag.m_truck = false;
             newNode.SetDataComponent(tag);
             entity.SetDataComponent(tag);
         } else if (tag.m_truck) {
-            newNode = Retrieve<EmptyInternodeResource>(entity);
+            newNode = Retrieve(entity);
             newFront = glm::normalize(m_center - newPosition);
             newNode.SetDataComponent(tag);
             tag.m_truck = false;
@@ -234,7 +234,7 @@ void SpaceColonizationBehaviour::OnInspect() {
              },
              [&](const SpaceColonizationParameters &params,
                  const Transform &transform) {
-                 auto entity = Retrieve<EmptyInternodeResource>();
+                 auto entity = Retrieve();
                  Transform internodeTransform;
                  internodeTransform.m_value =
                          glm::translate(glm::vec3(0.0f)) *
@@ -353,6 +353,14 @@ void SpaceColonizationBehaviour::PushVolume(const std::shared_ptr<IVolume>& volu
 
 bool SpaceColonizationBehaviour::InternalInternodeCheck(const Entity &target) {
     return target.HasDataComponent<SpaceColonizationTag>();
+}
+
+Entity SpaceColonizationBehaviour::Retrieve() {
+    return RetrieveHelper<EmptyInternodeResource>();
+}
+
+Entity SpaceColonizationBehaviour::Retrieve(const Entity &parent) {
+    return RetrieveHelper<EmptyInternodeResource>(parent);
 }
 
 

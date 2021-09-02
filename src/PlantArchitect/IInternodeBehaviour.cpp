@@ -5,7 +5,7 @@
 #include "IInternodeBehaviour.hpp"
 #include "Internode.hpp"
 #include "Curve.hpp"
-
+#include "InternodeSystem.hpp"
 using namespace PlantArchitect;
 
 void IInternodeBehaviour::Recycle(const Entity &internode) {

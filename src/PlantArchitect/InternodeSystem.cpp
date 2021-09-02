@@ -478,20 +478,13 @@ void InternodeSystem::RenderBranchPointers() {
                 glm::mat4(1.0f), 1.0f);
 }
 
-void InternodeSystem::PushInternodeBehaviour(const std::shared_ptr<IInternodeBehaviour>& behaviour) {
-    if(!behaviour.get()) return;
-    bool search = false;
-    for (auto &i: m_internodeBehaviours) {
-        if (i.Get<IInternodeBehaviour>()->GetTypeName() == behaviour->GetTypeName()) search = true;
-    }
-    if (!search) {
-        m_internodeBehaviours.emplace_back(behaviour);
-    }
-}
+
 
 bool InternodeSystem::InternodeCheck(const Entity &target) {
     return target.IsValid() && target.HasDataComponent<InternodeInfo>() && target.HasPrivateComponent<Internode>();
 }
+
+
 
 #pragma endregion
 

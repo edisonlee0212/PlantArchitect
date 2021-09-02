@@ -108,7 +108,7 @@ void LSystemBehaviour::ParseLString(const std::string &string, std::vector<LSyst
 
 Entity LSystemBehaviour::FormPlant(std::vector<LSystemCommand> &commands, const LSystemParameters &parameters) {
     if (commands.empty()) return Entity();
-    Entity currentNode = Retrieve<EmptyInternodeResource>();
+    Entity currentNode = Retrieve();
     Entity root = currentNode;
     currentNode.SetDataComponent(parameters);
     InternodeInfo newInfo;
@@ -161,7 +161,7 @@ Entity LSystemBehaviour::FormPlant(std::vector<LSystemCommand> &commands, const 
             }
                 break;
             case LSystemCommandType::Push: {
-                currentNode = Retrieve<EmptyInternodeResource>(currentNode);
+                currentNode = Retrieve(currentNode);
                 currentNode.SetDataComponent(parameters);
                 InternodeInfo newInfo;
                 newInfo.m_length = 0;
@@ -215,6 +215,14 @@ Entity LSystemBehaviour::FormPlant(std::vector<LSystemCommand> &commands, const 
 
 bool LSystemBehaviour::InternalInternodeCheck(const Entity &target) {
     return target.HasDataComponent<LSystemTag>();
+}
+
+Entity LSystemBehaviour::Retrieve() {
+    return RetrieveHelper<EmptyInternodeResource>();
+}
+
+Entity LSystemBehaviour::Retrieve(const Entity &parent) {
+    return RetrieveHelper<EmptyInternodeResource>(parent);
 }
 
 
