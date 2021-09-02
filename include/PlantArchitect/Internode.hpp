@@ -7,7 +7,7 @@
 using namespace UniEngine;
 namespace PlantArchitect {
     class InternodeSystem;
-
+    struct LString;
     enum PLANT_ARCHITECT_API class BudType {
         Apical,
         Lateral
@@ -81,11 +81,10 @@ namespace PlantArchitect {
         void OnCreate() override;
 
         void Clone(const std::shared_ptr<IPrivateComponent> &target);
-
         /*
          * Parse the structure of the internodes and set up commands.
          */
-        void ExportLSystemCommands(std::vector<LSystemCommand> &commands);
+        void ExportLString(const std::shared_ptr<LString>& lString);
 
         void OnGui() override;
     };

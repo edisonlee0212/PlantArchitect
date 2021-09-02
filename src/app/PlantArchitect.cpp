@@ -20,13 +20,16 @@
 #include <SpaceColonizationBehaviour.hpp>
 #include "EmptyInternodeResource.hpp"
 #include "LSystemBehaviour.hpp"
-
+#include "SpaceColonizationTreeToLString.hpp"
+#include "AutoTreeGenerationPipeline.hpp"
 using namespace PlantArchitect;
 using namespace RayTracerFacility;
+using namespace Scripts;
 
 void EngineSetup(bool enableRayTracing);
 void RegisterDataComponentMenus();
 int main() {
+
     ClassRegistry::RegisterDataComponent<BranchCylinder>("BranchCylinder");
     ClassRegistry::RegisterDataComponent<BranchCylinderWidth>("BranchCylinderWidth");
     ClassRegistry::RegisterDataComponent<BranchPointer>("BranchPointer");
@@ -40,6 +43,7 @@ int main() {
     ClassRegistry::RegisterDataComponent<DefaultInternodeTag>("DefaultInternodeTag");
     ClassRegistry::RegisterAsset<DefaultInternodeBehaviour>("DefaultInternodeBehaviour", ".defaultbehaviour");
 
+    ClassRegistry::RegisterAsset<LString>("LString", ",lstring");
     ClassRegistry::RegisterDataComponent<SpaceColonizationTag>("SpaceColonizationTag");
     ClassRegistry::RegisterDataComponent<SpaceColonizationParameters>("SpaceColonizationParameters");
     ClassRegistry::RegisterDataComponent<SpaceColonizationIncentive>("SpaceColonizationIncentive");
@@ -56,6 +60,9 @@ int main() {
 
     ClassRegistry::RegisterDataComponent<InternodeInfo>("InternodeInfo");
     ClassRegistry::RegisterSystem<InternodeSystem>("InternodeSystem");
+
+    ClassRegistry::RegisterPrivateComponent<AutoTreeGenerationPipeline>("AutoTreeGenerationPipeline");
+    ClassRegistry::RegisterAsset<SpaceColonizationTreeToLString>("SpaceColonizationTreeToLString", "sctolstring");
 
     const bool enableRayTracing = true;
     EngineSetup(enableRayTracing);

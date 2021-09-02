@@ -5,7 +5,7 @@
 #include "Internode.hpp"
 #include "InternodeSystem.hpp"
 #include "LSystemBehaviour.hpp"
-
+#include "AssetManager.hpp"
 using namespace PlantArchitect;
 
 void Internode::Clone(const std::shared_ptr<IPrivateComponent> &target) {
@@ -57,8 +57,8 @@ void Internode::CollectInternodes(std::vector<Entity> &results) {
     CollectInternodesHelper(GetOwner(), results);
 }
 
-void Internode::ExportLSystemCommands(std::vector<LSystemCommand> &commands) {
-    ExportLSystemCommandsHelper(GetOwner(), commands);
+void Internode::ExportLString(const std::shared_ptr<LString>& lString) {
+    ExportLSystemCommandsHelper(GetOwner(), lString->commands);
 }
 
 void Internode::ExportLSystemCommandsHelper(const Entity &target, std::vector<LSystemCommand> &commands) {
@@ -86,75 +86,9 @@ void Internode::ExportLSystemCommandsHelper(const Entity &target, std::vector<LS
 }
 
 void Internode::OnGui() {
-    FileUtils::SaveFile("Export L-String", "L-String", {".txt"}, [&](const std::filesystem::path& path){
-        std::ofstream of;
-        of.open(path.c_str(),
-                std::ofstream::out | std::ofstream::trunc);
-        if (of.is_open()) {
-            std::vector<LSystemCommand> commands;
-            ExportLSystemCommands(commands);
-            std::string output;
-            for (const auto &command: commands) {
-                switch (command.m_type) {
-                    case LSystemCommandType::Forward: {
-                        output += "F(";
-                        output += std::to_string(command.m_value);
-                        output += ")";
-                    }
-                        break;
-                    case LSystemCommandType::PitchUp: {
-                        output += "^(";
-                        output += std::to_string(command.m_value);
-                        output += ")";
-                    }
-                        break;
-                    case LSystemCommandType::PitchDown: {
-                        output += "&(";
-                        output += std::to_string(command.m_value);
-                        output += ")";
-                    }
-                        break;
-                    case LSystemCommandType::TurnLeft: {
-                        output += "+(";
-                        output += std::to_string(command.m_value);
-                        output += ")";
-                    }
-                        break;
-                    case LSystemCommandType::TurnRight: {
-                        output += "-(";
-                        output += std::to_string(command.m_value);
-                        output += ")";
-                    }
-                        break;
-                    case LSystemCommandType::RollLeft: {
-                        output += "\\(";
-                        output += std::to_string(command.m_value);
-                        output += ")";
-                    }
-                        break;
-                    case LSystemCommandType::RollRight: {
-                        output += "/(";
-                        output += std::to_string(command.m_value);
-                        output += ")";
-                    }
-                        break;
-                    case LSystemCommandType::Push: {
-                        output += "[";
-                    }
-                        break;
-                    case LSystemCommandType::Pop: {
-                        output += "]";
-                    }
-                        break;
-                }
-                output += "\n";
-            }
-
-            of.write(output.c_str(), output.size());
-            of.flush();
-            UNIENGINE_LOG("Exported L-String to " + path.string());
-        }else{
-            UNIENGINE_ERROR("Failed to open " + path.string());
-        }
-    });
+    if(ImGui::Button("Generate L-String")){
+        auto lString = AssetManager::CreateAsset<LString>();
+        AssetManager::Share(lString);
+        ExportLString(lString);
+    }
 }

@@ -6,21 +6,19 @@
 #include "InternodeSystem.hpp"
 #include "EmptyInternodeResource.hpp"
 #include "TransformManager.hpp"
+
 using namespace PlantArchitect;
 
 void LSystemBehaviour::OnInspect() {
     RecycleButton();
-
     static LSystemParameters parameters;
     parameters.OnInspect();
-    FileUtils::OpenFile("Load L-String", "L-String", {".txt"}, [&](const std::filesystem::path &path) {
-        auto string = FileUtils::LoadFileAsString(path);
-        std::vector<LSystemCommand> commands;
-        ParseLString(string, commands);
-        if (!commands.empty()) {
-            Entity entity = FormPlant(commands, parameters);
-        }
-    });
+    //button here
+    static AssetRef tempStoredLString;
+    EditorManager::DragAndDropButton<LString>(tempStoredLString, "Create tree from LString here: ");
+    auto lString = tempStoredLString.Get<LString>();
+    if(lString) FormPlant(lString, parameters);
+    tempStoredLString.Clear();
 
     static float resolution = 0.02;
     static float subdivision = 4.0;
@@ -46,67 +44,8 @@ void LSystemBehaviour::OnCreate() {
 }
 
 
-void LSystemBehaviour::ParseLString(const std::string &string, std::vector<LSystemCommand> &commands) {
-    std::istringstream iss(string);
-    std::string line;
-    int stackCheck = 0;
-    while (std::getline(iss, line)) {
-        LSystemCommand command;
-        switch (line[0]) {
-            case 'F': {
-                command.m_type = LSystemCommandType::Forward;
-            }
-                break;
-            case '+': {
-                command.m_type = LSystemCommandType::TurnLeft;
-            }
-                break;
-            case '-': {
-                command.m_type = LSystemCommandType::TurnRight;
-            }
-                break;
-            case '^': {
-                command.m_type = LSystemCommandType::PitchUp;
-            }
-                break;
-            case '&': {
-                command.m_type = LSystemCommandType::PitchDown;
-            }
-                break;
-            case '\\': {
-                command.m_type = LSystemCommandType::RollLeft;
-            }
-                break;
-            case '/': {
-                command.m_type = LSystemCommandType::RollRight;
-            }
-                break;
-            case '[': {
-                command.m_type = LSystemCommandType::Push;
-                stackCheck++;
-            }
-                break;
-            case ']': {
-                command.m_type = LSystemCommandType::Pop;
-                stackCheck--;
-            }
-                break;
-        }
-        if (command.m_type != LSystemCommandType::Push && command.m_type != LSystemCommandType::Pop) {
-            command.m_value = std::stof(line.substr(2));
-            if (command.m_type == LSystemCommandType::Forward && command.m_value > 2.0f) {
-                command.m_value = 3.0f;
-            }
-        }
-        commands.push_back(command);
-    }
-    if (stackCheck != 0) {
-        UNIENGINE_ERROR("Stack check failed! Something wrong with the string!");
-        commands.clear();
-    }
-}
-
-Entity LSystemBehaviour::FormPlant(std::vector<LSystemCommand> &commands, const LSystemParameters &parameters) {
+Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, const LSystemParameters &parameters) {
+    auto &commands = lString->commands;
     if (commands.empty()) return Entity();
     Entity currentNode = Retrieve();
     Entity root = currentNode;
@@ -175,7 +114,7 @@ Entity LSystemBehaviour::FormPlant(std::vector<LSystemCommand> &commands, const 
             }
         }
         currentNode.SetDataComponent(transform);
-        if(currentNode == root){
+        if (currentNode == root) {
             GlobalTransform globalTransform;
             globalTransform.m_value = transform.m_value;
             currentNode.SetDataComponent(globalTransform);
@@ -186,7 +125,8 @@ Entity LSystemBehaviour::FormPlant(std::vector<LSystemCommand> &commands, const 
         auto parentGlobalTransform = parent.GetDataComponent<GlobalTransform>();
         auto parentPosition = parentGlobalTransform.GetPosition();
         auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
-        auto childPosition = parentPosition + parentInternodeInfo.m_length * (parentGlobalTransform.GetRotation() * glm::vec3(0, 0, -1));
+        auto childPosition = parentPosition +
+                             parentInternodeInfo.m_length * (parentGlobalTransform.GetRotation() * glm::vec3(0, 0, -1));
         auto childGlobalTransform = child.GetDataComponent<GlobalTransform>();
         childGlobalTransform.SetPosition(childPosition);
         child.SetDataComponent(childGlobalTransform);
@@ -230,4 +170,143 @@ void LSystemParameters::OnInspect() {
     ImGui::DragFloat("Internode Length", &m_internodeLength);
     ImGui::DragFloat("Thickness Factor", &m_thicknessFactor);
     ImGui::DragFloat("End node thickness", &m_endNodeThickness);
+}
+
+void LString::Load(const std::filesystem::path &path) {
+    if (path.extension().string() == ".lstring") {
+        auto string = FileUtils::LoadFileAsString(path);
+        ParseLString(string);
+    } else {
+        IAsset::Load(path);
+    }
+}
+
+void LString::Save(const std::filesystem::path &path) {
+    if (path.extension().string() == ".lstring") {
+        std::ofstream of;
+        of.open(path.c_str(),
+                std::ofstream::out | std::ofstream::trunc);
+        if (of.is_open()) {
+            std::string output;
+            for (const auto &command: commands) {
+                switch (command.m_type) {
+                    case LSystemCommandType::Forward: {
+                        output += "F(";
+                        output += std::to_string(command.m_value);
+                        output += ")";
+                    }
+                        break;
+                    case LSystemCommandType::PitchUp: {
+                        output += "^(";
+                        output += std::to_string(command.m_value);
+                        output += ")";
+                    }
+                        break;
+                    case LSystemCommandType::PitchDown: {
+                        output += "&(";
+                        output += std::to_string(command.m_value);
+                        output += ")";
+                    }
+                        break;
+                    case LSystemCommandType::TurnLeft: {
+                        output += "+(";
+                        output += std::to_string(command.m_value);
+                        output += ")";
+                    }
+                        break;
+                    case LSystemCommandType::TurnRight: {
+                        output += "-(";
+                        output += std::to_string(command.m_value);
+                        output += ")";
+                    }
+                        break;
+                    case LSystemCommandType::RollLeft: {
+                        output += "\\(";
+                        output += std::to_string(command.m_value);
+                        output += ")";
+                    }
+                        break;
+                    case LSystemCommandType::RollRight: {
+                        output += "/(";
+                        output += std::to_string(command.m_value);
+                        output += ")";
+                    }
+                        break;
+                    case LSystemCommandType::Push: {
+                        output += "[";
+                    }
+                        break;
+                    case LSystemCommandType::Pop: {
+                        output += "]";
+                    }
+                        break;
+                }
+                output += "\n";
+            }
+            of.write(output.c_str(), output.size());
+            of.flush();
+        }
+    } else {
+        IAsset::Save(path);
+    }
+}
+
+void LString::ParseLString(const std::string &string) {
+    std::istringstream iss(string);
+    std::string line;
+    int stackCheck = 0;
+    while (std::getline(iss, line)) {
+        LSystemCommand command;
+        switch (line[0]) {
+            case 'F': {
+                command.m_type = LSystemCommandType::Forward;
+            }
+                break;
+            case '+': {
+                command.m_type = LSystemCommandType::TurnLeft;
+            }
+                break;
+            case '-': {
+                command.m_type = LSystemCommandType::TurnRight;
+            }
+                break;
+            case '^': {
+                command.m_type = LSystemCommandType::PitchUp;
+            }
+                break;
+            case '&': {
+                command.m_type = LSystemCommandType::PitchDown;
+            }
+                break;
+            case '\\': {
+                command.m_type = LSystemCommandType::RollLeft;
+            }
+                break;
+            case '/': {
+                command.m_type = LSystemCommandType::RollRight;
+            }
+                break;
+            case '[': {
+                command.m_type = LSystemCommandType::Push;
+                stackCheck++;
+            }
+                break;
+            case ']': {
+                command.m_type = LSystemCommandType::Pop;
+                stackCheck--;
+            }
+                break;
+        }
+        if (command.m_type != LSystemCommandType::Push && command.m_type != LSystemCommandType::Pop) {
+            command.m_value = std::stof(line.substr(2));
+            if (command.m_type == LSystemCommandType::Forward && command.m_value > 2.0f) {
+                command.m_value = 3.0f;
+            }
+        }
+        commands.push_back(command);
+    }
+    if (stackCheck != 0) {
+        UNIENGINE_ERROR("Stack check failed! Something wrong with the string!");
+        commands.clear();
+    }
 }

@@ -1,3 +1,4 @@
+#pragma once
 #include <InternodeSystem.hpp>
 #include <AutoTreeGenerationPipeline.hpp>
 #include <SpaceColonizationBehaviour.hpp>
@@ -11,9 +12,9 @@ namespace Scripts {
     public:
         int m_generationAmount = 10;
         std::filesystem::path m_currentExportFolder = "./export/";
-        int m_perTreeGrowthIteration = 40;
-        PrivateComponentRef m_volume;
+        int m_perTreeGrowthIteration = 20;
         int m_attractionPointAmount = 1000;
+        void OnIdle(AutoTreeGenerationPipeline& pipeline) override;
         void OnBeforeGrowth(AutoTreeGenerationPipeline& pipeline) override;
         void OnGrowth(AutoTreeGenerationPipeline& pipeline) override;
         void OnAfterGrowth(AutoTreeGenerationPipeline& pipeline) override;

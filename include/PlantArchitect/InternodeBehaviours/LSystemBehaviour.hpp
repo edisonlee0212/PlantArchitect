@@ -59,12 +59,19 @@ namespace PlantArchitect {
         float m_value;
     };
 
+    class PLANT_ARCHITECT_API LString : public IAsset{
+    public:
+        void ParseLString(const std::string& string);
+        std::vector<LSystemCommand> commands;
+        void Save(const std::filesystem::path &path) override;
+        void Load(const std::filesystem::path &path) override;
+    };
+
     class PLANT_ARCHITECT_API LSystemBehaviour : public IInternodeBehaviour {
     protected:
         bool InternalInternodeCheck(const Entity &target) override;
     public:
-        Entity FormPlant(std::vector<LSystemCommand>& commands, const LSystemParameters& parameters);
-        void ParseLString(const std::string& string, std::vector<LSystemCommand>& commands);
+        Entity FormPlant(const std::shared_ptr<LString>& lString, const LSystemParameters& parameters);
         void OnInspect() override;
         void OnCreate() override;
         Entity Retrieve() override;
