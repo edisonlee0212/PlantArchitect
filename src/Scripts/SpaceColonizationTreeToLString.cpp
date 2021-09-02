@@ -25,7 +25,7 @@ void SpaceColonizationTreeToLString::OnBeforeGrowth(AutoTreeGenerationPipeline& 
     for (int i = 0; i < m_attractionPointAmount; i++) {
         behaviour->m_attractionPoints.push_back(behaviour->m_volumes[0].Get<IVolume>()->GetRandomPoint());
     }
-    m_currentGrowingTree = behaviour->NewPlant(SpaceColonizationParameters(), Transform());
+    m_currentGrowingTree = behaviour->NewPlant(m_parameters, Transform());
 }
 
 void SpaceColonizationTreeToLString::OnGrowth(AutoTreeGenerationPipeline& pipeline) {
@@ -34,8 +34,10 @@ void SpaceColonizationTreeToLString::OnGrowth(AutoTreeGenerationPipeline& pipeli
         return;
     }
     auto internodeSystem = EntityManager::GetSystem<InternodeSystem>();
-    internodeSystem->Simulate(1.0f);
-    m_remainingGrowthIterations--;
+    while(m_remainingGrowthIterations > 0) {
+        internodeSystem->Simulate(1.0f);
+        m_remainingGrowthIterations--;
+    }
     if(m_remainingGrowthIterations == 0){
         pipeline.m_status = AutoTreeGenerationPipelineStatus::AfterGrowth;
     }
@@ -58,6 +60,9 @@ void SpaceColonizationTreeToLString::OnAfterGrowth(AutoTreeGenerationPipeline& p
 }
 
 void SpaceColonizationTreeToLString::OnInspect() {
+    ImGui::Text("Space colonization parameters");
+    m_parameters.OnInspect();
+    ImGui::Text("Pipeline Settings:");
     ImGui::DragInt("Generation Amount", &m_generationAmount);
     ImGui::DragInt("Growth iteration", &m_perTreeGrowthIteration);
     ImGui::DragInt("Attraction point per plant", &m_attractionPointAmount);
@@ -68,6 +73,7 @@ void SpaceColonizationTreeToLString::OnInspect() {
         }
     }else{
         ImGui::Text("Task dispatched...");
+        ImGui::Text(("Total: " + std::to_string(m_generationAmount) + ", Remaining: " + std::to_string(m_remainingInstanceAmount)).c_str());
     }
 }
 

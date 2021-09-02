@@ -35,9 +35,21 @@ void AutoTreeGenerationPipeline::OnGui() {
 
 void AutoTreeGenerationPipeline::DropBehaviourButton() {
     if(m_pipelineBehaviour.Get<IAutoTreeGenerationPipelineBehaviour>()){
-        ImGui::Text(("Current attached behaviour: " + m_pipelineBehaviour.Get<IAutoTreeGenerationPipelineBehaviour>()->GetTypeName()).c_str());
-        if(ImGui::Button("Remove")){
-            m_pipelineBehaviour.Clear();
+        auto behaviour = m_pipelineBehaviour.Get<IAutoTreeGenerationPipelineBehaviour>();
+        ImGui::Text("Current attached behaviour: ");
+        ImGui::Button((behaviour->m_name).c_str());
+        if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
+        {
+            EditorManager::GetInstance().m_inspectingAsset = behaviour;
+        }
+        const std::string tag = "##" + behaviour->GetTypeName() + (behaviour ? std::to_string(behaviour->GetHandle()) : "");
+        if (ImGui::BeginPopupContextItem(tag.c_str()))
+        {
+            if (ImGui::Button(("Remove" + tag).c_str()))
+            {
+                m_pipelineBehaviour.Clear();
+            }
+            ImGui::EndPopup();
         }
     }else {
         ImGui::Text("Drop Behaviour");

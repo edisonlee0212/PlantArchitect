@@ -122,11 +122,14 @@ void EngineSetup(bool enableRayTracing) {
         */
         if (enableRayTracing)
             RayTracerManager::Init();
-        auto internodeSystem = EntityManager::GetOrCreateSystem<InternodeSystem>(0.0f);
 
+        /*
+         * Add all internode behaviours for example.
+         */
+        auto internodeSystem = EntityManager::GetOrCreateSystem<InternodeSystem>(0.0f);
         Entity cubeVolumeEntity = EntityManager::CreateEntity("CubeVolume");
         Transform cubeVolumeTransform = cubeVolumeEntity.GetDataComponent<Transform>();
-        cubeVolumeTransform.SetPosition(glm::vec3(0, 10, 0));
+        cubeVolumeTransform.SetPosition(glm::vec3(0, 15, 0));
         cubeVolumeEntity.SetDataComponent(cubeVolumeTransform);
         auto spaceColonizationBehaviour = AssetManager::CreateAsset<SpaceColonizationBehaviour>();
         auto lSystemBehaviour = AssetManager::CreateAsset<LSystemBehaviour>();
@@ -134,7 +137,17 @@ void EngineSetup(bool enableRayTracing) {
                 std::dynamic_pointer_cast<IInternodeBehaviour>(spaceColonizationBehaviour));
         internodeSystem->PushInternodeBehaviour(std::dynamic_pointer_cast<IInternodeBehaviour>(lSystemBehaviour));
         auto cubeVolume = cubeVolumeEntity.GetOrSetPrivateComponent<CubeVolume>().lock();
+        cubeVolume->m_minMaxBound.m_min = glm::vec3(-10.0f);
+        cubeVolume->m_minMaxBound.m_max = glm::vec3(10.0f);
         spaceColonizationBehaviour->PushVolume(std::dynamic_pointer_cast<IVolume>(cubeVolume));
+
+
+        /*
+         * Add all pipelines
+         */
+        auto spaceColonizationPipelineEntity = EntityManager::CreateEntity("SpaceColonizationTreeToLStringPipeline");
+        auto spaceColonizationPipeline = spaceColonizationPipelineEntity.GetOrSetPrivateComponent<AutoTreeGenerationPipeline>().lock();
+        spaceColonizationPipeline->m_pipelineBehaviour = AssetManager::CreateAsset<SpaceColonizationTreeToLString>();
     });
 }
 
