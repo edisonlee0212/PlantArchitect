@@ -25,7 +25,7 @@ void SpaceColonizationTreeToLString::OnBeforeGrowth(AutoTreeGenerationPipeline& 
     for (int i = 0; i < m_attractionPointAmount; i++) {
         behaviour->m_attractionPoints.push_back(behaviour->m_volumes[0].Get<IVolume>()->GetRandomPoint());
     }
-    m_currentGrowingTree = behaviour->Retrieve();
+    m_currentGrowingTree = behaviour->NewPlant(SpaceColonizationParameters(), Transform());
 }
 
 void SpaceColonizationTreeToLString::OnGrowth(AutoTreeGenerationPipeline& pipeline) {
@@ -80,3 +80,4 @@ void SpaceColonizationTreeToLString::OnIdle(AutoTreeGenerationPipeline& pipeline
         return;
     }
 }
+

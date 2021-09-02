@@ -234,23 +234,7 @@ void SpaceColonizationBehaviour::OnInspect() {
              },
              [&](const SpaceColonizationParameters &params,
                  const Transform &transform) {
-                 auto entity = Retrieve();
-                 Transform internodeTransform;
-                 internodeTransform.m_value =
-                         glm::translate(glm::vec3(0.0f)) *
-                         glm::mat4_cast(glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f))) *
-                         glm::scale(glm::vec3(1.0f));
-                 internodeTransform.m_value = transform.m_value * internodeTransform.m_value;
-                 entity.SetDataComponent(internodeTransform);
-                 SpaceColonizationTag tag;
-                 tag.m_truck = true;
-                 entity.SetDataComponent(tag);
-                 InternodeInfo newInfo;
-                 newInfo.m_length = params.m_internodeLength;
-                 newInfo.m_thickness = params.m_endNodeThickness;
-                 entity.SetDataComponent(newInfo);
-                 entity.SetDataComponent(params);
-                 return entity;
+                 return NewPlant(params, transform);
              }
             );
 
@@ -363,6 +347,25 @@ Entity SpaceColonizationBehaviour::Retrieve(const Entity &parent) {
     return RetrieveHelper<EmptyInternodeResource>(parent);
 }
 
+Entity SpaceColonizationBehaviour::NewPlant(const SpaceColonizationParameters &params, const Transform &transform) {
+    auto entity = Retrieve();
+    Transform internodeTransform;
+    internodeTransform.m_value =
+            glm::translate(glm::vec3(0.0f)) *
+            glm::mat4_cast(glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f))) *
+            glm::scale(glm::vec3(1.0f));
+    internodeTransform.m_value = transform.m_value * internodeTransform.m_value;
+    entity.SetDataComponent(internodeTransform);
+    SpaceColonizationTag tag;
+    tag.m_truck = true;
+    entity.SetDataComponent(tag);
+    InternodeInfo newInfo;
+    newInfo.m_length = params.m_internodeLength;
+    newInfo.m_thickness = params.m_endNodeThickness;
+    entity.SetDataComponent(newInfo);
+    entity.SetDataComponent(params);
+    return entity;
+}
 
 void SpaceColonizationParameters::OnInspect() {
     ImGui::DragFloat("Remove Distance", &m_removeDistance);

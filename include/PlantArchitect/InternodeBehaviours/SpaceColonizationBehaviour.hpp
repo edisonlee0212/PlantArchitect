@@ -52,5 +52,8 @@ namespace PlantArchitect {
         Entity Retrieve() override;
 
         Entity Retrieve(const Entity &parent) override;
+
+        Entity NewPlant(const SpaceColonizationParameters &params,
+                        const Transform &transform);
     };
 }
