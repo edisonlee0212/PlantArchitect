@@ -20,6 +20,7 @@ namespace PlantArchitect {
         EntityArchetype m_internodeArchetype;
         EntityRef m_recycleStorageEntity;
         std::mutex m_internodeFactoryLock;
+
         /**
          * Disable and recycle the internode to the pool.
          * @param internode
@@ -34,6 +35,7 @@ namespace PlantArchitect {
          */
         template<typename T>
         Entity RetrieveHelper(const Entity &parent);
+
         /**
          * Get or create a root internode from the pool.
          * @tparam T The type of resource that will be added to the internode.
@@ -43,8 +45,10 @@ namespace PlantArchitect {
         Entity RetrieveHelper();
 
         void RecycleButton();
+
 #pragma endregion
 #pragma region Helpers
+
         void TreeNodeCollector(std::vector<Entity> &boundEntities,
                                std::vector<int> &parentIndices,
                                const int &parentIndex, const Entity &node, const Entity &root);
@@ -59,13 +63,17 @@ namespace PlantArchitect {
 #pragma endregion
 
         virtual bool InternalInternodeCheck(const Entity &target) = 0;
+
     public:
         virtual Entity Retrieve() = 0;
+
         virtual Entity Retrieve(const Entity &parent) = 0;
+
         /*
          * Disable and recycle the internode and all its descendents to the pool.
          */
         void Recycle(const Entity &internode);
+
         /**
          * What to do before the growth, and before the resource collection. Mesh, graph calculation...
          */
@@ -94,6 +102,7 @@ namespace PlantArchitect {
          * @param roots Where to store the results.
          */
         void CollectRoots(const EntityQuery &internodeQuery, std::vector<Entity> &roots);
+
         /**
          * A helper method that traverse target plant from root internode to end internodes, and come back from end to root.
          * @param root The start internode. It's your responsibility to make sure the root is valid.
@@ -102,18 +111,20 @@ namespace PlantArchitect {
          * @param endToRootAction The action to take during traversal from end to root. You must not delete the parent during the action.
          * @param endNodeAction The action to take for end nodes. You must not delete the end node during the action.
          */
-        void TreeGraphWalker(const Entity& root, const Entity &node,
+        void TreeGraphWalker(const Entity &root, const Entity &node,
                              const std::function<void(Entity parent, Entity child)> &rootToEndAction,
                              const std::function<void(Entity parent)> &endToRootAction,
                              const std::function<void(Entity endNode)> &endNodeAction);
+
         /**
          * A helper method that traverse target plant from root internode to end internodes.
          * @param root The start internode. It's your responsibility to make sure the root is valid.
          * @param node Walker node, should be same as root. It's your responsibility to make sure the root is valid.
          * @param rootToEndAction The action to take during traversal from root to end.
          */
-        void TreeGraphWalkerRootToEnd(const Entity& root, const Entity &node,
-                             const std::function<void(Entity parent, Entity child)> &rootToEndAction);
+        void TreeGraphWalkerRootToEnd(const Entity &root, const Entity &node,
+                                      const std::function<void(Entity parent, Entity child)> &rootToEndAction);
+
         /**
          * A helper method that traverse target plant from end internodes to root internode.
          * @param root The start internode. It's your responsibility to make sure the root is valid.
@@ -121,15 +132,17 @@ namespace PlantArchitect {
          * @param endToRootAction The action to take during traversal from end to root. You must not delete the parent during the action.
          * @param endNodeAction The action to take for end nodes. You must not delete the end node during the action.
          */
-        void TreeGraphWalkerEndToRoot(const Entity& root, const Entity &node,
+        void TreeGraphWalkerEndToRoot(const Entity &root, const Entity &node,
                                       const std::function<void(Entity parent)> &endToRootAction,
                                       const std::function<void(Entity endNode)> &endNodeAction);
+
         /**
          * Check if the entity is valid internode.
          * @param target Target for check.
          * @return True if the entity is valid and contains [InternodeInfo] and [Internode], false otherwise.
          */
-        bool InternodeCheck(const Entity& target);
+        bool InternodeCheck(const Entity &target);
+
         /**
          * The GUI menu template for creating an specific kind of internode.
          * @tparam T The target parameter of the internode.
@@ -323,9 +336,10 @@ namespace PlantArchitect {
     Entity IInternodeBehaviour::RetrieveHelper(const Entity &parent) {
         Entity retVal;
         std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
-        retVal = m_recycleStorageEntity.Get().GetChild(0);
+        auto recycleEntity = m_recycleStorageEntity.Get();
+        if (!recycleEntity.IsNull()) retVal = recycleEntity.GetChild(0);
         if (!retVal.IsNull()) {
-             retVal.SetParent(parent);
+            retVal.SetParent(parent);
             retVal.SetDataComponent(Transform());
             retVal.SetEnabled(true);
             retVal.GetOrSetPrivateComponent<Internode>().lock()->OnRetrieve();
@@ -343,9 +357,10 @@ namespace PlantArchitect {
     Entity IInternodeBehaviour::RetrieveHelper() {
         Entity retVal;
         std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
-        retVal = m_recycleStorageEntity.Get().GetChild(0);
+        auto recycleEntity = m_recycleStorageEntity.Get();
+        if (!recycleEntity.IsNull()) retVal = recycleEntity.GetChild(0);
         if (!retVal.IsNull()) {
-            m_recycleStorageEntity.Get().RemoveChild(retVal);
+            recycleEntity.RemoveChild(retVal);
             retVal.SetDataComponent(Transform());
             retVal.SetEnabled(true);
             retVal.GetOrSetPrivateComponent<Internode>().lock()->OnRetrieve();

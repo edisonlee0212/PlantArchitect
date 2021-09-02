@@ -42,9 +42,6 @@ void SpaceColonizationTreeToLString::OnGrowth(AutoTreeGenerationPipeline& pipeli
 }
 
 void SpaceColonizationTreeToLString::OnAfterGrowth(AutoTreeGenerationPipeline& pipeline) {
-    if(m_spaceColonizationTreeBehaviour.expired()){
-        m_spaceColonizationTreeBehaviour = EntityManager::GetSystem<InternodeSystem>()->GetInternodeBehaviour<SpaceColonizationBehaviour>();
-    }
     auto lString = AssetManager::CreateAsset<LString>();
     m_currentGrowingTree.GetOrSetPrivateComponent<Internode>().lock()->ExportLString(lString);
     //path here
@@ -53,10 +50,10 @@ void SpaceColonizationTreeToLString::OnAfterGrowth(AutoTreeGenerationPipeline& p
     behaviour->Recycle(m_currentGrowingTree);
     behaviour->m_attractionPoints.clear();
     m_remainingInstanceAmount--;
-    pipeline.m_status = AutoTreeGenerationPipelineStatus::BeforeGrowth;
     if(m_remainingInstanceAmount == 0){
         pipeline.m_status = AutoTreeGenerationPipelineStatus::Idle;
-        return;
+    }else{
+        pipeline.m_status = AutoTreeGenerationPipelineStatus::BeforeGrowth;
     }
 }
 

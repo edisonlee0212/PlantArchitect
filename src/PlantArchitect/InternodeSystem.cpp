@@ -402,7 +402,7 @@ void InternodeSystem::UpdateBranchColors() {
                 InternodeInfo &internodeInfo) {
                 internodeRenderColor.m_value = glm::vec4(m_branchColor, m_transparency);
             },
-            false);
+            true);
     BranchColor color;
     color.m_value = glm::vec4(1, 1, 1, 1);
     if (focusingInternode.IsValid() && focusingInternode.HasDataComponent<BranchColor>()) focusingInternode.SetDataComponent(color);
@@ -440,7 +440,7 @@ void InternodeSystem::UpdateBranchCylinder(const float &width) {
                                 internodeInfo.m_thickness));
 
             },
-            false);
+            true);
 }
 
 void InternodeSystem::UpdateBranchPointer(const float &length, const float &width) {
