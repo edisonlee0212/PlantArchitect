@@ -271,12 +271,26 @@ namespace RayTracerFacility {
     extern "C" __global__ void __miss__radiance() {
         DefaultRenderingRadianceRayData &prd = *GetRayDataPointer<DefaultRenderingRadianceRayData>();
         const float3 rayDir = optixGetWorldRayDirection();
-        float4 environmentalLightColor = make_float4(1.0f, 1.0f, 1.0f, 1.0f);
-        if (defaultRenderingLaunchParams.m_defaultRenderingProperties.m_useEnvironmentalMap && defaultRenderingLaunchParams.m_defaultRenderingProperties.m_environmentalMapId != 0)
-            environmentalLightColor = SampleCubeMap<float4>(defaultRenderingLaunchParams.m_skylight.m_environmentalMaps,
-                                                            rayDir);
-        prd.m_pixelAlbedo = prd.m_energy = glm::vec3(environmentalLightColor.x, environmentalLightColor.y,
-                                                     environmentalLightColor.z);
+        const glm::vec3 sunColor = glm::normalize(defaultRenderingLaunchParams.m_defaultRenderingProperties.m_sunColor);
+        float3 environmentalLightColor = make_float3(sunColor.x, sunColor.y, sunColor.z);
+        switch(defaultRenderingLaunchParams.m_defaultRenderingProperties.m_environmentalLightingType){
+            case EnvironmentalLightingType::White:
+                break;
+            case EnvironmentalLightingType::EnvironmentalMap:
+                if(defaultRenderingLaunchParams.m_defaultRenderingProperties.m_environmentalMapId != 0) {
+                    float4 color = SampleCubeMap<float4>(defaultRenderingLaunchParams.m_skylight.m_environmentalMaps,
+                                                         rayDir);
+                    environmentalLightColor = make_float3(color.x, color.y, color.z);
+                }
+                break;
+            case EnvironmentalLightingType::CIE:
+                float skylightIntensity = CIESkyIntensity(glm::vec3(rayDir.x, rayDir.y, rayDir.z), glm::normalize(defaultRenderingLaunchParams.m_defaultRenderingProperties.m_sunDirection), glm::vec3(0, 1, 0));
+                environmentalLightColor.x *= skylightIntensity;
+                environmentalLightColor.y *= skylightIntensity;
+                environmentalLightColor.z *= skylightIntensity;
+                break;
+        }
+        prd.m_pixelAlbedo = prd.m_energy = glm::vec3(environmentalLightColor.x, environmentalLightColor.y, environmentalLightColor.z);
         prd.m_energy *= defaultRenderingLaunchParams.m_defaultRenderingProperties.m_skylightIntensity;
     }
     extern "C" __global__ void __miss__sampleSp() {

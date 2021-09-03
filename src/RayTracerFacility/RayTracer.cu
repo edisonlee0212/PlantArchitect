@@ -35,7 +35,7 @@ void Camera::Set(const glm::quat &rotation, const glm::vec3 &position, const flo
     m_vertical
             = cosFovY * glm::normalize(glm::cross(m_horizontal, m_direction));
 }
-
+const char *EnvironmentalLightingTypes[]{"White", "EnvironmentalMap", "CIE"};
 void DefaultRenderingProperties::OnGui() {
     ImGui::Begin("Ray:Default");
     {
@@ -48,8 +48,29 @@ void DefaultRenderingProperties::OnGui() {
                     if (ImGui::DragInt("pixel samples", &m_samplesPerPixel, 1, 1, 64)) {
                         m_samplesPerPixel = glm::clamp(m_samplesPerPixel, 1, 128);
                     }
-                    ImGui::Checkbox("Use environmental map", &m_useEnvironmentalMap);
-                    ImGui::DragFloat("Skylight intensity", &m_skylightIntensity, 0.01f, 0.0f, 5.0f);
+                    static int type = 0;
+                    if (ImGui::Combo("Environment Lighting", &type,
+                                     EnvironmentalLightingTypes,
+                                     IM_ARRAYSIZE(EnvironmentalLightingTypes))) {
+                        m_environmentalLightingType =
+                                static_cast<EnvironmentalLightingType>(type);
+                    }
+
+                    ImGui::DragFloat(
+                            (m_environmentalLightingType == EnvironmentalLightingType::CIE
+                             ? "Env Lighting intensity"
+                             : "Zenith radiance"),
+                            &m_skylightIntensity, 0.01f, 0.0f, 5.0f);
+
+                    static glm::vec2 angles = glm::vec2(90, 0);
+                    if (ImGui::DragFloat2("Skylight Direction (X/Y axis)", &angles.x, 1.0f, 0.0f,
+                                          180.0f)) {
+                        m_sunDirection = glm::quat(glm::radians(glm::vec3(angles.x, angles.y, 0.0f))) * glm::vec3(0, 0, -1);
+                    }
+                    if (m_environmentalLightingType !=
+                        EnvironmentalLightingType::EnvironmentalMap) {
+                        ImGui::ColorEdit3("Sky light color", &m_sunColor.x);
+                    }
                     ImGui::EndMenu();
                 }
                 ImGui::EndMenuBar();
