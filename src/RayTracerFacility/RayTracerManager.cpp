@@ -1,21 +1,23 @@
 #include <RayTracedRenderer.hpp>
+
 #include <RayTracerManager.hpp>
+using namespace RayTracerFacility;
 #include <ProjectManager.hpp>
 
-using namespace RayTracerFacility;
+
 
 void RayTracerManager::UpdateScene() const {
     bool rebuildAccelerationStructure = false;
     bool updateShaderBindingTable = false;
     auto &meshesStorage = CudaModule::GetRayTracer()->m_instances;
-    for (auto &i : meshesStorage) {
+    for (auto &i: meshesStorage) {
         i.m_removeTag = true;
     }
     if (const auto *rayTracedEntities =
                 EntityManager::UnsafeGetPrivateComponentOwnersList<
                         RayTracedRenderer>();
             rayTracedEntities) {
-        for (auto entity : *rayTracedEntities) {
+        for (auto entity: *rayTracedEntities) {
             if (!entity.IsEnabled())
                 continue;
             auto rayTracedRenderer =
@@ -32,7 +34,7 @@ void RayTracerManager::UpdateScene() const {
             bool needTransformUpdate = false;
             bool fromNew = true;
             bool needMaterialUpdate = false;
-            for (auto &currentRayTracerInstance : meshesStorage) {
+            for (auto &currentRayTracerInstance: meshesStorage) {
                 if (currentRayTracerInstance.m_entityId == entity.GetIndex() &&
                     currentRayTracerInstance.m_entityVersion == entity.GetVersion()) {
                     fromNew = false;
@@ -143,7 +145,7 @@ void RayTracerManager::UpdateScene() const {
                 meshesStorage.push_back(newRayTracerInstance);
         }
     } else {
-        for (auto &i : meshesStorage) {
+        for (auto &i: meshesStorage) {
             i.m_removeTag = true;
         }
     }
@@ -202,7 +204,7 @@ void RayTracerManager::Update() {
                 EditorManager::GetInstance().m_sceneCameraRotation,
                 EditorManager::GetInstance().m_sceneCameraPosition,
                 EditorManager::GetInstance().m_sceneCamera->m_fov, size);
-        if(manager.m_environmentalMap) {
+        if (manager.m_environmentalMap) {
             manager.m_defaultRenderingProperties.m_environmentalMapId =
                     manager.m_environmentalMap->Texture()->Id();
         }
