@@ -54,11 +54,11 @@ namespace RayTracerFacility {
 
 #pragma endregion
 
-        void UpdateMeshesStorage(std::vector<RayTracerInstance> meshesStorage, bool &rebuildAccelerationStructure,
+        void UpdateMeshesStorage(std::vector<RayTracerInstance>& meshesStorage, bool &rebuildAccelerationStructure,
                                  bool &updateShaderBindingTable) const;
 
         void
-        UpdateSkinnedMeshesStorage(std::vector<SkinnedRayTracerInstance> meshesStorage, bool &rebuildAccelerationStructure,
+        UpdateSkinnedMeshesStorage(std::vector<SkinnedRayTracerInstance>& meshesStorage, bool &rebuildAccelerationStructure,
                                    bool &updateShaderBindingTable) const;
 
     public:

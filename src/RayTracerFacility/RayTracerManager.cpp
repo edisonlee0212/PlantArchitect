@@ -7,8 +7,9 @@ using namespace RayTracerFacility;
 
 #include <ProjectManager.hpp>
 
-void RayTracerManager::UpdateMeshesStorage(std::vector<RayTracerInstance> meshesStorage, bool &rebuildAccelerationStructure,
-                         bool &updateShaderBindingTable) const{
+void
+RayTracerManager::UpdateMeshesStorage(std::vector<RayTracerInstance>& meshesStorage, bool &rebuildAccelerationStructure,
+                                      bool &updateShaderBindingTable) const {
     for (auto &i: meshesStorage) {
         i.m_removeTag = true;
     }
@@ -23,7 +24,9 @@ void RayTracerManager::UpdateMeshesStorage(std::vector<RayTracerInstance> meshes
                     entity.GetOrSetPrivateComponent<RayTracedRenderer>().lock();
             if (!rayTracedRenderer->IsEnabled())
                 continue;
-            auto mesh = rayTracedRenderer->m_meshRenderer.Get<MeshRenderer>()->m_mesh.Get<Mesh>();
+            auto meshRenderer = rayTracedRenderer->m_meshRenderer.Get<MeshRenderer>();
+            if (!meshRenderer) continue;
+            auto mesh = meshRenderer->m_mesh.Get<Mesh>();
             if (!mesh || mesh->UnsafeGetVertices().empty())
                 continue;
             auto globalTransform = entity.GetDataComponent<GlobalTransform>().m_value;
@@ -158,8 +161,9 @@ void RayTracerManager::UpdateMeshesStorage(std::vector<RayTracerInstance> meshes
 }
 
 void
-RayTracerManager::UpdateSkinnedMeshesStorage(std::vector<SkinnedRayTracerInstance> meshesStorage, bool &rebuildAccelerationStructure,
-                           bool &updateShaderBindingTable) const{
+RayTracerManager::UpdateSkinnedMeshesStorage(std::vector<SkinnedRayTracerInstance>& meshesStorage,
+                                             bool &rebuildAccelerationStructure,
+                                             bool &updateShaderBindingTable) const {
     for (auto &i: meshesStorage) {
         i.m_removeTag = true;
     }
@@ -175,6 +179,7 @@ RayTracerManager::UpdateSkinnedMeshesStorage(std::vector<SkinnedRayTracerInstanc
             if (!rayTracedRenderer->IsEnabled())
                 continue;
             auto skinnedMeshRenderer = rayTracedRenderer->m_skinnedMeshRenderer.Get<SkinnedMeshRenderer>();
+            if(!skinnedMeshRenderer) continue;
             auto mesh = skinnedMeshRenderer->m_skinnedMesh.Get<SkinnedMesh>();
             if (!mesh || mesh->UnsafeGetSkinnedVertices().empty())
                 continue;
@@ -195,7 +200,7 @@ RayTracerManager::UpdateSkinnedMeshesStorage(std::vector<SkinnedRayTracerInstanc
                         needTransformUpdate = true;
                     }
                     //if (rayTracerInstance->m_version != mesh->GetVersion())
-                        needVerticesUpdate = true;
+                    needVerticesUpdate = true;
                     if (rayTracerInstance->m_surfaceColor !=
                         rayTracedRenderer->m_surfaceColor ||
                         rayTracerInstance->m_metallic !=
@@ -287,7 +292,7 @@ RayTracerManager::UpdateSkinnedMeshesStorage(std::vector<SkinnedRayTracerInstanc
                 rayTracerInstance->m_skinnedVertices =
                         reinterpret_cast<std::vector<SkinnedVertex> *>(&mesh->UnsafeGetSkinnedVertices());
                 rayTracerInstance->m_boneMatrices =
-                        reinterpret_cast<std::vector<glm::mat4> *>(skinnedMeshRenderer->m_finalResults.get()->m_value.data());
+                        reinterpret_cast<std::vector<glm::mat4> *>(&skinnedMeshRenderer->m_finalResults.get()->m_value);
                 rayTracerInstance->m_triangles = &mesh->UnsafeGetTriangles();
             } else if (needTransformUpdate) {
                 rebuildAccelerationStructure = true;
@@ -320,7 +325,7 @@ void RayTracerManager::UpdateScene() const {
     UpdateMeshesStorage(meshesStorage, rebuildAccelerationStructure, updateShaderBindingTable);
     UpdateSkinnedMeshesStorage(skinnedMeshesStorage, rebuildAccelerationStructure, updateShaderBindingTable);
 
-    if (rebuildAccelerationStructure && !meshesStorage.empty()) {
+    if (rebuildAccelerationStructure && (!meshesStorage.empty() || !skinnedMeshesStorage.empty())) {
         CudaModule::GetRayTracer()->BuildAccelerationStructure();
         CudaModule::GetRayTracer()->ClearAccumulate();
     } else if (updateShaderBindingTable) {
@@ -375,7 +380,7 @@ void RayTracerManager::Update() {
         manager.m_defaultRenderingProperties.m_frameSize = size;
         manager.m_defaultRenderingProperties.m_outputTextureId =
                 manager.m_defaultWindow.m_output->Id();
-        if (!CudaModule::GetRayTracer()->m_instances.empty()) {
+        if (!CudaModule::GetRayTracer()->m_instances.empty() || !CudaModule::GetRayTracer()->m_skinnedInstances.empty()) {
             manager.m_defaultWindow.m_rendered =
                     CudaModule::GetRayTracer()->RenderDefault(
                             manager.m_defaultRenderingProperties);

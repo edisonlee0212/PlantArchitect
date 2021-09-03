@@ -35,7 +35,9 @@ void Camera::Set(const glm::quat &rotation, const glm::vec3 &position, const flo
     m_vertical
             = cosFovY * glm::normalize(glm::cross(m_horizontal, m_direction));
 }
+
 const char *EnvironmentalLightingTypes[]{"White", "EnvironmentalMap", "CIE"};
+
 void DefaultRenderingProperties::OnGui() {
     ImGui::Begin("Ray:Default");
     {
@@ -65,7 +67,8 @@ void DefaultRenderingProperties::OnGui() {
                     static glm::vec2 angles = glm::vec2(90, 0);
                     if (ImGui::DragFloat2("Skylight Direction (X/Y axis)", &angles.x, 1.0f, 0.0f,
                                           180.0f)) {
-                        m_sunDirection = glm::quat(glm::radians(glm::vec3(angles.x, angles.y, 0.0f))) * glm::vec3(0, 0, -1);
+                        m_sunDirection =
+                                glm::quat(glm::radians(glm::vec3(angles.x, angles.y, 0.0f))) * glm::vec3(0, 0, -1);
                     }
                     if (m_environmentalLightingType !=
                         EnvironmentalLightingType::EnvironmentalMap) {
@@ -172,7 +175,7 @@ bool RayTracer::RenderDefault(const DefaultRenderingProperties &properties) {
         CUDA_CHECK(CreateTextureObject(&m_defaultRenderingLaunchParams.m_skylight.m_environmentalMaps[5],
                                        &cudaResourceDesc,
                                        &cudaTextureDesc, nullptr));
-    }else{
+    } else {
         m_defaultRenderingLaunchParams.m_skylight.m_environmentalMaps[0] = 0;
         m_defaultRenderingLaunchParams.m_skylight.m_environmentalMaps[1] = 0;
         m_defaultRenderingLaunchParams.m_skylight.m_environmentalMaps[2] = 0;
@@ -480,56 +483,80 @@ void RayTracer::CreateHitGroupPrograms() {
 __global__ void ApplyTransformKernel(
         int size, glm::mat4 globalTransform,
         Vertex *vertices,
-        glm::vec3 *targetPositions) {
+        glm::vec3 *targetPositions,
+        glm::vec3 *targetNormals,
+        glm::vec3 *targetTangents,
+        glm::vec2 *targetTexCoords) {
     const int idx = threadIdx.x + blockIdx.x * blockDim.x;
     if (idx < size) {
         targetPositions[idx] = globalTransform * glm::vec4(vertices[idx].m_position, 1.0f);
-        //targetNormals[idx] = glm::normalize(globalTransform * glm::vec4(vertices[idx].m_normal, 0.0f));
-        //targetTangents[idx] = glm::normalize(globalTransform * glm::vec4(vertices[idx].m_tangent, 0.0f));
+        glm::vec3 N = glm::normalize(globalTransform * glm::vec4(vertices[idx].m_normal, 0.0f));
+        glm::vec3 T = glm::normalize(globalTransform * glm::vec4(vertices[idx].m_tangent, 0.0f));
+        T = glm::normalize(T - dot(T, N) * N);
+        targetNormals[idx] = N;
+        targetTangents[idx] = T;
+        targetTexCoords[idx] = vertices[idx].m_texCoords;
     }
 }
 
 __global__ void ApplySkinnedTransformKernel(
         int size, glm::mat4 globalTransform,
         SkinnedVertex *vertices,
-        glm::mat4* boneMatrices,
-        glm::vec3 *targetPositions) {
+        glm::mat4 *boneMatrices,
+        glm::vec3 *targetPositions,
+        glm::vec3 *targetNormals,
+        glm::vec3 *targetTangents,
+        glm::vec2 *targetTexCoords) {
     const int idx = threadIdx.x + blockIdx.x * blockDim.x;
     if (idx < size) {
         glm::mat4 boneTransform = boneMatrices[vertices[idx].m_bondId[0]] * vertices[idx].m_weight[0];
-        if(vertices[idx].m_bondId[1] != -1){
+        if (vertices[idx].m_bondId[1] != -1) {
             boneTransform += boneMatrices[vertices[idx].m_bondId[1]] * vertices[idx].m_weight[1];
         }
-        if(vertices[idx].m_bondId[2] != -1){
+        if (vertices[idx].m_bondId[2] != -1) {
             boneTransform += boneMatrices[vertices[idx].m_bondId[2]] * vertices[idx].m_weight[2];
         }
-        if(vertices[idx].m_bondId[3] != -1){
+        if (vertices[idx].m_bondId[3] != -1) {
             boneTransform += boneMatrices[vertices[idx].m_bondId[3]] * vertices[idx].m_weight[3];
         }
-        if(vertices[idx].m_bondId2[0] != -1){
+        if (vertices[idx].m_bondId2[0] != -1) {
             boneTransform += boneMatrices[vertices[idx].m_bondId2[0]] * vertices[idx].m_weight2[0];
         }
-        if(vertices[idx].m_bondId2[1] != -1){
+        if (vertices[idx].m_bondId2[1] != -1) {
             boneTransform += boneMatrices[vertices[idx].m_bondId2[1]] * vertices[idx].m_weight2[1];
         }
-        if(vertices[idx].m_bondId2[2] != -1){
+        if (vertices[idx].m_bondId2[2] != -1) {
             boneTransform += boneMatrices[vertices[idx].m_bondId2[2]] * vertices[idx].m_weight2[2];
         }
-        if(vertices[idx].m_bondId2[3] != -1){
+        if (vertices[idx].m_bondId2[3] != -1) {
             boneTransform += boneMatrices[vertices[idx].m_bondId2[3]] * vertices[idx].m_weight2[3];
         }
 
         targetPositions[idx] = boneTransform * glm::vec4(vertices[idx].m_position, 1.0f);
-        //targetNormals[idx] = glm::normalize(globalTransform * glm::vec4(vertices[idx].m_normal, 0.0f));
-        //targetTangents[idx] = glm::normalize(globalTransform * glm::vec4(vertices[idx].m_tangent, 0.0f));
+        glm::vec3 N = glm::normalize(boneTransform * glm::vec4(vertices[idx].m_normal, 0.0f));
+        glm::vec3 T = glm::normalize(boneTransform * glm::vec4(vertices[idx].m_tangent, 0.0f));
+        T = glm::normalize(T - dot(T, N) * N);
+        targetNormals[idx] = N;
+        targetTangents[idx] = T;
+        targetTexCoords[idx] = vertices[idx].m_texCoords;
     }
 }
 
 void RayTracer::BuildAccelerationStructure() {
     bool uploadVertices = false;
-    if (m_verticesBuffer.size() != m_instances.size()) uploadVertices = true;
-    else {
+    int instanceSize = m_instances.size() + m_skinnedInstances.size();
+    if (m_verticesBuffer.size() != instanceSize) uploadVertices = true;
+    if (!uploadVertices) {
         for (auto &i: m_instances) {
+            if (i.m_verticesUpdateFlag) {
+                uploadVertices = true;
+                break;
+            }
+        }
+
+    }
+    if (!uploadVertices) {
+        for (auto &i: m_skinnedInstances) {
             if (i.m_verticesUpdateFlag) {
                 uploadVertices = true;
                 break;
@@ -540,32 +567,48 @@ void RayTracer::BuildAccelerationStructure() {
         for (auto &i: m_verticesBuffer) i.Free();
         for (auto &i: m_trianglesBuffer) i.Free();
         for (auto &i: m_transformedPositionsBuffer) i.Free();
+        for (auto &i: m_transformedNormalsBuffer) i.Free();
+        for (auto &i: m_transformedTangentBuffer) i.Free();
+        for (auto &i: m_texCoordBuffer) i.Free();
+        for (auto &i: m_boneMatricesBuffer) i.Free();
+
 
         m_verticesBuffer.clear();
         m_trianglesBuffer.clear();
         m_transformedPositionsBuffer.clear();
+        m_transformedNormalsBuffer.clear();
+        m_transformedTangentBuffer.clear();
+        m_texCoordBuffer.clear();
+        m_boneMatricesBuffer.clear();
 
-        m_verticesBuffer.resize(m_instances.size());
-        m_trianglesBuffer.resize(m_instances.size());
-        m_transformedPositionsBuffer.resize(m_instances.size());
+        m_verticesBuffer.resize(instanceSize);
+        m_trianglesBuffer.resize(instanceSize);
+        m_transformedPositionsBuffer.resize(instanceSize);
+        m_transformedNormalsBuffer.resize(instanceSize);
+        m_transformedTangentBuffer.resize(instanceSize);
+        m_texCoordBuffer.resize(instanceSize);
+        m_boneMatricesBuffer.resize(instanceSize);
     }
     OptixTraversableHandle asHandle = 0;
 
     // ==================================================================
     // triangle inputs
     // ==================================================================
-    std::vector<OptixBuildInput> triangleInput(m_instances.size());
-    std::vector<CUdeviceptr> deviceVertexPositions(m_instances.size());
-    std::vector<CUdeviceptr> deviceVertexTriangles(m_instances.size());
-    std::vector<CUdeviceptr> deviceTransforms(m_instances.size());
-    std::vector<uint32_t> triangleInputFlags(m_instances.size());
-
-    for (int meshID = 0; meshID < m_instances.size(); meshID++) {
+    std::vector<OptixBuildInput> triangleInput(instanceSize);
+    std::vector<CUdeviceptr> deviceVertexPositions(instanceSize);
+    std::vector<CUdeviceptr> deviceVertexTriangles(instanceSize);
+    std::vector<CUdeviceptr> deviceTransforms(instanceSize);
+    std::vector<uint32_t> triangleInputFlags(instanceSize);
+    int meshID = 0;
+    for (; meshID < m_instances.size(); meshID++) {
         // upload the model to the device: the builder
         RayTracerInstance &triangleMesh = m_instances[meshID];
         if (uploadVertices) {
             m_verticesBuffer[meshID].Upload(*triangleMesh.m_vertices);
             m_transformedPositionsBuffer[meshID].Resize(triangleMesh.m_vertices->size() * sizeof(glm::vec3));
+            m_transformedNormalsBuffer[meshID].Resize(triangleMesh.m_vertices->size() * sizeof(glm::vec3));
+            m_transformedTangentBuffer[meshID].Resize(triangleMesh.m_vertices->size() * sizeof(glm::vec3));
+            m_texCoordBuffer[meshID].Resize(triangleMesh.m_vertices->size() * sizeof(glm::vec3));
         }
 
         if (uploadVertices || triangleMesh.m_transformUpdateFlag) {
@@ -577,7 +620,10 @@ void RayTracer::BuildAccelerationStructure() {
             gridSize = (size + blockSize - 1) / blockSize;
             ApplyTransformKernel << < gridSize, blockSize >> > (size, triangleMesh.m_globalTransform,
                     static_cast<Vertex *>(m_verticesBuffer[meshID].m_dPtr),
-                    static_cast<glm::vec3 *>(m_transformedPositionsBuffer[meshID].m_dPtr));
+                    static_cast<glm::vec3 *>(m_transformedPositionsBuffer[meshID].m_dPtr),
+                    static_cast<glm::vec3 *>(m_transformedNormalsBuffer[meshID].m_dPtr),
+                    static_cast<glm::vec3 *>(m_transformedTangentBuffer[meshID].m_dPtr),
+                    static_cast<glm::vec2 *>(m_texCoordBuffer[meshID].m_dPtr));
             CUDA_SYNC_CHECK();
         }
 
@@ -616,6 +662,71 @@ void RayTracer::BuildAccelerationStructure() {
         triangleInput[meshID].triangleArray.sbtIndexOffsetSizeInBytes = 0;
         triangleInput[meshID].triangleArray.sbtIndexOffsetStrideInBytes = 0;
     }
+    for (; meshID < instanceSize; meshID++) {
+        // upload the model to the device: the builder
+        SkinnedRayTracerInstance &triangleMesh = m_skinnedInstances[meshID - m_instances.size()];
+        if (uploadVertices) {
+            m_verticesBuffer[meshID].Upload(*triangleMesh.m_skinnedVertices);
+            m_boneMatricesBuffer[meshID].Upload(*triangleMesh.m_boneMatrices);
+
+            m_transformedPositionsBuffer[meshID].Resize(triangleMesh.m_skinnedVertices->size() * sizeof(glm::vec3));
+            m_transformedNormalsBuffer[meshID].Resize(triangleMesh.m_skinnedVertices->size() * sizeof(glm::vec3));
+            m_transformedTangentBuffer[meshID].Resize(triangleMesh.m_skinnedVertices->size() * sizeof(glm::vec3));
+            m_texCoordBuffer[meshID].Resize(triangleMesh.m_skinnedVertices->size() * sizeof(glm::vec3));
+        }
+
+        if (true) {
+            int blockSize = 0;      // The launch configurator returned block size
+            int minGridSize = 0;    // The minimum grid size needed to achieve the maximum occupancy for a full device launch
+            int gridSize = 0;       // The actual grid size needed, based on input size
+            int size = triangleMesh.m_skinnedVertices->size();
+            cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, ApplyTransformKernel, 0, size);
+            gridSize = (size + blockSize - 1) / blockSize;
+            ApplySkinnedTransformKernel << < gridSize, blockSize >> > (size, triangleMesh.m_globalTransform,
+                    static_cast<SkinnedVertex *>(m_verticesBuffer[meshID].m_dPtr),
+                    static_cast<glm::mat4 *>(m_boneMatricesBuffer[meshID].m_dPtr),
+                    static_cast<glm::vec3 *>(m_transformedPositionsBuffer[meshID].m_dPtr),
+                    static_cast<glm::vec3 *>(m_transformedNormalsBuffer[meshID].m_dPtr),
+                    static_cast<glm::vec3 *>(m_transformedTangentBuffer[meshID].m_dPtr),
+                    static_cast<glm::vec2 *>(m_texCoordBuffer[meshID].m_dPtr));
+            CUDA_SYNC_CHECK();
+        }
+
+        triangleMesh.m_verticesUpdateFlag = false;
+        triangleMesh.m_transformUpdateFlag = false;
+        m_trianglesBuffer[meshID].Upload(*triangleMesh.m_triangles);
+        triangleInput[meshID] = {};
+        triangleInput[meshID].type
+                = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
+
+        // create local variables, because we need a *pointer* to the
+        // device pointers
+        deviceVertexPositions[meshID] = m_transformedPositionsBuffer[meshID].DevicePointer();
+        deviceVertexTriangles[meshID] = m_trianglesBuffer[meshID].DevicePointer();
+
+        triangleInput[meshID].triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
+        triangleInput[meshID].triangleArray.vertexStrideInBytes = sizeof(glm::vec3);
+        triangleInput[meshID].triangleArray.numVertices = static_cast<int>(triangleMesh.m_skinnedVertices->size());
+        triangleInput[meshID].triangleArray.vertexBuffers = &deviceVertexPositions[meshID];
+
+        //triangleInput[meshID].triangleArray.transformFormat = OPTIX_TRANSFORM_FORMAT_MATRIX_FLOAT12;
+        //triangleInput[meshID].triangleArray.preTransform = deviceTransforms[meshID];
+
+        triangleInput[meshID].triangleArray.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
+        triangleInput[meshID].triangleArray.indexStrideInBytes = sizeof(glm::uvec3);
+        triangleInput[meshID].triangleArray.numIndexTriplets = static_cast<int>(triangleMesh.m_triangles->size());
+        triangleInput[meshID].triangleArray.indexBuffer = deviceVertexTriangles[meshID];
+
+        triangleInputFlags[meshID] = 0;
+
+        // in this example we have one SBT entry, and no per-primitive
+        // materials:
+        triangleInput[meshID].triangleArray.flags = &triangleInputFlags[meshID];
+        triangleInput[meshID].triangleArray.numSbtRecords = 1;
+        triangleInput[meshID].triangleArray.sbtIndexOffsetBuffer = 0;
+        triangleInput[meshID].triangleArray.sbtIndexOffsetSizeInBytes = 0;
+        triangleInput[meshID].triangleArray.sbtIndexOffsetStrideInBytes = 0;
+    }
     // ==================================================================
     // BLAS setup
     // ==================================================================
@@ -631,7 +742,7 @@ void RayTracer::BuildAccelerationStructure() {
                         (m_optixDeviceContext,
                          &accelerateOptions,
                          triangleInput.data(),
-                         static_cast<int>(m_instances.size()),  // num_build_inputs
+                         static_cast<int>(instanceSize),  // num_build_inputs
                          &blasBufferSizes
                         ));
 
@@ -660,7 +771,7 @@ void RayTracer::BuildAccelerationStructure() {
             /* stream */nullptr,
                                 &accelerateOptions,
                                 triangleInput.data(),
-                                static_cast<int>(m_instances.size()),
+                                static_cast<int>(instanceSize),
                                 tempBuffer.DevicePointer(),
                                 tempBuffer.m_sizeInBytes,
 
@@ -840,23 +951,29 @@ void RayTracer::BuildShaderBindingTable(std::vector<std::pair<unsigned, cudaText
         // (which the sanity checks in compilation would complain about)
         const int numObjects = m_verticesBuffer.size();
         std::vector<DefaultRenderingRayHitRecord> hitGroupRecords;
-        for (int i = 0; i < numObjects; i++) {
+        int i = 0;
+        for (; i < m_instances.size(); i++) {
+            auto& instance = m_instances[i];
             for (int rayID = 0; rayID < static_cast<int>(DefaultRenderingRayType::RayTypeCount); rayID++) {
                 DefaultRenderingRayHitRecord rec;
                 OPTIX_CHECK(optixSbtRecordPackHeader(m_defaultRenderingPipeline.m_hitGroupProgramGroups[rayID], &rec));
-                rec.m_data.m_mesh.m_vertices = reinterpret_cast<Vertex *>(m_verticesBuffer[i].DevicePointer());
+                rec.m_data.m_mesh.m_positions = reinterpret_cast<glm::vec3 *>(m_transformedPositionsBuffer[i].DevicePointer());
+                rec.m_data.m_mesh.m_normals = reinterpret_cast<glm::vec3 *>(m_transformedNormalsBuffer[i].DevicePointer());
+                rec.m_data.m_mesh.m_tangents = reinterpret_cast<glm::vec3 *>(m_transformedTangentBuffer[i].DevicePointer());
+                rec.m_data.m_mesh.m_texCoords = reinterpret_cast<glm::vec2 *>(m_texCoordBuffer[i].DevicePointer());
+
                 rec.m_data.m_mesh.m_triangles = reinterpret_cast<glm::uvec3 *>(m_trianglesBuffer[i].DevicePointer());
-                rec.m_data.m_mesh.m_transform = m_instances[i].m_globalTransform;
-                rec.m_data.m_material.m_surfaceColor = m_instances[i].m_surfaceColor;
-                rec.m_data.m_material.m_roughness = m_instances[i].m_roughness;
-                rec.m_data.m_material.m_metallic = m_instances[i].m_metallic;
+                rec.m_data.m_mesh.m_transform = instance.m_globalTransform;
+                rec.m_data.m_material.m_surfaceColor = instance.m_surfaceColor;
+                rec.m_data.m_material.m_roughness = instance.m_roughness;
+                rec.m_data.m_material.m_metallic = instance.m_metallic;
                 rec.m_data.m_material.m_albedoTexture = 0;
                 rec.m_data.m_material.m_normalTexture = 0;
-                rec.m_data.m_material.m_diffuseIntensity = m_instances[i].m_diffuseIntensity;
-                if (m_instances[i].m_albedoTexture != 0) {
+                rec.m_data.m_material.m_diffuseIntensity = instance.m_diffuseIntensity;
+                if (instance.m_albedoTexture != 0) {
                     bool duplicate = false;
                     for (auto &boundTexture: boundTextures) {
-                        if (boundTexture.first == m_instances[i].m_albedoTexture) {
+                        if (boundTexture.first == instance.m_albedoTexture) {
                             rec.m_data.m_material.m_albedoTexture = boundTexture.second;
                             duplicate = true;
                             break;
@@ -866,7 +983,7 @@ void RayTracer::BuildShaderBindingTable(std::vector<std::pair<unsigned, cudaText
 #pragma region Bind output texture
                         cudaArray_t textureArray;
                         cudaGraphicsResource_t graphicsResource;
-                        CUDA_CHECK(GraphicsGLRegisterImage(&graphicsResource, m_instances[i].m_albedoTexture,
+                        CUDA_CHECK(GraphicsGLRegisterImage(&graphicsResource, instance.m_albedoTexture,
                                                            GL_TEXTURE_2D, cudaGraphicsRegisterFlagsReadOnly));
                         CUDA_CHECK(GraphicsMapResources(1, &graphicsResource, nullptr));
                         CUDA_CHECK(GraphicsSubResourceGetMappedArray(&textureArray, graphicsResource, 0, 0));
@@ -885,14 +1002,14 @@ void RayTracer::BuildShaderBindingTable(std::vector<std::pair<unsigned, cudaText
                                                        &cudaTextureDesc, nullptr));
 #pragma endregion
                         boundResources.push_back(graphicsResource);
-                        boundTextures.emplace_back(m_instances[i].m_albedoTexture,
+                        boundTextures.emplace_back(instance.m_albedoTexture,
                                                    rec.m_data.m_material.m_albedoTexture);
                     }
                 }
-                if (m_instances[i].m_normalTexture != 0) {
+                if (instance.m_normalTexture != 0) {
                     bool duplicate = false;
                     for (auto &boundTexture: boundTextures) {
-                        if (boundTexture.first == m_instances[i].m_normalTexture) {
+                        if (boundTexture.first == instance.m_normalTexture) {
                             rec.m_data.m_material.m_normalTexture = boundTexture.second;
                             duplicate = true;
                             break;
@@ -902,7 +1019,7 @@ void RayTracer::BuildShaderBindingTable(std::vector<std::pair<unsigned, cudaText
 #pragma region Bind output texture
                         cudaArray_t textureArray;
                         cudaGraphicsResource_t graphicsResource;
-                        CUDA_CHECK(GraphicsGLRegisterImage(&graphicsResource, m_instances[i].m_normalTexture,
+                        CUDA_CHECK(GraphicsGLRegisterImage(&graphicsResource, instance.m_normalTexture,
                                                            GL_TEXTURE_2D, cudaGraphicsRegisterFlagsReadOnly));
                         CUDA_CHECK(GraphicsMapResources(1, &graphicsResource, nullptr));
                         CUDA_CHECK(GraphicsSubResourceGetMappedArray(&textureArray, graphicsResource, 0, 0));
@@ -921,7 +1038,101 @@ void RayTracer::BuildShaderBindingTable(std::vector<std::pair<unsigned, cudaText
                                                        &cudaTextureDesc, nullptr));
 #pragma endregion
                         boundResources.push_back(graphicsResource);
-                        boundTextures.emplace_back(m_instances[i].m_normalTexture,
+                        boundTextures.emplace_back(instance.m_normalTexture,
+                                                   rec.m_data.m_material.m_normalTexture);
+                    }
+                }
+                hitGroupRecords.push_back(rec);
+            }
+        }
+        for (; i < numObjects; i++) {
+            auto& instance = m_skinnedInstances[i - m_instances.size()];
+            for (int rayID = 0; rayID < static_cast<int>(DefaultRenderingRayType::RayTypeCount); rayID++) {
+                DefaultRenderingRayHitRecord rec;
+                OPTIX_CHECK(optixSbtRecordPackHeader(m_defaultRenderingPipeline.m_hitGroupProgramGroups[rayID], &rec));
+                rec.m_data.m_mesh.m_positions = reinterpret_cast<glm::vec3 *>(m_transformedPositionsBuffer[i].DevicePointer());
+                rec.m_data.m_mesh.m_normals = reinterpret_cast<glm::vec3 *>(m_transformedNormalsBuffer[i].DevicePointer());
+                rec.m_data.m_mesh.m_tangents = reinterpret_cast<glm::vec3 *>(m_transformedTangentBuffer[i].DevicePointer());
+                rec.m_data.m_mesh.m_texCoords = reinterpret_cast<glm::vec2 *>(m_texCoordBuffer[i].DevicePointer());
+
+                rec.m_data.m_mesh.m_triangles = reinterpret_cast<glm::uvec3 *>(m_trianglesBuffer[i].DevicePointer());
+
+                rec.m_data.m_mesh.m_transform = instance.m_globalTransform;
+                rec.m_data.m_material.m_surfaceColor = instance.m_surfaceColor;
+                rec.m_data.m_material.m_roughness = instance.m_roughness;
+                rec.m_data.m_material.m_metallic = instance.m_metallic;
+                rec.m_data.m_material.m_albedoTexture = 0;
+                rec.m_data.m_material.m_normalTexture = 0;
+                rec.m_data.m_material.m_diffuseIntensity = instance.m_diffuseIntensity;
+                if (instance.m_albedoTexture != 0) {
+                    bool duplicate = false;
+                    for (auto &boundTexture: boundTextures) {
+                        if (boundTexture.first == instance.m_albedoTexture) {
+                            rec.m_data.m_material.m_albedoTexture = boundTexture.second;
+                            duplicate = true;
+                            break;
+                        }
+                    }
+                    if (!duplicate) {
+#pragma region Bind output texture
+                        cudaArray_t textureArray;
+                        cudaGraphicsResource_t graphicsResource;
+                        CUDA_CHECK(GraphicsGLRegisterImage(&graphicsResource, instance.m_albedoTexture,
+                                                           GL_TEXTURE_2D, cudaGraphicsRegisterFlagsReadOnly));
+                        CUDA_CHECK(GraphicsMapResources(1, &graphicsResource, nullptr));
+                        CUDA_CHECK(GraphicsSubResourceGetMappedArray(&textureArray, graphicsResource, 0, 0));
+                        struct cudaResourceDesc cudaResourceDesc;
+                        memset(&cudaResourceDesc, 0, sizeof(cudaResourceDesc));
+                        cudaResourceDesc.resType = cudaResourceTypeArray;
+                        cudaResourceDesc.res.array.array = textureArray;
+                        struct cudaTextureDesc cudaTextureDesc;
+                        memset(&cudaTextureDesc, 0, sizeof(cudaTextureDesc));
+                        cudaTextureDesc.addressMode[0] = cudaAddressModeWrap;
+                        cudaTextureDesc.addressMode[1] = cudaAddressModeWrap;
+                        cudaTextureDesc.filterMode = cudaFilterModeLinear;
+                        cudaTextureDesc.readMode = cudaReadModeElementType;
+                        cudaTextureDesc.normalizedCoords = 1;
+                        CUDA_CHECK(CreateTextureObject(&rec.m_data.m_material.m_albedoTexture, &cudaResourceDesc,
+                                                       &cudaTextureDesc, nullptr));
+#pragma endregion
+                        boundResources.push_back(graphicsResource);
+                        boundTextures.emplace_back(instance.m_albedoTexture,
+                                                   rec.m_data.m_material.m_albedoTexture);
+                    }
+                }
+                if (instance.m_normalTexture != 0) {
+                    bool duplicate = false;
+                    for (auto &boundTexture: boundTextures) {
+                        if (boundTexture.first == instance.m_normalTexture) {
+                            rec.m_data.m_material.m_normalTexture = boundTexture.second;
+                            duplicate = true;
+                            break;
+                        }
+                    }
+                    if (!duplicate) {
+#pragma region Bind output texture
+                        cudaArray_t textureArray;
+                        cudaGraphicsResource_t graphicsResource;
+                        CUDA_CHECK(GraphicsGLRegisterImage(&graphicsResource, instance.m_normalTexture,
+                                                           GL_TEXTURE_2D, cudaGraphicsRegisterFlagsReadOnly));
+                        CUDA_CHECK(GraphicsMapResources(1, &graphicsResource, nullptr));
+                        CUDA_CHECK(GraphicsSubResourceGetMappedArray(&textureArray, graphicsResource, 0, 0));
+                        struct cudaResourceDesc cudaResourceDesc;
+                        memset(&cudaResourceDesc, 0, sizeof(cudaResourceDesc));
+                        cudaResourceDesc.resType = cudaResourceTypeArray;
+                        cudaResourceDesc.res.array.array = textureArray;
+                        struct cudaTextureDesc cudaTextureDesc;
+                        memset(&cudaTextureDesc, 0, sizeof(cudaTextureDesc));
+                        cudaTextureDesc.addressMode[0] = cudaAddressModeWrap;
+                        cudaTextureDesc.addressMode[1] = cudaAddressModeWrap;
+                        cudaTextureDesc.filterMode = cudaFilterModeLinear;
+                        cudaTextureDesc.readMode = cudaReadModeElementType;
+                        cudaTextureDesc.normalizedCoords = 1;
+                        CUDA_CHECK(CreateTextureObject(&rec.m_data.m_material.m_normalTexture, &cudaResourceDesc,
+                                                       &cudaTextureDesc, nullptr));
+#pragma endregion
+                        boundResources.push_back(graphicsResource);
+                        boundTextures.emplace_back(instance.m_normalTexture,
                                                    rec.m_data.m_material.m_normalTexture);
                     }
                 }
@@ -972,21 +1183,50 @@ void RayTracer::BuildShaderBindingTable(std::vector<std::pair<unsigned, cudaText
         // (which the sanity checks in compilation would complain about)
         const int numObjects = m_verticesBuffer.size();
         std::vector<DefaultIlluminationEstimationRayHitRecord> hitGroupRecords;
-        for (int i = 0; i < numObjects; i++) {
+        int i = 0;
+        for (; i < m_instances.size(); i++) {
+            auto& instance = m_instances[i];
             for (int rayID = 0; rayID < static_cast<int>(DefaultIlluminationEstimationRayType::RayTypeCount); rayID++) {
                 DefaultIlluminationEstimationRayHitRecord rec;
                 OPTIX_CHECK(
                         optixSbtRecordPackHeader(m_defaultIlluminationEstimationPipeline.m_hitGroupProgramGroups[rayID],
                                                  &rec));
-                rec.m_data.m_mesh.m_vertices = reinterpret_cast<Vertex *>(m_verticesBuffer[i].DevicePointer());
+                rec.m_data.m_mesh.m_positions = reinterpret_cast<glm::vec3 *>(m_transformedPositionsBuffer[i].DevicePointer());
+                rec.m_data.m_mesh.m_normals = reinterpret_cast<glm::vec3 *>(m_transformedNormalsBuffer[i].DevicePointer());
+                rec.m_data.m_mesh.m_tangents = reinterpret_cast<glm::vec3 *>(m_transformedTangentBuffer[i].DevicePointer());
+                rec.m_data.m_mesh.m_texCoords = reinterpret_cast<glm::vec2 *>(m_texCoordBuffer[i].DevicePointer());
+
                 rec.m_data.m_mesh.m_triangles = reinterpret_cast<glm::uvec3 *>(m_trianglesBuffer[i].DevicePointer());
-                rec.m_data.m_mesh.m_transform = m_instances[i].m_globalTransform;
-                rec.m_data.m_material.m_surfaceColor = m_instances[i].m_surfaceColor;
-                rec.m_data.m_material.m_roughness = m_instances[i].m_roughness;
-                rec.m_data.m_material.m_metallic = m_instances[i].m_metallic;
+                rec.m_data.m_mesh.m_transform = instance.m_globalTransform;
+                rec.m_data.m_material.m_surfaceColor = instance.m_surfaceColor;
+                rec.m_data.m_material.m_roughness = instance.m_roughness;
+                rec.m_data.m_material.m_metallic = instance.m_metallic;
                 rec.m_data.m_material.m_albedoTexture = 0;
                 rec.m_data.m_material.m_normalTexture = 0;
-                rec.m_data.m_material.m_diffuseIntensity = m_instances[i].m_diffuseIntensity;
+                rec.m_data.m_material.m_diffuseIntensity = instance.m_diffuseIntensity;
+                hitGroupRecords.push_back(rec);
+            }
+        }
+        for (; i < numObjects; i++) {
+            auto& instance = m_skinnedInstances[i - m_instances.size()];
+            for (int rayID = 0; rayID < static_cast<int>(DefaultIlluminationEstimationRayType::RayTypeCount); rayID++) {
+                DefaultIlluminationEstimationRayHitRecord rec;
+                OPTIX_CHECK(
+                        optixSbtRecordPackHeader(m_defaultIlluminationEstimationPipeline.m_hitGroupProgramGroups[rayID],
+                                                 &rec));
+                rec.m_data.m_mesh.m_positions = reinterpret_cast<glm::vec3 *>(m_transformedPositionsBuffer[i].DevicePointer());
+                rec.m_data.m_mesh.m_normals = reinterpret_cast<glm::vec3 *>(m_transformedNormalsBuffer[i].DevicePointer());
+                rec.m_data.m_mesh.m_tangents = reinterpret_cast<glm::vec3 *>(m_transformedTangentBuffer[i].DevicePointer());
+                rec.m_data.m_mesh.m_texCoords = reinterpret_cast<glm::vec2 *>(m_texCoordBuffer[i].DevicePointer());
+
+                rec.m_data.m_mesh.m_triangles = reinterpret_cast<glm::uvec3 *>(m_trianglesBuffer[i].DevicePointer());
+                rec.m_data.m_mesh.m_transform = instance.m_globalTransform;
+                rec.m_data.m_material.m_surfaceColor = instance.m_surfaceColor;
+                rec.m_data.m_material.m_roughness = instance.m_roughness;
+                rec.m_data.m_material.m_metallic = instance.m_metallic;
+                rec.m_data.m_material.m_albedoTexture = 0;
+                rec.m_data.m_material.m_normalTexture = 0;
+                rec.m_data.m_material.m_diffuseIntensity = instance.m_diffuseIntensity;
                 hitGroupRecords.push_back(rec);
             }
         }

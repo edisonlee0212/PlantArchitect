@@ -306,6 +306,8 @@ namespace RayTracerFacility {
         std::vector<CudaBuffer> m_transformedTangentBuffer;
         std::vector<CudaBuffer> m_texCoordBuffer;
 
+        std::vector<CudaBuffer> m_boneMatricesBuffer;
+
         /*! one buffer per input mesh */
         std::vector<CudaBuffer> m_trianglesBuffer;
         //! buffer that keeps the (final, compacted) acceleration structure
