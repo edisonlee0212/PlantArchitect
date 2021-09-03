@@ -246,7 +246,7 @@ void RadialBoundingVolume::FormEntity() {
                 slice.GetOrSetPrivateComponent<RayTracerFacility::RayTracedRenderer>()
                         .lock();
         slice.SetParent(GetOwner(), false);
-        rayTracedRenderer->SyncWithMeshRenderer();
+        rayTracedRenderer->Sync();
     }
 }
 

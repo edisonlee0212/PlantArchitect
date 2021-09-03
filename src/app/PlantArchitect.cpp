@@ -20,6 +20,7 @@
 #include <SpaceColonizationBehaviour.hpp>
 #include "EmptyInternodeResource.hpp"
 #include "LSystemBehaviour.hpp"
+#include "SkinnedRayTracedRenderer.hpp"
 #include "SpaceColonizationTreeToLString.hpp"
 #include "AutoTreeGenerationPipeline.hpp"
 using namespace PlantArchitect;
@@ -39,6 +40,7 @@ int main() {
     ClassRegistry::RegisterPrivateComponent<IVolume>("IVolume");
     ClassRegistry::RegisterPrivateComponent<CubeVolume>("CubeVolume");
     ClassRegistry::RegisterPrivateComponent<RayTracedRenderer>("RayTracedRenderer");
+    ClassRegistry::RegisterPrivateComponent<SkinnedRayTracedRenderer>("SkinnedRayTracedRenderer");
 
     ClassRegistry::RegisterDataComponent<DefaultInternodeTag>("DefaultInternodeTag");
     ClassRegistry::RegisterAsset<DefaultInternodeBehaviour>("DefaultInternodeBehaviour", ".defaultbehaviour");

@@ -143,6 +143,27 @@ namespace RayTracerFacility {
     struct RAY_TRACER_FACILITY_API RayTracerInstance {
         std::vector<Vertex> *m_vertices;
         std::vector<glm::uvec3> *m_triangles;
+        size_t m_version;
+        size_t m_entityId = 0;
+        size_t m_entityVersion = 0;
+        glm::vec3 m_surfaceColor;
+        float m_roughness;
+        float m_metallic;
+        bool m_removeTag = false;
+        glm::mat4 m_globalTransform;
+
+        unsigned m_albedoTexture = 0;
+        unsigned m_normalTexture = 0;
+        float m_diffuseIntensity = 0;
+
+        bool m_verticesUpdateFlag = true;
+        bool m_transformUpdateFlag = true;
+    };
+
+    struct RAY_TRACER_FACILITY_API SkinnedRayTracerInstance {
+        std::vector<SkinnedVertex> *m_skinnedVertices;
+        std::vector<glm::uvec3> *m_triangles;
+        std::vector<glm::mat4> *m_boneMatrices;
 
         size_t m_version;
         size_t m_entityId = 0;
@@ -192,6 +213,7 @@ namespace RayTracerFacility {
     class RayTracer {
     public:
         std::vector<RayTracerInstance> m_instances;
+        std::vector<SkinnedRayTracerInstance> m_skinnedInstances;
 
         // ------------------------------------------------------------------
         // internal helper functions
@@ -280,6 +302,9 @@ namespace RayTracerFacility {
         /*! one buffer per input mesh */
         std::vector<CudaBuffer> m_verticesBuffer;
         std::vector<CudaBuffer> m_transformedPositionsBuffer;
+        std::vector<CudaBuffer> m_transformedNormalsBuffer;
+        std::vector<CudaBuffer> m_transformedTangentBuffer;
+        std::vector<CudaBuffer> m_texCoordBuffer;
 
         /*! one buffer per input mesh */
         std::vector<CudaBuffer> m_trianglesBuffer;

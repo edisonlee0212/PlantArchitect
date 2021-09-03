@@ -489,6 +489,42 @@ __global__ void ApplyTransformKernel(
     }
 }
 
+__global__ void ApplySkinnedTransformKernel(
+        int size, glm::mat4 globalTransform,
+        SkinnedVertex *vertices,
+        glm::mat4* boneMatrices,
+        glm::vec3 *targetPositions) {
+    const int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    if (idx < size) {
+        glm::mat4 boneTransform = boneMatrices[vertices[idx].m_bondId[0]] * vertices[idx].m_weight[0];
+        if(vertices[idx].m_bondId[1] != -1){
+            boneTransform += boneMatrices[vertices[idx].m_bondId[1]] * vertices[idx].m_weight[1];
+        }
+        if(vertices[idx].m_bondId[2] != -1){
+            boneTransform += boneMatrices[vertices[idx].m_bondId[2]] * vertices[idx].m_weight[2];
+        }
+        if(vertices[idx].m_bondId[3] != -1){
+            boneTransform += boneMatrices[vertices[idx].m_bondId[3]] * vertices[idx].m_weight[3];
+        }
+        if(vertices[idx].m_bondId2[0] != -1){
+            boneTransform += boneMatrices[vertices[idx].m_bondId2[0]] * vertices[idx].m_weight2[0];
+        }
+        if(vertices[idx].m_bondId2[1] != -1){
+            boneTransform += boneMatrices[vertices[idx].m_bondId2[1]] * vertices[idx].m_weight2[1];
+        }
+        if(vertices[idx].m_bondId2[2] != -1){
+            boneTransform += boneMatrices[vertices[idx].m_bondId2[2]] * vertices[idx].m_weight2[2];
+        }
+        if(vertices[idx].m_bondId2[3] != -1){
+            boneTransform += boneMatrices[vertices[idx].m_bondId2[3]] * vertices[idx].m_weight2[3];
+        }
+
+        targetPositions[idx] = boneTransform * glm::vec4(vertices[idx].m_position, 1.0f);
+        //targetNormals[idx] = glm::normalize(globalTransform * glm::vec4(vertices[idx].m_normal, 0.0f));
+        //targetTangents[idx] = glm::normalize(globalTransform * glm::vec4(vertices[idx].m_tangent, 0.0f));
+    }
+}
+
 void RayTracer::BuildAccelerationStructure() {
     bool uploadVertices = false;
     if (m_verticesBuffer.size() != m_instances.size()) uploadVertices = true;

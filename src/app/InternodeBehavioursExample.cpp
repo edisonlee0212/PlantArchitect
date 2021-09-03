@@ -22,6 +22,8 @@
 #include "LSystemBehaviour.hpp"
 #include "SpaceColonizationTreeToLString.hpp"
 #include "AutoTreeGenerationPipeline.hpp"
+#include "SkinnedRayTracedRenderer.hpp"
+
 using namespace PlantArchitect;
 using namespace RayTracerFacility;
 using namespace Scripts;
@@ -30,7 +32,6 @@ void EngineSetup(bool enableRayTracing);
 void RegisterDataComponentMenus();
 
 int main() {
-
 
     ClassRegistry::RegisterDataComponent<BranchCylinder>("BranchCylinder");
     ClassRegistry::RegisterDataComponent<BranchCylinderWidth>("BranchCylinderWidth");
@@ -41,6 +42,7 @@ int main() {
     ClassRegistry::RegisterPrivateComponent<IVolume>("IVolume");
     ClassRegistry::RegisterPrivateComponent<CubeVolume>("CubeVolume");
     ClassRegistry::RegisterPrivateComponent<RayTracedRenderer>("RayTracedRenderer");
+    ClassRegistry::RegisterPrivateComponent<SkinnedRayTracedRenderer>("SkinnedRayTracedRenderer");
 
     ClassRegistry::RegisterDataComponent<DefaultInternodeTag>("DefaultInternodeTag");
     ClassRegistry::RegisterAsset<DefaultInternodeBehaviour>("DefaultInternodeBehaviour", ".defaultbehaviour");

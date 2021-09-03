@@ -1,15 +1,14 @@
 #include <RayTracedRenderer.hpp>
+#include <SkinnedRayTracedRenderer.hpp>
 
 #include <RayTracerManager.hpp>
+
 using namespace RayTracerFacility;
+
 #include <ProjectManager.hpp>
 
-
-
-void RayTracerManager::UpdateScene() const {
-    bool rebuildAccelerationStructure = false;
-    bool updateShaderBindingTable = false;
-    auto &meshesStorage = CudaModule::GetRayTracer()->m_instances;
+void RayTracerManager::UpdateMeshesStorage(std::vector<RayTracerInstance> meshesStorage, bool &rebuildAccelerationStructure,
+                         bool &updateShaderBindingTable) const{
     for (auto &i: meshesStorage) {
         i.m_removeTag = true;
     }
@@ -24,7 +23,7 @@ void RayTracerManager::UpdateScene() const {
                     entity.GetOrSetPrivateComponent<RayTracedRenderer>().lock();
             if (!rayTracedRenderer->IsEnabled())
                 continue;
-            auto mesh = rayTracedRenderer->m_mesh.Get<Mesh>();
+            auto mesh = rayTracedRenderer->m_meshRenderer.Get<MeshRenderer>()->m_mesh.Get<Mesh>();
             if (!mesh || mesh->UnsafeGetVertices().empty())
                 continue;
             auto globalTransform = entity.GetDataComponent<GlobalTransform>().m_value;
@@ -156,6 +155,171 @@ void RayTracerManager::UpdateScene() const {
             rebuildAccelerationStructure = true;
         }
     }
+}
+
+void
+RayTracerManager::UpdateSkinnedMeshesStorage(std::vector<SkinnedRayTracerInstance> meshesStorage, bool &rebuildAccelerationStructure,
+                           bool &updateShaderBindingTable) const{
+    for (auto &i: meshesStorage) {
+        i.m_removeTag = true;
+    }
+    if (const auto *rayTracedEntities =
+                EntityManager::UnsafeGetPrivateComponentOwnersList<
+                        SkinnedRayTracedRenderer>();
+            rayTracedEntities) {
+        for (auto entity: *rayTracedEntities) {
+            if (!entity.IsEnabled())
+                continue;
+            auto rayTracedRenderer =
+                    entity.GetOrSetPrivateComponent<SkinnedRayTracedRenderer>().lock();
+            if (!rayTracedRenderer->IsEnabled())
+                continue;
+            auto skinnedMeshRenderer = rayTracedRenderer->m_skinnedMeshRenderer.Get<SkinnedMeshRenderer>();
+            auto mesh = skinnedMeshRenderer->m_skinnedMesh.Get<SkinnedMesh>();
+            if (!mesh || mesh->UnsafeGetSkinnedVertices().empty())
+                continue;
+            auto globalTransform = entity.GetDataComponent<GlobalTransform>().m_value;
+            SkinnedRayTracerInstance newRayTracerInstance;
+            SkinnedRayTracerInstance *rayTracerInstance = &newRayTracerInstance;
+            bool needVerticesUpdate = false;
+            bool needTransformUpdate = false;
+            bool fromNew = true;
+            bool needMaterialUpdate = false;
+            for (auto &currentRayTracerInstance: meshesStorage) {
+                if (currentRayTracerInstance.m_entityId == entity.GetIndex() &&
+                    currentRayTracerInstance.m_entityVersion == entity.GetVersion()) {
+                    fromNew = false;
+                    rayTracerInstance = &currentRayTracerInstance;
+                    currentRayTracerInstance.m_removeTag = false;
+                    if (globalTransform != currentRayTracerInstance.m_globalTransform) {
+                        needTransformUpdate = true;
+                    }
+                    //if (rayTracerInstance->m_version != mesh->GetVersion())
+                        needVerticesUpdate = true;
+                    if (rayTracerInstance->m_surfaceColor !=
+                        rayTracedRenderer->m_surfaceColor ||
+                        rayTracerInstance->m_metallic !=
+                        (rayTracedRenderer->m_metallic == 1.0f
+                         ? -1.0f
+                         : 1.0f / glm::pow(1.0f - rayTracedRenderer->m_metallic,
+                                           3.0f)) ||
+                        rayTracerInstance->m_roughness !=
+                        rayTracedRenderer->m_roughness
+                            ) {
+                        needMaterialUpdate = true;
+                    }
+                }
+            }
+            rayTracerInstance->m_version = mesh->GetVersion();
+            if (fromNew || needVerticesUpdate || needTransformUpdate ||
+                needMaterialUpdate) {
+                updateShaderBindingTable = true;
+                rayTracerInstance->m_surfaceColor = rayTracedRenderer->m_surfaceColor;
+                rayTracerInstance->m_metallic =
+                        rayTracedRenderer->m_metallic == 1.0f
+                        ? -1.0f
+                        : 1.0f / glm::pow(1.0f - rayTracedRenderer->m_metallic, 3.0f);
+                rayTracerInstance->m_roughness = rayTracedRenderer->m_roughness;
+                rayTracerInstance->m_normalTexture = 0;
+                rayTracerInstance->m_albedoTexture = 0;
+                rayTracerInstance->m_entityId = entity.GetIndex();
+                rayTracerInstance->m_entityVersion = entity.GetVersion();
+            }
+            if (rayTracedRenderer->m_albedoTexture.Get<Texture2D>() &&
+                rayTracedRenderer->m_albedoTexture.Get<Texture2D>()
+                        ->Texture()
+                        ->Id() != rayTracerInstance->m_albedoTexture) {
+                updateShaderBindingTable = true;
+                if (rayTracedRenderer->m_albedoTexture.Get<Texture2D>() &&
+                    rayTracedRenderer->m_albedoTexture.Get<Texture2D>()
+                            ->Texture()
+                            ->IsResident()) {
+                    UNIENGINE_ERROR("Texture is resident, can't be used!");
+                    rayTracedRenderer->m_albedoTexture.Clear();
+                    rayTracerInstance->m_albedoTexture = 0;
+                } else {
+                    rayTracerInstance->m_albedoTexture =
+                            rayTracedRenderer->m_albedoTexture.Get<Texture2D>()
+                                    ->Texture()
+                                    ->Id();
+                }
+            } else if (!rayTracedRenderer->m_albedoTexture.Get<Texture2D>() &&
+                       rayTracerInstance->m_albedoTexture != 0) {
+                updateShaderBindingTable = true;
+                rayTracerInstance->m_albedoTexture = 0;
+            }
+            if (rayTracedRenderer->m_normalTexture.Get<Texture2D>() &&
+                rayTracedRenderer->m_normalTexture.Get<Texture2D>()
+                        ->Texture()
+                        ->Id() != rayTracerInstance->m_normalTexture) {
+                updateShaderBindingTable = true;
+                if (rayTracedRenderer->m_normalTexture.Get<Texture2D>() &&
+                    rayTracedRenderer->m_normalTexture.Get<Texture2D>()
+                            ->Texture()
+                            ->IsResident()) {
+                    UNIENGINE_ERROR("Texture is resident, can't be used!");
+                    rayTracedRenderer->m_normalTexture.Clear();
+                    rayTracerInstance->m_normalTexture = 0;
+                } else {
+                    rayTracerInstance->m_normalTexture =
+                            rayTracedRenderer->m_normalTexture.Get<Texture2D>()
+                                    ->Texture()
+                                    ->Id();
+                }
+            } else if (!rayTracedRenderer->m_normalTexture.Get<Texture2D>() &&
+                       rayTracerInstance->m_normalTexture != 0) {
+                updateShaderBindingTable = true;
+                rayTracerInstance->m_normalTexture = 0;
+            }
+            if (rayTracerInstance->m_diffuseIntensity !=
+                rayTracedRenderer->m_diffuseIntensity) {
+                updateShaderBindingTable = true;
+                rayTracerInstance->m_diffuseIntensity =
+                        rayTracedRenderer->m_diffuseIntensity;
+            }
+            if (fromNew || needVerticesUpdate) {
+                rebuildAccelerationStructure = true;
+                rayTracerInstance->m_verticesUpdateFlag = true;
+                if (fromNew) {
+                    rayTracerInstance->m_transformUpdateFlag = true;
+                    rayTracerInstance->m_globalTransform = globalTransform;
+                }
+                rayTracerInstance->m_skinnedVertices =
+                        reinterpret_cast<std::vector<SkinnedVertex> *>(&mesh->UnsafeGetSkinnedVertices());
+                rayTracerInstance->m_boneMatrices =
+                        reinterpret_cast<std::vector<glm::mat4> *>(skinnedMeshRenderer->m_finalResults.get()->m_value.data());
+                rayTracerInstance->m_triangles = &mesh->UnsafeGetTriangles();
+            } else if (needTransformUpdate) {
+                rebuildAccelerationStructure = true;
+                rayTracerInstance->m_globalTransform = globalTransform;
+                rayTracerInstance->m_transformUpdateFlag = true;
+            }
+            if (fromNew)
+                meshesStorage.push_back(newRayTracerInstance);
+        }
+    } else {
+        for (auto &i: meshesStorage) {
+            i.m_removeTag = true;
+        }
+    }
+    for (int i = 0; i < meshesStorage.size(); i++) {
+        if (meshesStorage[i].m_removeTag) {
+            meshesStorage.erase(meshesStorage.begin() + i);
+            i--;
+            rebuildAccelerationStructure = true;
+        }
+    }
+}
+
+
+void RayTracerManager::UpdateScene() const {
+    bool rebuildAccelerationStructure = false;
+    bool updateShaderBindingTable = false;
+    auto &meshesStorage = CudaModule::GetRayTracer()->m_instances;
+    auto &skinnedMeshesStorage = CudaModule::GetRayTracer()->m_skinnedInstances;
+    UpdateMeshesStorage(meshesStorage, rebuildAccelerationStructure, updateShaderBindingTable);
+    UpdateSkinnedMeshesStorage(skinnedMeshesStorage, rebuildAccelerationStructure, updateShaderBindingTable);
+
     if (rebuildAccelerationStructure && !meshesStorage.empty()) {
         CudaModule::GetRayTracer()->BuildAccelerationStructure();
         CudaModule::GetRayTracer()->ClearAccumulate();
