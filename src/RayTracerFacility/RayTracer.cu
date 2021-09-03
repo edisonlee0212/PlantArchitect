@@ -39,49 +39,35 @@ void Camera::Set(const glm::quat &rotation, const glm::vec3 &position, const flo
 const char *EnvironmentalLightingTypes[]{"White", "EnvironmentalMap", "CIE"};
 
 void DefaultRenderingProperties::OnGui() {
-    ImGui::Begin("Ray:Default");
-    {
-        if (ImGui::BeginChild("CameraRenderer", ImVec2(0, 0), false,
-                              ImGuiWindowFlags_None | ImGuiWindowFlags_MenuBar)) {
-            if (ImGui::BeginMenuBar()) {
-                if (ImGui::BeginMenu("Settings")) {
-                    ImGui::Checkbox("Accumulate", &m_accumulate);
-                    ImGui::DragInt("bounce limit", &m_bounceLimit, 1, 1, 8);
-                    if (ImGui::DragInt("pixel samples", &m_samplesPerPixel, 1, 1, 64)) {
-                        m_samplesPerPixel = glm::clamp(m_samplesPerPixel, 1, 128);
-                    }
-                    static int type = 0;
-                    if (ImGui::Combo("Environment Lighting", &type,
-                                     EnvironmentalLightingTypes,
-                                     IM_ARRAYSIZE(EnvironmentalLightingTypes))) {
-                        m_environmentalLightingType =
-                                static_cast<EnvironmentalLightingType>(type);
-                    }
-
-                    ImGui::DragFloat(
-                            (m_environmentalLightingType == EnvironmentalLightingType::CIE
-                             ? "Env Lighting intensity"
-                             : "Zenith radiance"),
-                            &m_skylightIntensity, 0.01f, 0.0f, 5.0f);
-
-                    static glm::vec2 angles = glm::vec2(90, 0);
-                    if (ImGui::DragFloat2("Skylight Direction (X/Y axis)", &angles.x, 1.0f, 0.0f,
-                                          180.0f)) {
-                        m_sunDirection =
-                                glm::quat(glm::radians(glm::vec3(angles.x, angles.y, 0.0f))) * glm::vec3(0, 0, -1);
-                    }
-                    if (m_environmentalLightingType !=
-                        EnvironmentalLightingType::EnvironmentalMap) {
-                        ImGui::ColorEdit3("Sky light color", &m_sunColor.x);
-                    }
-                    ImGui::EndMenu();
-                }
-                ImGui::EndMenuBar();
-            }
-        }
-        ImGui::EndChild();
+    ImGui::Checkbox("Accumulate", &m_accumulate);
+    ImGui::DragInt("bounce limit", &m_bounceLimit, 1, 1, 8);
+    if (ImGui::DragInt("pixel samples", &m_samplesPerPixel, 1, 1, 64)) {
+        m_samplesPerPixel = glm::clamp(m_samplesPerPixel, 1, 128);
     }
-    ImGui::End();
+    static int type = 0;
+    if (ImGui::Combo("Environment Lighting", &type,
+                     EnvironmentalLightingTypes,
+                     IM_ARRAYSIZE(EnvironmentalLightingTypes))) {
+        m_environmentalLightingType =
+                static_cast<EnvironmentalLightingType>(type);
+    }
+
+    ImGui::DragFloat(
+            (m_environmentalLightingType == EnvironmentalLightingType::CIE
+             ? "Env Lighting intensity"
+             : "Zenith radiance"),
+            &m_skylightIntensity, 0.01f, 0.0f, 5.0f);
+
+    static glm::vec2 angles = glm::vec2(90, 0);
+    if (ImGui::DragFloat2("Skylight Direction (X/Y axis)", &angles.x, 1.0f, 0.0f,
+                          180.0f)) {
+        m_sunDirection =
+                glm::quat(glm::radians(glm::vec3(angles.x, angles.y, 0.0f))) * glm::vec3(0, 0, -1);
+    }
+    if (m_environmentalLightingType !=
+        EnvironmentalLightingType::EnvironmentalMap) {
+        ImGui::ColorEdit3("Sky light color", &m_sunColor.x);
+    }
 }
 
 bool RayTracer::RenderDefault(const DefaultRenderingProperties &properties) {
@@ -953,7 +939,7 @@ void RayTracer::BuildShaderBindingTable(std::vector<std::pair<unsigned, cudaText
         std::vector<DefaultRenderingRayHitRecord> hitGroupRecords;
         int i = 0;
         for (; i < m_instances.size(); i++) {
-            auto& instance = m_instances[i];
+            auto &instance = m_instances[i];
             for (int rayID = 0; rayID < static_cast<int>(DefaultRenderingRayType::RayTypeCount); rayID++) {
                 DefaultRenderingRayHitRecord rec;
                 OPTIX_CHECK(optixSbtRecordPackHeader(m_defaultRenderingPipeline.m_hitGroupProgramGroups[rayID], &rec));
@@ -1046,7 +1032,7 @@ void RayTracer::BuildShaderBindingTable(std::vector<std::pair<unsigned, cudaText
             }
         }
         for (; i < numObjects; i++) {
-            auto& instance = m_skinnedInstances[i - m_instances.size()];
+            auto &instance = m_skinnedInstances[i - m_instances.size()];
             for (int rayID = 0; rayID < static_cast<int>(DefaultRenderingRayType::RayTypeCount); rayID++) {
                 DefaultRenderingRayHitRecord rec;
                 OPTIX_CHECK(optixSbtRecordPackHeader(m_defaultRenderingPipeline.m_hitGroupProgramGroups[rayID], &rec));
@@ -1185,7 +1171,7 @@ void RayTracer::BuildShaderBindingTable(std::vector<std::pair<unsigned, cudaText
         std::vector<DefaultIlluminationEstimationRayHitRecord> hitGroupRecords;
         int i = 0;
         for (; i < m_instances.size(); i++) {
-            auto& instance = m_instances[i];
+            auto &instance = m_instances[i];
             for (int rayID = 0; rayID < static_cast<int>(DefaultIlluminationEstimationRayType::RayTypeCount); rayID++) {
                 DefaultIlluminationEstimationRayHitRecord rec;
                 OPTIX_CHECK(
@@ -1208,7 +1194,7 @@ void RayTracer::BuildShaderBindingTable(std::vector<std::pair<unsigned, cudaText
             }
         }
         for (; i < numObjects; i++) {
-            auto& instance = m_skinnedInstances[i - m_instances.size()];
+            auto &instance = m_skinnedInstances[i - m_instances.size()];
             for (int rayID = 0; rayID < static_cast<int>(DefaultIlluminationEstimationRayType::RayTypeCount); rayID++) {
                 DefaultIlluminationEstimationRayHitRecord rec;
                 OPTIX_CHECK(

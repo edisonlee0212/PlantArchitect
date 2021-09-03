@@ -62,8 +62,8 @@ namespace RayTracerFacility {
                                    bool &updateShaderBindingTable) const;
 
     public:
-        std::shared_ptr<Cubemap> m_environmentalMap;
-
+        AssetRef m_environmentalMap;
+        bool m_enableMenus = true;
         DefaultRenderingProperties m_defaultRenderingProperties;
         RayTracerRenderWindow m_defaultWindow;
 

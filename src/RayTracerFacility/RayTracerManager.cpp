@@ -339,13 +339,9 @@ RayTracerManager &RayTracerManager::GetInstance() {
 }
 
 void RayTracerManager::Init() {
-
-
     auto &manager = GetInstance();
-
     CudaModule::Init();
-
-    manager.m_defaultWindow.Init("Ray:Default");
+    manager.m_defaultWindow.Init("Ray Tracer");
     Application::RegisterUpdateFunction([]() {
         Update();
         OnGui();
@@ -373,9 +369,10 @@ void RayTracerManager::Update() {
                 EditorManager::GetInstance().m_sceneCameraRotation,
                 EditorManager::GetInstance().m_sceneCameraPosition,
                 EditorManager::GetInstance().m_sceneCamera->m_fov, size);
-        if (manager.m_environmentalMap) {
+        auto environmentalMap = manager.m_environmentalMap.Get<Cubemap>();
+        if (environmentalMap) {
             manager.m_defaultRenderingProperties.m_environmentalMapId =
-                    manager.m_environmentalMap->Texture()->Id();
+                    environmentalMap->Texture()->Id();
         }
         manager.m_defaultRenderingProperties.m_frameSize = size;
         manager.m_defaultRenderingProperties.m_outputTextureId =
@@ -390,8 +387,24 @@ void RayTracerManager::Update() {
 
 void RayTracerManager::OnGui() {
     auto &manager = GetInstance();
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("View"))
+        {
+            ImGui::Checkbox("Ray Tracer Manager", &manager.m_enableMenus);
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
+    ImGui::Begin("Ray Tracer Manager");
+    {
+        manager.m_defaultRenderingProperties.OnGui();
+        EditorManager::DragAndDropButton<Cubemap>(RayTracerManager::GetInstance().m_environmentalMap, "Environmental Map");
+    }
+    ImGui::End();
+
     manager.m_defaultWindow.OnGui();
-    manager.m_defaultRenderingProperties.OnGui();
+
 }
 
 void RayTracerManager::End() { CudaModule::Terminate(); }
@@ -418,6 +431,13 @@ void RayTracerRenderWindow::OnGui() {
     {
         if (ImGui::BeginChild("CameraRenderer", ImVec2(0, 0), false,
                               ImGuiWindowFlags_None | ImGuiWindowFlags_MenuBar)) {
+            if (ImGui::BeginMenuBar()) {
+                if (ImGui::BeginMenu("Settings")) {
+
+                    ImGui::EndMenu();
+                }
+                ImGui::EndMenuBar();
+            }
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{5, 5});
             if (ImGui::BeginMenuBar()) {
                 if (ImGui::BeginMenu("Settings")) {
