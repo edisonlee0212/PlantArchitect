@@ -36,7 +36,8 @@ void Camera::Set(const glm::quat &rotation, const glm::vec3 &position, const flo
             = cosFovY * glm::normalize(glm::cross(m_horizontal, m_direction));
 }
 
-const char *EnvironmentalLightingTypes[]{"White", "EnvironmentalMap", "CIE"};
+const char *EnvironmentalLightingTypes[]{"Color", "EnvironmentalMap", "CIE"};
+const char *OutputTypes[]{"Color", "Normal", "Albedo", "DenoisedColor"};
 
 void DefaultRenderingProperties::OnGui() {
     ImGui::Checkbox("Accumulate", &m_accumulate);
@@ -68,6 +69,13 @@ void DefaultRenderingProperties::OnGui() {
         EnvironmentalLightingType::EnvironmentalMap) {
         ImGui::ColorEdit3("Sky light color", &m_sunColor.x);
     }
+    static int outputType = 0;
+    if (ImGui::Combo("Output Type", &outputType,
+                     OutputTypes,
+                     IM_ARRAYSIZE(OutputTypes))) {
+        m_outputType =
+                static_cast<OutputType>(outputType);
+    }
 }
 
 bool RayTracer::RenderDefault(const DefaultRenderingProperties &properties) {
@@ -76,17 +84,21 @@ bool RayTracer::RenderDefault(const DefaultRenderingProperties &properties) {
     std::vector<std::pair<unsigned, cudaTextureObject_t>> boundTextures;
     std::vector<cudaGraphicsResource_t> boundResources;
     BuildShaderBindingTable(boundTextures, boundResources);
+    if (properties.m_frameSize != m_defaultRenderingLaunchParams.m_defaultRenderingProperties.m_frameSize) {
+        Resize(properties.m_frameSize);
+        m_defaultRenderingPipeline.m_statusChanged = true;
+    }
+
     if (m_defaultRenderingLaunchParams.m_defaultRenderingProperties.Changed(properties)) {
         m_defaultRenderingLaunchParams.m_defaultRenderingProperties = properties;
         m_defaultRenderingPipeline.m_statusChanged = true;
     }
-    if (!m_defaultRenderingPipeline.m_accumulate || m_defaultRenderingPipeline.m_statusChanged) {
+    if (!m_defaultRenderingLaunchParams.m_defaultRenderingProperties.m_accumulate || m_defaultRenderingPipeline.m_statusChanged) {
         m_defaultRenderingLaunchParams.m_frame.m_frameId = 0;
         m_defaultRenderingPipeline.m_statusChanged = false;
     }
-#pragma region Bind texture
-    cudaArray_t outputArray;
-    cudaGraphicsResource_t outputTexture;
+#pragma region Bind environmental map as cudaTexture
+    struct cudaResourceDesc cudaResourceDesc;
     cudaArray_t environmentalMapPosXArray;
     cudaArray_t environmentalMapNegXArray;
     cudaArray_t environmentalMapPosYArray;
@@ -94,22 +106,6 @@ bool RayTracer::RenderDefault(const DefaultRenderingProperties &properties) {
     cudaArray_t environmentalMapPosZArray;
     cudaArray_t environmentalMapNegZArray;
     cudaGraphicsResource_t environmentalMapTexture;
-#pragma region Bind output texture as cudaSurface
-    CUDA_CHECK(GraphicsGLRegisterImage(&outputTexture,
-                                       m_defaultRenderingLaunchParams.m_defaultRenderingProperties.m_outputTextureId,
-                                       GL_TEXTURE_2D, cudaGraphicsRegisterFlagsNone));
-    CUDA_CHECK(GraphicsMapResources(1, &outputTexture, nullptr));
-    CUDA_CHECK(GraphicsSubResourceGetMappedArray(&outputArray, outputTexture, 0, 0));
-    // Specify surface
-    struct cudaResourceDesc cudaResourceDesc;
-    memset(&cudaResourceDesc, 0, sizeof(cudaResourceDesc));
-    cudaResourceDesc.resType = cudaResourceTypeArray;
-    // Create the surface objects
-    cudaResourceDesc.res.array.array = outputArray;
-    // Create surface object
-    CUDA_CHECK(CreateSurfaceObject(&m_defaultRenderingLaunchParams.m_frame.m_outputTexture, &cudaResourceDesc));
-#pragma endregion
-#pragma region Bind environmental map as cudaTexture
     if (m_defaultRenderingLaunchParams.m_defaultRenderingProperties.m_environmentalMapId != 0) {
         CUDA_CHECK(GraphicsGLRegisterImage(&environmentalMapTexture,
                                            m_defaultRenderingLaunchParams.m_defaultRenderingProperties.m_environmentalMapId,
@@ -170,13 +166,11 @@ bool RayTracer::RenderDefault(const DefaultRenderingProperties &properties) {
         m_defaultRenderingLaunchParams.m_skylight.m_environmentalMaps[5] = 0;
     }
 #pragma endregion
-#pragma endregion
 #pragma region Upload parameters
     m_defaultRenderingPipeline.m_launchParamsBuffer.
             Upload(&m_defaultRenderingLaunchParams,
                    1);
     m_defaultRenderingLaunchParams.m_frame.m_frameId++;
-#pragma endregion
 #pragma endregion
 #pragma region Launch rays from camera
     OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
@@ -192,12 +186,7 @@ bool RayTracer::RenderDefault(const DefaultRenderingProperties &properties) {
     ));
 #pragma endregion
     CUDA_SYNC_CHECK();
-#pragma region Remove texture binding.
-    CUDA_CHECK(DestroySurfaceObject(m_defaultRenderingLaunchParams.m_frame.m_outputTexture));
-    m_defaultRenderingLaunchParams.m_frame.
-            m_outputTexture = 0;
-    CUDA_CHECK(GraphicsUnmapResources(1, &outputTexture, 0));
-    CUDA_CHECK(GraphicsUnregisterResource(outputTexture));
+#pragma region Remove textures binding.
     if (m_defaultRenderingLaunchParams.m_defaultRenderingProperties.m_environmentalMapId != 0) {
         CUDA_CHECK(DestroyTextureObject(m_defaultRenderingLaunchParams.m_skylight.m_environmentalMaps[0]));
         m_defaultRenderingLaunchParams.m_skylight.m_environmentalMaps[0] = 0;
@@ -215,13 +204,163 @@ bool RayTracer::RenderDefault(const DefaultRenderingProperties &properties) {
         CUDA_CHECK(GraphicsUnmapResources(1, &environmentalMapTexture, 0));
         CUDA_CHECK(GraphicsUnregisterResource(environmentalMapTexture));
     }
-#pragma endregion
-
     for (int i = 0; i < boundResources.size(); i++) {
         CUDA_CHECK(DestroySurfaceObject(boundTextures[i].second));
         CUDA_CHECK(GraphicsUnmapResources(1, &boundResources[i], 0));
         CUDA_CHECK(GraphicsUnregisterResource(boundResources[i]));
     }
+#pragma endregion
+#pragma region Bind output texture
+    cudaArray_t outputArray;
+    cudaGraphicsResource_t outputTexture;
+    CUDA_CHECK(GraphicsGLRegisterImage(&outputTexture,
+                                       m_defaultRenderingLaunchParams.m_defaultRenderingProperties.m_outputTextureId,
+                                       GL_TEXTURE_2D, cudaGraphicsRegisterFlagsNone));
+    CUDA_CHECK(GraphicsMapResources(1, &outputTexture, nullptr));
+    CUDA_CHECK(GraphicsSubResourceGetMappedArray(&outputArray, outputTexture, 0, 0));
+    // Specify surface
+    memset(&cudaResourceDesc, 0, sizeof(cudaResourceDesc));
+    cudaResourceDesc.resType = cudaResourceTypeArray;
+    // Create the surface objects
+    cudaResourceDesc.res.array.array = outputArray;
+    // Create surface object
+    cudaSurfaceObject_t outputTextureId;
+    CUDA_CHECK(CreateSurfaceObject(&outputTextureId, &cudaResourceDesc));
+#pragma endregion
+#pragma region Copy results to output texture
+    OptixImage2D inputLayer[3];
+    inputLayer[0].data = m_frameBufferColor.DevicePointer();
+    /// Width of the image (in pixels)
+    inputLayer[0].width = m_defaultRenderingLaunchParams.m_frame.size.x;
+    /// Height of the image (in pixels)
+    inputLayer[0].height = m_defaultRenderingLaunchParams.m_frame.size.y;
+    /// Stride between subsequent rows of the image (in bytes).
+    inputLayer[0].rowStrideInBytes = m_defaultRenderingLaunchParams.m_frame.size.x * sizeof(glm::vec4);
+    /// Stride between subsequent pixels of the image (in bytes).
+    /// For now, only 0 or the value that corresponds to a dense packing of pixels (no gaps) is supported.
+    inputLayer[0].pixelStrideInBytes = sizeof(glm::vec4);
+    /// Pixel format.
+    inputLayer[0].format = OPTIX_PIXEL_FORMAT_FLOAT4;
+
+    // ..................................................................
+    inputLayer[1].data = m_frameBufferAlbedo.DevicePointer();
+    /// Width of the image (in pixels)
+    inputLayer[1].width = m_defaultRenderingLaunchParams.m_frame.size.x;
+    /// Height of the image (in pixels)
+    inputLayer[1].height = m_defaultRenderingLaunchParams.m_frame.size.y;
+    /// Stride between subsequent rows of the image (in bytes).
+    inputLayer[1].rowStrideInBytes = m_defaultRenderingLaunchParams.m_frame.size.x * sizeof(glm::vec4);
+    /// Stride between subsequent pixels of the image (in bytes).
+    /// For now, only 0 or the value that corresponds to a dense packing of pixels (no gaps) is supported.
+    inputLayer[1].pixelStrideInBytes = sizeof(glm::vec4);
+    /// Pixel format.
+    inputLayer[1].format = OPTIX_PIXEL_FORMAT_FLOAT4;
+
+    // ..................................................................
+    inputLayer[2].data = m_frameBufferNormal.DevicePointer();
+    /// Width of the image (in pixels)
+    inputLayer[2].width = m_defaultRenderingLaunchParams.m_frame.size.x;
+    /// Height of the image (in pixels)
+    inputLayer[2].height = m_defaultRenderingLaunchParams.m_frame.size.y;
+    /// Stride between subsequent rows of the image (in bytes).
+    inputLayer[2].rowStrideInBytes = m_defaultRenderingLaunchParams.m_frame.size.x * sizeof(glm::vec4);
+    /// Stride between subsequent pixels of the image (in bytes).
+    /// For now, only 0 or the value that corresponds to a dense packing of pixels (no gaps) is supported.
+    inputLayer[2].pixelStrideInBytes = sizeof(glm::vec4);
+    /// Pixel format.
+    inputLayer[2].format = OPTIX_PIXEL_FORMAT_FLOAT4;
+
+    // -------------------------------------------------------
+    OptixImage2D outputLayer;
+    outputLayer.data = m_denoisedBuffer.DevicePointer();
+    /// Width of the image (in pixels)
+    outputLayer.width = m_defaultRenderingLaunchParams.m_frame.size.x;
+    /// Height of the image (in pixels)
+    outputLayer.height = m_defaultRenderingLaunchParams.m_frame.size.y;
+    /// Stride between subsequent rows of the image (in bytes).
+    outputLayer.rowStrideInBytes = m_defaultRenderingLaunchParams.m_frame.size.x * sizeof(glm::vec4);
+    /// Stride between subsequent pixels of the image (in bytes).
+    /// For now, only 0 or the value that corresponds to a dense packing of pixels (no gaps) is supported.
+    outputLayer.pixelStrideInBytes = sizeof(glm::vec4);
+    /// Pixel format.
+    outputLayer.format = OPTIX_PIXEL_FORMAT_FLOAT4;
+    switch (m_defaultRenderingLaunchParams.m_defaultRenderingProperties.m_outputType) {
+        case OutputType::Color: {
+            CUDA_CHECK(MemcpyToArray(outputArray, 0, 0, (void *) m_frameBufferColor.DevicePointer(),
+                                     sizeof(glm::vec4) * m_defaultRenderingLaunchParams.m_frame.size.x *
+                                     m_defaultRenderingLaunchParams.m_frame.size.y,
+                                     cudaMemcpyDeviceToDevice));
+        }
+            break;
+        case OutputType::Normal: {
+            CUDA_CHECK(MemcpyToArray(outputArray, 0, 0, (void *) m_frameBufferNormal.DevicePointer(),
+                                     sizeof(glm::vec4) * m_defaultRenderingLaunchParams.m_frame.size.x *
+                                     m_defaultRenderingLaunchParams.m_frame.size.y,
+                                     cudaMemcpyDeviceToDevice));
+        }
+            break;
+        case OutputType::Albedo: {
+            CUDA_CHECK(MemcpyToArray(outputArray, 0, 0, (void *) m_frameBufferAlbedo.DevicePointer(),
+                                     sizeof(glm::vec4) * m_defaultRenderingLaunchParams.m_frame.size.x *
+                                     m_defaultRenderingLaunchParams.m_frame.size.y,
+                                     cudaMemcpyDeviceToDevice));
+        }
+            break;
+        case OutputType::DenoisedColor: {
+            OptixDenoiserParams denoiserParams;
+            denoiserParams.denoiseAlpha = 1;
+            m_denoiserIntensity.Resize(sizeof(float));
+            if (m_denoiserIntensity.m_sizeInBytes != sizeof(float))
+                m_denoiserIntensity.Resize(sizeof(float));
+            denoiserParams.hdrIntensity = m_denoiserIntensity.DevicePointer();
+            if (m_defaultRenderingLaunchParams.m_defaultRenderingProperties.m_accumulate && m_defaultRenderingLaunchParams.m_frame.m_frameId > 1)
+                denoiserParams.blendFactor = 1.f / m_defaultRenderingLaunchParams.m_frame.m_frameId;
+            else
+                denoiserParams.blendFactor = 0.0f;
+
+            OPTIX_CHECK(optixDenoiserComputeIntensity
+                                (m_denoiser,
+                                        /*stream*/0,
+                                 &inputLayer[0],
+                                 (CUdeviceptr) m_denoiserIntensity.DevicePointer(),
+                                 (CUdeviceptr) m_denoiserScratch.DevicePointer(),
+                                 m_denoiserScratch.m_sizeInBytes));
+
+            OptixDenoiserLayer denoiserLayer = {};
+            denoiserLayer.input = inputLayer[0];
+            denoiserLayer.output = outputLayer;
+
+            OptixDenoiserGuideLayer denoiserGuideLayer = {};
+            denoiserGuideLayer.albedo = inputLayer[1];
+            denoiserGuideLayer.normal = inputLayer[2];
+
+            OPTIX_CHECK(optixDenoiserInvoke(m_denoiser,
+                    /*stream*/0,
+                                            &denoiserParams,
+                                            m_denoiserState.DevicePointer(),
+                                            m_denoiserState.m_sizeInBytes,
+                                            &denoiserGuideLayer,
+                                            &denoiserLayer, 1,
+                    /*inputOffsetX*/0,
+                    /*inputOffsetY*/0,
+                                            m_denoiserScratch.DevicePointer(),
+                                            m_denoiserScratch.m_sizeInBytes));
+            CUDA_CHECK(MemcpyToArray(outputArray, 0, 0, (void *) outputLayer.data,
+                                     sizeof(glm::vec4) * m_defaultRenderingLaunchParams.m_frame.size.x *
+                                     m_defaultRenderingLaunchParams.m_frame.size.y,
+                                     cudaMemcpyDeviceToDevice));
+        }
+            break;
+    }
+
+#pragma endregion
+#pragma region UnBind output texture
+    CUDA_CHECK(DestroySurfaceObject(outputTextureId));
+    CUDA_CHECK(GraphicsUnmapResources(1, &outputTexture, 0));
+    CUDA_CHECK(GraphicsUnregisterResource(outputTexture));
+#pragma endregion
+
+
     return true;
 }
 
@@ -797,11 +936,6 @@ void RayTracer::BuildAccelerationStructure() {
     m_hasAccelerationStructure = true;
 }
 
-void RayTracer::SetAccumulate(const bool &value) {
-    m_defaultRenderingPipeline.m_accumulate = value;
-    m_defaultRenderingPipeline.m_statusChanged = true;
-}
-
 void RayTracer::AssemblePipelines() {
     AssemblePipeline(m_defaultRenderingPipeline);
     AssemblePipeline(m_defaultIlluminationEstimationPipeline);
@@ -1221,4 +1355,45 @@ void RayTracer::BuildShaderBindingTable(std::vector<std::pair<unsigned, cudaText
         m_defaultIlluminationEstimationPipeline.m_sbt.hitgroupRecordStrideInBytes = sizeof(DefaultIlluminationEstimationRayHitRecord);
         m_defaultIlluminationEstimationPipeline.m_sbt.hitgroupRecordCount = static_cast<int>(hitGroupRecords.size());
     }
+}
+
+void RayTracer::Resize(const glm::ivec2 &newSize) {
+    if (m_denoiser) {
+        OPTIX_CHECK(optixDenoiserDestroy(m_denoiser));
+    };
+    // ------------------------------------------------------------------
+    // create the denoiser:
+    OptixDenoiserOptions denoiserOptions = {};
+    OPTIX_CHECK(
+            optixDenoiserCreate(m_optixDeviceContext, OPTIX_DENOISER_MODEL_KIND_LDR, &denoiserOptions, &m_denoiser));
+    // .. then compute and allocate memory resources for the denoiser
+    OptixDenoiserSizes denoiserReturnSizes;
+    OPTIX_CHECK(optixDenoiserComputeMemoryResources(m_denoiser, newSize.x, newSize.y,
+                                                    &denoiserReturnSizes));
+
+    m_denoiserScratch.Resize(std::max(denoiserReturnSizes.withOverlapScratchSizeInBytes,
+                                      denoiserReturnSizes.withoutOverlapScratchSizeInBytes));
+
+    m_denoiserState.Resize(denoiserReturnSizes.stateSizeInBytes);
+    // ------------------------------------------------------------------
+    // resize our cuda frame buffer
+    m_denoisedBuffer.Resize(newSize.x * newSize.y * sizeof(glm::vec4));
+    m_frameBufferColor.Resize(newSize.x * newSize.y * sizeof(glm::vec4));
+    m_frameBufferNormal.Resize(newSize.x * newSize.y * sizeof(glm::vec4));
+    m_frameBufferAlbedo.Resize(newSize.x * newSize.y * sizeof(glm::vec4));
+
+    // update the launch parameters that we'll pass to the optix
+    // launch:
+    m_defaultRenderingLaunchParams.m_frame.size = newSize;
+    m_defaultRenderingLaunchParams.m_frame.m_colorBuffer = (glm::vec4 *) m_frameBufferColor.DevicePointer();
+    m_defaultRenderingLaunchParams.m_frame.m_normalBuffer = (glm::vec4 *) m_frameBufferNormal.DevicePointer();
+    m_defaultRenderingLaunchParams.m_frame.m_albedoBuffer = (glm::vec4 *) m_frameBufferAlbedo.DevicePointer();
+
+    // ------------------------------------------------------------------
+    OPTIX_CHECK(optixDenoiserSetup(m_denoiser, 0,
+                                   newSize.x, newSize.y,
+                                   m_denoiserState.DevicePointer(),
+                                   m_denoiserState.m_sizeInBytes,
+                                   m_denoiserScratch.DevicePointer(),
+                                   m_denoiserScratch.m_sizeInBytes));
 }

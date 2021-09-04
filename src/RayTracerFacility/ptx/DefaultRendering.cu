@@ -360,14 +360,13 @@ namespace RayTracerFacility {
         }
         glm::vec3 rgb(pixelColor / static_cast<float>(numPixelSamples));
         rgb = glm::pow(rgb, glm::vec3(1.0 / 2.2));
+
+        const uint32_t fbIndex = ix + iy * defaultRenderingLaunchParams.m_frame.size.x;
         // and write/accumulate to frame buffer ...
         if (defaultRenderingLaunchParams.m_defaultRenderingProperties.m_accumulate) {
             if (defaultRenderingLaunchParams.m_frame.m_frameId > 1) {
-                float4 currentColor;
-                surf2Dread(&currentColor, defaultRenderingLaunchParams.m_frame.m_outputTexture, ix * sizeof(float4),
-                           iy);
-                glm::vec3 transferredCurrentColor = glm::vec4(currentColor.x, currentColor.y, currentColor.z,
-                                                              currentColor.w);
+                glm::vec4 currentColor = defaultRenderingLaunchParams.m_frame.m_colorBuffer[fbIndex];
+                glm::vec3 transferredCurrentColor = currentColor;
                 rgb += static_cast<float>(defaultRenderingLaunchParams.m_frame.m_frameId) * transferredCurrentColor;
                 rgb /= static_cast<float>(defaultRenderingLaunchParams.m_frame.m_frameId + 1);
             }
@@ -377,7 +376,11 @@ namespace RayTracerFacility {
                                   rgb.b,
                                   1.0f);
         // and write to frame buffer ...
-        surf2Dwrite(data, defaultRenderingLaunchParams.m_frame.m_outputTexture, ix * sizeof(float4), iy);
+
+        defaultRenderingLaunchParams.m_frame.m_colorBuffer[fbIndex] = glm::vec4(rgb, 1.0);
+        defaultRenderingLaunchParams.m_frame.m_albedoBuffer[fbIndex] = glm::vec4(pixelAlbedo / static_cast<float>(numPixelSamples), 1.0f);
+        defaultRenderingLaunchParams.m_frame.m_normalBuffer[fbIndex] = glm::vec4(pixelNormal / static_cast<float>(numPixelSamples), 1.0f);
+        //surf2Dwrite(data, defaultRenderingLaunchParams.m_frame.m_outputTexture, ix * sizeof(float4), iy);
     }
 #pragma endregion
 }
