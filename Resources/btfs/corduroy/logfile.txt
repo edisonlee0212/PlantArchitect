@@ -1,0 +1,1374 @@
+#Starting log for compression, DATE Sun Apr  5 13:53:24 2009
+#LocalMachine		Name of the machine running this test
+#Hostname forte.felk.cvut.cz
+# BTFBASE shared for all materials (PDF1,PDF2,PDF3,PDF4,AB,IAB)
+i=-0001 f=000 y=0000 x=0000 pixs=-000001 ut=0000000 rt=0000000     -0.000    -0.000    -0.000    -0.000    -0.000    -0.000    -0.000    -0.000 
+################### Algorithm Setting ##############################
+#S=00# allMaterialsInOneDatabase=1
+#S=00# use34viewRepresentation=0
+#S=00# usePDF2compactRep=0
+#S=00# materialCount=1 materialOrder=0 materialName=corduroy
+#S=00# countPixelTotal=0 nrows=256 ncols=256 rows_offset=0 cols_offset=0
+#S=00# numRows=256 numCols=256, ncolour=2, nillu=81, nview=81
+#S=00# bPath=./02btfbase/corduroy/ iPath=./indata/corduroy/ oPath=./outdata01/corduroy/ tPath=./tmp11/corduroy/
+#S=00# stepAlpha=18.000000 useCosBeta=1
+#S=00# HDR=0 maxShift=0 metric=2
+#S=00# LengthOfSlice=11 SlicesPerHemi=11 NoOfTheta=7 NoOfPhi=16
+#S=00# maxPDF1D=10000 maxVectorColor=10000 maxIndexSlices=10000 maxPDF2D=10000
+#S=00# maxPDF2Dlumcol=10000 maxPDF3D=10000 maxPDF4D=10000 maxPDF34D=1000
+#S=00# minimumCacheStrategy=1
+#S=00# epsPDF1=0.004800 epsPDF2=0.005700 epsPDF2L=0.005520 epsPDF2AB=0.001800 epsPDF3=0.005820
+#S=00# epsPDF4=0.006000 epsPDF34=0.005400 epsAB=0.001500 epsIAB=0.001800
+#S=00# debug=0 tileSize=32 baseUserTime=0 baseRealTime=0
+#S=00# algPut=6 belowThresholdSearch=0 firstOnlyCompareLuminances=0onlyCompareLuminances=0
+#S=00# baseEps=0.006000 rPDF1=0.800000 rPDF2=0.950000 rPDF2L=0.920000
+#S=00# rPDF3=0.970000 rPDF34=0.900000 rPDF4=1.000000
+#S=00# fPDF1=0 fAB=0 fIAB=0 fPDF2=0 fPDF2L=0
+#S=00# fPDF2DAB=0 fPDF3=0 fPDF34=0, fPDF4=0
+#S=00# lsPDF1=0 lsAB=0 lsIAB=0 lsPDF2=0 lsPDF2L=0
+#S=00# lsPDF2DAB=0 lsPDF3=0 lsPDF34=0, lsPDF4=0
+#S=00# findInCacheOnlyFirstBelowThreshold=0  resortCacheEntries=1
+#S=00# resetCacheOrderFrequency=32 resetCacheCompletelyFrequency=64
+#S=00# insertDataIntoCacheImmediatelyPDF2D=1 insertDataIntoCacheImmediatelyPDF3D4D=1
+#S=00# visualizationFrequency=30 reportScreenFrequency=10
+#S=00# recoverFlag=0 recoverMaterialIndex=0
+#S=00# lastMaterialIndex=0, lastX=0, lastY=0
+#S=00# lastTimeSaved=0 lastIndexSaved=0 userTime=0.007999 realTime=0.051000
+#S=00# logFileName = ./02btfbase/corduroy///logfile.txt saveDatabaseInterval[secs]=1000
+################### END Algorithm Setting ##############################
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=23
+#|# Saved 1D PDFs: 1898 (28336, 83512 B) 0.066982 | 0.088304 M 14.038556
+#|# Saved colours: 17 (311696, 272 B) 0.000055 | 0.000450 M 0.045724
+#|# Saved index slices: 3431 (28336, 178412 B) 0.121083 | 0.195187 M 29.991461
+#|# Saved 2D PDF_LUMs: 1954 (2576, 203216 B) 0.758540 | 0.954568 M 34.161068
+#|# Saved 2D PDF_ABs: 1598 (2576, 83096 B) 0.620342 | 0.780655 M 13.968625
+#|# Saved 2D PDFs: 2047 (2576, 16376 B) 0.794643 | 0.794643 M 2.752843 /Cache hr=20.57% o=193.56 s=2047/270809
+#|# Saved 3D PDFs: 368 (368, 26496 B) 1.000000 | 1.000000 M 4.454038 /Cache hr=0.27% o=0.00 s=368/79231
+#|# Saved 4D PDFs: 23 (23, 3312 B) 1.000000 | M 0.556755  /Cache hr=4.35% o=0.04 s=23/5377
+#|# Index PDF4D: 23 Scale: 1  (dist=0.01448 GT th=0.00600) M 0.030931
+#|# UserTime = 1011.38  realTime = 1066.65
+#|# hdr=0 pix: 23, orig size:      452709 comprs. size:   594876  cr=1.31403617
+#|#   Bpap=25865  BpapQ=11761                     quantSize =   270496 crq=0.59750524
+#|# ^^ MAE R=  5.363 G=  4.949 B=  5.574 |MSE R=  50.150 G=  45.275 B=  54.264 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  4.001 ^^^^ MSE= 31.142 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 14:11:11 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00000 f=000 y=0011 x=0121 pixs=0000023 ut=0001011 rt=0001066      4.001    31.142     5.363     5.574     4.949    50.150    54.264    45.275 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=45
+#|# Saved 1D PDFs: 2663 (55440, 117172 B) 0.048034 | 0.066673 M 11.611812
+#|# Saved colours: 19 (609840, 304 B) 0.000031 | 0.000333 M 0.030127
+#|# Saved index slices: 5192 (55440, 269984 B) 0.093651 | 0.159030 M 26.755566
+#|# Saved 2D PDF_LUMs: 3631 (5040, 377624 B) 0.720437 | 0.937758 M 37.422752
+#|# Saved 2D PDF_ABs: 2968 (5040, 154336 B) 0.588889 | 0.766529 M 15.294785
+#|# Saved 2D PDFs: 3872 (5040, 30976 B) 0.768254 | 0.768254 M 3.069739 /Cache hr=23.19% o=393.19 s=3872/270809
+#|# Saved 3D PDFs: 720 (720, 51840 B) 1.000000 | 1.000000 M 5.137373 /Cache hr=0.14% o=0.00 s=720/79231
+#|# Saved 4D PDFs: 45 (45, 6480 B) 1.000000 | M 0.642172  /Cache hr=2.22% o=0.02 s=45/5377
+#|# Index PDF4D: 45 Scale: 1  (dist=0.01173 GT th=0.00600) M 0.035676
+#|# UserTime = 1962.80  realTime = 2136.27
+#|# hdr=0 pix: 45, orig size:      885735 comprs. size:  1009076  cr=1.13925271
+#|#   Bpap=22424  BpapQ=10422                     quantSize =   468957 crq=0.52945520
+#|# ^^ MAE R=  5.457 G=  5.067 B=  5.671 |MSE R=  51.626 G=  46.788 B=  56.150 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  4.126 ^^^^ MSE= 32.263 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 14:29:01 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00001 f=000 y=0001 x=0236 pixs=0000045 ut=0001962 rt=0002136      4.126    32.263     5.457     5.671     5.067    51.626    56.150    46.788 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=83
+#|# Saved 1D PDFs: 3620 (102256, 159280 B) 0.035401 | 0.051923 M 9.527410
+#|# Saved colours: 19 (1124816, 304 B) 0.000017 | 0.000223 M 0.018184
+#|# Saved index slices: 7738 (102256, 402376 B) 0.075673 | 0.127161 M 24.068314
+#|# Saved 2D PDF_LUMs: 6338 (9296, 659152 B) 0.681799 | 0.924041 M 39.427494
+#|# Saved 2D PDF_ABs: 5532 (9296, 287664 B) 0.595095 | 0.806532 M 17.206760
+#|# Saved 2D PDFs: 6859 (9296, 54872 B) 0.737844 | 0.738400 M 3.282195 /Cache hr=18.28% o=150.80 s=1754/270809
+#|# Saved 3D PDFs: 1327 (1328, 95544 B) 0.999247 | 0.999247 M 5.715010 /Cache hr=0.33% o=0.00 s=314/79231
+#|# Saved 4D PDFs: 83 (83, 11952 B) 1.000000 | M 0.714915  /Cache hr=5.00% o=0.05 s=23/5377
+#|# Index PDF4D: 83 Scale: 1  (dist=0.01073 GT th=0.00600) M 0.039717
+#|# UserTime = 3105.77  realTime = 3336.47
+#|# hdr=0 pix: 83, orig size:     1633689 comprs. size:  1671808  cr=1.02333308
+#|#   Bpap=20143  BpapQ=9361                     quantSize =   776922 crq=0.47556297
+#|# ^^ MAE R=  5.483 G=  5.127 B=  5.702 |MSE R=  52.257 G=  47.756 B=  57.025 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  4.192 ^^^^ MSE= 32.957 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 14:49:01 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00002 f=000 y=0027 x=0187 pixs=0000083 ut=0003105 rt=0003336      4.192    32.957     5.483     5.702     5.127    52.257    57.025    47.756 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=128
+#|# Saved 1D PDFs: 4467 (157696, 196548 B) 0.028327 | 0.044552 M 8.388833
+#|# Saved colours: 21 (1734656, 336 B) 0.000012 | 0.000188 M 0.014341
+#|# Saved index slices: 10147 (157696, 527644 B) 0.064345 | 0.113226 M 22.520287
+#|# Saved 2D PDF_LUMs: 9115 (14336, 947960 B) 0.635812 | 0.908230 M 40.459724
+#|# Saved 2D PDF_ABs: 8147 (14336, 423644 B) 0.568290 | 0.811778 M 18.081480
+#|# Saved 2D PDFs: 10036 (14336, 80288 B) 0.700056 | 0.701769 M 3.426759 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 2043 (2048, 147096 B) 0.997559 | 0.997559 M 6.278180 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 128 (128, 18432 B) 1.000000 | M 0.786693  /Cache hr=100.00% o=1.00 s=4/5377
+#|# Index PDF4D: 128 Scale: 1  (dist=0.00963 GT th=0.00600) M 0.043705
+#|# UserTime = 4147.26  realTime = 4382.25
+#|# hdr=0 pix: 128, orig size:     2519424 comprs. size:  2342972  cr=0.92996336
+#|#   Bpap=18305  BpapQ=8711                     quantSize =  1114902 crq=0.44252258
+#|# ^^ MAE R=  5.586 G=  5.256 B=  5.805 |MSE R=  54.371 G=  50.214 B=  59.492 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  4.311 ^^^^ MSE= 34.704 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 15:06:27 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00003 f=000 y=0044 x=0172 pixs=0000128 ut=0004147 rt=0004382      4.311    34.704     5.586     5.805     5.256    54.371    59.492    50.214 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=168
+#|# Saved 1D PDFs: 5205 (206976, 229020 B) 0.025148 | 0.041275 M 7.852499
+#|# Saved colours: 23 (2276736, 368 B) 0.000010 | 0.000172 M 0.012618
+#|# Saved index slices: 12171 (206976, 632892 B) 0.058804 | 0.106155 M 21.700216
+#|# Saved 2D PDF_LUMs: 11464 (18816, 1192256 B) 0.609269 | 0.900408 M 40.879349
+#|# Saved 2D PDF_ABs: 10423 (18816, 541996 B) 0.553943 | 0.818646 M 18.583630
+#|# Saved 2D PDFs: 12732 (18816, 101856 B) 0.676658 | 0.679947 M 3.492377 /Cache hr=22.33% o=335.48 s=3457/270809
+#|# Saved 3D PDFs: 2675 (2688, 192600 B) 0.995164 | 0.995164 M 6.603752 /Cache hr=0.16% o=0.00 s=650/79231
+#|# Saved 4D PDFs: 168 (168, 24192 B) 1.000000 | M 0.829481  /Cache hr=2.44% o=0.02 s=44/5377
+#|# Index PDF4D: 168 Scale: 1  (dist=0.01187 GT th=0.00600) M 0.046082
+#|# UserTime = 5165.16  realTime = 5407.14
+#|# hdr=0 pix: 168, orig size:     3306744 comprs. size:  2916524  cr=0.88199268
+#|#   Bpap=17361  BpapQ=8278                     quantSize =  1390550 crq=0.42051940
+#|# ^^ MAE R=  5.657 G=  5.347 B=  5.873 |MSE R=  56.003 G=  52.143 B=  61.320 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  4.392 ^^^^ MSE= 36.052 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 15:23:32 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00004 f=000 y=0061 x=0124 pixs=0000168 ut=0005165 rt=0005407      4.392    36.052     5.657     5.873     5.347    56.003    61.320    52.143 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=209
+#|# Saved 1D PDFs: 5665 (257488, 249260 B) 0.022001 | 0.037550 M 7.257441
+#|# Saved colours: 24 (2832368, 384 B) 0.000008 | 0.000159 M 0.011181
+#|# Saved index slices: 13743 (257488, 714636 B) 0.053373 | 0.099933 M 20.807304
+#|# Saved 2D PDF_LUMs: 13715 (23408, 1426360 B) 0.585911 | 0.894709 M 41.529823
+#|# Saved 2D PDF_ABs: 12502 (23408, 650104 B) 0.534091 | 0.815578 M 18.928394
+#|# Saved 2D PDFs: 15329 (23408, 122632 B) 0.654862 | 0.658604 M 3.570547 /Cache hr=18.07% o=133.03 s=1575/270809
+#|# Saved 3D PDFs: 3325 (3344, 239400 B) 0.994318 | 0.994318 M 6.970357 /Cache hr=0.37% o=0.00 s=282/79231
+#|# Saved 4D PDFs: 209 (209, 30096 B) 1.000000 | M 0.876274  /Cache hr=5.56% o=0.06 s=21/5377
+#|# Index PDF4D: 209 Scale: 1  (dist=0.01109 GT th=0.00600) M 0.048682
+#|# UserTime = 6211.60  realTime = 6461.27
+#|# hdr=0 pix: 209, orig size:     4113747 comprs. size:  3434544  cr=0.83489432
+#|#   Bpap=16434  BpapQ=7847                     quantSize =  1639960 crq=0.39865359
+#|# ^^ MAE R=  5.715 G=  5.420 B=  5.943 |MSE R=  57.179 G=  53.534 B=  62.910 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  4.457 ^^^^ MSE= 37.023 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 15:41:06 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00005 f=000 y=0077 x=0093 pixs=0000209 ut=0006211 rt=0006461      4.457    37.023     5.715     5.943     5.420    57.179    62.910    53.534 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=246
+#|# Saved 1D PDFs: 6112 (303072, 268928 B) 0.020167 | 0.035165 M 6.889640
+#|# Saved colours: 25 (3333792, 400 B) 0.000007 | 0.000151 M 0.010248
+#|# Saved index slices: 15054 (303072, 782808 B) 0.049671 | 0.095197 M 20.054682
+#|# Saved 2D PDF_LUMs: 15801 (27552, 1643304 B) 0.573497 | 0.892661 M 42.099644
+#|# Saved 2D PDF_ABs: 14376 (27552, 747552 B) 0.521777 | 0.812158 M 19.151461
+#|# Saved 2D PDFs: 17701 (27552, 141608 B) 0.642458 | 0.647061 M 3.627841 /Cache hr=22.16% o=447.63 s=4674/270809
+#|# Saved 3D PDFs: 3908 (3936, 281376 B) 0.992886 | 0.992886 M 7.208544 /Cache hr=0.12% o=0.00 s=874/79231
+#|# Saved 4D PDFs: 246 (246, 35424 B) 1.000000 | M 0.907524  /Cache hr=1.82% o=0.02 s=58/5377
+#|# Index PDF4D: 246 Scale: 1  (dist=0.01318 GT th=0.00600) M 0.050418
+#|# UserTime = 7204.98  realTime = 7462.44
+#|# hdr=0 pix: 246, orig size:     4842018 comprs. size:  3903368  cr=0.80614488
+#|#   Bpap=15868  BpapQ=7612                     quantSize =  1872412 crq=0.38670075
+#|# ^^ MAE R=  5.742 G=  5.455 B=  5.979 |MSE R=  57.788 G=  54.271 B=  63.793 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  4.488 ^^^^ MSE= 37.538 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 15:57:47 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00006 f=000 y=0087 x=0028 pixs=0000246 ut=0007204 rt=0007462      4.488    37.538     5.742     5.979     5.455    57.788    63.793    54.271 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=281
+#|# Saved 1D PDFs: 6430 (346192, 282920 B) 0.018574 | 0.033218 M 6.575602
+#|# Saved colours: 26 (3808112, 416 B) 0.000007 | 0.000147 M 0.009669
+#|# Saved index slices: 16097 (346192, 837044 B) 0.046497 | 0.091712 M 19.454502
+#|# Saved 2D PDF_LUMs: 17597 (31472, 1830088 B) 0.559132 | 0.888648 M 42.534744
+#|# Saved 2D PDF_ABs: 15956 (31472, 829712 B) 0.506990 | 0.805777 M 19.284094
+#|# Saved 2D PDFs: 19802 (31472, 158416 B) 0.629194 | 0.633989 M 3.681891 /Cache hr=20.25% o=202.04 s=2226/270809
+#|# Saved 3D PDFs: 4462 (4496, 321264 B) 0.992438 | 0.992438 M 7.466790 /Cache hr=0.25% o=0.00 s=410/79231
+#|# Saved 4D PDFs: 281 (281, 40464 B) 1.000000 | M 0.940461  /Cache hr=3.85% o=0.04 s=29/5377
+#|# Index PDF4D: 281 Scale: 1  (dist=0.01166 GT th=0.00600) M 0.052248
+#|# UserTime = 8216.40  realTime = 8482.41
+#|# hdr=0 pix: 281, orig size:     5530923 comprs. size:  4302572  cr=0.77791211
+#|#   Bpap=15312  BpapQ=7373                     quantSize =  2071579 crq=0.37454490
+#|# ^^ MAE R=  5.781 G=  5.504 B=  6.029 |MSE R=  58.603 G=  55.231 B=  64.934 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  4.531 ^^^^ MSE= 38.211 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 16:14:47 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00007 f=000 y=0093 x=0222 pixs=0000281 ut=0008216 rt=0008482      4.531    38.211     5.781     6.029     5.504    58.603    64.934    55.231 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=314
+#|# Saved 1D PDFs: 6732 (386848, 296208 B) 0.017402 | 0.031863 M 6.352692
+#|# Saved colours: 26 (4255328, 416 B) 0.000006 | 0.000139 M 0.008922
+#|# Saved index slices: 17039 (386848, 886028 B) 0.044046 | 0.089269 M 19.002401
+#|# Saved 2D PDF_LUMs: 19207 (35168, 1997528 B) 0.546150 | 0.885197 M 42.840439
+#|# Saved 2D PDF_ABs: 17352 (35168, 902304 B) 0.493403 | 0.799705 M 19.351469
+#|# Saved 2D PDFs: 21698 (35168, 173584 B) 0.616981 | 0.621808 M 3.722809 /Cache hr=24.29% o=485.25 s=4886/270809
+#|# Saved 3D PDFs: 4985 (5024, 358920 B) 0.992237 | 0.992237 M 7.697659 /Cache hr=0.11% o=0.00 s=938/79231
+#|# Saved 4D PDFs: 314 (314, 45216 B) 1.000000 | M 0.969735  /Cache hr=1.69% o=0.02 s=62/5377
+#|# Index PDF4D: 314 Scale: 1  (dist=0.01138 GT th=0.00600) M 0.053874
+#|# UserTime = 9220.22  realTime = 9495.64
+#|# hdr=0 pix: 314, orig size:     6180462 comprs. size:  4662716  cr=0.75442839
+#|#   Bpap=14850  BpapQ=7249                     quantSize =  2275924 crq=0.36824496
+#|# ^^ MAE R=  5.797 G=  5.524 B=  6.054 |MSE R=  58.974 G=  55.645 B=  65.509 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  4.549 ^^^^ MSE= 38.502 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 16:31:41 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00008 f=000 y=0107 x=0132 pixs=0000314 ut=0009220 rt=0009495      4.549    38.502     5.797     6.054     5.524    58.974    65.509    55.645 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=350
+#|# Saved 1D PDFs: 7079 (431200, 311476 B) 0.016417 | 0.030711 M 6.165864
+#|# Saved colours: 26 (4743200, 416 B) 0.000005 | 0.000131 M 0.008235
+#|# Saved index slices: 18072 (431200, 939744 B) 0.041911 | 0.087361 M 18.602825
+#|# Saved 2D PDF_LUMs: 20955 (39200, 2179320 B) 0.534566 | 0.882873 M 43.141010
+#|# Saved 2D PDF_ABs: 18806 (39200, 977912 B) 0.479745 | 0.792332 M 19.358383
+#|# Saved 2D PDFs: 23735 (39200, 189880 B) 0.605485 | 0.610829 M 3.758794 /Cache hr=19.92% o=246.90 s=2661/270809
+#|# Saved 3D PDFs: 5551 (5600, 399672 B) 0.991250 | 0.991250 M 7.911759 /Cache hr=0.42% o=0.03 s=489/79231
+#|# Saved 4D PDFs: 350 (350, 50400 B) 1.000000 | M 0.997700  /Cache hr=3.23% o=0.03 s=34/5377
+#|# Index PDF4D: 350 Scale: 1  (dist=0.01348 GT th=0.00600) M 0.055428
+#|# UserTime = 10213.29  realTime = 10498.46
+#|# hdr=0 pix: 350, orig size:     6889050 comprs. size:  5051620  cr=0.73328253
+#|#   Bpap=14434  BpapQ=7060                     quantSize =  2470774 crq=0.35865235
+#|# ^^ MAE R=  5.817 G=  5.549 B=  6.079 |MSE R=  59.445 G=  56.202 B=  66.133 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  4.571 ^^^^ MSE= 38.884 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 16:48:24 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00009 f=000 y=0125 x=0069 pixs=0000350 ut=0010213 rt=0010498      4.571    38.884     5.817     6.079     5.549    59.445    66.133    56.202 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=385
+#|# Saved 1D PDFs: 7311 (474320, 321684 B) 0.015414 | 0.029503 M 5.954165
+#|# Saved colours: 26 (5217520, 416 B) 0.000005 | 0.000125 M 0.007700
+#|# Saved index slices: 18962 (474320, 986024 B) 0.039977 | 0.085409 M 18.250673
+#|# Saved 2D PDF_LUMs: 22528 (43120, 2342912 B) 0.522449 | 0.879863 M 43.365803
+#|# Saved 2D PDF_ABs: 20183 (43120, 1049516 B) 0.468066 | 0.788275 M 19.425869
+#|# Saved 2D PDFs: 25604 (43120, 204832 B) 0.593785 | 0.600216 M 3.791309 /Cache hr=18.58% o=12.02 s=112/270809
+#|# Saved 3D PDFs: 6094 (6160, 438768 B) 0.989286 | 0.989286 M 8.121315 /Cache hr=5.88% o=0.06 s=26/79231
+#|# Saved 4D PDFs: 385 (385, 55440 B) 1.000000 | M 1.026159  /Cache hr=50.00% o=0.50 s=5/5377
+#|# Index PDF4D: 385 Scale: 1  (dist=0.01228 GT th=0.00600) M 0.057009
+#|# UserTime = 11270.05  realTime = 11564.21
+#|# hdr=0 pix: 385, orig size:     7577955 comprs. size:  5402672  cr=0.71294591
+#|#   Bpap=14033  BpapQ=6872                     quantSize =  2645496 crq=0.34910421
+#|# ^^ MAE R=  5.851 G=  5.589 B=  6.117 |MSE R=  60.175 G=  57.017 B=  67.029 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  4.606 ^^^^ MSE= 39.457 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 17:06:09 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00010 f=000 y=0140 x=0009 pixs=0000385 ut=0011270 rt=0011564      4.606    39.457     5.851     6.117     5.589    60.175    67.029    57.017 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=417
+#|# Saved 1D PDFs: 7604 (513744, 334576 B) 0.014801 | 0.028810 M 5.838081
+#|# Saved colours: 26 (5651184, 416 B) 0.000005 | 0.000120 M 0.007259
+#|# Saved index slices: 19766 (513744, 1027832 B) 0.038474 | 0.083745 M 17.934839
+#|# Saved 2D PDF_LUMs: 23994 (46704, 2495376 B) 0.513746 | 0.879288 M 43.542297
+#|# Saved 2D PDF_ABs: 21457 (46704, 1115764 B) 0.459425 | 0.786316 M 19.469181
+#|# Saved 2D PDFs: 27288 (46704, 218304 B) 0.584275 | 0.590560 M 3.809229 /Cache hr=21.00% o=266.47 s=2913/270809
+#|# Saved 3D PDFs: 6601 (6672, 475272 B) 0.989358 | 0.989358 M 8.293113 /Cache hr=0.38% o=0.00 s=537/79231
+#|# Saved 4D PDFs: 417 (417, 60048 B) 1.000000 | M 1.047789  /Cache hr=2.94% o=0.03 s=37/5377
+#|# Index PDF4D: 417 Scale: 1  (dist=0.01317 GT th=0.00600) M 0.058211
+#|# UserTime = 12278.22  realTime = 12580.72
+#|# hdr=0 pix: 417, orig size:     8207811 comprs. size:  5730924  cr=0.69822807
+#|#   Bpap=13744  BpapQ=6742                     quantSize =  2811106 crq=0.34249156
+#|# ^^ MAE R=  5.876 G=  5.617 B=  6.145 |MSE R=  60.700 G=  57.592 B=  67.667 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  4.631 ^^^^ MSE= 39.866 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 17:23:06 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00011 f=000 y=0139 x=0164 pixs=0000417 ut=0012278 rt=0012580      4.631    39.866     5.876     6.145     5.617    60.700    67.667    57.592 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=451
+#|# Saved 1D PDFs: 7895 (555632, 347380 B) 0.014209 | 0.028003 M 5.715751
+#|# Saved colours: 26 (6111952, 416 B) 0.000004 | 0.000115 M 0.006845
+#|# Saved index slices: 20501 (555632, 1066052 B) 0.036897 | 0.081951 M 17.540697
+#|# Saved 2D PDF_LUMs: 25630 (50512, 2665520 B) 0.507404 | 0.878612 M 43.858158
+#|# Saved 2D PDF_ABs: 22742 (50512, 1182584 B) 0.450230 | 0.779610 M 19.458101
+#|# Saved 2D PDFs: 29171 (50512, 233368 B) 0.577506 | 0.584062 M 3.839810 /Cache hr=14.85% o=23.14 s=301/270809
+#|# Saved 3D PDFs: 7135 (7216, 513720 B) 0.988775 | 0.988775 M 8.452690 /Cache hr=2.04% o=0.02 s=58/79231
+#|# Saved 4D PDFs: 451 (451, 64944 B) 1.000000 | M 1.068581  /Cache hr=25.00% o=0.25 s=7/5377
+#|# Index PDF4D: 451 Scale: 1  (dist=0.01169 GT th=0.00600) M 0.059366
+#|# UserTime = 13314.63  realTime = 13624.01
+#|# hdr=0 pix: 451, orig size:     8877033 comprs. size:  6077592  cr=0.68464227
+#|#   Bpap=13476  BpapQ=6628                     quantSize =  2988945 crq=0.33670541
+#|# ^^ MAE R=  5.883 G=  5.627 B=  6.159 |MSE R=  60.832 G=  57.778 B=  67.958 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  4.640 ^^^^ MSE= 39.990 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 17:40:29 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00012 f=000 y=0158 x=0098 pixs=0000451 ut=0013314 rt=0013624      4.640    39.990     5.883     6.159     5.627    60.832    67.958    57.778 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=485
+#|# Saved 1D PDFs: 8138 (597520, 358072 B) 0.013620 | 0.027223 M 5.584882
+#|# Saved colours: 27 (6572720, 432 B) 0.000004 | 0.000116 M 0.006738
+#|# Saved index slices: 21242 (597520, 1104584 B) 0.035550 | 0.080439 M 17.228296
+#|# Saved 2D PDF_LUMs: 27176 (54320, 2826304 B) 0.500295 | 0.877834 M 44.082119
+#|# Saved 2D PDF_ABs: 24007 (54320, 1248364 B) 0.441955 | 0.775470 M 19.470846
+#|# Saved 2D PDFs: 30958 (54320, 247664 B) 0.569919 | 0.576531 M 3.862838 /Cache hr=20.92% o=310.97 s=3248/270809
+#|# Saved 3D PDFs: 7671 (7760, 552312 B) 0.988531 | 0.988531 M 8.614461 /Cache hr=0.17% o=0.00 s=602/79231
+#|# Saved 4D PDFs: 485 (485, 69840 B) 1.000000 | M 1.089301  /Cache hr=2.63% o=0.03 s=41/5377
+#|# Index PDF4D: 485 Scale: 1  (dist=0.01050 GT th=0.00600) M 0.060517
+#|# UserTime = 14313.36  realTime = 14627.49
+#|# hdr=0 pix: 485, orig size:     9546255 comprs. size:  6411452  cr=0.67161960
+#|#   Bpap=13220  BpapQ=6513                     quantSize =  3158456 crq=0.33085812
+#|# ^^ MAE R=  5.894 G=  5.641 B=  6.173 |MSE R=  61.051 G=  58.033 B=  68.290 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  4.652 ^^^^ MSE= 40.169 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 17:57:12 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00013 f=000 y=0165 x=0030 pixs=0000485 ut=0014313 rt=0014627      4.652    40.169     5.894     6.173     5.641    61.051    68.290    58.033 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=512
+#|# Saved 1D PDFs: 8316 (630784, 365904 B) 0.013184 | 0.026511 M 5.469636
+#|# Saved colours: 27 (6938624, 432 B) 0.000004 | 0.000113 M 0.006458
+#|# Saved index slices: 21815 (630784, 1134380 B) 0.034584 | 0.079182 M 16.957031
+#|# Saved 2D PDF_LUMs: 28517 (57344, 2965768 B) 0.497297 | 0.878257 M 44.333138
+#|# Saved 2D PDF_ABs: 25046 (57344, 1302392 B) 0.436768 | 0.771358 M 19.468523
+#|# Saved 2D PDFs: 32470 (57344, 259760 B) 0.566232 | 0.572592 M 3.882966 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 8101 (8192, 583272 B) 0.988892 | 0.988892 M 8.718914 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 512 (512, 73728 B) 1.000000 | M 1.102107  /Cache hr=100.00% o=1.00 s=4/5377
+#|# Index PDF4D: 512 Scale: 1  (dist=0.00959 GT th=0.00600) M 0.061228
+#|# UserTime = 15316.31  realTime = 15637.59
+#|# hdr=0 pix: 512, orig size:    10077696 comprs. size:  6689732  cr=0.66381562
+#|#   Bpap=13066  BpapQ=6524                     quantSize =  3339825 crq=0.33140760
+#|# ^^ MAE R=  5.893 G=  5.641 B=  6.180 |MSE R=  61.040 G=  58.025 B=  68.428 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  4.653 ^^^^ MSE= 40.167 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 18:14:03 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00014 f=000 y=0171 x=0175 pixs=0000512 ut=0015316 rt=0015637      4.653    40.167     5.893     6.180     5.641    61.040    68.428    58.025 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=548
+#|# Saved 1D PDFs: 8765 (675136, 385660 B) 0.012983 | 0.026410 M 5.464021
+#|# Saved colours: 28 (7426496, 448 B) 0.000004 | 0.000112 M 0.006347
+#|# Saved index slices: 22689 (675136, 1179828 B) 0.033607 | 0.078169 M 16.715773
+#|# Saved 2D PDF_LUMs: 30171 (61376, 3137784 B) 0.491577 | 0.877447 M 44.456043
+#|# Saved 2D PDF_ABs: 26387 (61376, 1372124 B) 0.429924 | 0.767399 M 19.440218
+#|# Saved 2D PDFs: 34385 (61376, 275080 B) 0.560235 | 0.566829 M 3.897326 /Cache hr=21.44% o=290.56 s=3128/270809
+#|# Saved 3D PDFs: 8666 (8768, 623952 B) 0.988367 | 0.988367 M 8.840136 /Cache hr=0.17% o=0.00 s=586/79231
+#|# Saved 4D PDFs: 548 (548, 78912 B) 1.000000 | M 1.118023  /Cache hr=2.70% o=0.03 s=40/5377
+#|# Index PDF4D: 548 Scale: 1  (dist=0.01572 GT th=0.00600) M 0.062112
+#|# UserTime = 16377.99  realTime = 16709.93
+#|# hdr=0 pix: 548, orig size:    10786284 comprs. size:  7058172  cr=0.65436549
+#|#   Bpap=12880  BpapQ=6461                     quantSize =  3540384 crq=0.32823019
+#|# ^^ MAE R=  5.897 G=  5.646 B=  6.187 |MSE R=  61.118 G=  58.120 B=  68.590 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  4.657 ^^^^ MSE= 40.233 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 18:31:55 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00015 f=000 y=0191 x=0109 pixs=0000548 ut=0016377 rt=0016709      4.657    40.233     5.897     6.187     5.646    61.118    68.590    58.120 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=579
+#|# Saved 1D PDFs: 9082 (713328, 399608 B) 0.012732 | 0.026176 M 5.428556
+#|# Saved colours: 28 (7846608, 448 B) 0.000004 | 0.000109 M 0.006086
+#|# Saved index slices: 23434 (713328, 1218568 B) 0.032852 | 0.077589 M 16.553886
+#|# Saved 2D PDF_LUMs: 31542 (64848, 3280368 B) 0.486399 | 0.877434 M 44.562832
+#|# Saved 2D PDF_ABs: 27457 (64848, 1427764 B) 0.423405 | 0.763798 M 19.395752
+#|# Saved 2D PDFs: 35948 (64848, 287584 B) 0.554342 | 0.561188 M 3.906744 /Cache hr=16.77% o=21.55 s=283/270809
+#|# Saved 3D PDFs: 9151 (9264, 658872 B) 0.987802 | 0.987802 M 8.950582 /Cache hr=2.04% o=0.02 s=58/79231
+#|# Saved 4D PDFs: 579 (579, 83376 B) 1.000000 | M 1.132638  /Cache hr=25.00% o=0.25 s=7/5377
+#|# Index PDF4D: 579 Scale: 1  (dist=0.01038 GT th=0.00600) M 0.062924
+#|# UserTime = 17386.22  realTime = 17726.78
+#|# hdr=0 pix: 579, orig size:    11396457 comprs. size:  7361220  cr=0.64592180
+#|#   Bpap=12714  BpapQ=6386                     quantSize =  3697482 crq=0.32444136
+#|# ^^ MAE R=  5.908 G=  5.658 B=  6.202 |MSE R=  61.360 G=  58.387 B=  68.955 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  4.668 ^^^^ MSE= 40.421 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 18:48:52 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00016 f=000 y=0207 x=0011 pixs=0000579 ut=0017386 rt=0017726      4.668    40.421     5.908     6.202     5.658    61.360    68.955    58.387 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=608
+#|# Saved 1D PDFs: 9243 (749056, 406692 B) 0.012340 | 0.025620 M 5.330777
+#|# Saved colours: 28 (8239616, 448 B) 0.000003 | 0.000106 M 0.005872
+#|# Saved index slices: 23994 (749056, 1247688 B) 0.032032 | 0.076638 M 16.354259
+#|# Saved 2D PDF_LUMs: 32798 (68096, 3410992 B) 0.481644 | 0.877046 M 44.710094
+#|# Saved 2D PDF_ABs: 28462 (68096, 1480024 B) 0.417969 | 0.761097 M 19.399637
+#|# Saved 2D PDFs: 37396 (68096, 299168 B) 0.549166 | 0.556083 M 3.921390 /Cache hr=20.35% o=256.40 s=2814/270809
+#|# Saved 3D PDFs: 9607 (9728, 691704 B) 0.987562 | 0.987562 M 9.066615 /Cache hr=0.19% o=0.00 s=522/79231
+#|# Saved 4D PDFs: 608 (608, 87552 B) 1.000000 | M 1.147601  /Cache hr=3.03% o=0.03 s=36/5377
+#|# Index PDF4D: 608 Scale: 1  (dist=0.00998 GT th=0.00600) M 0.063756
+#|# UserTime = 18533.09  realTime = 18882.76
+#|# hdr=0 pix: 608, orig size:    11967264 comprs. size:  7629132  cr=0.63750010
+#|#   Bpap=12548  BpapQ=6317                     quantSize =  3840659 crq=0.32093041
+#|# ^^ MAE R=  5.914 G=  5.666 B=  6.209 |MSE R=  61.504 G=  58.549 B=  69.141 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  4.675 ^^^^ MSE= 40.532 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 19:08:08 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00017 f=000 y=0204 x=0173 pixs=0000608 ut=0018533 rt=0018882      4.675    40.532     5.914     6.209     5.666    61.504    69.141    58.549 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=637
+#|# Saved 1D PDFs: 9442 (784784, 415448 B) 0.012031 | 0.025156 M 5.248426
+#|# Saved colours: 28 (8632624, 448 B) 0.000003 | 0.000103 M 0.005660
+#|# Saved index slices: 24624 (784784, 1280448 B) 0.031377 | 0.075680 M 16.176121
+#|# Saved 2D PDF_LUMs: 34122 (71344, 3548688 B) 0.478274 | 0.877060 M 44.831188
+#|# Saved 2D PDF_ABs: 29579 (71344, 1538108 B) 0.414597 | 0.760288 M 19.431185
+#|# Saved 2D PDFs: 38905 (71344, 311240 B) 0.545316 | 0.552361 M 3.931949 /Cache hr=24.08% o=531.60 s=5101/270809
+#|# Saved 3D PDFs: 10062 (10192, 724464 B) 0.987245 | 0.987245 M 9.152279 /Cache hr=0.20% o=0.53 s=985/79231
+#|# Saved 4D PDFs: 637 (637, 91728 B) 1.000000 | M 1.158816  /Cache hr=1.61% o=0.02 s=65/5377
+#|# Index PDF4D: 637 Scale: 1  (dist=0.00969 GT th=0.00600) M 0.064379
+#|# UserTime = 19550.97  realTime = 19908.73
+#|# hdr=0 pix: 637, orig size:    12538071 comprs. size:  7915668  cr=0.63133061
+#|#   Bpap=12427  BpapQ=6262                     quantSize =  3988301 crq=0.31809526
+#|# ^^ MAE R=  5.918 G=  5.671 B=  6.215 |MSE R=  61.603 G=  58.675 B=  69.287 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  4.680 ^^^^ MSE= 40.620 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 19:25:14 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00018 f=000 y=0221 x=0076 pixs=0000637 ut=0019550 rt=0019908      4.680    40.620     5.918     6.215     5.671    61.603    69.287    58.675 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=669
+#|# Saved 1D PDFs: 9596 (824208, 422224 B) 0.011643 | 0.024734 M 5.170071
+#|# Saved colours: 28 (9066288, 448 B) 0.000003 | 0.000101 M 0.005486
+#|# Saved index slices: 25112 (824208, 1305824 B) 0.030468 | 0.074835 M 15.989624
+#|# Saved 2D PDF_LUMs: 35270 (74928, 3668080 B) 0.470719 | 0.875642 M 44.915104
+#|# Saved 2D PDF_ABs: 30506 (74928, 1586312 B) 0.407138 | 0.757367 M 19.424158
+#|# Saved 2D PDFs: 40279 (74928, 322232 B) 0.537569 | 0.545210 M 3.945684 /Cache hr=19.97% o=220.87 s=2525/270809
+#|# Saved 3D PDFs: 10554 (10704, 759888 B) 0.985987 | 0.985987 M 9.304718 /Cache hr=0.22% o=0.00 s=474/79231
+#|# Saved 4D PDFs: 669 (669, 96336 B) 1.000000 | M 1.179620  /Cache hr=3.33% o=0.03 s=33/5377
+#|# Index PDF4D: 669 Scale: 1  (dist=0.01207 GT th=0.00600) M 0.065534
+#|# UserTime = 20561.64  realTime = 20937.42
+#|# hdr=0 pix: 669, orig size:    13167927 comprs. size:  8166696  cr=0.62019603
+#|#   Bpap=12208  BpapQ=6158                     quantSize =  4119260 crq=0.31282525
+#|# ^^ MAE R=  5.931 G=  5.687 B=  6.230 |MSE R=  61.876 G=  58.998 B=  69.667 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  4.693 ^^^^ MSE= 40.843 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 19:42:22 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00019 f=000 y=0223 x=0227 pixs=0000669 ut=0020561 rt=0020937      4.693    40.843     5.931     6.230     5.687    61.876    69.667    58.998 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=697
+#|# Saved 1D PDFs: 9734 (858704, 428296 B) 0.011336 | 0.024299 M 5.094672
+#|# Saved colours: 28 (9445744, 448 B) 0.000003 | 0.000099 M 0.005329
+#|# Saved index slices: 25585 (858704, 1330420 B) 0.029795 | 0.074213 M 15.825627
+#|# Saved 2D PDF_LUMs: 36417 (78064, 3787368 B) 0.466502 | 0.875346 M 45.051544
+#|# Saved 2D PDF_ABs: 31341 (78064, 1629732 B) 0.401478 | 0.753335 M 19.386007
+#|# Saved 2D PDFs: 41603 (78064, 332824 B) 0.532934 | 0.540495 M 3.959012 /Cache hr=24.55% o=486.60 s=4716/270809
+#|# Saved 3D PDFs: 10996 (11152, 791712 B) 0.986012 | 0.986012 M 9.417582 /Cache hr=0.11% o=0.00 s=922/79231
+#|# Saved 4D PDFs: 697 (697, 100368 B) 1.000000 | M 1.193899  /Cache hr=1.72% o=0.02 s=61/5377
+#|# Index PDF4D: 697 Scale: 1  (dist=0.01438 GT th=0.00600) M 0.066328
+#|# UserTime = 21594.40  realTime = 21988.25
+#|# hdr=0 pix: 697, orig size:    13719051 comprs. size:  8406744  cr=0.61277883
+#|#   Bpap=12062  BpapQ=6091                     quantSize =  4244767 crq=0.30940675
+#|# ^^ MAE R=  5.933 G=  5.690 B=  6.234 |MSE R=  61.918 G=  59.055 B=  69.767 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  4.695 ^^^^ MSE= 40.879 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 19:59:54 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00020 f=000 y=0237 x=0136 pixs=0000697 ut=0021594 rt=0021988      4.695    40.879     5.933     6.234     5.690    61.918    69.767    59.055 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=734
+#|# Saved 1D PDFs: 9990 (904288, 439560 B) 0.011047 | 0.023925 M 5.027652
+#|# Saved colours: 28 (9947168, 448 B) 0.000003 | 0.000096 M 0.005124
+#|# Saved index slices: 26383 (904288, 1371916 B) 0.029175 | 0.073751 M 15.691866
+#|# Saved 2D PDF_LUMs: 37959 (82208, 3947736 B) 0.461743 | 0.874994 M 45.153889
+#|# Saved 2D PDF_ABs: 32521 (82208, 1691092 B) 0.395594 | 0.749643 M 19.342575
+#|# Saved 2D PDFs: 43382 (82208, 347056 B) 0.527710 | 0.535369 M 3.969599 /Cache hr=21.47% o=241.43 s=2599/270809
+#|# Saved 3D PDFs: 11576 (11744, 833472 B) 0.985695 | 0.985695 M 9.533187 /Cache hr=0.21% o=0.00 s=490/79231
+#|# Saved 4D PDFs: 734 (734, 105696 B) 1.000000 | M 1.208942  /Cache hr=3.23% o=0.03 s=34/5377
+#|# Index PDF4D: 734 Scale: 1  (dist=0.01040 GT th=0.00600) M 0.067163
+#|# UserTime = 22585.44  realTime = 22996.10
+#|# hdr=0 pix: 734, orig size:    14447322 comprs. size:  8742848  cr=0.60515354
+#|#   Bpap=11912  BpapQ=6020                     quantSize =  4418233 crq=0.30581675
+#|# ^^ MAE R=  5.933 G=  5.690 B=  6.236 |MSE R=  61.932 G=  59.073 B=  69.834 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  4.696 ^^^^ MSE= 40.890 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 20:16:41 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00021 f=000 y=0240 x=0072 pixs=0000734 ut=0022585 rt=0022996      4.696    40.890     5.933     6.236     5.690    61.932    69.834    59.073 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=1103
+#|# Saved 1D PDFs: 10532 (1358896, 463408 B) 0.007750 | 0.023644 M 4.991880
+#|# Saved colours: 28 (14947856, 448 B) 0.000002 | 0.000092 M 0.004826
+#|# Saved index slices: 27615 (1358896, 1435980 B) 0.020322 | 0.073038 M 15.468529
+#|# Saved 2D PDF_LUMs: 40495 (123536, 4211480 B) 0.327799 | 0.875946 M 45.366508
+#|# Saved 2D PDF_ABs: 34372 (123536, 1787344 B) 0.278235 | 0.743500 M 19.253458
+#|# Saved 2D PDFs: 46230 (123536, 369840 B) 0.374223 | 0.532647 M 3.983956 /Cache hr=15.14% o=30.38 s=401/270809
+#|# Saved 3D PDFs: 12399 (17648, 892728 B) 0.702573 | 0.985926 M 9.616560 /Cache hr=1.54% o=0.02 s=74/79231
+#|# Saved 4D PDFs: 786 (1103, 113184 B) 0.712602 | M 1.219230  /Cache hr=31.25% o=0.69 s=15/5377
+#|# Index PDF4D: 786 Scale: 1  (dist=0.01512 GT th=0.01500) M 0.095053
+#|# UserTime = 23551.70  realTime = 24002.02
+#|# hdr=0 pix: 1103, orig size:    21710349 comprs. size:  9283236  cr=0.42759497
+#|#   Bpap=8417  BpapQ=4268                     quantSize =  4707186 crq=0.21681761
+#|# ^^ MAE R=  7.259 G=  7.116 B=  7.701 |MSE R= 101.447 G= 102.856 B= 119.747 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  5.832 ^^^^ MSE= 69.959 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 20:33:28 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00022 f=000 y=0042 x=0253 pixs=0001103 ut=0023551 rt=0024002      5.832    69.959     7.259     7.701     7.116   101.447   119.747   102.856 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=2001
+#|# Saved 1D PDFs: 11144 (2465232, 490336 B) 0.004520 | 0.023772 M 5.037202
+#|# Saved colours: 28 (27117552, 448 B) 0.000001 | 0.000089 M 0.004602
+#|# Saved index slices: 28691 (2465232, 1491932 B) 0.011638 | 0.072755 M 15.326559
+#|# Saved 2D PDF_LUMs: 42617 (224112, 4432168 B) 0.190159 | 0.878864 M 45.531487
+#|# Saved 2D PDF_ABs: 35850 (224112, 1864200 B) 0.159965 | 0.739312 M 19.150854
+#|# Saved 2D PDFs: 48491 (224112, 387928 B) 0.216369 | 0.534554 M 3.985169 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 12959 (32016, 933048 B) 0.404766 | 0.986526 M 9.585166 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 821 (2001, 118224 B) 0.410295 | M 1.214511  /Cache hr=38.89% o=1.00 s=15/5377
+#|# Index PDF4D: 485 Scale: 0.979516  (dist=0.00956 < th=0.01500) M 0.164450
+#|# UserTime = 24470.04  realTime = 25003.29
+#|# hdr=0 pix: 2001, orig size:    39385683 comprs. size:  9734292  cr=0.24715306
+#|#   Bpap=4865  BpapQ=2473                     quantSize =  4946599 crq=0.12559384
+#|# ^^ MAE R=  8.699 G=  8.666 B=  9.359 |MSE R= 144.748 G= 151.326 B= 176.595 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  7.072 ^^^^ MSE=102.228 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 20:50:08 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00023 f=000 y=0190 x=0007 pixs=0002001 ut=0024470 rt=0025003      7.072   102.228     8.699     9.359     8.666   144.748   176.595   151.326 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=3260
+#|# Saved 1D PDFs: 11647 (4016320, 512468 B) 0.002900 | 0.024132 M 5.096902
+#|# Saved colours: 28 (44179520, 448 B) 0.000001 | 0.000085 M 0.004456
+#|# Saved index slices: 30025 (4016320, 1561300 B) 0.007476 | 0.073945 M 15.528371
+#|# Saved 2D PDF_LUMs: 43876 (365120, 4563104 B) 0.120169 | 0.881221 M 45.383698
+#|# Saved 2D PDF_ABs: 36913 (365120, 1919476 B) 0.101098 | 0.741374 M 19.090715
+#|# Saved 2D PDFs: 49790 (365120, 398320 B) 0.136366 | 0.537590 M 3.961609 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (52160, 952632 B) 0.253662 | 0.986799 M 9.474683 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (3260, 120672 B) 0.257055 | M 1.200179  /Cache hr=3.28% o=0.03 s=63/5377
+#|# Index PDF4D: 8 Scale: 0.975045  (dist=0.01197 GT th=0.00600) M 0.259386
+#|# UserTime = 25429.37  realTime = 26003.29
+#|# hdr=0 pix: 3260, orig size:    64166580 comprs. size: 10054500  cr=0.15669372
+#|#   Bpap=3085  BpapQ=1566                     quantSize =  5104094 crq=0.07954443
+#|# ^^ MAE R=  9.064 G=  9.050 B=  9.764 |MSE R= 153.960 G= 161.439 B= 188.179 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  7.379 ^^^^ MSE=108.929 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 21:06:48 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00024 f=000 y=0007 x=0034 pixs=0003260 ut=0025429 rt=0026003      7.379   108.929     9.064     9.764     9.050   153.960   188.179   161.439 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=4688
+#|# Saved 1D PDFs: 11647 (5775616, 512468 B) 0.002017 | 0.024132 M 5.091117
+#|# Saved colours: 28 (63531776, 448 B) 0.000000 | 0.000085 M 0.004451
+#|# Saved index slices: 30025 (5775616, 1561300 B) 0.005199 | 0.073945 M 15.510747
+#|# Saved 2D PDF_LUMs: 43876 (525056, 4563104 B) 0.083564 | 0.881221 M 45.332191
+#|# Saved 2D PDF_ABs: 36913 (525056, 1919476 B) 0.070303 | 0.741374 M 19.069050
+#|# Saved 2D PDFs: 49790 (525056, 398320 B) 0.094828 | 0.537590 M 3.957113 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (75008, 952632 B) 0.176395 | 0.986799 M 9.463930 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (4688, 120672 B) 0.178754 | M 1.198817  /Cache hr=5.88% o=0.06 s=20/5377
+#|# Index PDF4D: 765 Scale: 0.993411  (dist=0.00890 GT th=0.00600) M 0.372584
+#|# UserTime = 26420.60  realTime = 27004.73
+#|# hdr=0 pix: 4688, orig size:    92273904 comprs. size: 10065924  cr=0.10908744
+#|#   Bpap=2148  BpapQ=1091                     quantSize =  5111413 crq=0.05539392
+#|# ^^ MAE R=  9.197 G=  9.212 B=  9.930 |MSE R= 156.452 G= 164.642 B= 191.835 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  7.510 ^^^^ MSE=111.084 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 21:23:30 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00025 f=000 y=0001 x=0131 pixs=0004688 ut=0026420 rt=0027004      7.510   111.084     9.197     9.930     9.212   156.452   191.835   164.642 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=6113
+#|# Saved 1D PDFs: 11647 (7531216, 512468 B) 0.001546 | 0.024132 M 5.085358
+#|# Saved colours: 28 (82843376, 448 B) 0.000000 | 0.000085 M 0.004446
+#|# Saved index slices: 30025 (7531216, 1561300 B) 0.003987 | 0.073945 M 15.493200
+#|# Saved 2D PDF_LUMs: 43876 (684656, 4563104 B) 0.064085 | 0.881221 M 45.280910
+#|# Saved 2D PDF_ABs: 36913 (684656, 1919476 B) 0.053915 | 0.741374 M 19.047478
+#|# Saved 2D PDFs: 49790 (684656, 398320 B) 0.072723 | 0.537590 M 3.952637 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (97808, 952632 B) 0.135275 | 0.986799 M 9.453224 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (6113, 120672 B) 0.137085 | M 1.197461  /Cache hr=5.88% o=0.15 s=36/5377
+#|# Index PDF4D: 45 Scale: 1.02679  (dist=0.00868 GT th=0.00600) M 0.485288
+#|# UserTime = 27412.73  realTime = 28005.55
+#|# hdr=0 pix: 6113, orig size:   120322179 comprs. size: 10077324  cr=0.08375284
+#|#   Bpap=1649  BpapQ=838                     quantSize =  5118716 crq=0.04254175
+#|# ^^ MAE R=  9.294 G=  9.326 B= 10.061 |MSE R= 158.942 G= 167.981 B= 196.214 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  7.593 ^^^^ MSE=113.155 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 21:40:11 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00026 f=000 y=0000 x=0235 pixs=0006113 ut=0027412 rt=0028005      7.593   113.155     9.294    10.061     9.326   158.942   196.214   167.981 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=7556
+#|# Saved 1D PDFs: 11647 (9308992, 512468 B) 0.001251 | 0.024132 M 5.079539
+#|# Saved colours: 28 (102398912, 448 B) 0.000000 | 0.000085 M 0.004441
+#|# Saved index slices: 30025 (9308992, 1561300 B) 0.003225 | 0.073945 M 15.475472
+#|# Saved 2D PDF_LUMs: 43876 (846272, 4563104 B) 0.051846 | 0.881221 M 45.229099
+#|# Saved 2D PDF_ABs: 36913 (846272, 1919476 B) 0.043618 | 0.741374 M 19.025682
+#|# Saved 2D PDFs: 49790 (846272, 398320 B) 0.058835 | 0.537590 M 3.948114 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (120896, 952632 B) 0.109441 | 0.986799 M 9.442408 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (7556, 120672 B) 0.110905 | M 1.196091  /Cache hr=20.00% o=0.20 s=8/5377
+#|# Index PDF4D: 716 Scale: 1.00472  (dist=0.01099 GT th=0.00600) M 0.599155
+#|# UserTime = 28403.91  realTime = 29006.71
+#|# hdr=0 pix: 7556, orig size:   148724748 comprs. size: 10088868  cr=0.06783584
+#|#   Bpap=1336  BpapQ=679                     quantSize =  5126111 crq=0.03446710
+#|# ^^ MAE R=  9.330 G=  9.357 B= 10.081 |MSE R= 159.516 G= 168.388 B= 196.350 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  7.621 ^^^^ MSE=113.479 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 21:56:52 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00027 f=000 y=0031 x=0075 pixs=0007556 ut=0028403 rt=0029006      7.621   113.479     9.330    10.081     9.357   159.516   196.350   168.388 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=8968
+#|# Saved 1D PDFs: 11647 (11048576, 512468 B) 0.001054 | 0.024132 M 5.073858
+#|# Saved colours: 28 (121534336, 448 B) 0.000000 | 0.000085 M 0.004436
+#|# Saved index slices: 30025 (11048576, 1561300 B) 0.002718 | 0.073945 M 15.458165
+#|# Saved 2D PDF_LUMs: 43876 (1004416, 4563104 B) 0.043683 | 0.881221 M 45.178513
+#|# Saved 2D PDF_ABs: 36913 (1004416, 1919476 B) 0.036751 | 0.741374 M 19.004404
+#|# Saved 2D PDFs: 49790 (1004416, 398320 B) 0.049571 | 0.537590 M 3.943698 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (143488, 952632 B) 0.092210 | 0.986799 M 9.431847 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (8968, 120672 B) 0.093443 | M 1.194753  /Cache hr=11.11% o=0.11 s=12/5377
+#|# Index PDF4D: 45 Scale: 1.0241  (dist=0.00997 GT th=0.00600) M 0.710325
+#|# UserTime = 29396.20  realTime = 30007.56
+#|# hdr=0 pix: 8968, orig size:   176517144 comprs. size: 10100164  cr=0.05721917
+#|#   Bpap=1127  BpapQ=573                     quantSize =  5133348 crq=0.02908130
+#|# ^^ MAE R=  9.408 G=  9.454 B= 10.176 |MSE R= 161.747 G= 171.243 B= 199.661 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  7.698 ^^^^ MSE=115.394 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 22:13:33 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00028 f=000 y=0017 x=0166 pixs=0008968 ut=0029396 rt=0030007      7.698   115.394     9.408    10.176     9.454   161.747   199.661   171.243 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=10396
+#|# Saved 1D PDFs: 11647 (12807872, 512468 B) 0.000909 | 0.024132 M 5.068126
+#|# Saved colours: 28 (140886592, 448 B) 0.000000 | 0.000085 M 0.004431
+#|# Saved index slices: 30025 (12807872, 1561300 B) 0.002344 | 0.073945 M 15.440701
+#|# Saved 2D PDF_LUMs: 43876 (1164352, 4563104 B) 0.037683 | 0.881221 M 45.127472
+#|# Saved 2D PDF_ABs: 36913 (1164352, 1919476 B) 0.031703 | 0.741374 M 18.982933
+#|# Saved 2D PDFs: 49790 (1164352, 398320 B) 0.042762 | 0.537590 M 3.939243 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (166336, 952632 B) 0.079544 | 0.986799 M 9.421191 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (10396, 120672 B) 0.080608 | M 1.193403  /Cache hr=6.90% o=0.41 s=31/5377
+#|# Index PDF4D: 142 Scale: 0.983652  (dist=0.00808 GT th=0.00600) M 0.822502
+#|# UserTime = 30391.34  realTime = 31008.27
+#|# hdr=0 pix: 10396, orig size:   204624468 comprs. size: 10111588  cr=0.04941534
+#|#   Bpap=973  BpapQ=495                     quantSize =  5140666 crq=0.02512244
+#|# ^^ MAE R=  9.432 G=  9.492 B= 10.214 |MSE R= 162.387 G= 172.271 B= 201.034 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  7.726 ^^^^ MSE=116.049 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 22:30:13 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00029 f=000 y=0030 x=0246 pixs=0010396 ut=0030391 rt=0031008      7.726   116.049     9.432    10.214     9.492   162.387   201.034   172.271 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=11805
+#|# Saved 1D PDFs: 11647 (14543760, 512468 B) 0.000801 | 0.024132 M 5.062482
+#|# Saved colours: 28 (159981360, 448 B) 0.000000 | 0.000085 M 0.004426
+#|# Saved index slices: 30025 (14543760, 1561300 B) 0.002064 | 0.073945 M 15.423507
+#|# Saved 2D PDF_LUMs: 43876 (1322160, 4563104 B) 0.033185 | 0.881221 M 45.077221
+#|# Saved 2D PDF_ABs: 36913 (1322160, 1919476 B) 0.027919 | 0.741374 M 18.961796
+#|# Saved 2D PDFs: 49790 (1322160, 398320 B) 0.037658 | 0.537590 M 3.934856 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (188880, 952632 B) 0.070050 | 0.986799 M 9.410700 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (11805, 120672 B) 0.070987 | M 1.192074  /Cache hr=6.67% o=0.33 s=32/5377
+#|# Index PDF4D: 836 Scale: 0.994207  (dist=0.01159 GT th=0.00600) M 0.932938
+#|# UserTime = 31383.33  realTime = 32008.59
+#|# hdr=0 pix: 11805, orig size:   232357815 comprs. size: 10122860  cr=0.04356583
+#|#   Bpap=858  BpapQ=437                     quantSize =  5147887 crq=0.02215500
+#|# ^^ MAE R=  9.517 G=  9.578 B= 10.294 |MSE R= 165.071 G= 175.124 B= 203.866 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  7.800 ^^^^ MSE=118.027 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 22:46:54 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00030 f=000 y=0039 x=0094 pixs=0011805 ut=0031383 rt=0032008      7.800   118.027     9.517    10.294     9.578   165.071   203.866   175.124 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=13223
+#|# Saved 1D PDFs: 11647 (16290736, 512468 B) 0.000715 | 0.024132 M 5.056816
+#|# Saved colours: 28 (179198096, 448 B) 0.000000 | 0.000085 M 0.004421
+#|# Saved index slices: 30025 (16290736, 1561300 B) 0.001843 | 0.073945 M 15.406242
+#|# Saved 2D PDF_LUMs: 43876 (1480976, 4563104 B) 0.029626 | 0.881221 M 45.026764
+#|# Saved 2D PDF_ABs: 36913 (1480976, 1919476 B) 0.024925 | 0.741374 M 18.940571
+#|# Saved 2D PDFs: 49790 (1480976, 398320 B) 0.033620 | 0.537590 M 3.930452 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (211568, 952632 B) 0.062538 | 0.986799 M 9.400166 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (13223, 120672 B) 0.063374 | M 1.190740  /Cache hr=5.00% o=0.12 s=42/5377
+#|# Index PDF4D: 836 Scale: 0.983736  (dist=0.01005 GT th=0.00600) M 1.043831
+#|# UserTime = 32378.52  realTime = 33009.54
+#|# hdr=0 pix: 13223, orig size:   260268309 comprs. size: 10134204  cr=0.03893753
+#|#   Bpap=767  BpapQ=390                     quantSize =  5155154 crq=0.01980708
+#|# ^^ MAE R=  9.540 G=  9.607 B= 10.332 |MSE R= 165.531 G= 175.889 B= 204.993 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  7.828 ^^^^ MSE=118.620 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 23:03:35 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00031 f=000 y=0042 x=0188 pixs=0013223 ut=0032378 rt=0033009      7.828   118.620     9.540    10.332     9.607   165.531   204.993   175.889 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=14653
+#|# Saved 1D PDFs: 11647 (18052496, 512468 B) 0.000645 | 0.024132 M 5.051114
+#|# Saved colours: 28 (198577456, 448 B) 0.000000 | 0.000085 M 0.004416
+#|# Saved index slices: 30025 (18052496, 1561300 B) 0.001663 | 0.073945 M 15.388870
+#|# Saved 2D PDF_LUMs: 43876 (1641136, 4563104 B) 0.026735 | 0.881221 M 44.975990
+#|# Saved 2D PDF_ABs: 36913 (1641136, 1919476 B) 0.022492 | 0.741374 M 18.919212
+#|# Saved 2D PDFs: 49790 (1641136, 398320 B) 0.030339 | 0.537590 M 3.926020 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (234448, 952632 B) 0.056435 | 0.986799 M 9.389566 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (14653, 120672 B) 0.057190 | M 1.189397  /Cache hr=3.23% o=0.44 s=64/5377
+#|# Index PDF4D: 391 Scale: 1.01408  (dist=0.01229 GT th=0.00600) M 1.155412
+#|# UserTime = 33373.77  realTime = 34010.58
+#|# hdr=0 pix: 14653, orig size:   288414999 comprs. size: 10145644  cr=0.03517724
+#|#   Bpap=693  BpapQ=353                     quantSize =  5162483 crq=0.01789950
+#|# ^^ MAE R=  9.559 G=  9.629 B= 10.357 |MSE R= 166.044 G= 176.576 B= 205.887 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  7.848 ^^^^ MSE=119.128 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 23:20:16 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00032 f=000 y=0053 x=0018 pixs=0014653 ut=0033373 rt=0034010      7.848   119.128     9.559    10.357     9.629   166.044   205.887   176.576 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=16057
+#|# Saved 1D PDFs: 11647 (19782224, 512468 B) 0.000589 | 0.024132 M 5.045528
+#|# Saved colours: 28 (217604464, 448 B) 0.000000 | 0.000085 M 0.004411
+#|# Saved index slices: 30025 (19782224, 1561300 B) 0.001518 | 0.073945 M 15.371853
+#|# Saved 2D PDF_LUMs: 43876 (1798384, 4563104 B) 0.024397 | 0.881221 M 44.926254
+#|# Saved 2D PDF_ABs: 36913 (1798384, 1919476 B) 0.020526 | 0.741374 M 18.898291
+#|# Saved 2D PDFs: 49790 (1798384, 398320 B) 0.027686 | 0.537590 M 3.921678 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (256912, 952632 B) 0.051500 | 0.986799 M 9.379183 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (16057, 120672 B) 0.052189 | M 1.188082  /Cache hr=3.45% o=0.03 s=60/5377
+#|# Index PDF4D: 705 Scale: 1.00651  (dist=0.00929 GT th=0.00600) M 1.264720
+#|# UserTime = 34369.63  realTime = 35011.41
+#|# hdr=0 pix: 16057, orig size:   316049931 comprs. size: 10156876  cr=0.03213693
+#|#   Bpap=633  BpapQ=322                     quantSize =  5169679 crq=0.01635716
+#|# ^^ MAE R=  9.622 G=  9.700 B= 10.432 |MSE R= 168.171 G= 179.057 B= 208.688 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  7.908 ^^^^ MSE=120.860 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 23:36:57 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00033 f=000 y=0063 x=0104 pixs=0016057 ut=0034369 rt=0035011      7.908   120.860     9.622    10.432     9.700   168.171   208.688   179.057 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=17462
+#|# Saved 1D PDFs: 11647 (21513184, 512468 B) 0.000541 | 0.024132 M 5.039950
+#|# Saved colours: 28 (236645024, 448 B) 0.000000 | 0.000085 M 0.004406
+#|# Saved index slices: 30025 (21513184, 1561300 B) 0.001396 | 0.073945 M 15.354860
+#|# Saved 2D PDF_LUMs: 43876 (1955744, 4563104 B) 0.022434 | 0.881221 M 44.876595
+#|# Saved 2D PDF_ABs: 36913 (1955744, 1919476 B) 0.018874 | 0.741374 M 18.877401
+#|# Saved 2D PDFs: 49790 (1955744, 398320 B) 0.025458 | 0.537590 M 3.917343 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (279392, 952632 B) 0.047356 | 0.986799 M 9.368815 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (17462, 120672 B) 0.047990 | M 1.186769  /Cache hr=10.91% o=1.75 s=53/5377
+#|# Index PDF4D: 378 Scale: 1.02413  (dist=0.01056 GT th=0.00600) M 1.373863
+#|# UserTime = 35365.36  realTime = 36012.16
+#|# hdr=0 pix: 17462, orig size:   343704546 comprs. size: 10168116  cr=0.02958389
+#|#   Bpap=583  BpapQ=297                     quantSize =  5176879 crq=0.01506200
+#|# ^^ MAE R=  9.645 G=  9.732 B= 10.474 |MSE R= 168.802 G= 179.981 B= 209.973 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  7.935 ^^^^ MSE=121.492 ^^^^^
+#Continuing log for compression, DATE Sun Apr  5 23:53:37 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00034 f=000 y=0048 x=0193 pixs=0017462 ut=0035365 rt=0036012      7.935   121.492     9.645    10.474     9.732   168.802   209.973   179.981 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=18872
+#|# Saved 1D PDFs: 11647 (23250304, 512468 B) 0.000501 | 0.024132 M 5.034366
+#|# Saved colours: 28 (255753344, 448 B) 0.000000 | 0.000085 M 0.004401
+#|# Saved index slices: 30025 (23250304, 1561300 B) 0.001291 | 0.073945 M 15.337845
+#|# Saved 2D PDF_LUMs: 43876 (2113664, 4563104 B) 0.020758 | 0.881221 M 44.826862
+#|# Saved 2D PDF_ABs: 36913 (2113664, 1919476 B) 0.017464 | 0.741374 M 18.856482
+#|# Saved 2D PDFs: 49790 (2113664, 398320 B) 0.023556 | 0.537590 M 3.913002 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (301952, 952632 B) 0.043818 | 0.986799 M 9.358434 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (18872, 120672 B) 0.044404 | M 1.185453  /Cache hr=1.75% o=0.02 s=60/5377
+#|# Index PDF4D: 103 Scale: 1.02507  (dist=0.01418 GT th=0.00600) M 1.483153
+#|# UserTime = 36360.29  realTime = 37012.28
+#|# hdr=0 pix: 18872, orig size:   371457576 comprs. size: 10179396  cr=0.02740393
+#|#   Bpap=540  BpapQ=275                     quantSize =  5184106 crq=0.01395612
+#|# ^^ MAE R=  9.666 G=  9.753 B= 10.501 |MSE R= 169.396 G= 180.653 B= 210.957 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  7.955 ^^^^ MSE=121.989 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 00:10:18 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00035 f=000 y=0075 x=0040 pixs=0018872 ut=0036360 rt=0037012      7.955   121.989     9.666    10.501     9.753   169.396   210.957   180.653 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=20272
+#|# Saved 1D PDFs: 11647 (24975104, 512468 B) 0.000466 | 0.024132 M 5.028832
+#|# Saved colours: 28 (274726144, 448 B) 0.000000 | 0.000085 M 0.004396
+#|# Saved index slices: 30025 (24975104, 1561300 B) 0.001202 | 0.073945 M 15.320988
+#|# Saved 2D PDF_LUMs: 43876 (2270464, 4563104 B) 0.019325 | 0.881221 M 44.777596
+#|# Saved 2D PDF_ABs: 36913 (2270464, 1919476 B) 0.016258 | 0.741374 M 18.835758
+#|# Saved 2D PDFs: 49790 (2270464, 398320 B) 0.021929 | 0.537590 M 3.908702 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (324352, 952632 B) 0.040792 | 0.986799 M 9.348148 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (20272, 120672 B) 0.041338 | M 1.184151  /Cache hr=2.04% o=0.02 s=52/5377
+#|# Index PDF4D: 833 Scale: 1.02093  (dist=0.00902 GT th=0.00600) M 1.591428
+#|# UserTime = 37355.65  realTime = 38012.19
+#|# hdr=0 pix: 20272, orig size:   399013776 comprs. size: 10190596  cr=0.02553946
+#|#   Bpap=503  BpapQ=257                     quantSize =  5191281 crq=0.01301028
+#|# ^^ MAE R=  9.695 G=  9.789 B= 10.540 |MSE R= 170.326 G= 181.824 B= 212.301 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  7.985 ^^^^ MSE=122.810 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 00:26:57 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00036 f=000 y=0065 x=0125 pixs=0020272 ut=0037355 rt=0038012      7.985   122.810     9.695    10.540     9.789   170.326   212.301   181.824 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=21673
+#|# Saved 1D PDFs: 11647 (26701136, 512468 B) 0.000436 | 0.024132 M 5.023308
+#|# Saved colours: 28 (293712496, 448 B) 0.000000 | 0.000085 M 0.004391
+#|# Saved index slices: 30025 (26701136, 1561300 B) 0.001124 | 0.073945 M 15.304156
+#|# Saved 2D PDF_LUMs: 43876 (2427376, 4563104 B) 0.018075 | 0.881221 M 44.728401
+#|# Saved 2D PDF_ABs: 36913 (2427376, 1919476 B) 0.015207 | 0.741374 M 18.815065
+#|# Saved 2D PDFs: 49790 (2427376, 398320 B) 0.020512 | 0.537590 M 3.904408 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (346768, 952632 B) 0.038155 | 0.986799 M 9.337878 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (21673, 120672 B) 0.038666 | M 1.182850  /Cache hr=2.38% o=0.02 s=45/5377
+#|# Index PDF4D: 287 Scale: 0.993451  (dist=0.00971 GT th=0.00600) M 1.699543
+#|# UserTime = 38350.54  realTime = 39012.01
+#|# hdr=0 pix: 21673, orig size:   426589659 comprs. size: 10201804  cr=0.02391479
+#|#   Bpap=471  BpapQ=240                     quantSize =  5198461 crq=0.01218609
+#|# ^^ MAE R=  9.693 G=  9.791 B= 10.547 |MSE R= 170.240 G= 181.910 B= 212.559 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  7.989 ^^^^ MSE=122.910 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 00:43:37 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00037 f=000 y=0078 x=0217 pixs=0021673 ut=0038350 rt=0039012      7.989   122.910     9.693    10.547     9.791   170.240   212.559   181.910 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=23094
+#|# Saved 1D PDFs: 11647 (28451808, 512468 B) 0.000409 | 0.024132 M 5.017716
+#|# Saved colours: 28 (312969888, 448 B) 0.000000 | 0.000085 M 0.004386
+#|# Saved index slices: 30025 (28451808, 1561300 B) 0.001055 | 0.073945 M 15.287122
+#|# Saved 2D PDF_LUMs: 43876 (2586528, 4563104 B) 0.016963 | 0.881221 M 44.678616
+#|# Saved 2D PDF_ABs: 36913 (2586528, 1919476 B) 0.014271 | 0.741374 M 18.794123
+#|# Saved 2D PDFs: 49790 (2586528, 398320 B) 0.019250 | 0.537590 M 3.900062 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (369504, 952632 B) 0.035807 | 0.986799 M 9.327484 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (23094, 120672 B) 0.036286 | M 1.181533  /Cache hr=3.64% o=0.22 s=57/5377
+#|# Index PDF4D: 541 Scale: 1.01389  (dist=0.01236 GT th=0.00600) M 1.808958
+#|# UserTime = 39345.24  realTime = 40012.49
+#|# hdr=0 pix: 23094, orig size:   454559202 comprs. size: 10213172  cr=0.02246830
+#|#   Bpap=443  BpapQ=226                     quantSize =  5205743 crq=0.01145229
+#|# ^^ MAE R=  9.703 G=  9.801 B= 10.554 |MSE R= 170.584 G= 182.218 B= 212.878 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  7.996 ^^^^ MSE=123.120 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 01:00:18 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00038 f=000 y=0092 x=0049 pixs=0023094 ut=0039345 rt=0040012      7.996   123.120     9.703    10.554     9.801   170.584   212.878   182.218 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=24497
+#|# Saved 1D PDFs: 11647 (30180304, 512468 B) 0.000386 | 0.024132 M 5.012208
+#|# Saved colours: 28 (331983344, 448 B) 0.000000 | 0.000085 M 0.004382
+#|# Saved index slices: 30025 (30180304, 1561300 B) 0.000995 | 0.073945 M 15.270340
+#|# Saved 2D PDF_LUMs: 43876 (2743664, 4563104 B) 0.015992 | 0.881221 M 44.629570
+#|# Saved 2D PDF_ABs: 36913 (2743664, 1919476 B) 0.013454 | 0.741374 M 18.773491
+#|# Saved 2D PDFs: 49790 (2743664, 398320 B) 0.018147 | 0.537590 M 3.895780 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (391952, 952632 B) 0.033757 | 0.986799 M 9.317245 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (24497, 120672 B) 0.034208 | M 1.180236  /Cache hr=4.00% o=0.60 s=52/5377
+#|# Index PDF4D: 279 Scale: 1.01703  (dist=0.01156 GT th=0.00600) M 1.916749
+#|# UserTime = 40338.15  realTime = 41013.17
+#|# hdr=0 pix: 24497, orig size:   482174451 comprs. size: 10224396  cr=0.02120477
+#|#   Bpap=418  BpapQ=213                     quantSize =  5212934 crq=0.01081130
+#|# ^^ MAE R=  9.708 G=  9.809 B= 10.567 |MSE R= 170.667 G= 182.456 B= 213.235 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.004 ^^^^ MSE=123.291 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 01:16:59 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00039 f=000 y=0090 x=0155 pixs=0024497 ut=0040338 rt=0041013      8.004   123.291     9.708    10.567     9.809   170.667   213.235   182.456 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=25903
+#|# Saved 1D PDFs: 11647 (31912496, 512468 B) 0.000365 | 0.024132 M 5.006700
+#|# Saved colours: 28 (351037456, 448 B) 0.000000 | 0.000085 M 0.004377
+#|# Saved index slices: 30025 (31912496, 1561300 B) 0.000941 | 0.073945 M 15.253559
+#|# Saved 2D PDF_LUMs: 43876 (2901136, 4563104 B) 0.015124 | 0.881221 M 44.580528
+#|# Saved 2D PDF_ABs: 36913 (2901136, 1919476 B) 0.012724 | 0.741374 M 18.752861
+#|# Saved 2D PDFs: 49790 (2901136, 398320 B) 0.017162 | 0.537590 M 3.891499 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (414448, 952632 B) 0.031924 | 0.986799 M 9.307006 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (25903, 120672 B) 0.032351 | M 1.178939  /Cache hr=6.25% o=0.19 s=49/5377
+#|# Index PDF4D: 837 Scale: 0.998557  (dist=0.01004 GT th=0.00600) M 2.024533
+#|# UserTime = 41331.40  realTime = 42013.05
+#|# hdr=0 pix: 25903, orig size:   509848749 comprs. size: 10235644  cr=0.02007584
+#|#   Bpap=396  BpapQ=202                     quantSize =  5220139 crq=0.01023860
+#|# ^^ MAE R=  9.698 G=  9.802 B= 10.564 |MSE R= 170.309 G= 182.123 B= 212.977 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  7.999 ^^^^ MSE=123.097 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 01:33:38 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00040 f=000 y=0088 x=0233 pixs=0025903 ut=0041331 rt=0042013      7.999   123.097     9.698    10.564     9.802   170.309   212.977   182.123 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=27336
+#|# Saved 1D PDFs: 11647 (33677952, 512468 B) 0.000346 | 0.024132 M 5.001099
+#|# Saved colours: 28 (370457472, 448 B) 0.000000 | 0.000085 M 0.004372
+#|# Saved index slices: 30025 (33677952, 1561300 B) 0.000892 | 0.073945 M 15.236494
+#|# Saved 2D PDF_LUMs: 43876 (3061632, 4563104 B) 0.014331 | 0.881221 M 44.530651
+#|# Saved 2D PDF_ABs: 36913 (3061632, 1919476 B) 0.012057 | 0.741374 M 18.731880
+#|# Saved 2D PDFs: 49790 (3061632, 398320 B) 0.016263 | 0.537590 M 3.887146 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (437376, 952632 B) 0.030251 | 0.986799 M 9.296594 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (27336, 120672 B) 0.030656 | M 1.177620  /Cache hr=11.11% o=0.11 s=12/5377
+#|# Index PDF4D: 832 Scale: 1.0039  (dist=0.01251 GT th=0.00600) M 2.134144
+#|# UserTime = 42324.88  realTime = 43013.16
+#|# hdr=0 pix: 27336, orig size:   538054488 comprs. size: 10247108  cr=0.01904474
+#|#   Bpap=375  BpapQ=192                     quantSize =  5227484 crq=0.00971553
+#|# ^^ MAE R=  9.707 G=  9.811 B= 10.567 |MSE R= 170.654 G= 182.473 B= 213.243 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.006 ^^^^ MSE=123.326 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 01:50:18 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00041 f=000 y=0107 x=0070 pixs=0027336 ut=0042324 rt=0043013      8.006   123.326     9.707    10.567     9.811   170.654   213.243   182.473 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=28749
+#|# Saved 1D PDFs: 11647 (35418768, 512468 B) 0.000329 | 0.024132 M 4.995588
+#|# Saved colours: 28 (389606448, 448 B) 0.000000 | 0.000085 M 0.004367
+#|# Saved index slices: 30025 (35418768, 1561300 B) 0.000848 | 0.073945 M 15.219705
+#|# Saved 2D PDF_LUMs: 43876 (3219888, 4563104 B) 0.013627 | 0.881221 M 44.481583
+#|# Saved 2D PDF_ABs: 36913 (3219888, 1919476 B) 0.011464 | 0.741374 M 18.711239
+#|# Saved 2D PDFs: 49790 (3219888, 398320 B) 0.015463 | 0.537590 M 3.882862 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (459984, 952632 B) 0.028764 | 0.986799 M 9.286349 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (28749, 120672 B) 0.029149 | M 1.176322  /Cache hr=14.29% o=0.14 s=16/5377
+#|# Index PDF4D: 271 Scale: 0.99248  (dist=0.00889 GT th=0.00600) M 2.241984
+#|# UserTime = 43315.62  realTime = 44013.39
+#|# hdr=0 pix: 28749, orig size:   565866567 comprs. size: 10258412  cr=0.01812868
+#|#   Bpap=357  BpapQ=183                     quantSize =  5234725 crq=0.00925081
+#|# ^^ MAE R=  9.700 G=  9.808 B= 10.564 |MSE R= 170.358 G= 182.253 B= 213.063 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.002 ^^^^ MSE=123.165 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 02:06:59 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00042 f=000 y=0098 x=0171 pixs=0028749 ut=0043315 rt=0044013      8.002   123.165     9.700    10.564     9.808   170.358   213.063   182.253 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=30163
+#|# Saved 1D PDFs: 11647 (37160816, 512468 B) 0.000313 | 0.024132 M 4.990086
+#|# Saved colours: 28 (408768976, 448 B) 0.000000 | 0.000085 M 0.004362
+#|# Saved index slices: 30025 (37160816, 1561300 B) 0.000808 | 0.073945 M 15.202940
+#|# Saved 2D PDF_LUMs: 43876 (3378256, 4563104 B) 0.012988 | 0.881221 M 44.432587
+#|# Saved 2D PDF_ABs: 36913 (3378256, 1919476 B) 0.010927 | 0.741374 M 18.690628
+#|# Saved 2D PDFs: 49790 (3378256, 398320 B) 0.014738 | 0.537590 M 3.878585 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (482608, 952632 B) 0.027416 | 0.986799 M 9.276121 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (30163, 120672 B) 0.027782 | M 1.175027  /Cache hr=5.00% o=0.05 s=23/5377
+#|# Index PDF4D: 337 Scale: 0.968131  (dist=0.01220 GT th=0.00600) M 2.349664
+#|# UserTime = 44306.38  realTime = 45014.32
+#|# hdr=0 pix: 30163, orig size:   593698329 comprs. size: 10269724  cr=0.01729788
+#|#   Bpap=341  BpapQ=174                     quantSize =  5241972 crq=0.00882935
+#|# ^^ MAE R=  9.705 G=  9.811 B= 10.574 |MSE R= 170.431 G= 182.329 B= 213.342 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.005 ^^^^ MSE=123.203 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 02:23:40 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00043 f=000 y=0118 x=0012 pixs=0030163 ut=0044306 rt=0045014      8.005   123.203     9.705    10.574     9.811   170.431   213.342   182.329 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=31580
+#|# Saved 1D PDFs: 11647 (38906560, 512468 B) 0.000299 | 0.024132 M 4.984583
+#|# Saved colours: 28 (427972160, 448 B) 0.000000 | 0.000085 M 0.004358
+#|# Saved index slices: 30025 (38906560, 1561300 B) 0.000772 | 0.073945 M 15.186177
+#|# Saved 2D PDF_LUMs: 43876 (3536960, 4563104 B) 0.012405 | 0.881221 M 44.383595
+#|# Saved 2D PDF_ABs: 36913 (3536960, 1919476 B) 0.010436 | 0.741374 M 18.670021
+#|# Saved 2D PDFs: 49790 (3536960, 398320 B) 0.014077 | 0.537590 M 3.874309 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (505280, 952632 B) 0.026185 | 0.986799 M 9.265893 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (31580, 120672 B) 0.026536 | M 1.173731  /Cache hr=3.45% o=0.03 s=32/5377
+#|# Index PDF4D: 114 Scale: 1.02107  (dist=0.01210 GT th=0.00600) M 2.457334
+#|# UserTime = 45297.62  realTime = 46015.43
+#|# hdr=0 pix: 31580, orig size:   621589140 comprs. size: 10281060  cr=0.01653996
+#|#   Bpap=326  BpapQ=167                     quantSize =  5249234 crq=0.00844486
+#|# ^^ MAE R=  9.717 G=  9.823 B= 10.583 |MSE R= 170.878 G= 182.776 B= 213.696 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.015 ^^^^ MSE=123.511 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 02:40:21 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00044 f=000 y=0114 x=0083 pixs=0031580 ut=0045297 rt=0046015      8.015   123.511     9.717    10.583     9.823   170.878   213.696   182.776 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=32988
+#|# Saved 1D PDFs: 11647 (40641216, 512468 B) 0.000287 | 0.024132 M 4.979128
+#|# Saved colours: 28 (447053376, 448 B) 0.000000 | 0.000085 M 0.004353
+#|# Saved index slices: 30025 (40641216, 1561300 B) 0.000739 | 0.073945 M 15.169558
+#|# Saved 2D PDF_LUMs: 43876 (3694656, 4563104 B) 0.011876 | 0.881221 M 44.335022
+#|# Saved 2D PDF_ABs: 36913 (3694656, 1919476 B) 0.009991 | 0.741374 M 18.649588
+#|# Saved 2D PDFs: 49790 (3694656, 398320 B) 0.013476 | 0.537590 M 3.870069 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (527808, 952632 B) 0.025068 | 0.986799 M 9.255753 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (32988, 120672 B) 0.025403 | M 1.172447  /Cache hr=3.45% o=0.03 s=32/5377
+#|# Index PDF4D: 752 Scale: 1.03799  (dist=0.01101 GT th=0.00600) M 2.564086
+#|# UserTime = 46288.84  realTime = 47016.55
+#|# hdr=0 pix: 32988, orig size:   649302804 comprs. size: 10292324  cr=0.01585135
+#|#   Bpap=313  BpapQ=160                     quantSize =  5256450 crq=0.00809553
+#|# ^^ MAE R=  9.718 G=  9.827 B= 10.589 |MSE R= 170.817 G= 182.773 B= 213.784 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.018 ^^^^ MSE=123.517 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 02:57:02 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00045 f=000 y=0123 x=0190 pixs=0032988 ut=0046288 rt=0047016      8.018   123.517     9.718    10.589     9.827   170.817   213.784   182.773 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=34401
+#|# Saved 1D PDFs: 11647 (42382032, 512468 B) 0.000275 | 0.024132 M 4.973666
+#|# Saved colours: 28 (466202352, 448 B) 0.000000 | 0.000085 M 0.004348
+#|# Saved index slices: 30025 (42382032, 1561300 B) 0.000708 | 0.073945 M 15.152915
+#|# Saved 2D PDF_LUMs: 43876 (3852912, 4563104 B) 0.011388 | 0.881221 M 44.286381
+#|# Saved 2D PDF_ABs: 36913 (3852912, 1919476 B) 0.009581 | 0.741374 M 18.629128
+#|# Saved 2D PDFs: 49790 (3852912, 398320 B) 0.012923 | 0.537590 M 3.865823 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (550416, 952632 B) 0.024038 | 0.986799 M 9.245598 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (34401, 120672 B) 0.024360 | M 1.171160  /Cache hr=2.94% o=0.03 s=37/5377
+#|# Index PDF4D: 438 Scale: 1.01551  (dist=0.01095 GT th=0.00600) M 2.670981
+#|# UserTime = 47280.56  realTime = 48017.16
+#|# hdr=0 pix: 34401, orig size:   677114883 comprs. size: 10303628  cr=0.01521696
+#|#   Bpap=300  BpapQ=154                     quantSize =  5263692 crq=0.00777371
+#|# ^^ MAE R=  9.722 G=  9.831 B= 10.595 |MSE R= 170.941 G= 182.900 B= 214.010 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.022 ^^^^ MSE=123.609 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 03:13:43 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00046 f=000 y=0128 x=0029 pixs=0034401 ut=0047280 rt=0048017      8.022   123.609     9.722    10.595     9.831   170.941   214.010   182.900 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=35808
+#|# Saved 1D PDFs: 11647 (44115456, 512468 B) 0.000264 | 0.024132 M 4.968238
+#|# Saved colours: 28 (485270016, 448 B) 0.000000 | 0.000085 M 0.004343
+#|# Saved index slices: 30025 (44115456, 1561300 B) 0.000681 | 0.073945 M 15.136379
+#|# Saved 2D PDF_LUMs: 43876 (4010496, 4563104 B) 0.010940 | 0.881221 M 44.238056
+#|# Saved 2D PDF_ABs: 36913 (4010496, 1919476 B) 0.009204 | 0.741374 M 18.608799
+#|# Saved 2D PDFs: 49790 (4010496, 398320 B) 0.012415 | 0.537590 M 3.861604 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (572928, 952632 B) 0.023094 | 0.986799 M 9.235509 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (35808, 120672 B) 0.023403 | M 1.169882  /Cache hr=3.03% o=0.03 s=36/5377
+#|# Index PDF4D: 357 Scale: 1.02496  (dist=0.01145 GT th=0.00600) M 2.777191
+#|# UserTime = 48273.95  realTime = 49017.43
+#|# hdr=0 pix: 35808, orig size:   704808864 comprs. size: 10314884  cr=0.01463501
+#|#   Bpap=289  BpapQ=148                     quantSize =  5270903 crq=0.00747849
+#|# ^^ MAE R=  9.738 G=  9.847 B= 10.614 |MSE R= 171.469 G= 183.504 B= 214.697 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.036 ^^^^ MSE=124.041 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 03:30:23 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00047 f=000 y=0141 x=0126 pixs=0035808 ut=0048273 rt=0049017      8.036   124.041     9.738    10.614     9.847   171.469   214.697   183.504 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=37216
+#|# Saved 1D PDFs: 11647 (45850112, 512468 B) 0.000254 | 0.024132 M 4.962819
+#|# Saved colours: 28 (504351232, 448 B) 0.000000 | 0.000085 M 0.004339
+#|# Saved index slices: 30025 (45850112, 1561300 B) 0.000655 | 0.073945 M 15.119868
+#|# Saved 2D PDF_LUMs: 43876 (4168192, 4563104 B) 0.010526 | 0.881221 M 44.189800
+#|# Saved 2D PDF_ABs: 36913 (4168192, 1919476 B) 0.008856 | 0.741374 M 18.588499
+#|# Saved 2D PDFs: 49790 (4168192, 398320 B) 0.011945 | 0.537590 M 3.857392 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (595456, 952632 B) 0.022220 | 0.986799 M 9.225434 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (37216, 120672 B) 0.022517 | M 1.168606  /Cache hr=6.06% o=0.03 s=35/5377
+#|# Index PDF4D: 37 Scale: 1.02421  (dist=0.01239 GT th=0.00600) M 2.883244
+#|# UserTime = 49268.66  realTime = 50018.11
+#|# hdr=0 pix: 37216, orig size:   732522528 comprs. size: 10326148  cr=0.01409670
+#|#   Bpap=278  BpapQ=142                     quantSize =  5278119 crq=0.00720540
+#|# ^^ MAE R=  9.743 G=  9.855 B= 10.629 |MSE R= 171.638 G= 183.745 B= 215.186 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.043 ^^^^ MSE=124.225 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 03:47:04 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00048 f=000 y=0136 x=0206 pixs=0037216 ut=0049268 rt=0050018      8.043   124.225     9.743    10.629     9.855   171.638   215.186   183.745 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=38611
+#|# Saved 1D PDFs: 11647 (47568752, 512468 B) 0.000245 | 0.024132 M 4.957461
+#|# Saved colours: 28 (523256272, 448 B) 0.000000 | 0.000085 M 0.004334
+#|# Saved index slices: 30025 (47568752, 1561300 B) 0.000631 | 0.073945 M 15.103545
+#|# Saved 2D PDF_LUMs: 43876 (4324432, 4563104 B) 0.010146 | 0.881221 M 44.142094
+#|# Saved 2D PDF_ABs: 36913 (4324432, 1919476 B) 0.008536 | 0.741374 M 18.568432
+#|# Saved 2D PDFs: 49790 (4324432, 398320 B) 0.011514 | 0.537590 M 3.853228 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (617776, 952632 B) 0.021417 | 0.986799 M 9.215475 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (38611, 120672 B) 0.021704 | M 1.167345  /Cache hr=5.00% o=0.05 s=23/5377
+#|# Index PDF4D: 52 Scale: 0.995053  (dist=0.01361 GT th=0.00600) M 2.988089
+#|# UserTime = 50257.81  realTime = 51018.67
+#|# hdr=0 pix: 38611, orig size:   759980313 comprs. size: 10337308  cr=0.01360207
+#|#   Bpap=268  BpapQ=137                     quantSize =  5285268 crq=0.00695448
+#|# ^^ MAE R=  9.740 G=  9.851 B= 10.629 |MSE R= 171.532 G= 183.603 B= 215.075 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.041 ^^^^ MSE=124.140 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 04:03:44 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00049 f=000 y=0144 x=0040 pixs=0038611 ut=0050257 rt=0051018      8.041   124.140     9.740    10.629     9.851   171.532   215.075   183.603 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=40008
+#|# Saved 1D PDFs: 11647 (49289856, 512468 B) 0.000236 | 0.024132 M 4.952107
+#|# Saved colours: 28 (542188416, 448 B) 0.000000 | 0.000085 M 0.004329
+#|# Saved index slices: 30025 (49289856, 1561300 B) 0.000609 | 0.073945 M 15.087234
+#|# Saved 2D PDF_LUMs: 43876 (4480896, 4563104 B) 0.009792 | 0.881221 M 44.094421
+#|# Saved 2D PDF_ABs: 36913 (4480896, 1919476 B) 0.008238 | 0.741374 M 18.548378
+#|# Saved 2D PDFs: 49790 (4480896, 398320 B) 0.011112 | 0.537590 M 3.849066 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (640128, 952632 B) 0.020669 | 0.986799 M 9.205523 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (40008, 120672 B) 0.020946 | M 1.166084  /Cache hr=11.11% o=0.11 s=12/5377
+#|# Index PDF4D: 459 Scale: 0.989519  (dist=0.00758 GT th=0.00600) M 3.092859
+#|# UserTime = 51249.23  realTime = 52019.04
+#|# hdr=0 pix: 40008, orig size:   787477464 comprs. size: 10348484  cr=0.01314131
+#|#   Bpap=259  BpapQ=133                     quantSize =  5292428 crq=0.00672074
+#|# ^^ MAE R=  9.740 G=  9.853 B= 10.632 |MSE R= 171.477 G= 183.577 B= 215.070 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.042 ^^^^ MSE=124.123 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 04:20:24 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00050 f=000 y=0156 x=0135 pixs=0040008 ut=0051249 rt=0052019      8.042   124.123     9.740    10.632     9.853   171.477   215.070   183.577 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=41404
+#|# Saved 1D PDFs: 11647 (51009728, 512468 B) 0.000228 | 0.024132 M 4.946768
+#|# Saved colours: 28 (561107008, 448 B) 0.000000 | 0.000085 M 0.004324
+#|# Saved index slices: 30025 (51009728, 1561300 B) 0.000589 | 0.073945 M 15.070970
+#|# Saved 2D PDF_LUMs: 43876 (4637248, 4563104 B) 0.009462 | 0.881221 M 44.046886
+#|# Saved 2D PDF_ABs: 36913 (4637248, 1919476 B) 0.007960 | 0.741374 M 18.528383
+#|# Saved 2D PDFs: 49790 (4637248, 398320 B) 0.010737 | 0.537590 M 3.844917 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (662464, 952632 B) 0.019972 | 0.986799 M 9.195599 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (41404, 120672 B) 0.020240 | M 1.164827  /Cache hr=6.56% o=0.43 s=61/5377
+#|# Index PDF4D: 372 Scale: 0.987127  (dist=0.00933 GT th=0.00600) M 3.197327
+#|# UserTime = 52240.68  realTime = 53019.18
+#|# hdr=0 pix: 41404, orig size:   814954932 comprs. size: 10359652  cr=0.01271193
+#|#   Bpap=251  BpapQ=128                     quantSize =  5299582 crq=0.00650291
+#|# ^^ MAE R=  9.740 G=  9.852 B= 10.635 |MSE R= 171.397 G= 183.517 B= 215.089 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.043 ^^^^ MSE=124.107 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 04:37:05 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00051 f=000 y=0153 x=0223 pixs=0041404 ut=0052240 rt=0053019      8.043   124.107     9.740    10.635     9.852   171.397   215.089   183.517 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=42813
+#|# Saved 1D PDFs: 11647 (52745616, 512468 B) 0.000221 | 0.024132 M 4.941392
+#|# Saved colours: 28 (580201776, 448 B) 0.000000 | 0.000085 M 0.004320
+#|# Saved index slices: 30025 (52745616, 1561300 B) 0.000569 | 0.073945 M 15.054589
+#|# Saved 2D PDF_LUMs: 43876 (4795056, 4563104 B) 0.009150 | 0.881221 M 43.999012
+#|# Saved 2D PDF_ABs: 36913 (4795056, 1919476 B) 0.007698 | 0.741374 M 18.508245
+#|# Saved 2D PDFs: 49790 (4795056, 398320 B) 0.010384 | 0.537590 M 3.840738 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (685008, 952632 B) 0.019315 | 0.986799 M 9.185604 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (42813, 120672 B) 0.019573 | M 1.163561  /Cache hr=3.23% o=0.13 s=64/5377
+#|# Index PDF4D: 490 Scale: 0.990231  (dist=0.00754 GT th=0.00600) M 3.302541
+#|# UserTime = 53229.03  realTime = 54019.26
+#|# hdr=0 pix: 42813, orig size:   842688279 comprs. size: 10370924  cr=0.01230695
+#|#   Bpap=243  BpapQ=124                     quantSize =  5306803 crq=0.00629747
+#|# ^^ MAE R=  9.739 G=  9.849 B= 10.636 |MSE R= 171.326 G= 183.385 B= 215.033 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.041 ^^^^ MSE=124.017 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 04:53:45 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00052 f=000 y=0160 x=0049 pixs=0042813 ut=0053229 rt=0054019      8.041   124.017     9.739    10.636     9.849   171.326   215.033   183.385 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=44212
+#|# Saved 1D PDFs: 11647 (54469184, 512468 B) 0.000214 | 0.024132 M 4.936065
+#|# Saved colours: 28 (599161024, 448 B) 0.000000 | 0.000085 M 0.004315
+#|# Saved index slices: 30025 (54469184, 1561300 B) 0.000551 | 0.073945 M 15.038361
+#|# Saved 2D PDF_LUMs: 43876 (4951744, 4563104 B) 0.008861 | 0.881221 M 43.951580
+#|# Saved 2D PDF_ABs: 36913 (4951744, 1919476 B) 0.007455 | 0.741374 M 18.488293
+#|# Saved 2D PDFs: 49790 (4951744, 398320 B) 0.010055 | 0.537590 M 3.836597 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (707392, 952632 B) 0.018704 | 0.986799 M 9.175702 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (44212, 120672 B) 0.018954 | M 1.162306  /Cache hr=7.55% o=0.34 s=53/5377
+#|# Index PDF4D: 726 Scale: 1.01932  (dist=0.01016 GT th=0.00600) M 3.406781
+#|# UserTime = 54220.70  realTime = 55019.15
+#|# hdr=0 pix: 44212, orig size:   870224796 comprs. size: 10382116  cr=0.01193038
+#|#   Bpap=235  BpapQ=121                     quantSize =  5313973 crq=0.00610644
+#|# ^^ MAE R=  9.745 G=  9.857 B= 10.648 |MSE R= 171.523 G= 183.623 B= 215.387 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.047 ^^^^ MSE=124.171 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 05:10:25 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00053 f=000 y=0174 x=0144 pixs=0044212 ut=0054220 rt=0055019      8.047   124.171     9.745    10.648     9.857   171.523   215.387   183.623 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=45616
+#|# Saved 1D PDFs: 11647 (56198912, 512468 B) 0.000207 | 0.024132 M 4.930731
+#|# Saved colours: 28 (618188032, 448 B) 0.000000 | 0.000085 M 0.004310
+#|# Saved index slices: 30025 (56198912, 1561300 B) 0.000534 | 0.073945 M 15.022108
+#|# Saved 2D PDF_LUMs: 43876 (5108992, 4563104 B) 0.008588 | 0.881221 M 43.904083
+#|# Saved 2D PDF_ABs: 36913 (5108992, 1919476 B) 0.007225 | 0.741374 M 18.468313
+#|# Saved 2D PDFs: 49790 (5108992, 398320 B) 0.009746 | 0.537590 M 3.832451 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (729856, 952632 B) 0.018128 | 0.986799 M 9.165786 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (45616, 120672 B) 0.018371 | M 1.161050  /Cache hr=4.08% o=0.04 s=51/5377
+#|# Index PDF4D: 526 Scale: 1.0125  (dist=0.00868 GT th=0.00600) M 3.511169
+#|# UserTime = 55213.41  realTime = 56019.33
+#|# hdr=0 pix: 45616, orig size:   897859728 comprs. size: 10393348  cr=0.01157569
+#|#   Bpap=228  BpapQ=117                     quantSize =  5321169 crq=0.00592650
+#|# ^^ MAE R=  9.745 G=  9.857 B= 10.651 |MSE R= 171.477 G= 183.565 B= 215.407 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.047 ^^^^ MSE=124.135 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 05:27:05 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00054 f=000 y=0166 x=0243 pixs=0045616 ut=0055213 rt=0056019      8.047   124.135     9.745    10.651     9.857   171.477   215.407   183.565 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=47027
+#|# Saved 1D PDFs: 11647 (57937264, 512468 B) 0.000201 | 0.024132 M 4.925381
+#|# Saved colours: 28 (637309904, 448 B) 0.000000 | 0.000085 M 0.004306
+#|# Saved index slices: 30025 (57937264, 1561300 B) 0.000518 | 0.073945 M 15.005811
+#|# Saved 2D PDF_LUMs: 43876 (5267024, 4563104 B) 0.008330 | 0.881221 M 43.856449
+#|# Saved 2D PDF_ABs: 36913 (5267024, 1919476 B) 0.007008 | 0.741374 M 18.448277
+#|# Saved 2D PDFs: 49790 (5267024, 398320 B) 0.009453 | 0.537590 M 3.828294 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (752432, 952632 B) 0.017584 | 0.986799 M 9.155842 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (47027, 120672 B) 0.017820 | M 1.159791  /Cache hr=1.92% o=0.02 s=55/5377
+#|# Index PDF4D: 772 Scale: 1.00344  (dist=0.01256 GT th=0.00600) M 3.615850
+#|# UserTime = 56208.31  realTime = 57020.54
+#|# hdr=0 pix: 47027, orig size:   925632441 comprs. size: 10404636  cr=0.01124057
+#|#   Bpap=222  BpapQ=114                     quantSize =  5328400 crq=0.00575650
+#|# ^^ MAE R=  9.739 G=  9.852 B= 10.645 |MSE R= 171.283 G= 183.354 B= 215.156 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.043 ^^^^ MSE=124.000 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 05:43:46 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00055 f=000 y=0191 x=0066 pixs=0047027 ut=0056208 rt=0057020      8.043   124.000     9.739    10.645     9.852   171.283   215.156   183.354 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=48427
+#|# Saved 1D PDFs: 11647 (59662064, 512468 B) 0.000195 | 0.024132 M 4.920085
+#|# Saved colours: 28 (656282704, 448 B) 0.000000 | 0.000085 M 0.004301
+#|# Saved index slices: 30025 (59662064, 1561300 B) 0.000503 | 0.073945 M 14.989676
+#|# Saved 2D PDF_LUMs: 43876 (5423824, 4563104 B) 0.008089 | 0.881221 M 43.809292
+#|# Saved 2D PDF_ABs: 36913 (5423824, 1919476 B) 0.006806 | 0.741374 M 18.428440
+#|# Saved 2D PDFs: 49790 (5423824, 398320 B) 0.009180 | 0.537590 M 3.824177 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (774832, 952632 B) 0.017076 | 0.986799 M 9.145996 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (48427, 120672 B) 0.017304 | M 1.158544  /Cache hr=2.27% o=0.02 s=47/5377
+#|# Index PDF4D: 231 Scale: 1.01843  (dist=0.01312 GT th=0.00600) M 3.719490
+#|# UserTime = 57201.07  realTime = 58021.39
+#|# hdr=0 pix: 48427, orig size:   953188641 comprs. size: 10415836  cr=0.01092736
+#|#   Bpap=216  BpapQ=111                     quantSize =  5335575 crq=0.00559761
+#|# ^^ MAE R=  9.750 G=  9.863 B= 10.657 |MSE R= 171.623 G= 183.718 B= 215.578 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.052 ^^^^ MSE=124.238 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 06:00:27 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00056 f=000 y=0190 x=0160 pixs=0048427 ut=0057201 rt=0058021      8.052   124.238     9.750    10.657     9.863   171.623   215.578   183.718 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=49845
+#|# Saved 1D PDFs: 11647 (61409040, 512468 B) 0.000190 | 0.024132 M 4.914732
+#|# Saved colours: 28 (675499440, 448 B) 0.000000 | 0.000085 M 0.004296
+#|# Saved index slices: 30025 (61409040, 1561300 B) 0.000489 | 0.073945 M 14.973368
+#|# Saved 2D PDF_LUMs: 43876 (5582640, 4563104 B) 0.007859 | 0.881221 M 43.761631
+#|# Saved 2D PDF_ABs: 36913 (5582640, 1919476 B) 0.006612 | 0.741374 M 18.408390
+#|# Saved 2D PDFs: 49790 (5582640, 398320 B) 0.008919 | 0.537590 M 3.820017 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (797520, 952632 B) 0.016590 | 0.986799 M 9.136046 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (49845, 120672 B) 0.016812 | M 1.157283  /Cache hr=1.85% o=0.02 s=57/5377
+#|# Index PDF4D: 578 Scale: 1.0028  (dist=0.00917 GT th=0.00600) M 3.824236
+#|# UserTime = 58195.57  realTime = 59022.37
+#|# hdr=0 pix: 49845, orig size:   981099135 comprs. size: 10427180  cr=0.01062806
+#|#   Bpap=210  BpapQ=108                     quantSize =  5342842 crq=0.00544577
+#|# ^^ MAE R=  9.748 G=  9.860 B= 10.655 |MSE R= 171.531 G= 183.594 B= 215.490 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.050 ^^^^ MSE=124.156 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 06:17:08 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00057 f=000 y=0201 x=0002 pixs=0049845 ut=0058195 rt=0059022      8.050   124.156     9.748    10.655     9.860   171.531   215.490   183.594 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=51257
+#|# Saved 1D PDFs: 11647 (63148624, 512468 B) 0.000184 | 0.024132 M 4.909414
+#|# Saved colours: 28 (694634864, 448 B) 0.000000 | 0.000085 M 0.004292
+#|# Saved index slices: 30025 (63148624, 1561300 B) 0.000475 | 0.073945 M 14.957164
+#|# Saved 2D PDF_LUMs: 43876 (5740784, 4563104 B) 0.007643 | 0.881221 M 43.714275
+#|# Saved 2D PDF_ABs: 36913 (5740784, 1919476 B) 0.006430 | 0.741374 M 18.388470
+#|# Saved 2D PDFs: 49790 (5740784, 398320 B) 0.008673 | 0.537590 M 3.815883 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (820112, 952632 B) 0.016133 | 0.986799 M 9.126160 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (51257, 120672 B) 0.016349 | M 1.156031  /Cache hr=3.45% o=0.26 s=60/5377
+#|# Index PDF4D: 706 Scale: 1.02276  (dist=0.01198 GT th=0.00600) M 3.928313
+#|# UserTime = 59189.37  realTime = 60023.17
+#|# hdr=0 pix: 51257, orig size:  1008891531 comprs. size: 10438476  cr=0.01034648
+#|#   Bpap=204  BpapQ=105                     quantSize =  5350079 crq=0.00530293
+#|# ^^ MAE R=  9.742 G=  9.854 B= 10.649 |MSE R= 171.329 G= 183.350 B= 215.198 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.045 ^^^^ MSE=124.006 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 06:33:49 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00058 f=000 y=0204 x=0084 pixs=0051257 ut=0059189 rt=0060023      8.045   124.006     9.742    10.649     9.854   171.329   215.198   183.350 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=52652
+#|# Saved 1D PDFs: 11647 (64867264, 512468 B) 0.000180 | 0.024132 M 4.904171
+#|# Saved colours: 28 (713539904, 448 B) 0.000000 | 0.000085 M 0.004287
+#|# Saved index slices: 30025 (64867264, 1561300 B) 0.000463 | 0.073945 M 14.941191
+#|# Saved 2D PDF_LUMs: 43876 (5897024, 4563104 B) 0.007440 | 0.881221 M 43.667587
+#|# Saved 2D PDF_ABs: 36913 (5897024, 1919476 B) 0.006260 | 0.741374 M 18.368832
+#|# Saved 2D PDFs: 49790 (5897024, 398320 B) 0.008443 | 0.537590 M 3.811807 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (842432, 952632 B) 0.015706 | 0.986799 M 9.116413 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (52652, 120672 B) 0.015916 | M 1.154796  /Cache hr=4.44% o=0.33 s=47/5377
+#|# Index PDF4D: 611 Scale: 1.00366  (dist=0.00740 GT th=0.00600) M 4.030916
+#|# UserTime = 60181.07  realTime = 61023.01
+#|# hdr=0 pix: 52652, orig size:  1036349316 comprs. size: 10449636  cr=0.01008312
+#|#   Bpap=199  BpapQ=102                     quantSize =  5357228 crq=0.00516933
+#|# ^^ MAE R=  9.751 G=  9.863 B= 10.655 |MSE R= 171.600 G= 183.632 B= 215.377 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.052 ^^^^ MSE=124.189 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 06:50:29 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00059 f=000 y=0195 x=0187 pixs=0052652 ut=0060181 rt=0061023      8.052   124.189     9.751    10.655     9.863   171.600   215.377   183.632 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=54082
+#|# Saved 1D PDFs: 11647 (66629024, 512468 B) 0.000175 | 0.024132 M 4.898808
+#|# Saved colours: 28 (732919264, 448 B) 0.000000 | 0.000085 M 0.004283
+#|# Saved index slices: 30025 (66629024, 1561300 B) 0.000451 | 0.073945 M 14.924851
+#|# Saved 2D PDF_LUMs: 43876 (6057184, 4563104 B) 0.007244 | 0.881221 M 43.619835
+#|# Saved 2D PDF_ABs: 36913 (6057184, 1919476 B) 0.006094 | 0.741374 M 18.348743
+#|# Saved 2D PDFs: 49790 (6057184, 398320 B) 0.008220 | 0.537590 M 3.807639 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (865312, 952632 B) 0.015290 | 0.986799 M 9.106443 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (54082, 120672 B) 0.015495 | M 1.153533  /Cache hr=33.33% o=0.33 s=6/5377
+#|# Index PDF4D: 576 Scale: 1.02422  (dist=0.01010 GT th=0.00600) M 4.135865
+#|# UserTime = 61175.32  realTime = 62023.07
+#|# hdr=0 pix: 54082, orig size:  1064496006 comprs. size: 10461076  cr=0.00982726
+#|#   Bpap=194  BpapQ=100                     quantSize =  5364557 crq=0.00503953
+#|# ^^ MAE R=  9.746 G=  9.856 B= 10.646 |MSE R= 171.393 G= 183.379 B= 215.032 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.047 ^^^^ MSE=124.018 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 07:07:09 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00060 f=000 y=0212 x=0022 pixs=0054082 ut=0061175 rt=0062023      8.047   124.018     9.746    10.646     9.856   171.393   215.032   183.379 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=55484
+#|# Saved 1D PDFs: 11647 (68356288, 512468 B) 0.000170 | 0.024132 M 4.893561
+#|# Saved colours: 28 (751919168, 448 B) 0.000000 | 0.000085 M 0.004278
+#|# Saved index slices: 30025 (68356288, 1561300 B) 0.000439 | 0.073945 M 14.908866
+#|# Saved 2D PDF_LUMs: 43876 (6214208, 4563104 B) 0.007061 | 0.881221 M 43.573116
+#|# Saved 2D PDF_ABs: 36913 (6214208, 1919476 B) 0.005940 | 0.741374 M 18.329092
+#|# Saved 2D PDFs: 49790 (6214208, 398320 B) 0.008012 | 0.537590 M 3.803561 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (887744, 952632 B) 0.014904 | 0.986799 M 9.096690 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (55484, 120672 B) 0.015103 | M 1.152298  /Cache hr=1.64% o=0.02 s=64/5377
+#|# Index PDF4D: 2 Scale: 0.998254  (dist=0.01068 GT th=0.00600) M 4.238537
+#|# UserTime = 62168.57  realTime = 63023.13
+#|# hdr=0 pix: 55484, orig size:  1092091572 comprs. size: 10472292  cr=0.00958921
+#|#   Bpap=189  BpapQ= 97                     quantSize =  5371742 crq=0.00491877
+#|# ^^ MAE R=  9.742 G=  9.852 B= 10.640 |MSE R= 171.266 G= 183.232 B= 214.789 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.044 ^^^^ MSE=123.929 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 07:23:49 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00061 f=000 y=0215 x=0119 pixs=0055484 ut=0062168 rt=0063023      8.044   123.929     9.742    10.640     9.852   171.266   214.789   183.232 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=56896
+#|# Saved 1D PDFs: 11647 (70095872, 512468 B) 0.000166 | 0.024132 M 4.888288
+#|# Saved colours: 28 (771054592, 448 B) 0.000000 | 0.000085 M 0.004273
+#|# Saved index slices: 30025 (70095872, 1561300 B) 0.000428 | 0.073945 M 14.892802
+#|# Saved 2D PDF_LUMs: 43876 (6372352, 4563104 B) 0.006885 | 0.881221 M 43.526165
+#|# Saved 2D PDF_ABs: 36913 (6372352, 1919476 B) 0.005793 | 0.741374 M 18.309341
+#|# Saved 2D PDFs: 49790 (6372352, 398320 B) 0.007813 | 0.537590 M 3.799463 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (910336, 952632 B) 0.014534 | 0.986799 M 9.086889 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (56896, 120672 B) 0.014729 | M 1.151056  /Cache hr=100.00% o=1.00 s=4/5377
+#|# Index PDF4D: 21 Scale: 0.992275  (dist=0.00837 GT th=0.00600) M 4.341720
+#|# UserTime = 63162.79  realTime = 64023.44
+#|# hdr=0 pix: 56896, orig size:  1119883968 comprs. size: 10483588  cr=0.00936132
+#|#   Bpap=185  BpapQ= 95                     quantSize =  5378979 crq=0.00480316
+#|# ^^ MAE R=  9.738 G=  9.847 B= 10.634 |MSE R= 171.082 G= 183.016 B= 214.543 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.040 ^^^^ MSE=123.779 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 07:40:29 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00062 f=000 y=0214 x=0196 pixs=0056896 ut=0063162 rt=0064023      8.040   123.779     9.738    10.634     9.847   171.082   214.543   183.016 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=58338
+#|# Saved 1D PDFs: 11647 (71872416, 512468 B) 0.000162 | 0.024132 M 4.882915
+#|# Saved colours: 28 (790596576, 448 B) 0.000000 | 0.000085 M 0.004269
+#|# Saved index slices: 30025 (71872416, 1561300 B) 0.000418 | 0.073945 M 14.876432
+#|# Saved 2D PDF_LUMs: 43876 (6533856, 4563104 B) 0.006715 | 0.881221 M 43.478325
+#|# Saved 2D PDF_ABs: 36913 (6533856, 1919476 B) 0.005649 | 0.741374 M 18.289217
+#|# Saved 2D PDFs: 49790 (6533856, 398320 B) 0.007620 | 0.537590 M 3.795286 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (933408, 952632 B) 0.014175 | 0.986799 M 9.076900 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (58338, 120672 B) 0.014365 | M 1.149791  /Cache hr=8.57% o=0.43 s=36/5377
+#|# Index PDF4D: 21 Scale: 0.998454  (dist=0.00944 GT th=0.00600) M 4.446865
+#|# UserTime = 64158.80  realTime = 65024.52
+#|# hdr=0 pix: 58338, orig size:  1148266854 comprs. size: 10495124  cr=0.00913997
+#|#   Bpap=180  BpapQ= 93                     quantSize =  5386369 crq=0.00469087
+#|# ^^ MAE R=  9.730 G=  9.838 B= 10.623 |MSE R= 170.802 G= 182.669 B= 214.108 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.032 ^^^^ MSE=123.548 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 07:57:10 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00063 f=000 y=0229 x=0033 pixs=0058338 ut=0064158 rt=0065024      8.032   123.548     9.730    10.623     9.838   170.802   214.108   182.669 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=59765
+#|# Saved 1D PDFs: 11647 (73630480, 512468 B) 0.000158 | 0.024132 M 4.877610
+#|# Saved colours: 28 (809935280, 448 B) 0.000000 | 0.000085 M 0.004264
+#|# Saved index slices: 30025 (73630480, 1561300 B) 0.000408 | 0.073945 M 14.860268
+#|# Saved 2D PDF_LUMs: 43876 (6693680, 4563104 B) 0.006555 | 0.881221 M 43.431084
+#|# Saved 2D PDF_ABs: 36913 (6693680, 1919476 B) 0.005515 | 0.741374 M 18.269344
+#|# Saved 2D PDFs: 49790 (6693680, 398320 B) 0.007438 | 0.537590 M 3.791162 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (956240, 952632 B) 0.013836 | 0.986799 M 9.067039 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (59765, 120672 B) 0.014022 | M 1.148542  /Cache hr=3.70% o=0.02 s=56/5377
+#|# Index PDF4D: 666 Scale: 1.01231  (dist=0.01095 GT th=0.00600) M 4.550689
+#|# UserTime = 65153.27  realTime = 66025.26
+#|# hdr=0 pix: 59765, orig size:  1176354495 comprs. size: 10506540  cr=0.00893144
+#|#   Bpap=176  BpapQ= 91                     quantSize =  5393682 crq=0.00458508
+#|# ^^ MAE R=  9.722 G=  9.831 B= 10.615 |MSE R= 170.539 G= 182.401 B= 213.764 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.027 ^^^^ MSE=123.378 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 08:13:51 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00064 f=000 y=0226 x=0129 pixs=0059765 ut=0065153 rt=0066025      8.027   123.378     9.722    10.615     9.831   170.539   213.764   182.401 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=61183
+#|# Saved 1D PDFs: 11647 (75377456, 512468 B) 0.000155 | 0.024132 M 4.872349
+#|# Saved colours: 28 (829152016, 448 B) 0.000000 | 0.000085 M 0.004259
+#|# Saved index slices: 30025 (75377456, 1561300 B) 0.000398 | 0.073945 M 14.844240
+#|# Saved 2D PDF_LUMs: 43876 (6852496, 4563104 B) 0.006403 | 0.881221 M 43.384239
+#|# Saved 2D PDF_ABs: 36913 (6852496, 1919476 B) 0.005387 | 0.741374 M 18.249640
+#|# Saved 2D PDFs: 49790 (6852496, 398320 B) 0.007266 | 0.537590 M 3.787074 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (978928, 952632 B) 0.013516 | 0.986799 M 9.057259 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (61183, 120672 B) 0.013697 | M 1.147303  /Cache hr=4.69% o=1.19 s=65/5377
+#|# Index PDF4D: 46 Scale: 1.01178  (dist=0.01339 GT th=0.00600) M 4.653636
+#|# UserTime = 66145.81  realTime = 67025.47
+#|# hdr=0 pix: 61183, orig size:  1204264989 comprs. size: 10517884  cr=0.00873386
+#|#   Bpap=172  BpapQ= 89                     quantSize =  5400949 crq=0.00448485
+#|# ^^ MAE R=  9.716 G=  9.825 B= 10.609 |MSE R= 170.335 G= 182.179 B= 213.513 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.023 ^^^^ MSE=123.241 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 08:30:31 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00065 f=000 y=0236 x=0228 pixs=0061183 ut=0066145 rt=0067025      8.023   123.241     9.716    10.609     9.825   170.335   213.513   182.179 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=62631
+#|# Saved 1D PDFs: 11647 (77161392, 512468 B) 0.000151 | 0.024132 M 4.866989
+#|# Saved colours: 28 (848775312, 448 B) 0.000000 | 0.000085 M 0.004255
+#|# Saved index slices: 30025 (77161392, 1561300 B) 0.000389 | 0.073945 M 14.827909
+#|# Saved 2D PDF_LUMs: 43876 (7014672, 4563104 B) 0.006255 | 0.881221 M 43.336510
+#|# Saved 2D PDF_ABs: 36913 (7014672, 1919476 B) 0.005262 | 0.741374 M 18.229563
+#|# Saved 2D PDFs: 49790 (7014672, 398320 B) 0.007098 | 0.537590 M 3.782907 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (1002096, 952632 B) 0.013203 | 0.986799 M 9.047295 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (62631, 120672 B) 0.013380 | M 1.146041  /Cache hr=2.50% o=0.03 s=43/5377
+#|# Index PDF4D: 828 Scale: 1.0204  (dist=0.01223 GT th=0.00600) M 4.758531
+#|# UserTime = 67143.70  realTime = 68026.31
+#|# hdr=0 pix: 62631, orig size:  1232765973 comprs. size: 10529468  cr=0.00854134
+#|#   Bpap=169  BpapQ= 87                     quantSize =  5408370 crq=0.00438718
+#|# ^^ MAE R=  9.706 G=  9.813 B= 10.597 |MSE R= 169.965 G= 181.730 B= 212.992 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.013 ^^^^ MSE=122.940 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 08:47:12 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00066 f=000 y=0242 x=0067 pixs=0062631 ut=0067143 rt=0068026      8.013   122.940     9.706    10.597     9.813   169.965   212.992   181.730 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=64082
+#|# Saved 1D PDFs: 11647 (78949024, 512468 B) 0.000148 | 0.024132 M 4.861629
+#|# Saved colours: 28 (868439264, 448 B) 0.000000 | 0.000085 M 0.004250
+#|# Saved index slices: 30025 (78949024, 1561300 B) 0.000380 | 0.073945 M 14.811581
+#|# Saved 2D PDF_LUMs: 43876 (7177184, 4563104 B) 0.006113 | 0.881221 M 43.288788
+#|# Saved 2D PDF_ABs: 36913 (7177184, 1919476 B) 0.005143 | 0.741374 M 18.209488
+#|# Saved 2D PDFs: 49790 (7177184, 398320 B) 0.006937 | 0.537590 M 3.778741 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (1025312, 952632 B) 0.012904 | 0.986799 M 9.037332 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (64082, 120672 B) 0.013077 | M 1.144779  /Cache hr=5.26% o=0.05 s=22/5377
+#|# Index PDF4D: 800 Scale: 1.00651  (dist=0.02076 GT th=0.00600) M 4.863412
+#|# UserTime = 68141.14  realTime = 69027.25
+#|# hdr=0 pix: 64082, orig size:  1261326006 comprs. size: 10541076  cr=0.00835714
+#|#   Bpap=165  BpapQ= 85                     quantSize =  5415807 crq=0.00429374
+#|# ^^ MAE R=  9.702 G=  9.808 B= 10.591 |MSE R= 169.796 G= 181.540 B= 212.714 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.009 ^^^^ MSE=122.811 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 09:03:53 2009
+#Database saved to files by order 01: info in file ./02btfbase/corduroy///01all_materialInfo.txt
+i=00067 f=000 y=0255 x=0162 pixs=0064082 ut=0068141 rt=0069027      8.009   122.811     9.702    10.591     9.808   169.796   212.714   181.540 corduroy
+#|#----------------------------------
+#|#------- Report for only current material, indexMaterial=0 currentPixelOrder=65531
+#|# Saved 1D PDFs: 11647 (80734192, 512468 B) 0.000144 | 0.024132 M 4.856288
+#|# Saved colours: 28 (888076112, 448 B) 0.000000 | 0.000085 M 0.004245
+#|# Saved index slices: 30025 (80734192, 1561300 B) 0.000372 | 0.073945 M 14.795311
+#|# Saved 2D PDF_LUMs: 43876 (7339472, 4563104 B) 0.005978 | 0.881221 M 43.241234
+#|# Saved 2D PDF_ABs: 36913 (7339472, 1919476 B) 0.005029 | 0.741374 M 18.189486
+#|# Saved 2D PDFs: 49790 (7339472, 398320 B) 0.006784 | 0.537590 M 3.774590 /Cache hr=100.00% o=1.00 s=20/270809
+#|# Saved 3D PDFs: 13231 (1048496, 952632 B) 0.012619 | 0.986799 M 9.027404 /Cache hr=100.00% o=1.00 s=10/79231
+#|# Saved 4D PDFs: 838 (65531, 120672 B) 0.012788 | M 1.143521  /Cache hr=1.67% o=0.02 s=63/5377
+#|# Index PDF4D: 830 Scale: 0.993843  (dist=0.01033 GT th=0.00600) M 4.967919
+#|# UserTime = 69137.44  realTime = 70027.36
+#|# hdr=0 pix: 65531, orig size:  1289846673 comprs. size: 10552668  cr=0.00818134
+#|#   Bpap=162  BpapQ= 83                     quantSize =  5423233 crq=0.00420456
+#|# ^^ MAE R=  9.693 G=  9.797 B= 10.579 |MSE R= 169.472 G= 181.146 B= 212.228 ^^
+#|# ^^^ matIndex 0 Luminance ^^^ MAE=  8.000 ^^^^ MSE=122.543 ^^^^^
+#Continuing log for compression, DATE Mon Apr  6 09:20:33 2009
+#Database saved to files by order 02: info in file ./02btfbase/corduroy///02all_materialInfo.txt
+i=00068 f=000 y=0250 x=0247 pixs=0065531 ut=0069137 rt=0070027      8.000   122.543     9.693    10.579     9.797   169.472   212.228   181.146 corduroy
+#Continuing log for compression, DATE Mon Apr  6 09:20:37 2009
+#Database saved to files by order 00: info in file ./02btfbase/corduroy///00all_materialInfo.txt
+i=00069 f=000 y=0255 x=0255 pixs=0065536 ut=0069141 rt=0070031      8.000   122.543     9.693    10.579     9.797   169.472   212.227   181.146 corduroy
+#|f#----------------------------------
+#|f#------- Report for only current material, indexMaterial=0 currentPixelOrder=65536
+#|f# Saved 1D PDFs: 11647 (80740352, 512468 B) 0.000144 | 0.024132 M 4.856270
+#|f# Saved colours: 28 (888143872, 448 B) 0.000000 | 0.000085 M 0.004245
+#|f# Saved index slices: 30025 (80740352, 1561300 B) 0.000372 | 0.073945 M 14.795255
+#|f# Saved 2D PDF_LUMs: 43876 (7340032, 4563104 B) 0.005978 | 0.881221 M 43.241070
+#|f# Saved 2D PDF_ABs: 36913 (7340032, 1919476 B) 0.005029 | 0.741374 M 18.189417
+#|f# Saved 2D PDFs: 49790 (7340032, 398320 B) 0.006783 | 0.537590 M 3.774576 /Cache hr=100.00% o=0.00 s=0/0
+#|f# Saved 3D PDFs: 13231 (1048576, 952632 B) 0.012618 | 0.986799 M 9.027370 /Cache hr=100.00% o=0.00 s=0/0
+#|f# Saved 4D PDFs: 838 (65536, 120672 B) 0.012787 | M 1.143517  /Cache hr=100.00% o=0.00 s=0/0
+#|f# Index PDF4D: 528 Scale: 0.971203  (dist=0.00914 GT th=0.00600) M 4.968279
+#|f# UserTime = 69141.82  realTime = 70031.81
+#|f# hdr=0 pix: 65536, orig size:  1289945088 comprs. size: 10552708  cr=0.00818074
+#|f#   Bpap=162  BpapQ= 83                     quantSize =  5423259 crq=0.00420426
+#|f# ^^ MAE R=  9.693 G=  9.797 B= 10.579 |MSE R= 169.472 G= 181.146 B= 212.227 ^^
+#|f# ^^^ matIndex 0 Luminance ^^^ MAE=  8.000 ^^^^ MSE=122.543 ^^^^^
+### ============================================================
+#Continuing log for compression, DATE Mon Apr  6 09:20:38 2009
+#Database saved to files by order : info in file ./02btfbase/corduroy///all_materialInfo.txt
+i=00069 f=000 y=0255 x=0255 pixs=0065536 ut=0069141 rt=0070031      8.000   122.543     9.693    10.579     9.797   169.472   212.227   181.146 corduroy
+### Material compression order = 0, name = corduroy FINISHED
+### ============================================================

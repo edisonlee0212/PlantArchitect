@@ -21,7 +21,7 @@
 #include "LSystemBehaviour.hpp"
 #include "SpaceColonizationTreeToLString.hpp"
 #include "AutoTreeGenerationPipeline.hpp"
-
+#include "MLVQRenderer.hpp"
 using namespace PlantArchitect;
 using namespace RayTracerFacility;
 using namespace Scripts;
@@ -39,6 +39,7 @@ int main() {
     ClassRegistry::RegisterPrivateComponent<ObjectRotator>("ObjectRotator");
     ClassRegistry::RegisterPrivateComponent<IVolume>("IVolume");
     ClassRegistry::RegisterPrivateComponent<CubeVolume>("CubeVolume");
+    ClassRegistry::RegisterPrivateComponent<MLVQRenderer>("MLVQRenderer");
 
     ClassRegistry::RegisterDataComponent<DefaultInternodeTag>("DefaultInternodeTag");
     ClassRegistry::RegisterAsset<DefaultInternodeBehaviour>("DefaultInternodeBehaviour", ".defaultbehaviour");

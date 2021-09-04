@@ -1,0 +1,30 @@
+Material = ./02btfbase/wool/
+ORIG = ncolour=2 nview=81 nillu=81 tileSize=32
+Mode = 0, bits=8
+PDF6Dscale - AvgAbsErr=1.17e-04, AvgRelErr=1.17e-04, maxAbsErr=2.39e-04, maxRelErr=2.52e-04 min/max=0.94 1.06
+Mode = 0, bits=8
+PDF1Dslice - AvgAbsErr=2.01e-04, AvgRelErr=2.42e-03, maxAbsErr=4.01e-04, maxRelErr=1.49e-02 min/max=0.02 0.22
+Mode = 0, bits=8
+AB colours - AvgAbsErr=1.05e-01, AvgRelErr=8.74e-04, maxAbsErr=2.06e-01, maxRelErr=2.37e-03 min/max=74.99 183.20
+Mode = 0, bits=8
+PDF2Dscale - AvgAbsErr=1.52e+00, AvgRelErr=1.76e-03, maxAbsErr=3.04e+00, maxRelErr=1.02e-02 min/max=260.42 1817.79
+Mode = 0, bits=8
+PDF3Dscale - AvgAbsErr=1.26e-03, AvgRelErr=1.31e-03, maxAbsErr=2.37e-03, maxRelErr=4.87e-03 min/max=0.42 1.64
+Mode = 0, bits=8
+PDF4Dscale - AvgAbsErr=1.22e-10, AvgRelErr=1.23e-10, maxAbsErr=2.56e-06, maxRelErr=2.59e-06 min/max=0.98 1.00
+The database was quantized successfully
+The size data uncompressed = 1289945088 compressed = 8428729  ratio = 153.041
+The size data compressed quantized = 5514260  ratio = 233.929
+---------------------------------------------------------------------------------
+1D PDF       -      10260    mem=0000451440  perc= 5.356  | mem=0000112876  perc= 2.047
+colours      -         22    mem=0000332069  perc= 3.940  | mem=0000415096  perc= 7.528
+index slices -      60376    mem=0000000176  perc= 0.002  | mem=0000000060  perc= 0.001
+2D PDF Lums  -      67302    mem=0004164312  perc=49.406  | mem=0002035912  perc=36.921
+2D PDF ABs   -      84703    mem=0001747000  perc=20.727  | mem=0001863476  perc=33.794
+2D PDFs      -      96845    mem=0000387381  perc= 4.596  | mem=0000411600  perc= 7.464
+3D PDFs      -      20990    mem=0000881581  perc=10.459  | mem=0000459184  perc= 8.327
+4D PDFs      -       1312    mem=0000120705  perc= 1.432  | mem=0000060380  perc= 1.095
+6D PDFs      -      65536    mem=0000344065  perc= 4.082  | mem=0000155676  perc= 2.823
+---------------------------------------------------------------------------------
+Sums                         mem=0008428729               | mem=0005514260
+Compression NoQuantization ratio=   153.041               | ratio=   233.929 (quantization)

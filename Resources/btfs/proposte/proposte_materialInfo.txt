@@ -1,0 +1,1 @@
+proposte ./indata/proposte/ ./outdata01/proposte/ ./tmp11/proposte/ 0 0 256 256 0.000000

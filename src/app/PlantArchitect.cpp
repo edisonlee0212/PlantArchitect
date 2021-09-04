@@ -10,7 +10,7 @@
 #include <PostProcessing.hpp>
 #include <RayTracerManager.hpp>
 #include <CubeVolume.hpp>
-#include <RayTracedRenderer.hpp>
+#include <MLVQRenderer.hpp>
 #include <ClassRegistry.hpp>
 #include <ObjectRotator.hpp>
 #include "DefaultInternodeBehaviour.hpp"
@@ -20,7 +20,6 @@
 #include <SpaceColonizationBehaviour.hpp>
 #include "EmptyInternodeResource.hpp"
 #include "LSystemBehaviour.hpp"
-#include "SkinnedRayTracedRenderer.hpp"
 #include "SpaceColonizationTreeToLString.hpp"
 #include "AutoTreeGenerationPipeline.hpp"
 using namespace PlantArchitect;
@@ -39,18 +38,17 @@ int main() {
     ClassRegistry::RegisterPrivateComponent<ObjectRotator>("ObjectRotator");
     ClassRegistry::RegisterPrivateComponent<IVolume>("IVolume");
     ClassRegistry::RegisterPrivateComponent<CubeVolume>("CubeVolume");
-    ClassRegistry::RegisterPrivateComponent<RayTracedRenderer>("RayTracedRenderer");
-    ClassRegistry::RegisterPrivateComponent<SkinnedRayTracedRenderer>("SkinnedRayTracedRenderer");
+    ClassRegistry::RegisterPrivateComponent<MLVQRenderer>("MLVQRenderer");
 
     ClassRegistry::RegisterDataComponent<DefaultInternodeTag>("DefaultInternodeTag");
     ClassRegistry::RegisterAsset<DefaultInternodeBehaviour>("DefaultInternodeBehaviour", ".defaultbehaviour");
 
-    ClassRegistry::RegisterAsset<LString>("LString", ".lstring");
     ClassRegistry::RegisterDataComponent<SpaceColonizationTag>("SpaceColonizationTag");
     ClassRegistry::RegisterDataComponent<SpaceColonizationParameters>("SpaceColonizationParameters");
     ClassRegistry::RegisterDataComponent<SpaceColonizationIncentive>("SpaceColonizationIncentive");
     ClassRegistry::RegisterAsset<SpaceColonizationBehaviour>("SpaceColonizationBehaviour", ".scbehaviour");
 
+    ClassRegistry::RegisterAsset<LString>("LString", ".lstring");
     ClassRegistry::RegisterDataComponent<LSystemTag>("LSystemTag");
     ClassRegistry::RegisterDataComponent<LSystemParameters>("LSystemParameters");
     ClassRegistry::RegisterAsset<LSystemBehaviour>("LSystemBehaviour", ".lsbehaviour");

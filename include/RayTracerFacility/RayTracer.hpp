@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 #include <MaterialType.hpp>
-
+#include <filesystem>
 namespace RayTracerFacility {
     struct RAY_TRACER_FACILITY_API Camera {
         bool m_modified = false;
@@ -232,6 +232,15 @@ namespace RayTracerFacility {
         bool m_statusChanged = false;
     };
     struct MLVQMaterial;
+    struct MLVQMaterialStorage{
+        std::shared_ptr<MLVQMaterial> m_material;
+        CudaBuffer m_buffer;
+    };
+
+    struct SurfaceMaterial{
+        MaterialType m_type;
+        CudaBuffer m_buffer;
+    };
 
     class RayTracer {
     public:
@@ -264,11 +273,10 @@ namespace RayTracerFacility {
         void SetSkylightDir(const glm::vec3 &value);
 
         void ClearAccumulate();
-
+        void LoadBtfMaterials(const std::vector<std::string>& folderPathes);
     protected:
 #pragma region MLVQ
-        std::vector<std::shared_ptr<MLVQMaterial>> m_MLVQMaterials;
-        std::vector<CudaBuffer> m_MLVQMaterialsBuffer;
+        std::vector<MLVQMaterialStorage> m_MLVQMaterialStorage;
 #pragma endregion
 
 #pragma region Device and context
@@ -335,8 +343,7 @@ namespace RayTracerFacility {
 
         std::vector<CudaBuffer> m_boneMatricesBuffer;
 
-        std::vector<MaterialType> m_materialTypes;
-        std::vector<CudaBuffer> m_surfaceMaterialBuffer;
+        std::vector<SurfaceMaterial> m_surfaceMaterials;
 
         /*! one buffer per input mesh */
         std::vector<CudaBuffer> m_trianglesBuffer;

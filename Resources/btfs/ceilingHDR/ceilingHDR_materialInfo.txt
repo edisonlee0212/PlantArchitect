@@ -1,0 +1,1 @@
+ceilingHDR ./indata/ceiling_hdr/ ./outdata01/ceiling_hdr/ ./tmp11/ceiling_hdr/ 0 0 256 256 434.000000

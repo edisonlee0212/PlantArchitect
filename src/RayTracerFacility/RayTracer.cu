@@ -424,7 +424,7 @@ RayTracer::RayTracer() {
     AssemblePipelines();
 
     std::cout << "#Optix: context, module, pipeline, etc, all set up ..." << std::endl;
-
+    LoadBtfMaterials({"../Resources/btfs/alu", "../Resources/btfs/pulli"});
 }
 
 void RayTracer::SetSkylightSize(const float &value) {
@@ -1042,20 +1042,24 @@ void RayTracer::BuildShaderBindingTable(std::vector<std::pair<unsigned, cudaText
     // Prepare surface materials
     // ------------------------------------------------------------------
     const int numObjects = m_verticesBuffer.size();
-    for (auto &i: m_surfaceMaterialBuffer) i.Free();
-    m_surfaceMaterialBuffer.clear();
-    m_surfaceMaterialBuffer.resize(numObjects);
+    for (auto &i: m_surfaceMaterials) if(i.m_type == MaterialType::Default) i.m_buffer.Free();
+    m_surfaceMaterials.clear();
+    m_surfaceMaterials.resize(numObjects);
     int i = 0;
     for (; i < m_instances.size(); i++) {
         auto &instance = m_instances[i];
         switch (instance.m_materialType) {
             case MaterialType::MLVQ: {
-                if (instance.m_MLVQMaterialIndex >= 0 && instance.m_MLVQMaterialIndex < m_MLVQMaterialsBuffer.size()) {
-                    m_surfaceMaterialBuffer[i] = m_MLVQMaterialsBuffer[instance.m_MLVQMaterialIndex];
-                    break;
+                m_surfaceMaterials[i].m_type = MaterialType::MLVQ;
+                if (instance.m_MLVQMaterialIndex >= 0 && instance.m_MLVQMaterialIndex < m_MLVQMaterialStorage.size()) {
+                    m_surfaceMaterials[i].m_buffer = m_MLVQMaterialStorage[instance.m_MLVQMaterialIndex].m_buffer;
+                }else{
+                    m_surfaceMaterials[i].m_buffer = m_MLVQMaterialStorage[0].m_buffer;
                 }
+                break;
             }
             case MaterialType::Default: {
+                m_surfaceMaterials[i].m_type = MaterialType::Default;
                 DefaultMaterial material;
 #pragma region Material Settings
                 material.m_surfaceColor = instance.m_surfaceColor;
@@ -1137,7 +1141,7 @@ void RayTracer::BuildShaderBindingTable(std::vector<std::pair<unsigned, cudaText
                     }
                 }
 #pragma endregion
-                m_surfaceMaterialBuffer[i].Upload(&material, 1);
+                m_surfaceMaterials[i].m_buffer.Upload(&material, 1);
             }
                 break;
         }
@@ -1146,12 +1150,16 @@ void RayTracer::BuildShaderBindingTable(std::vector<std::pair<unsigned, cudaText
         auto &instance = m_skinnedInstances[i - m_instances.size()];
         switch (instance.m_materialType) {
             case MaterialType::MLVQ: {
-                if (instance.m_MLVQMaterialIndex >= 0 && instance.m_MLVQMaterialIndex < m_MLVQMaterialsBuffer.size()) {
-                    m_surfaceMaterialBuffer[i] = m_MLVQMaterialsBuffer[instance.m_MLVQMaterialIndex];
-                    break;
+                m_surfaceMaterials[i].m_type = MaterialType::MLVQ;
+                if (instance.m_MLVQMaterialIndex >= 0 && instance.m_MLVQMaterialIndex < m_MLVQMaterialStorage.size()) {
+                    m_surfaceMaterials[i].m_buffer = m_MLVQMaterialStorage[instance.m_MLVQMaterialIndex].m_buffer;
+                }else{
+                    m_surfaceMaterials[i].m_buffer = m_MLVQMaterialStorage[0].m_buffer;
                 }
+                break;
             }
             case MaterialType::Default: {
+                m_surfaceMaterials[i].m_type = MaterialType::Default;
                 DefaultMaterial material;
 #pragma region Material Settings
                 material.m_surfaceColor = instance.m_surfaceColor;
@@ -1233,7 +1241,7 @@ void RayTracer::BuildShaderBindingTable(std::vector<std::pair<unsigned, cudaText
                     }
                 }
 #pragma endregion
-                m_surfaceMaterialBuffer[i].Upload(&material, 1);
+                m_surfaceMaterials[i].m_buffer.Upload(&material, 1);
             }
                 break;
         }
@@ -1291,7 +1299,7 @@ void RayTracer::BuildShaderBindingTable(std::vector<std::pair<unsigned, cudaText
                 rec.m_data.m_mesh.m_transform = instance.m_globalTransform;
 
                 rec.m_data.m_materialType = instance.m_materialType;
-                rec.m_data.m_material = reinterpret_cast<void *>(m_surfaceMaterialBuffer[i].DevicePointer());
+                rec.m_data.m_material = reinterpret_cast<void *>(m_surfaceMaterials[i].m_buffer.DevicePointer());
                 hitGroupRecords.push_back(rec);
             }
         }
@@ -1309,7 +1317,7 @@ void RayTracer::BuildShaderBindingTable(std::vector<std::pair<unsigned, cudaText
                 rec.m_data.m_mesh.m_transform = instance.m_globalTransform;
 
                 rec.m_data.m_materialType = instance.m_materialType;
-                rec.m_data.m_material = reinterpret_cast<void *>(m_surfaceMaterialBuffer[i].DevicePointer());
+                rec.m_data.m_material = reinterpret_cast<void *>(m_surfaceMaterials[i].m_buffer.DevicePointer());
                 hitGroupRecords.push_back(rec);
             }
         }
@@ -1373,7 +1381,7 @@ void RayTracer::BuildShaderBindingTable(std::vector<std::pair<unsigned, cudaText
                 rec.m_data.m_mesh.m_transform = instance.m_globalTransform;
 
                 rec.m_data.m_materialType = instance.m_materialType;
-                rec.m_data.m_material = reinterpret_cast<void *>(m_surfaceMaterialBuffer[i].DevicePointer());
+                rec.m_data.m_material = reinterpret_cast<void *>(m_surfaceMaterials[i].m_buffer.DevicePointer());
                 hitGroupRecords.push_back(rec);
             }
         }
@@ -1391,9 +1399,9 @@ void RayTracer::BuildShaderBindingTable(std::vector<std::pair<unsigned, cudaText
 
                 rec.m_data.m_mesh.m_triangles = reinterpret_cast<glm::uvec3 *>(m_trianglesBuffer[i].DevicePointer());
                 rec.m_data.m_mesh.m_transform = instance.m_globalTransform;
-                
+
                 rec.m_data.m_materialType = instance.m_materialType;
-                rec.m_data.m_material = reinterpret_cast<void *>(m_surfaceMaterialBuffer[i].DevicePointer());
+                rec.m_data.m_material = reinterpret_cast<void *>(m_surfaceMaterials[i].m_buffer.DevicePointer());
                 hitGroupRecords.push_back(rec);
             }
         }
@@ -1443,4 +1451,15 @@ void RayTracer::Resize(const glm::ivec2 &newSize) {
                                    m_denoiserState.m_sizeInBytes,
                                    m_denoiserScratch.DevicePointer(),
                                    m_denoiserScratch.m_sizeInBytes));
+}
+
+void RayTracer::LoadBtfMaterials(const std::vector<std::string>& folderPathes) {
+    for (const auto &entry : folderPathes)
+    {
+        MLVQMaterialStorage storage;
+        storage.m_material = std::make_shared<MLVQMaterial>();
+        storage.m_material->m_btf.Init(entry);
+        storage.m_buffer.Upload(storage.m_material.get(), 1);
+        m_MLVQMaterialStorage.push_back(storage);
+    }
 }
