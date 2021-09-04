@@ -218,6 +218,7 @@ bool RayTracer::RenderDefault(const DefaultRenderingProperties &properties) {
                                        GL_TEXTURE_2D, cudaGraphicsRegisterFlagsNone));
     CUDA_CHECK(GraphicsMapResources(1, &outputTexture, nullptr));
     CUDA_CHECK(GraphicsSubResourceGetMappedArray(&outputArray, outputTexture, 0, 0));
+    /*
     // Specify surface
     memset(&cudaResourceDesc, 0, sizeof(cudaResourceDesc));
     cudaResourceDesc.resType = cudaResourceTypeArray;
@@ -226,6 +227,7 @@ bool RayTracer::RenderDefault(const DefaultRenderingProperties &properties) {
     // Create surface object
     cudaSurfaceObject_t outputTextureId;
     CUDA_CHECK(CreateSurfaceObject(&outputTextureId, &cudaResourceDesc));
+    */
 #pragma endregion
 #pragma region Copy results to output texture
     OptixImage2D inputLayer[3];
@@ -355,7 +357,7 @@ bool RayTracer::RenderDefault(const DefaultRenderingProperties &properties) {
 
 #pragma endregion
 #pragma region UnBind output texture
-    CUDA_CHECK(DestroySurfaceObject(outputTextureId));
+    //CUDA_CHECK(DestroySurfaceObject(outputTextureId));
     CUDA_CHECK(GraphicsUnmapResources(1, &outputTexture, 0));
     CUDA_CHECK(GraphicsUnregisterResource(outputTexture));
 #pragma endregion
