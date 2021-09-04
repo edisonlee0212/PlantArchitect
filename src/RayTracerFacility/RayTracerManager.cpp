@@ -1,6 +1,3 @@
-#include <RayTracedRenderer.hpp>
-#include <SkinnedRayTracedRenderer.hpp>
-
 #include <RayTracerManager.hpp>
 
 using namespace RayTracerFacility;

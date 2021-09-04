@@ -10,7 +10,6 @@
 #include <PostProcessing.hpp>
 #include <RayTracerManager.hpp>
 #include <CubeVolume.hpp>
-#include <RayTracedRenderer.hpp>
 #include <ClassRegistry.hpp>
 #include <ObjectRotator.hpp>
 #include "DefaultInternodeBehaviour.hpp"
@@ -22,7 +21,6 @@
 #include "LSystemBehaviour.hpp"
 #include "SpaceColonizationTreeToLString.hpp"
 #include "AutoTreeGenerationPipeline.hpp"
-#include "SkinnedRayTracedRenderer.hpp"
 
 using namespace PlantArchitect;
 using namespace RayTracerFacility;
@@ -41,9 +39,7 @@ int main() {
     ClassRegistry::RegisterPrivateComponent<ObjectRotator>("ObjectRotator");
     ClassRegistry::RegisterPrivateComponent<IVolume>("IVolume");
     ClassRegistry::RegisterPrivateComponent<CubeVolume>("CubeVolume");
-    ClassRegistry::RegisterPrivateComponent<RayTracedRenderer>("RayTracedRenderer");
-    ClassRegistry::RegisterPrivateComponent<SkinnedRayTracedRenderer>("SkinnedRayTracedRenderer");
-
+    
     ClassRegistry::RegisterDataComponent<DefaultInternodeTag>("DefaultInternodeTag");
     ClassRegistry::RegisterAsset<DefaultInternodeBehaviour>("DefaultInternodeBehaviour", ".defaultbehaviour");
 

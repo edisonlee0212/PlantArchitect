@@ -1,6 +1,5 @@
 #include <InternodeSystem.hpp>
 #include <RadialBoundingVolume.hpp>
-#include <RayTracedRenderer.hpp>
 #include <RayTracer.hpp>
 
 using namespace PlantArchitect;
@@ -242,11 +241,7 @@ void RadialBoundingVolume::FormEntity() {
         mmc->m_forwardRendering = false;
         mmc->m_mesh = m_boundMeshes[i];
 
-        auto rayTracedRenderer =
-                slice.GetOrSetPrivateComponent<RayTracerFacility::RayTracedRenderer>()
-                        .lock();
         slice.SetParent(GetOwner(), false);
-        rayTracedRenderer->Sync();
     }
 }
 
