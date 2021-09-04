@@ -199,43 +199,56 @@ namespace RayTracerFacility {
         perRayData.m_hitCount = hitCount;
         perRayData.m_energy = glm::vec3(0.0f);
 
-        sbtData.m_material.ApplyNormalTexture(normal, texCoord, tangent);
-        float metallic = sbtData.m_material.m_metallic;
-        float roughness = sbtData.m_material.m_roughness;
-        glm::vec3 albedoColor = sbtData.m_material.GetAlbedo(texCoord);
-        if (perRayData.m_hitCount <= defaultRenderingLaunchParams.m_defaultRenderingProperties.m_bounceLimit) {
-            energy = glm::vec3(0.0f);
-            float f = 1.0f;
-            if (metallic >= 0.0f) f = (metallic + 2) / (metallic + 1);
-            float3 incidentRayOrigin;
-            float3 newRayDirectionInternal;
-            BRDF(metallic, perRayData.m_random,
-                 normal, hitPoint, rayDirection,
-                 incidentRayOrigin, newRayDirectionInternal);
-            optixTrace(defaultRenderingLaunchParams.m_traversable,
-                       incidentRayOrigin,
-                       newRayDirectionInternal,
-                       1e-3f,    // tmin
-                       1e20f,  // tmax
-                       0.0f,   // rayTime
-                       static_cast<OptixVisibilityMask>(255),
-                       OPTIX_RAY_FLAG_DISABLE_ANYHIT,
-                       static_cast<int>(DefaultRenderingRayType::RadianceRayType),             // SBT offset
-                       static_cast<int>(DefaultRenderingRayType::RayTypeCount),               // SBT stride
-                       static_cast<int>(DefaultRenderingRayType::RadianceRayType),             // missSBTIndex
-                       u0, u1);
-            energy += albedoColor
-                      * glm::clamp(glm::abs(glm::dot(normal,
-                                                     glm::vec3(newRayDirectionInternal.x, newRayDirectionInternal.y,
-                                                               newRayDirectionInternal.z))) * roughness +
-                                   (1.0f - roughness) * f, 0.0f, 1.0f)
-                      * perRayData.m_energy;
+        switch(sbtData.m_materialType){
+            case MaterialType::Default:
+            {
+                static_cast<DefaultMaterial*>(sbtData.m_material)->ApplyNormalTexture(normal, texCoord, tangent);
+                float metallic = static_cast<DefaultMaterial*>(sbtData.m_material)->m_metallic;
+                float roughness = static_cast<DefaultMaterial*>(sbtData.m_material)->m_roughness;
+                glm::vec3 albedoColor = static_cast<DefaultMaterial*>(sbtData.m_material)->GetAlbedo(texCoord);
+                if (perRayData.m_hitCount <= defaultRenderingLaunchParams.m_defaultRenderingProperties.m_bounceLimit) {
+                    energy = glm::vec3(0.0f);
+                    float f = 1.0f;
+                    if (metallic >= 0.0f) f = (metallic + 2) / (metallic + 1);
+                    float3 incidentRayOrigin;
+                    float3 newRayDirectionInternal;
+                    BRDF(metallic, perRayData.m_random,
+                         normal, hitPoint, rayDirection,
+                         incidentRayOrigin, newRayDirectionInternal);
+                    optixTrace(defaultRenderingLaunchParams.m_traversable,
+                               incidentRayOrigin,
+                               newRayDirectionInternal,
+                               1e-3f,    // tmin
+                               1e20f,  // tmax
+                               0.0f,   // rayTime
+                               static_cast<OptixVisibilityMask>(255),
+                               OPTIX_RAY_FLAG_DISABLE_ANYHIT,
+                               static_cast<int>(DefaultRenderingRayType::RadianceRayType),             // SBT offset
+                               static_cast<int>(DefaultRenderingRayType::RayTypeCount),               // SBT stride
+                               static_cast<int>(DefaultRenderingRayType::RadianceRayType),             // missSBTIndex
+                               u0, u1);
+                    energy += albedoColor
+                              * glm::clamp(glm::abs(glm::dot(normal,
+                                                             glm::vec3(newRayDirectionInternal.x, newRayDirectionInternal.y,
+                                                                       newRayDirectionInternal.z))) * roughness +
+                                           (1.0f - roughness) * f, 0.0f, 1.0f)
+                              * perRayData.m_energy;
+                }
+                if (hitCount == 1) {
+                    perRayData.m_pixelNormal = normal;
+                    perRayData.m_pixelAlbedo = albedoColor;
+                }
+                perRayData.m_energy = energy + static_cast<DefaultMaterial*>(sbtData.m_material)->m_diffuseIntensity * albedoColor;
+
+            }
+            break;
+            case MaterialType::MLVQ:
+            {
+
+            }
+                break;
         }
-        if (hitCount == 1) {
-            perRayData.m_pixelNormal = normal;
-            perRayData.m_pixelAlbedo = albedoColor;
-        }
-        perRayData.m_energy = energy + sbtData.m_material.m_diffuseIntensity * albedoColor;
+
 
     }
     extern "C" __global__ void __closesthit__sampleSp() {
@@ -264,7 +277,7 @@ namespace RayTracerFacility {
         const auto hitPoint = sbtData.m_mesh.GetPosition(optixGetTriangleBarycentrics(), indices);
         const auto origin = optixGetWorldRayOrigin();
         const float distance = glm::distance(hitPoint, glm::vec3(origin.x, origin.y, origin.z));
-        if (distance > sbtData.m_material.GetRadiusMax()) optixIgnoreIntersection();
+        //if (distance > sbtData.m_material.GetRadiusMax()) optixIgnoreIntersection();
     }
 #pragma endregion
 #pragma region Miss functions

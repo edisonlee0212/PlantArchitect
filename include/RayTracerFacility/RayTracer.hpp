@@ -1,5 +1,6 @@
 #pragma once
 
+#include <BTFBase.cuh>
 #include <CUDABuffer.hpp>
 #include <Optix7.hpp>
 #include <Vertex.hpp>
@@ -7,6 +8,7 @@
 #include <glm/glm.hpp>
 #include <string>
 #include <vector>
+#include <MaterialType.hpp>
 
 namespace RayTracerFacility {
     struct RAY_TRACER_FACILITY_API Camera {
@@ -37,12 +39,13 @@ namespace RayTracerFacility {
         EnvironmentalMap,
         CIE
     };
-    enum class OutputType{
+    enum class OutputType {
         Color,
         Normal,
         Albedo,
         DenoisedColor,
     };
+
     struct RAY_TRACER_FACILITY_API DefaultRenderingProperties {
         bool m_accumulate = true;
         EnvironmentalLightingType m_environmentalLightingType = EnvironmentalLightingType::White;
@@ -56,6 +59,7 @@ namespace RayTracerFacility {
         unsigned m_environmentalMapId = 0;
         glm::ivec2 m_frameSize = glm::vec2(0, 0);
         OutputType m_outputType = OutputType::Color;
+
         [[nodiscard]] bool
         Changed(const DefaultRenderingProperties &properties) const {
             return properties.m_accumulate != m_accumulate ||
@@ -68,7 +72,7 @@ namespace RayTracerFacility {
                    properties.m_outputTextureId != m_outputTextureId ||
                    properties.m_environmentalMapId != m_environmentalMapId ||
                    properties.m_frameSize != m_frameSize ||
-                    properties.m_outputType != m_outputType ||
+                   properties.m_outputType != m_outputType ||
                    properties.m_camera != m_camera;
         }
 
@@ -109,12 +113,12 @@ namespace RayTracerFacility {
     struct DefaultRenderingLaunchParams {
         DefaultRenderingProperties m_defaultRenderingProperties;
         struct {
-            glm::vec4   *m_colorBuffer;
-            glm::vec4   *m_normalBuffer;
-            glm::vec4   *m_albedoBuffer;
+            glm::vec4 *m_colorBuffer;
+            glm::vec4 *m_normalBuffer;
+            glm::vec4 *m_albedoBuffer;
 
             /*! the size of the frame buffer to render */
-            glm::ivec2     size;
+            glm::ivec2 size;
             size_t m_frameId;
         } m_frame;
         struct {
@@ -152,6 +156,10 @@ namespace RayTracerFacility {
 
 #pragma endregion
     struct RAY_TRACER_FACILITY_API RayTracerInstance {
+        MaterialType m_materialType = MaterialType::Default;
+        int m_MLVQMaterialIndex;
+
+
         std::vector<Vertex> *m_vertices;
         std::vector<glm::uvec3> *m_triangles;
         size_t m_version;
@@ -161,6 +169,7 @@ namespace RayTracerFacility {
         float m_roughness;
         float m_metallic;
         bool m_removeTag = false;
+
         glm::mat4 m_globalTransform;
 
         unsigned m_albedoTexture = 0;
@@ -172,6 +181,9 @@ namespace RayTracerFacility {
     };
 
     struct RAY_TRACER_FACILITY_API SkinnedRayTracerInstance {
+        MaterialType m_materialType = MaterialType::Default;
+        int m_MLVQMaterialIndex;
+
         std::vector<SkinnedVertex> *m_skinnedVertices;
         std::vector<glm::uvec3> *m_triangles;
         std::vector<glm::mat4> *m_boneMatrices;
@@ -219,6 +231,7 @@ namespace RayTracerFacility {
         CudaBuffer m_launchParamsBuffer;
         bool m_statusChanged = false;
     };
+    struct MLVQMaterial;
 
     class RayTracer {
     public:
@@ -253,6 +266,11 @@ namespace RayTracerFacility {
         void ClearAccumulate();
 
     protected:
+#pragma region MLVQ
+        std::vector<std::shared_ptr<MLVQMaterial>> m_MLVQMaterials;
+        std::vector<CudaBuffer> m_MLVQMaterialsBuffer;
+#pragma endregion
+
 #pragma region Device and context
         /*! @{ CUDA device context and stream that optix pipeline will run
                 on, as well as device properties for this device */
@@ -317,6 +335,9 @@ namespace RayTracerFacility {
 
         std::vector<CudaBuffer> m_boneMatricesBuffer;
 
+        std::vector<MaterialType> m_materialTypes;
+        std::vector<CudaBuffer> m_surfaceMaterialBuffer;
+
         /*! one buffer per input mesh */
         std::vector<CudaBuffer> m_trianglesBuffer;
         //! buffer that keeps the (final, compacted) acceleration structure
@@ -324,7 +345,8 @@ namespace RayTracerFacility {
 #pragma endregion
 
 #pragma region FrameBuffer
-        void Resize(const glm::ivec2& newSize);
+
+        void Resize(const glm::ivec2 &newSize);
 
         /*! the color buffer we use during _rendering_, which is a bit
         larger than the actual displayed frame buffer (to account for
@@ -338,9 +360,9 @@ namespace RayTracerFacility {
         /*! output of the denoiser pass, in float4 */
         CudaBuffer m_denoisedBuffer;
         OptixDenoiser m_denoiser = nullptr;
-        CudaBuffer    m_denoiserScratch;
-        CudaBuffer    m_denoiserState;
-        CudaBuffer    m_denoiserIntensity;
+        CudaBuffer m_denoiserScratch;
+        CudaBuffer m_denoiserState;
+        CudaBuffer m_denoiserIntensity;
 #pragma endregion
 
     };

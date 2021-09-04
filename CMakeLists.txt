@@ -49,12 +49,14 @@ set(CMAKE_CXX_STANDARD 17)
 
 enable_language(CUDA)
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/RayTracerFacility/MLVQ)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/RayTracerFacility)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${UNIENGINE_INCLUDES})
 
 file(GLOB RAY_TRACER_FACILITY_SOURCES_LOCAL
         "src/RayTracerFacility/*.cpp"
+        "src/RayTracerFacility/MLVQ/*.cpp"
         )
 file(GLOB RAY_TRACER_FACILITY_CUDA_SOURCES_LOCAL
         "src/RayTracerFacility/*.cu"
@@ -101,6 +103,7 @@ set(RAY_TRACER_FACILITY_INCLUDES_LOCAL
         ${OptiX_INCLUDE}
         ${CUDA_TOOLKIT_ROOT_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/include/RayTracerFacility
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/RayTracerFacility/MLVQ
         ${UNIENGINE_INCLUDES}
         ${CMAKE_CURRENT_BINARY_DIR}
         )

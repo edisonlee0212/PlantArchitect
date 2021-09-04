@@ -26,53 +26,55 @@ namespace RayTracerFacility {
             normal = -normal;
         }
         auto tangent = sbtData.m_mesh.GetTangent(triangleBarycentricsInternal, indices);
-        glm::vec3 albedoColor = sbtData.m_material.GetAlbedo(texCoord);
-        sbtData.m_material.ApplyNormalTexture(normal, texCoord, tangent);
         auto hitPoint = sbtData.m_mesh.GetPosition(triangleBarycentricsInternal, indices);
 #pragma endregion
         IlluminationEstimationRayData &perRayData = *GetRayDataPointer<IlluminationEstimationRayData>();
+        unsigned hitCount = perRayData.m_hitCount + 1;
         auto energy = 0.0f;
-        const auto scatterSamples = defaultIlluminationEstimationLaunchParams.m_defaultIlluminationEstimationProperties.m_numScatterSamples;
         uint32_t u0, u1;
         PackRayDataPointer(&perRayData, u0, u1);
-        float metallic = sbtData.m_material.m_metallic;
-        float roughness = sbtData.m_material.m_roughness;
-        unsigned hitCount = perRayData.m_hitCount + 1;
-        for (int sampleID = 0; sampleID < scatterSamples; sampleID++) {
-            perRayData.m_hitCount = hitCount;
-            perRayData.m_energy = 0;
-            if (perRayData.m_hitCount <=
-                defaultIlluminationEstimationLaunchParams.m_defaultIlluminationEstimationProperties.m_bounceLimit) {
-                float f = 1.0f;
-                if (metallic >= 0.0f) f = (metallic + 2) / (metallic + 1);
-                glm::vec3 reflected = Reflect(rayDirection, normal);
-                glm::vec3 newRayDirection = RandomSampleHemisphere(perRayData.m_random, reflected, metallic);
-                auto origin = hitPoint;
-                if (glm::dot(newRayDirection, normal) > 0.0f) {
-                    origin += normal * 1e-3f;
-                } else {
-                    origin -= normal * 1e-3f;
+        perRayData.m_hitCount = hitCount;
+        perRayData.m_energy = 0;
+        switch (sbtData.m_materialType) {
+            case MaterialType::Default: {
+                static_cast<DefaultMaterial*>(sbtData.m_material)->ApplyNormalTexture(normal, texCoord, tangent);
+                float metallic = static_cast<DefaultMaterial*>(sbtData.m_material)->m_metallic;
+                float roughness = static_cast<DefaultMaterial*>(sbtData.m_material)->m_roughness;
+                glm::vec3 albedoColor = static_cast<DefaultMaterial*>(sbtData.m_material)->GetAlbedo(texCoord);
+                if (perRayData.m_hitCount <= defaultIlluminationEstimationLaunchParams.m_defaultIlluminationEstimationProperties.m_bounceLimit) {
+                    energy = 0.0f;
+                    float f = 1.0f;
+                    if (metallic >= 0.0f) f = (metallic + 2) / (metallic + 1);
+                    float3 incidentRayOrigin;
+                    float3 newRayDirectionInternal;
+                    BRDF(metallic, perRayData.m_random,
+                         normal, hitPoint, rayDirection,
+                         incidentRayOrigin, newRayDirectionInternal);
+                    optixTrace(defaultIlluminationEstimationLaunchParams.m_traversable,
+                               incidentRayOrigin,
+                               newRayDirectionInternal,
+                               0.0f,    // tmin
+                               1e20f,  // tmax
+                               0.0f,   // rayTime
+                               static_cast<OptixVisibilityMask>(255),
+                               OPTIX_RAY_FLAG_DISABLE_ANYHIT,//OPTIX_RAY_FLAG_NONE,
+                               static_cast<int>(DefaultIlluminationEstimationRayType::RadianceRayType),             // SBT offset
+                               static_cast<int>(DefaultIlluminationEstimationRayType::RayTypeCount),               // SBT stride
+                               static_cast<int>(DefaultIlluminationEstimationRayType::RadianceRayType),             // missSBTIndex
+                               u0, u1);
+                    energy += glm::clamp(glm::abs(glm::dot(normal, glm::vec3(newRayDirectionInternal.x, newRayDirectionInternal.y,
+                                                                             newRayDirectionInternal.z))) * roughness + (1.0f - roughness) * f,
+                                         0.0f, 1.0f)
+                              * perRayData.m_energy;
                 }
-                float3 incidentRayOrigin = make_float3(origin.x, origin.y, origin.z);
-                float3 newRayDirectionInternal = make_float3(newRayDirection.x, newRayDirection.y, newRayDirection.z);
-                optixTrace(defaultIlluminationEstimationLaunchParams.m_traversable,
-                           incidentRayOrigin,
-                           newRayDirectionInternal,
-                           0.0f,    // tmin
-                           1e20f,  // tmax
-                           0.0f,   // rayTime
-                           static_cast<OptixVisibilityMask>(255),
-                           OPTIX_RAY_FLAG_DISABLE_ANYHIT,//OPTIX_RAY_FLAG_NONE,
-                           static_cast<int>(DefaultIlluminationEstimationRayType::RadianceRayType),             // SBT offset
-                           static_cast<int>(DefaultIlluminationEstimationRayType::RayTypeCount),               // SBT stride
-                           static_cast<int>(DefaultIlluminationEstimationRayType::RadianceRayType),             // missSBTIndex
-                           u0, u1);
-                energy += glm::clamp(glm::abs(glm::dot(normal, newRayDirection)) * roughness + (1.0f - roughness) * f,
-                                     0.0f, 1.0f)
-                          * perRayData.m_energy;
+                perRayData.m_energy = energy + static_cast<DefaultMaterial*>(sbtData.m_material)->m_diffuseIntensity;
             }
+                break;
+            case MaterialType::MLVQ: {
+
+            }
+                break;
         }
-        perRayData.m_energy = energy / scatterSamples;
     }
 #pragma endregion
 #pragma region Any hit functions
