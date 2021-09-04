@@ -424,7 +424,11 @@ RayTracer::RayTracer() {
     AssemblePipelines();
 
     std::cout << "#Optix: context, module, pipeline, etc, all set up ..." << std::endl;
-    LoadBtfMaterials({"../Resources/btfs/alu", "../Resources/btfs/pulli"});
+
+    MLVQMaterialStorage storage;
+    storage.m_material = std::make_shared<MLVQMaterial>();
+    storage.m_buffer.Upload(storage.m_material.get(), 1);
+    m_MLVQMaterialStorage.push_back(storage);
 }
 
 void RayTracer::SetSkylightSize(const float &value) {

@@ -11,8 +11,8 @@ using namespace RayTracerFacility;
 
 using namespace UniEngine;
 
-const char *MLVQMaterials[]{"fabrics01", "alu", "corduroy", "wool",
-                            "wallpaper", "impalla", "pulli", "proposte"};
+const char *MLVQMaterials[]{"None", "alu", "corduroy", "fabric01", "impalla",
+                            "proposte", "pulli", "wallpaper", "wool"};
 
 void MLVQRenderer::OnGui() {
     if(ImGui::Button("Sync")) Sync();

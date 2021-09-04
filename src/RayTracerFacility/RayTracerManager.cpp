@@ -427,6 +427,15 @@ void RayTracerManager::OnGui() {
         manager.m_defaultRenderingProperties.OnGui();
         EditorManager::DragAndDropButton<Cubemap>(RayTracerManager::GetInstance().m_environmentalMap,
                                                   "Environmental Map");
+
+        if(ImGui::Button("Load all MLVQ Materials")){
+            std::vector<std::string> pathes;
+            std::filesystem::path folder("../Resources/btfs");
+            for(auto& entry : std::filesystem::directory_iterator(folder)){
+                pathes.push_back(entry.path().string());
+            }
+            CudaModule::GetRayTracer()->LoadBtfMaterials(pathes);
+        }
     }
     ImGui::End();
 

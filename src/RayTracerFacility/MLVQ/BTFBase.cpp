@@ -428,6 +428,9 @@ bool BtfBase::Init(const std::string &materialDirectoryPath) {
       reinterpret_cast<int *>(pdf4.m_pdf4DSlicesBuffer.DevicePointer());
   UNIENGINE_LOG("The database was read successfully.");
 #pragma endregion
+
+  m_hasData = true;
+
   return true; // OK - database loaded, or at least partially
 #pragma endregion
 }
