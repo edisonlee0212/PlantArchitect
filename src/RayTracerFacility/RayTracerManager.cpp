@@ -79,6 +79,8 @@ RayTracerManager::UpdateMeshesStorage(std::vector<RayTracerInstance> &meshesStor
             }
             if (material->m_albedoTexture.Get<Texture2D>() &&
                 material->m_albedoTexture.Get<Texture2D>()
+                        ->Texture() &&
+                material->m_albedoTexture.Get<Texture2D>()
                         ->Texture()
                         ->Id() != rayTracerInstance->m_albedoTexture) {
                 updateShaderBindingTable = true;
@@ -86,12 +88,13 @@ RayTracerManager::UpdateMeshesStorage(std::vector<RayTracerInstance> &meshesStor
                         material->m_albedoTexture.Get<Texture2D>()
                                 ->Texture()
                                 ->Id();
-            } else if (!material->m_albedoTexture.Get<Texture2D>() &&
-                       rayTracerInstance->m_albedoTexture != 0) {
+            } else if (rayTracerInstance->m_albedoTexture != 0) {
                 updateShaderBindingTable = true;
                 rayTracerInstance->m_albedoTexture = 0;
             }
             if (material->m_normalTexture.Get<Texture2D>() &&
+                material->m_normalTexture.Get<Texture2D>()
+                        ->Texture() &&
                 material->m_normalTexture.Get<Texture2D>()
                         ->Texture()
                         ->Id() != rayTracerInstance->m_normalTexture) {
@@ -101,8 +104,7 @@ RayTracerManager::UpdateMeshesStorage(std::vector<RayTracerInstance> &meshesStor
                                 ->Texture()
                                 ->Id();
 
-            } else if (!material->m_normalTexture.Get<Texture2D>() &&
-                       rayTracerInstance->m_normalTexture != 0) {
+            } else if (rayTracerInstance->m_normalTexture != 0) {
                 updateShaderBindingTable = true;
                 rayTracerInstance->m_normalTexture = 0;
             }
@@ -279,6 +281,8 @@ RayTracerManager::UpdateSkinnedMeshesStorage(std::vector<SkinnedRayTracerInstanc
             }
             if (material->m_albedoTexture.Get<Texture2D>() &&
                 material->m_albedoTexture.Get<Texture2D>()
+                        ->Texture() &&
+                material->m_albedoTexture.Get<Texture2D>()
                         ->Texture()
                         ->Id() != rayTracerInstance->m_albedoTexture) {
                 updateShaderBindingTable = true;
@@ -287,12 +291,13 @@ RayTracerManager::UpdateSkinnedMeshesStorage(std::vector<SkinnedRayTracerInstanc
                                 ->Texture()
                                 ->Id();
 
-            } else if (!material->m_albedoTexture.Get<Texture2D>() &&
-                       rayTracerInstance->m_albedoTexture != 0) {
+            } else if (rayTracerInstance->m_albedoTexture != 0) {
                 updateShaderBindingTable = true;
                 rayTracerInstance->m_albedoTexture = 0;
             }
             if (material->m_normalTexture.Get<Texture2D>() &&
+                material->m_normalTexture.Get<Texture2D>()
+                        ->Texture() &&
                 material->m_normalTexture.Get<Texture2D>()
                         ->Texture()
                         ->Id() != rayTracerInstance->m_normalTexture) {
@@ -302,8 +307,7 @@ RayTracerManager::UpdateSkinnedMeshesStorage(std::vector<SkinnedRayTracerInstanc
                                 ->Texture()
                                 ->Id();
 
-            } else if (!material->m_normalTexture.Get<Texture2D>() &&
-                       rayTracerInstance->m_normalTexture != 0) {
+            } else if (rayTracerInstance->m_normalTexture != 0) {
                 updateShaderBindingTable = true;
                 rayTracerInstance->m_normalTexture = 0;
             }
