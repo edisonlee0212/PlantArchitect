@@ -78,14 +78,14 @@ RayTracerManager::UpdateMeshesStorage(std::vector<RayTracerInstance> &meshesStor
                 rayTracerInstance->m_entityVersion = entity.GetVersion();
             }
             if (material->m_albedoTexture.Get<Texture2D>() &&
-                material->m_albedoTexture.Get<Texture2D>()->Texture()) {
+                material->m_albedoTexture.Get<Texture2D>()->UnsafeGetGLTexture()) {
                 if (material->m_albedoTexture.Get<Texture2D>()
-                            ->Texture()
+                            ->UnsafeGetGLTexture()
                             ->Id() != rayTracerInstance->m_albedoTexture) {
                     updateShaderBindingTable = true;
                     rayTracerInstance->m_albedoTexture =
                             material->m_albedoTexture.Get<Texture2D>()
-                                    ->Texture()
+                                    ->UnsafeGetGLTexture()
                                     ->Id();
                 }
             } else if (rayTracerInstance->m_albedoTexture != 0) {
@@ -94,14 +94,14 @@ RayTracerManager::UpdateMeshesStorage(std::vector<RayTracerInstance> &meshesStor
             }
 
             if (material->m_normalTexture.Get<Texture2D>() &&
-                material->m_normalTexture.Get<Texture2D>()->Texture()) {
+                material->m_normalTexture.Get<Texture2D>()->UnsafeGetGLTexture()) {
                 if (material->m_normalTexture.Get<Texture2D>()
-                            ->Texture()
+                            ->UnsafeGetGLTexture()
                             ->Id() != rayTracerInstance->m_normalTexture) {
                     updateShaderBindingTable = true;
                     rayTracerInstance->m_normalTexture =
                             material->m_normalTexture.Get<Texture2D>()
-                                    ->Texture()
+                                    ->UnsafeGetGLTexture()
                                     ->Id();
                 }
             } else if (rayTracerInstance->m_normalTexture != 0) {
@@ -282,14 +282,14 @@ RayTracerManager::UpdateSkinnedMeshesStorage(std::vector<SkinnedRayTracerInstanc
                 rayTracerInstance->m_entityVersion = entity.GetVersion();
             }
             if (material->m_albedoTexture.Get<Texture2D>() &&
-                material->m_albedoTexture.Get<Texture2D>()->Texture()) {
+                material->m_albedoTexture.Get<Texture2D>()->UnsafeGetGLTexture()) {
                 if (material->m_albedoTexture.Get<Texture2D>()
-                            ->Texture()
+                            ->UnsafeGetGLTexture()
                             ->Id() != rayTracerInstance->m_albedoTexture) {
                     updateShaderBindingTable = true;
                     rayTracerInstance->m_albedoTexture =
                             material->m_albedoTexture.Get<Texture2D>()
-                                    ->Texture()
+                                    ->UnsafeGetGLTexture()
                                     ->Id();
                 }
             } else if (rayTracerInstance->m_albedoTexture != 0) {
@@ -298,14 +298,14 @@ RayTracerManager::UpdateSkinnedMeshesStorage(std::vector<SkinnedRayTracerInstanc
             }
 
             if (material->m_normalTexture.Get<Texture2D>() &&
-                material->m_normalTexture.Get<Texture2D>()->Texture()) {
+                material->m_normalTexture.Get<Texture2D>()->UnsafeGetGLTexture()) {
                 if (material->m_normalTexture.Get<Texture2D>()
-                            ->Texture()
+                            ->UnsafeGetGLTexture()
                             ->Id() != rayTracerInstance->m_normalTexture) {
                     updateShaderBindingTable = true;
                     rayTracerInstance->m_normalTexture =
                             material->m_normalTexture.Get<Texture2D>()
-                                    ->Texture()
+                                    ->UnsafeGetGLTexture()
                                     ->Id();
                 }
             } else if (rayTracerInstance->m_normalTexture != 0) {

@@ -202,7 +202,7 @@ void InternodeSystem::LateUpdate() {
             m_internodeDebuggingCameraResolutionY = viewPortSize.y;
             ImGui::Image(
                     reinterpret_cast<ImTextureID>(
-                            m_internodeDebuggingCamera->GetTexture()->Texture()->Id()),
+                            m_internodeDebuggingCamera->GetTexture()->UnsafeGetGLTexture()->Id()),
                     viewPortSize, ImVec2(0, 1), ImVec2(1, 0));
             glm::vec2 mousePosition = glm::vec2(FLT_MAX, FLT_MIN);
             if (ImGui::IsWindowFocused()) {
