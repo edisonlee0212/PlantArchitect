@@ -149,7 +149,6 @@ generate_export_header(PlantArchitect
 target_compile_definitions(PlantArchitect
         PRIVATE
         GLAD_GLAPI_EXPORT
-        ${PLANT_ARCHITECT_RESOURCE_DEF}
         )
 target_precompile_headers(PlantArchitect
         PRIVATE
@@ -215,10 +214,6 @@ target_precompile_headers(Application
         PRIVATE
         ${PLANT_ARCHITECT_PCH_LOCAL}
         )
-target_compile_definitions(Application
-        PRIVATE
-        ${PLANT_ARCHITECT_RESOURCE_DEF}
-        )
 target_link_libraries(Application
         RayTracerFacility
         PlantArchitect
@@ -237,10 +232,6 @@ target_include_directories(InternodeBehavioursExample
 target_precompile_headers(InternodeBehavioursExample
         PRIVATE
         ${PLANT_ARCHITECT_PCH_LOCAL}
-        )
-target_compile_definitions(InternodeBehavioursExample
-        PRIVATE
-        ${PLANT_ARCHITECT_RESOURCE_DEF}
         )
 target_link_libraries(InternodeBehavioursExample
         RayTracerFacility
