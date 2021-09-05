@@ -664,10 +664,10 @@ __global__ void ApplySkinnedTransformKernel(
         if (vertices[idx].m_bondId2[3] != -1) {
             boneTransform += boneMatrices[vertices[idx].m_bondId2[3]] * vertices[idx].m_weight2[3];
         }
-
-        targetPositions[idx] = boneTransform * glm::vec4(vertices[idx].m_position, 1.0f);
-        glm::vec3 N = glm::normalize(boneTransform * glm::vec4(vertices[idx].m_normal, 0.0f));
-        glm::vec3 T = glm::normalize(boneTransform * glm::vec4(vertices[idx].m_tangent, 0.0f));
+        auto finalTransform = globalTransform * boneTransform;
+        targetPositions[idx] = finalTransform * glm::vec4(vertices[idx].m_position, 1.0f);
+        glm::vec3 N = glm::normalize(finalTransform * glm::vec4(vertices[idx].m_normal, 0.0f));
+        glm::vec3 T = glm::normalize(finalTransform * glm::vec4(vertices[idx].m_tangent, 0.0f));
         T = glm::normalize(T - dot(T, N) * N);
         targetNormals[idx] = N;
         targetTangents[idx] = T;

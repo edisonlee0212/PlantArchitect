@@ -358,22 +358,16 @@ void IInternodeBehaviour::TreeSkinnedMeshGenerator(std::vector<Entity> &internod
 
 void IInternodeBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity) {
     auto animator = entity.GetOrSetPrivateComponent<Animator>().lock();
-    animator->Setup(AssetManager::CreateAsset<Animation>());
     auto skinnedMeshRenderer =
             entity.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
     skinnedMeshRenderer->m_skinnedMesh = AssetManager::CreateAsset<SkinnedMesh>();
-    auto animation =
-            entity.GetOrSetPrivateComponent<Animator>().lock()->GetAnimation();
-    skinnedMeshRenderer->m_skinnedMesh.Get<SkinnedMesh>()->m_animation =
-            animation;
     auto skinnedMat = AssetManager::LoadMaterial(
             DefaultResources::GLPrograms::StandardSkinnedProgram);
     skinnedMeshRenderer->m_material = skinnedMat;
     skinnedMat->m_albedoColor = glm::vec3(0.7f, 0.3f, 0.0f);
     skinnedMat->m_roughness = 1.0f;
     skinnedMat->m_metallic = 0.0f;
-    skinnedMeshRenderer->AttachAnimator(
-            entity.GetOrSetPrivateComponent<Animator>().lock());
+    skinnedMeshRenderer->m_animator = entity.GetOrSetPrivateComponent<Animator>().lock();
 }
 
 void IInternodeBehaviour::CollectRoots(const EntityQuery &internodeQuery, std::vector<Entity> &roots) {
