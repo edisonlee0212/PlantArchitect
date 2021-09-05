@@ -13,7 +13,7 @@ namespace RayTracerFacility {
     public:
         AssetRef m_mesh;
         int m_materialIndex = 0;
-        void OnGui() override;
+        void OnInspect() override;
         void Sync();
 
         void Serialize(YAML::Emitter &out) override;

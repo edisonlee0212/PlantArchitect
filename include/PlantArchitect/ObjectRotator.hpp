@@ -9,7 +9,7 @@ namespace PlantArchitect {
         float m_rotateSpeed;
         glm::vec3 m_rotation = glm::vec3(0, 0, 0);
 
-        void OnGui() override;
+        void OnInspect() override;
 
         void FixedUpdate() override;
 

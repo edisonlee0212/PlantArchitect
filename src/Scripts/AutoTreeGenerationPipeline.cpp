@@ -29,7 +29,7 @@ void AutoTreeGenerationPipeline::Update() {
     }
 }
 
-void AutoTreeGenerationPipeline::OnGui() {
+void AutoTreeGenerationPipeline::OnInspect() {
     DropBehaviourButton();
 }
 

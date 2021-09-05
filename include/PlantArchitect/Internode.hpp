@@ -86,7 +86,7 @@ namespace PlantArchitect {
          */
         void ExportLString(const std::shared_ptr<LString>& lString);
 
-        void OnGui() override;
+        void OnInspect() override;
     };
 
 }

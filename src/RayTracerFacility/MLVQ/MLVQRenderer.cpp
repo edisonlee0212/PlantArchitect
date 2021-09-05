@@ -14,7 +14,7 @@ using namespace UniEngine;
 const char *MLVQMaterials[]{"None", "alu", "corduroy", "fabric01", "impalla",
                             "proposte", "pulli", "wallpaper", "wool"};
 
-void MLVQRenderer::OnGui() {
+void MLVQRenderer::OnInspect() {
     if(ImGui::Button("Sync")) Sync();
     EditorManager::DragAndDropButton<Mesh>(m_mesh, "Mesh");
     ImGui::Text("Material: ");

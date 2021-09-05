@@ -85,7 +85,7 @@ void Internode::ExportLSystemCommandsHelper(const Entity &target, std::vector<LS
     });
 }
 
-void Internode::OnGui() {
+void Internode::OnInspect() {
     if(ImGui::Button("Generate L-String")){
         auto lString = AssetManager::CreateAsset<LString>();
         AssetManager::Share(lString);

@@ -14,7 +14,7 @@ void CubeVolume::OnCreate() {
     SetEnabled(true);
 }
 
-void CubeVolume::OnGui() {
+void CubeVolume::OnInspect() {
     ImGui::Checkbox("Obstacle", &m_asObstacle);
     ImGui::DragFloat3("Min", &m_minMaxBound.m_min.x, 0.1);
     ImGui::DragFloat3("Max", &m_minMaxBound.m_max.x, 0.1);

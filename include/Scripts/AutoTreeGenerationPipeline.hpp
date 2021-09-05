@@ -18,7 +18,7 @@ namespace Scripts {
         AssetRef m_pipelineBehaviour;
         void Update() override;
         void Clone(const std::shared_ptr<IPrivateComponent> &target) override;
-        void OnGui() override;
+        void OnInspect() override;
 
     };
 

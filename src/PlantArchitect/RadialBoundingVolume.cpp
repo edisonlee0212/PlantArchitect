@@ -477,7 +477,7 @@ void RadialBoundingVolume::CalculateVolume(float maxHeight) {
     GenerateMesh();
 }
 
-void RadialBoundingVolume::OnGui() {
+void RadialBoundingVolume::OnInspect() {
     if (!m_meshGenerated)
         CalculateVolume();
     ImGui::Checkbox("Prune Buds", &m_pruneBuds);
