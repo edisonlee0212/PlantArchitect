@@ -15,9 +15,9 @@ namespace PlantArchitect {
     public:
         void OnInspect() override;
         void OnCreate() override;
-        void PreProcess() override;
-        void Grow() override;
-        void PostProcess() override;
+        void PreProcess(float deltaTime) override;
+        void Grow(float deltaTime) override;
+        void PostProcess(float deltaTime) override;
         Entity Retrieve() override;
         Entity Retrieve(const Entity &parent) override;
     };

@@ -12,7 +12,7 @@ void InternodeSystem::Simulate(float deltaTime) {
     //0. Pre processing
     for (auto &i: m_internodeBehaviours) {
         auto behaviour = i.Get<IInternodeBehaviour>();
-        if (behaviour) behaviour->PreProcess();
+        if (behaviour) behaviour->PreProcess(deltaTime);
     }
 
     //1. Collect resource from environment
@@ -37,13 +37,13 @@ void InternodeSystem::Simulate(float deltaTime) {
     //4. Growth
     for (auto &i: m_internodeBehaviours) {
         auto behaviour = i.Get<IInternodeBehaviour>();
-        if (behaviour) behaviour->Grow();
+        if (behaviour) behaviour->Grow(deltaTime);
     }
 
     //5. Post processing
     for (auto &i: m_internodeBehaviours) {
         auto behaviour = i.Get<IInternodeBehaviour>();
-        if (behaviour) behaviour->PostProcess();
+        if (behaviour) behaviour->PostProcess(deltaTime);
     }
 }
 

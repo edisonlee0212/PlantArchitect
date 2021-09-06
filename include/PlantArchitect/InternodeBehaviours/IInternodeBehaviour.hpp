@@ -77,17 +77,17 @@ namespace PlantArchitect {
         /**
          * What to do before the growth, and before the resource collection. Mesh, graph calculation...
          */
-        virtual void PreProcess() {};
+        virtual void PreProcess(float deltaTime) {};
 
         /**
          * Handle main growth here.
          */
-        virtual void Grow() {};
+        virtual void Grow(float deltaTime) {};
 
         /**
          * What to do after the growth. Mesh, graph calculation...
          */
-        virtual void PostProcess() {};
+        virtual void PostProcess(float deltaTime) {};
 
         /**
          * Generate branch skinned mesh for internodes.

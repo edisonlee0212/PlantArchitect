@@ -367,7 +367,7 @@ void IInternodeBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &ent
     auto skinnedMat = AssetManager::LoadMaterial(
             DefaultResources::GLPrograms::StandardSkinnedProgram);
     skinnedMeshRenderer->m_material = skinnedMat;
-    skinnedMat->m_albedoColor = glm::vec3(0.7f, 0.3f, 0.0f);
+    skinnedMat->m_albedoColor = glm::vec3(40.0f / 255, 15.0f / 255, 0.0f);
     skinnedMat->m_roughness = 1.0f;
     skinnedMat->m_metallic = 0.0f;
     skinnedMeshRenderer->m_animator = entity.GetOrSetPrivateComponent<Animator>().lock();

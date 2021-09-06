@@ -8,7 +8,7 @@
 
 using namespace PlantArchitect;
 
-void DefaultInternodeBehaviour::PreProcess() {
+void DefaultInternodeBehaviour::PreProcess(float deltaTime) {
     EntityManager::ForEach<InternodeInfo, DefaultInternodeTag>
             (JobManager::PrimaryWorkers(), m_internodesQuery,
              [&](int i, Entity entity, InternodeInfo &internodeTag, DefaultInternodeTag &defaultInternodeTag) {
@@ -16,7 +16,7 @@ void DefaultInternodeBehaviour::PreProcess() {
              }, true);
 }
 
-void DefaultInternodeBehaviour::Grow() {
+void DefaultInternodeBehaviour::Grow(float deltaTime) {
     std::vector<Entity> entities;
     m_internodesQuery.ToEntityArray(entities);
     EntityManager::ForEach<InternodeInfo, DefaultInternodeTag>
@@ -33,7 +33,7 @@ void DefaultInternodeBehaviour::Grow() {
     }
 }
 
-void DefaultInternodeBehaviour::PostProcess() {
+void DefaultInternodeBehaviour::PostProcess(float deltaTime) {
     EntityManager::ForEach<InternodeInfo, DefaultInternodeTag>
             (JobManager::PrimaryWorkers(), m_internodesQuery,
              [&](int i, Entity entity, InternodeInfo &internodeTag, DefaultInternodeTag &defaultInternodeTag) {
