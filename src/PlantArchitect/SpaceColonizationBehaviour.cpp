@@ -205,17 +205,21 @@ void SpaceColonizationBehaviour::PostProcess(float deltaTime) {
                     thicknessCollection += glm::pow(childInternodeInfo.m_thickness, 1.0f / parameters.m_thicknessFactor);
                 });
                 parentInternodeInfo.m_thickness = glm::pow(thicknessCollection, parameters.m_thicknessFactor);
+                parentInternodeInfo.m_leafCount = 0;
                 parent.SetDataComponent(parentInternodeInfo);
             }, [](Entity endNode){
                 auto internodeInfo = endNode.GetDataComponent<InternodeInfo>();
                 auto parameters = endNode.GetDataComponent<SpaceColonizationParameters>();
                 internodeInfo.m_thickness = parameters.m_endNodeThickness;
+                internodeInfo.m_leafCount = 5;
                 endNode.SetDataComponent(internodeInfo);
             });
         }).share());
     }
     for (const auto &i: results)
         i.wait();
+
+
 }
 
 void SpaceColonizationBehaviour::OnInspect() {

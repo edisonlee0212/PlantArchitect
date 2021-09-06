@@ -22,6 +22,9 @@
 #include "LSystemBehaviour.hpp"
 #include "SpaceColonizationTreeToLString.hpp"
 #include "AutoTreeGenerationPipeline.hpp"
+#include "DefaultInternodePhyllotaxis.hpp"
+#include "EmptyInternodePhyllotaxis.hpp"
+#include "InternodeFoliage.hpp"
 using namespace PlantArchitect;
 using namespace RayTracerFacility;
 using namespace Scripts;
@@ -63,6 +66,10 @@ int main() {
 
     ClassRegistry::RegisterPrivateComponent<AutoTreeGenerationPipeline>("AutoTreeGenerationPipeline");
     ClassRegistry::RegisterAsset<SpaceColonizationTreeToLString>("SpaceColonizationTreeToLString", "sctolstring");
+
+    ClassRegistry::RegisterSerializable<InternodeFoliage>("InternodeFoliage");
+    ClassRegistry::RegisterAsset<EmptyInternodePhyllotaxis>("EmptyInternodePhyllotaxis", ".emptyip");
+    ClassRegistry::RegisterAsset<DefaultInternodePhyllotaxis>("DefaultInternodePhyllotaxis", ".defaultip");
 
     const bool enableRayTracing = true;
     EngineSetup(enableRayTracing);

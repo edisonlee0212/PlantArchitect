@@ -21,12 +21,12 @@ namespace PlantArchitect {
         /**
          * The current root of the internode.
          */
-        Entity m_currentRoot;
+        Entity m_currentRoot = Entity();
 
         /**
          * The amount of leaves on this internode.
          */
-        int m_leafCount = 3;
+        int m_leafCount = 0;
     };
 
     struct PLANT_ARCHITECT_API BranchColor : IDataComponent {

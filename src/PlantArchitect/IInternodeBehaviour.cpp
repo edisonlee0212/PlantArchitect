@@ -6,6 +6,8 @@
 #include "Internode.hpp"
 #include "Curve.hpp"
 #include "InternodeSystem.hpp"
+#include "IInternodePhyllotaxis.hpp"
+#include "InternodeFoliage.hpp"
 
 using namespace PlantArchitect;
 
@@ -143,28 +145,19 @@ IInternodeBehaviour::GenerateSkinnedMeshes(const EntityQuery &internodeQuery, fl
     std::mutex mutex;
     EntityManager::ForEach<GlobalTransform, InternodeInfo>(
             JobManager::PrimaryWorkers(),
-            internodeQuery,
+            m_internodesQuery,
             [&](int index, Entity entity, GlobalTransform &globalTransform,
                 InternodeInfo &internodeInfo) {
+                if (entity.GetChildrenAmount() != 0) return;
                 auto internode =
                         entity.GetOrSetPrivateComponent<Internode>().lock();
-                internode->m_foliageMatrices.clear();
                 auto rootGlobalTransform = globalTransform;
                 if (internodeInfo.m_currentRoot != entity) {
                     rootGlobalTransform = internodeInfo.m_currentRoot.GetDataComponent<GlobalTransform>();
                 }
                 GlobalTransform relativeGlobalTransform;
                 relativeGlobalTransform.m_value = glm::inverse(rootGlobalTransform.m_value) * globalTransform.m_value;
-                for(int i = 0; i < internodeInfo.m_leafCount; i++){
-                    const auto transform =
-                            relativeGlobalTransform.m_value *
-                            (glm::translate(
-                                    glm::linearRand(glm::vec3(-0.1), glm::vec3(0.1))) *
-                             glm::mat4_cast(glm::quat(glm::radians(
-                                     glm::linearRand(glm::vec3(0.0f), glm::vec3(360.0f))))) *
-                             glm::scale(glm::vec3(0.1f, 1.0f, 0.1f)));
-                    internode->m_foliageMatrices.push_back(transform);
-                }
+                if (internode->m_foliage) internode->m_foliage->Generate(internode, internodeInfo, relativeGlobalTransform);
             });
 #pragma endregion
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
@@ -204,12 +197,12 @@ IInternodeBehaviour::GenerateSkinnedMeshes(const EntityQuery &internodeQuery, fl
             BranchSkinnedMeshGenerator(boundEntitiesLists[plantIndex],
                                        parentIndicesLists[plantIndex],
                                        skinnedVertices, skinnedIndices);
-            treeData->m_skinnedBranchMesh.Get<SkinnedMesh>()->SetVertices(
+            auto skinnedMesh = AssetManager::CreateAsset<SkinnedMesh>();
+            skinnedMesh->SetVertices(
                     17, skinnedVertices, skinnedIndices);
-            treeData->m_skinnedBranchMesh.Get<SkinnedMesh>()
+            skinnedMesh
                     ->m_boneAnimatorIndices = boneIndicesLists[plantIndex];
-            skinnedMeshRenderer->m_skinnedMesh.Set<SkinnedMesh>(
-                    treeData->m_skinnedBranchMesh.Get<SkinnedMesh>());
+            skinnedMeshRenderer->m_skinnedMesh.Set<SkinnedMesh>(skinnedMesh);
 #pragma endregion
         }
         {
@@ -245,12 +238,12 @@ IInternodeBehaviour::GenerateSkinnedMeshes(const EntityQuery &internodeQuery, fl
             FoliageSkinnedMeshGenerator(boundEntitiesLists[plantIndex],
                                         parentIndicesLists[plantIndex],
                                         skinnedVertices, skinnedIndices);
-            treeData->m_skinnedFoliageMesh.Get<SkinnedMesh>()->SetVertices(
+            auto skinnedMesh = AssetManager::CreateAsset<SkinnedMesh>();
+            skinnedMesh->SetVertices(
                     17, skinnedVertices, skinnedIndices);
-            treeData->m_skinnedFoliageMesh.Get<SkinnedMesh>()
+            skinnedMesh
                     ->m_boneAnimatorIndices = boneIndicesLists[plantIndex];
-            skinnedMeshRenderer->m_skinnedMesh.Set<SkinnedMesh>(
-                    treeData->m_skinnedFoliageMesh.Get<SkinnedMesh>());
+            skinnedMeshRenderer->m_skinnedMesh.Set<SkinnedMesh>(skinnedMesh);
 #pragma endregion
         }
     }
@@ -494,16 +487,16 @@ void IInternodeBehaviour::BranchSkinnedMeshGenerator(std::vector<Entity> &entiti
 
 void
 IInternodeBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, Entity &branchMesh, Entity &foliage) {
-    entity.ForEachChild([&](Entity child){
-       if(child.GetName() == "Branch"){
-           branchMesh = child;
-       } else if(child.GetName() == "Foliage"){
-           foliage = child;
-       }
+    entity.ForEachChild([&](Entity child) {
+        if (child.GetName() == "Branch") {
+            branchMesh = child;
+        } else if (child.GetName() == "Foliage") {
+            foliage = child;
+        }
     });
 
     {
-        if(branchMesh.IsNull()) branchMesh = EntityManager::CreateEntity("Branch");
+        if (branchMesh.IsNull()) branchMesh = EntityManager::CreateEntity("Branch");
         auto animator = branchMesh.GetOrSetPrivateComponent<Animator>().lock();
         auto skinnedMeshRenderer =
                 branchMesh.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
@@ -517,7 +510,7 @@ IInternodeBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, 
         skinnedMeshRenderer->m_animator = branchMesh.GetOrSetPrivateComponent<Animator>().lock();
     }
     {
-        if(foliage.IsNull()) foliage = EntityManager::CreateEntity("Foliage");
+        if (foliage.IsNull()) foliage = EntityManager::CreateEntity("Foliage");
         auto animator = foliage.GetOrSetPrivateComponent<Animator>().lock();
         auto skinnedMeshRenderer =
                 foliage.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
@@ -528,6 +521,7 @@ IInternodeBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, 
         skinnedMat->m_albedoColor = glm::vec3(0.0f, 1.0f, 0.0f);
         skinnedMat->m_roughness = 1.0f;
         skinnedMat->m_metallic = 0.0f;
+        skinnedMat->m_cullingMode = MaterialCullingMode::Off;
         skinnedMeshRenderer->m_animator = foliage.GetOrSetPrivateComponent<Animator>().lock();
     }
     branchMesh.SetParent(entity);

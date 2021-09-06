@@ -6,6 +6,7 @@
 #include "InternodeSystem.hpp"
 #include "LSystemBehaviour.hpp"
 #include "AssetManager.hpp"
+#include "InternodeFoliage.hpp"
 using namespace PlantArchitect;
 
 void Internode::Clone(const std::shared_ptr<IPrivateComponent> &target) {
@@ -14,10 +15,7 @@ void Internode::Clone(const std::shared_ptr<IPrivateComponent> &target) {
 
 void Internode::OnCreate() {
     m_internodeSystem = EntityManager::GetSystem<InternodeSystem>();
-    m_skinnedBranchMesh = AssetManager::CreateAsset<SkinnedMesh>();
-    m_skinnedFoliageMesh = AssetManager::CreateAsset<SkinnedMesh>();
-    m_meshGenerated = false;
-}
+ }
 
 void Internode::OnRetrieve() {
 
@@ -91,4 +89,6 @@ void Internode::OnInspect() {
         AssetManager::Share(lString);
         ExportLString(lString);
     }
+
+    m_foliage->OnInspect();
 }

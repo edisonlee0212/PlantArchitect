@@ -3,7 +3,6 @@
 #include "InternodeRingSegment.hpp"
 #include <plant_architect_export.h>
 #include <IInternodeResource.hpp>
-
 using namespace UniEngine;
 namespace PlantArchitect {
     class InternodeSystem;
@@ -19,31 +18,24 @@ namespace PlantArchitect {
         float m_rollAngle;
     };
     struct LSystemCommand;
-
+    class InternodeFoliage;
     class PLANT_ARCHITECT_API Internode : public IPrivateComponent {
         std::weak_ptr<InternodeSystem> m_internodeSystem;
-
         void ExportLSystemCommandsHelper(const Entity &target, std::vector<LSystemCommand> &commands);
-
         void CollectInternodesHelper(const Entity &target, std::vector<Entity> &results);
-
     public:
         void CollectInternodes(std::vector<Entity> &results);
-
-        AssetRef m_skinnedBranchMesh;
-        AssetRef m_skinnedFoliageMesh;
         glm::vec3 m_normalDir = glm::vec3(0, 0, 1);
-        bool m_meshGenerated = false;
-        bool m_foliageGenerated = false;
         int m_step;
 
+        std::shared_ptr<InternodeFoliage> m_foliage;
         std::vector<glm::mat4> m_foliageMatrices;
 
         std::vector<InternodeRingSegment> m_rings;
         /**
          * The resource storage for the internode.
          */
-        std::unique_ptr<IInternodeResource> m_resource;
+        std::shared_ptr<IInternodeResource> m_resource;
         /**
          * The apical or terminal bud.
          */

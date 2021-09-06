@@ -159,6 +159,7 @@ set(PLANT_ARCHITECT_INCLUDES_LOCAL
         ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect
         ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeBehaviours
         ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeResources
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodePhyllotaxis
         ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/MeshFormation
         ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/Volumes
         ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/Utilities

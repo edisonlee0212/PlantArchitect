@@ -2,7 +2,8 @@
 
 #include <plant_architect_export.h>
 #include <Internode.hpp>
-
+#include <SerializationManager.hpp>
+#include "InternodeFoliage.hpp"
 using namespace UniEngine;
 namespace PlantArchitect {
     struct SpaceColonizationParameters;
@@ -38,7 +39,8 @@ namespace PlantArchitect {
 
         /**
          * Get or create a root internode from the pool.
-         * @tparam T The type of resource that will be added to the internode.
+         * @tparam T T The type of resource that will be added to the internode.
+         * @param internodeFoliage The foliage module of the root internode. Will be shared from all new internodes grown from this internode.
          * @return An entity represent the internode.
          */
         template<typename T>
@@ -350,10 +352,11 @@ namespace PlantArchitect {
         } else {
             retVal = EntityManager::CreateEntity(m_internodeArchetype, "Internode");
             retVal.SetParent(parent);
-            auto internode = retVal.GetOrSetPrivateComponent<Internode>().lock();
-            internode->m_resource = std::make_unique<T>();
-            internode->OnRetrieve();
         }
+        auto internode = retVal.GetOrSetPrivateComponent<Internode>().lock();
+        internode->m_resource = std::make_unique<T>();
+        internode->m_foliage = parent.GetOrSetPrivateComponent<Internode>().lock()->m_foliage;
+        internode->OnRetrieve();
         return retVal;
     }
 
@@ -367,13 +370,13 @@ namespace PlantArchitect {
             recycleEntity.RemoveChild(retVal);
             retVal.SetDataComponent(Transform());
             retVal.SetEnabled(true);
-            retVal.GetOrSetPrivateComponent<Internode>().lock()->OnRetrieve();
         } else {
             retVal = EntityManager::CreateEntity(m_internodeArchetype, "Internode");
-            auto internode = retVal.GetOrSetPrivateComponent<Internode>().lock();
-            internode->m_resource = std::make_unique<T>();
-            internode->OnRetrieve();
         }
+        auto internode = retVal.GetOrSetPrivateComponent<Internode>().lock();
+        internode->m_resource = SerializationManager::ProduceSerializable<T>();
+        internode->m_foliage = SerializationManager::ProduceSerializable<InternodeFoliage>();
+        internode->OnRetrieve();
         return retVal;
     }
 

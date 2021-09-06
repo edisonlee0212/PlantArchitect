@@ -6,7 +6,7 @@
 #include "InternodeSystem.hpp"
 #include "EmptyInternodeResource.hpp"
 #include "TransformManager.hpp"
-
+#include "InternodeFoliage.hpp"
 using namespace PlantArchitect;
 
 void LSystemBehaviour::OnInspect() {
@@ -158,6 +158,7 @@ bool LSystemBehaviour::InternalInternodeCheck(const Entity &target) {
 }
 
 Entity LSystemBehaviour::Retrieve() {
+
     return RetrieveHelper<EmptyInternodeResource>();
 }
 
