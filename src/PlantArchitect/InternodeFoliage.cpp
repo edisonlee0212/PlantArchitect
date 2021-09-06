@@ -4,7 +4,6 @@
 
 #include "InternodeFoliage.hpp"
 #include "IInternodePhyllotaxis.hpp"
-
 using namespace PlantArchitect;
 void InternodeFoliage::Generate(const std::shared_ptr<Internode> &internode,
                                                        const PlantArchitect::InternodeInfo &internodeInfo,
@@ -16,6 +15,6 @@ void InternodeFoliage::Generate(const std::shared_ptr<Internode> &internode,
 }
 
 void InternodeFoliage::OnInspect() {
-    DragAndDropButton<IInternodePhyllotaxis>(m_foliagePhyllotaxis, "Phyllotaxis", {"EmptyInternodePhyllotaxis", "DefaultInternodePhyllotaxis"}, true);
+    EditorManager::DragAndDropButton(m_foliagePhyllotaxis, "Phyllotaxis", {"EmptyInternodePhyllotaxis", "DefaultInternodePhyllotaxis"}, true);
 }
 
