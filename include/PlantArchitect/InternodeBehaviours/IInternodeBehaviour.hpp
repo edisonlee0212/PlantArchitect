@@ -53,12 +53,16 @@ namespace PlantArchitect {
                                std::vector<int> &parentIndices,
                                const int &parentIndex, const Entity &node, const Entity &root);
 
-        void TreeSkinnedMeshGenerator(std::vector<Entity> &internodes,
-                                      std::vector<int> &parentIndices,
-                                      std::vector<SkinnedVertex> &vertices,
-                                      std::vector<unsigned> &indices);
+        void BranchSkinnedMeshGenerator(std::vector<Entity> &entities,
+                                        std::vector<int> &parentIndices,
+                                        std::vector<SkinnedVertex> &vertices,
+                                        std::vector<unsigned> &indices);
 
-        void PrepareInternodeForSkeletalAnimation(const Entity &entity);
+        void FoliageSkinnedMeshGenerator(std::vector<Entity> &entities,
+                                         std::vector<int> &parentIndices,
+                                        std::vector<SkinnedVertex> &vertices,
+                                        std::vector<unsigned> &indices);
+        void PrepareInternodeForSkeletalAnimation(const Entity &entity, Entity& branchMesh, Entity& foliage);
 
 #pragma endregion
 
@@ -90,11 +94,11 @@ namespace PlantArchitect {
         virtual void PostProcess(float deltaTime) {};
 
         /**
-         * Generate branch skinned mesh for internodes.
+         * Generate skinned mesh for internodes.
          * @param entities
          */
         virtual void
-        GenerateBranchSkinnedMeshes(const EntityQuery &internodeQuery, float subdivision, float resolution);
+        GenerateSkinnedMeshes(const EntityQuery &internodeQuery, float subdivision, float resolution);
 
         /**
          * Collect roots with target kind of internodes.
@@ -372,6 +376,8 @@ namespace PlantArchitect {
         }
         return retVal;
     }
+
+
 
 
 }

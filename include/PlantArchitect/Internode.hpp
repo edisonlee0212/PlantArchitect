@@ -30,8 +30,8 @@ namespace PlantArchitect {
     public:
         void CollectInternodes(std::vector<Entity> &results);
 
-        AssetRef m_branchMesh;
         AssetRef m_skinnedBranchMesh;
+        AssetRef m_skinnedFoliageMesh;
         glm::vec3 m_normalDir = glm::vec3(0, 0, 1);
         bool m_meshGenerated = false;
         bool m_foliageGenerated = false;

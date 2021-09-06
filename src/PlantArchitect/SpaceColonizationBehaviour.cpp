@@ -245,8 +245,8 @@ void SpaceColonizationBehaviour::OnInspect() {
     static float subdivision = 4.0;
     ImGui::DragFloat("Resolution", &resolution, 0.001f);
     ImGui::DragFloat("Subdivision", &subdivision, 0.001f);
-    if (ImGui::Button("Generate branch mesh")) {
-        GenerateBranchSkinnedMeshes(m_internodesQuery, subdivision, resolution);
+    if (ImGui::Button("Generate meshes")) {
+        GenerateSkinnedMeshes(m_internodesQuery, subdivision, resolution);
     }
 
     if (ImGui::TreeNodeEx("Attraction Points", ImGuiTreeNodeFlags_DefaultOpen)) {

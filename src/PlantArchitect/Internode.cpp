@@ -14,8 +14,8 @@ void Internode::Clone(const std::shared_ptr<IPrivateComponent> &target) {
 
 void Internode::OnCreate() {
     m_internodeSystem = EntityManager::GetSystem<InternodeSystem>();
-    m_branchMesh = AssetManager::CreateAsset<Mesh>();
     m_skinnedBranchMesh = AssetManager::CreateAsset<SkinnedMesh>();
+    m_skinnedFoliageMesh = AssetManager::CreateAsset<SkinnedMesh>();
     m_meshGenerated = false;
 }
 
