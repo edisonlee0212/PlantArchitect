@@ -11,7 +11,7 @@ namespace PlantArchitect {
     struct PLANT_ARCHITECT_API LSystemParameters : public IDataComponent {
         float m_internodeLength = 1.0f;
         float m_thicknessFactor = 0.5f;
-        float m_endNodeThickness = 0.01f;
+        float m_endNodeThickness = 0.02f;
         void OnInspect();
     };
 

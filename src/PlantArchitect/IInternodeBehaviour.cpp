@@ -9,7 +9,6 @@
 using namespace PlantArchitect;
 
 void IInternodeBehaviour::Recycle(const Entity &internode) {
-    if (!InternodeCheck(internode)) return;
     auto children = internode.GetChildren();
     if (!children.empty()) {
         for (const auto &child: children) {
@@ -25,6 +24,13 @@ void IInternodeBehaviour::RecycleSingle(const Entity &internode) {
         EntityManager::DeleteEntity(internode);
         return;
     }
+    if (!InternodeCheck(internode)) {
+        EntityManager::DeleteEntity(internode);
+        return;
+    }
+    EntityManager::ForEachPrivateComponent(internode, [&](PrivateComponentElement& element){
+        if(element.m_typeId != typeid(Internode).hash_code()) EntityManager::RemovePrivateComponent(internode, element.m_typeId);
+    });
     internode.GetOrSetPrivateComponent<Internode>().lock()->OnRecycle();
     internode.SetParent(m_recycleStorageEntity.Get());
     internode.SetEnabled(false);
