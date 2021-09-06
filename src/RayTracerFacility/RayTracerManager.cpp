@@ -233,7 +233,8 @@ RayTracerManager::UpdateSkinnedMeshesStorage(std::vector<SkinnedRayTracerInstanc
             auto material = skinnedMeshRenderer->m_material.Get<Material>();
             if (!mesh || mesh->UnsafeGetSkinnedVertices().empty())
                 continue;
-            auto globalTransform = skinnedMeshRenderer->NeedApplyGlobalTransform() ? entity.GetDataComponent<GlobalTransform>().m_value : glm::mat4(1.0f);
+            auto globalTransform = skinnedMeshRenderer->RagDoll() ? glm::mat4(1.0f)
+                                                                  : entity.GetDataComponent<GlobalTransform>().m_value;
             SkinnedRayTracerInstance newRayTracerInstance;
             SkinnedRayTracerInstance *rayTracerInstance = &newRayTracerInstance;
             bool needVerticesUpdate = false;
@@ -250,6 +251,8 @@ RayTracerManager::UpdateSkinnedMeshesStorage(std::vector<SkinnedRayTracerInstanc
                         needTransformUpdate = true;
                     }
                     if (rayTracerInstance->m_version != mesh->GetVersion() ||
+                        (skinnedMeshRenderer->RagDoll() && !skinnedMeshRenderer->m_ragDollFreeze)
+                        ||
                         skinnedMeshRenderer->m_animator.Get<Animator>()->AnimatedCurrentFrame())
                         needVerticesUpdate = true;
                     if (rayTracerInstance->m_surfaceColor !=

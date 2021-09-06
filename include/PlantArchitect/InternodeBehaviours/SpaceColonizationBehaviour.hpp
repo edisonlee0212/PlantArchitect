@@ -19,7 +19,7 @@ namespace PlantArchitect {
         float m_internodeLength = 0.5f;
 
         float m_thicknessFactor = 0.5f;
-        float m_endNodeThickness = 0.01f;
+        float m_endNodeThickness = 0.02f;
 
         void OnInspect();
     };

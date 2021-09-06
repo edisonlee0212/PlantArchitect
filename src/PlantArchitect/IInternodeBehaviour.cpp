@@ -138,6 +138,7 @@ IInternodeBehaviour::GenerateBranchSkinnedMeshes(const EntityQuery &internodeQue
         PrepareInternodeForSkeletalAnimation(plant);
         auto animator = plant.GetOrSetPrivateComponent<Animator>().lock();
         auto skinnedMeshRenderer = plant.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
+        skinnedMeshRenderer->m_animator = animator;
         skinnedMeshRenderer->SetEnabled(true);
         auto treeData = plant.GetOrSetPrivateComponent<Internode>().lock();
         const auto plantGlobalTransform =
@@ -159,7 +160,9 @@ IInternodeBehaviour::GenerateBranchSkinnedMeshes(const EntityQuery &internodeQue
                                          .m_value);
             boneIndicesLists[plantIndex][i] = i;
         }
-        animator->Setup(boundEntitiesLists[plantIndex], names, offsetMatrices);
+        animator->Setup(names, offsetMatrices);
+        skinnedMeshRenderer->SetRagDoll(true);
+        skinnedMeshRenderer->SetRagDollBoundEntities(boundEntitiesLists[plantIndex], false);
 #pragma endregion
         std::vector<unsigned> skinnedIndices;
         std::vector<SkinnedVertex> skinnedVertices;
@@ -208,7 +211,7 @@ void IInternodeBehaviour::TreeSkinnedMeshGenerator(std::vector<Entity> &internod
             newNormalDir = internodes[parentIndex].GetOrSetPrivateComponent<Internode>().lock()->m_normalDir;
         } else {
             newNormalDir = internodeGlobalTransform.GetRotation() *
-                           glm::vec3(0.0f, 1.0f, 0.0f);
+                           glm::vec3(1.0f, 0.0f, 0.0f);
         }
         const glm::vec3 front =
                 internodeGlobalTransform.GetRotation() *
