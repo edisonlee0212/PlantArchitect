@@ -6,6 +6,7 @@
 #include "Internode.hpp"
 #include "Curve.hpp"
 #include "InternodeSystem.hpp"
+
 using namespace PlantArchitect;
 
 void IInternodeBehaviour::Recycle(const Entity &internode) {
@@ -20,7 +21,7 @@ void IInternodeBehaviour::Recycle(const Entity &internode) {
 
 void IInternodeBehaviour::RecycleSingle(const Entity &internode) {
     std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
-    if(m_recycleStorageEntity.Get().IsNull()){
+    if (m_recycleStorageEntity.Get().IsNull()) {
         EntityManager::DeleteEntity(internode);
         return;
     }
@@ -28,8 +29,9 @@ void IInternodeBehaviour::RecycleSingle(const Entity &internode) {
         EntityManager::DeleteEntity(internode);
         return;
     }
-    EntityManager::ForEachPrivateComponent(internode, [&](PrivateComponentElement& element){
-        if(element.m_typeId != typeid(Internode).hash_code()) EntityManager::RemovePrivateComponent(internode, element.m_typeId);
+    EntityManager::ForEachPrivateComponent(internode, [&](PrivateComponentElement &element) {
+        if (element.m_typeId != typeid(Internode).hash_code())
+            EntityManager::RemovePrivateComponent(internode, element.m_typeId);
     });
     internode.GetOrSetPrivateComponent<Internode>().lock()->OnRecycle();
     internode.SetParent(m_recycleStorageEntity.Get());
@@ -146,7 +148,23 @@ IInternodeBehaviour::GenerateSkinnedMeshes(const EntityQuery &internodeQuery, fl
                 InternodeInfo &internodeInfo) {
                 auto internode =
                         entity.GetOrSetPrivateComponent<Internode>().lock();
-
+                internode->m_foliageMatrices.clear();
+                auto rootGlobalTransform = globalTransform;
+                if (internodeInfo.m_currentRoot != entity) {
+                    rootGlobalTransform = internodeInfo.m_currentRoot.GetDataComponent<GlobalTransform>();
+                }
+                GlobalTransform relativeGlobalTransform;
+                relativeGlobalTransform.m_value = glm::inverse(rootGlobalTransform.m_value) * globalTransform.m_value;
+                for(int i = 0; i < internodeInfo.m_leafCount; i++){
+                    const auto transform =
+                            relativeGlobalTransform.m_value *
+                            (glm::translate(
+                                    glm::linearRand(glm::vec3(-0.1), glm::vec3(0.1))) *
+                             glm::mat4_cast(glm::quat(glm::radians(
+                                     glm::linearRand(glm::vec3(0.0f), glm::vec3(360.0f))))) *
+                             glm::scale(glm::vec3(0.1f, 1.0f, 0.1f)));
+                    internode->m_foliageMatrices.push_back(transform);
+                }
             });
 #pragma endregion
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
@@ -226,13 +244,13 @@ IInternodeBehaviour::GenerateSkinnedMeshes(const EntityQuery &internodeQuery, fl
             std::vector<SkinnedVertex> skinnedVertices;
             FoliageSkinnedMeshGenerator(boundEntitiesLists[plantIndex],
                                         parentIndicesLists[plantIndex],
-                                       skinnedVertices, skinnedIndices);
+                                        skinnedVertices, skinnedIndices);
             treeData->m_skinnedFoliageMesh.Get<SkinnedMesh>()->SetVertices(
                     17, skinnedVertices, skinnedIndices);
             treeData->m_skinnedFoliageMesh.Get<SkinnedMesh>()
                     ->m_boneAnimatorIndices = boneIndicesLists[plantIndex];
             skinnedMeshRenderer->m_skinnedMesh.Set<SkinnedMesh>(
-                    treeData->m_skinnedBranchMesh.Get<SkinnedMesh>());
+                    treeData->m_skinnedFoliageMesh.Get<SkinnedMesh>());
 #pragma endregion
         }
     }
@@ -252,10 +270,15 @@ void IInternodeBehaviour::TreeNodeCollector(std::vector<Entity> &boundEntities, 
         TreeNodeCollector(boundEntities, parentIndices, currentIndex, child, root);
     });
 }
+
 void IInternodeBehaviour::FoliageSkinnedMeshGenerator(std::vector<Entity> &entities,
                                                       std::vector<int> &parentIndices,
                                                       std::vector<SkinnedVertex> &vertices,
                                                       std::vector<unsigned int> &indices) {
+    auto quadMesh = DefaultResources::Primitives::Quad;
+    auto &quadTriangles = quadMesh->UnsafeGetTriangles();
+    auto quadVerticesSize = quadMesh->GetVerticesAmount();
+    size_t offset = 0;
     for (int internodeIndex = 0; internodeIndex < entities.size();
          internodeIndex++) {
         int parentIndex = 0;
@@ -275,8 +298,37 @@ void IInternodeBehaviour::FoliageSkinnedMeshGenerator(std::vector<Entity> &entit
                 glm::vec3(0.0f, 0.0f, -1.0f);
         newNormalDir = glm::cross(glm::cross(front, newNormalDir), front);
         internode->m_normalDir = newNormalDir;
+        for (const auto &matrix: internode->m_foliageMatrices) {
+            SkinnedVertex archetype;
+            for (auto i = 0; i < quadMesh->GetVerticesAmount(); i++) {
+                archetype.m_position =
+                        matrix * glm::vec4(quadMesh->UnsafeGetVertices()[i].m_position, 1.0f);
+                archetype.m_normal = glm::normalize(glm::vec3(
+                        matrix * glm::vec4(quadMesh->UnsafeGetVertices()[i].m_normal, 0.0f)));
+                archetype.m_tangent = glm::normalize(glm::vec3(
+                        matrix *
+                        glm::vec4(quadMesh->UnsafeGetVertices()[i].m_tangent, 0.0f)));
+                archetype.m_texCoords =
+                        quadMesh->UnsafeGetVertices()[i].m_texCoords;
+                archetype.m_bondId = glm::ivec4(internodeIndex, -1, -1, -1);
+                archetype.m_weight = glm::vec4(1, 0, 0, 0);
+                archetype.m_bondId2 = glm::ivec4(-1, -1, -1, -1);
+                archetype.m_weight2 = glm::vec4(0, 0, 0, 0);
+                vertices.push_back(archetype);
+            }
+            for (auto triangle: quadTriangles) {
+                triangle.x += offset;
+                triangle.y += offset;
+                triangle.z += offset;
+                indices.push_back(triangle.x);
+                indices.push_back(triangle.y);
+                indices.push_back(triangle.z);
+            }
+            offset += quadVerticesSize;
+        }
     }
 }
+
 void IInternodeBehaviour::BranchSkinnedMeshGenerator(std::vector<Entity> &entities, std::vector<int> &parentIndices,
                                                      std::vector<SkinnedVertex> &vertices,
                                                      std::vector<unsigned int> &indices) {
@@ -440,9 +492,18 @@ void IInternodeBehaviour::BranchSkinnedMeshGenerator(std::vector<Entity> &entiti
     }
 }
 
-void IInternodeBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, Entity& branchMesh, Entity& foliage) {
+void
+IInternodeBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, Entity &branchMesh, Entity &foliage) {
+    entity.ForEachChild([&](Entity child){
+       if(child.GetName() == "Branch"){
+           branchMesh = child;
+       } else if(child.GetName() == "Foliage"){
+           foliage = child;
+       }
+    });
+
     {
-        branchMesh = EntityManager::CreateEntity("Branch");
+        if(branchMesh.IsNull()) branchMesh = EntityManager::CreateEntity("Branch");
         auto animator = branchMesh.GetOrSetPrivateComponent<Animator>().lock();
         auto skinnedMeshRenderer =
                 branchMesh.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
@@ -456,7 +517,7 @@ void IInternodeBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &ent
         skinnedMeshRenderer->m_animator = branchMesh.GetOrSetPrivateComponent<Animator>().lock();
     }
     {
-        foliage = EntityManager::CreateEntity("Foliage");
+        if(foliage.IsNull()) foliage = EntityManager::CreateEntity("Foliage");
         auto animator = foliage.GetOrSetPrivateComponent<Animator>().lock();
         auto skinnedMeshRenderer =
                 foliage.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();

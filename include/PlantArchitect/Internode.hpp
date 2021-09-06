@@ -36,6 +36,9 @@ namespace PlantArchitect {
         bool m_meshGenerated = false;
         bool m_foliageGenerated = false;
         int m_step;
+
+        std::vector<glm::mat4> m_foliageMatrices;
+
         std::vector<InternodeRingSegment> m_rings;
         /**
          * The resource storage for the internode.

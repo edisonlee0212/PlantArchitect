@@ -26,7 +26,7 @@ namespace PlantArchitect {
         /**
          * The amount of leaves on this internode.
          */
-        int m_leafCount = 0;
+        int m_leafCount = 3;
     };
 
     struct PLANT_ARCHITECT_API BranchColor : IDataComponent {
