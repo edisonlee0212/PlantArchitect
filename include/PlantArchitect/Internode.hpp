@@ -28,7 +28,7 @@ namespace PlantArchitect {
         glm::vec3 m_normalDir = glm::vec3(0, 0, 1);
         int m_step;
 
-        std::shared_ptr<InternodeFoliage> m_foliage;
+        AssetRef m_foliage;
         std::vector<glm::mat4> m_foliageMatrices;
 
         std::vector<InternodeRingSegment> m_rings;

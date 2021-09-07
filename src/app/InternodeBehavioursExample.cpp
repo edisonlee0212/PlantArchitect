@@ -67,7 +67,7 @@ int main() {
     ClassRegistry::RegisterPrivateComponent<AutoTreeGenerationPipeline>("AutoTreeGenerationPipeline");
     ClassRegistry::RegisterAsset<SpaceColonizationTreeToLString>("SpaceColonizationTreeToLString", ".sctolstring");
 
-    ClassRegistry::RegisterSerializable<InternodeFoliage>("InternodeFoliage");
+    ClassRegistry::RegisterAsset<InternodeFoliage>("InternodeFoliage", ".internodefoliage");
     ClassRegistry::RegisterAsset<DefaultInternodePhyllotaxis>("DefaultInternodePhyllotaxis", ".defaultip");
 
     const bool enableRayTracing = true;

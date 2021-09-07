@@ -8,7 +8,7 @@ namespace PlantArchitect {
 
     struct InternodeInfo;
 
-    class PLANT_ARCHITECT_API InternodeFoliage : public ISerializable {
+    class PLANT_ARCHITECT_API InternodeFoliage : public IAsset {
     public:
         AssetRef m_foliagePhyllotaxis;
 

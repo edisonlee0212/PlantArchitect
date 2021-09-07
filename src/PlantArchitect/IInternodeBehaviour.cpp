@@ -157,7 +157,8 @@ IInternodeBehaviour::GenerateSkinnedMeshes(const EntityQuery &internodeQuery, fl
                 }
                 GlobalTransform relativeGlobalTransform;
                 relativeGlobalTransform.m_value = glm::inverse(rootGlobalTransform.m_value) * globalTransform.m_value;
-                if (internode->m_foliage) internode->m_foliage->Generate(internode, internodeInfo, relativeGlobalTransform);
+                auto foliage = internode->m_foliage.Get<InternodeFoliage>();
+                if (foliage) foliage->Generate(internode, internodeInfo, relativeGlobalTransform);
             });
 #pragma endregion
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {

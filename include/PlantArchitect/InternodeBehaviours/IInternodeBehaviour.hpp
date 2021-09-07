@@ -375,7 +375,7 @@ namespace PlantArchitect {
         }
         auto internode = retVal.GetOrSetPrivateComponent<Internode>().lock();
         internode->m_resource = SerializationManager::ProduceSerializable<T>();
-        internode->m_foliage = SerializationManager::ProduceSerializable<InternodeFoliage>();
+        internode->m_foliage = AssetManager::CreateAsset<InternodeFoliage>("Foliage");
         internode->OnRetrieve();
         return retVal;
     }

@@ -90,5 +90,5 @@ void Internode::OnInspect() {
         ExportLString(lString);
     }
 
-    m_foliage->OnInspect();
+    m_foliage.Get<InternodeFoliage>()->OnInspect();
 }
