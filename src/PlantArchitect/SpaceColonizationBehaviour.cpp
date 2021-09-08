@@ -99,10 +99,10 @@ void SpaceColonizationBehaviour::Grow(float deltaTime) {
             auto entity = minDistance[i].first;
             if (entity.IsNull()) continue;
             auto globalTransform = entity.GetDataComponent<GlobalTransform>();
-            auto parameter = entity.GetDataComponent<SpaceColonizationParameters>();
+            auto internodeInfo = entity.GetDataComponent<InternodeInfo>();
             auto position = globalTransform.GetPosition();
             auto front = globalTransform.GetRotation() * glm::vec3(0, 0, -1);
-            glm::vec3 newPosition = position + parameter.m_internodeLength * front;
+            glm::vec3 newPosition = position + internodeInfo.m_length * front;
             auto incentive = entity.GetDataComponent<SpaceColonizationIncentive>();
             incentive.m_direction += m_attractionPoints[i] - newPosition;
             incentive.m_pointAmount++;
@@ -114,6 +114,7 @@ void SpaceColonizationBehaviour::Grow(float deltaTime) {
         for (const auto &entity: entities) {
             if (!entity.IsEnabled()) continue;
             auto parameter = entity.GetDataComponent<SpaceColonizationParameters>();
+            auto internodeInfo = entity.GetDataComponent<InternodeInfo>();
             auto globalTransform = entity.GetDataComponent<GlobalTransform>();
             auto tag = entity.GetDataComponent<SpaceColonizationTag>();
             auto position = globalTransform.GetPosition();
@@ -121,7 +122,7 @@ void SpaceColonizationBehaviour::Grow(float deltaTime) {
             auto up = globalTransform.GetRotation() * glm::vec3(0, 1, 0);
             auto spaceColonizationIncentive = entity.GetDataComponent<SpaceColonizationIncentive>();
             Entity newNode;
-            glm::vec3 newPosition = position + parameter.m_internodeLength * front;
+            glm::vec3 newPosition = position + internodeInfo.m_length * front;
             glm::vec3 newFront;
             if (spaceColonizationIncentive.m_pointAmount != 0) {
                 if (glm::all(glm::equal(spaceColonizationIncentive.m_direction, glm::vec3(0)))) {
@@ -154,7 +155,7 @@ void SpaceColonizationBehaviour::Grow(float deltaTime) {
             newNode.SetDataComponent(newNodeGlobalTransform);
             newNode.SetDataComponent(parameter);
             InternodeInfo newInfo;
-            newInfo.m_length = parameter.m_internodeLength;
+            newInfo.m_length = glm::gaussRand(parameter.m_internodeLengthMean, parameter.m_internodeLengthVariance);
             newInfo.m_thickness = parameter.m_endNodeThickness;
             newNode.SetDataComponent(newInfo);
             auto newInternode = newNode.GetOrSetPrivateComponent<Internode>().lock();
@@ -365,7 +366,7 @@ Entity SpaceColonizationBehaviour::NewPlant(const SpaceColonizationParameters &p
     tag.m_truck = true;
     entity.SetDataComponent(tag);
     InternodeInfo newInfo;
-    newInfo.m_length = params.m_internodeLength;
+    newInfo.m_length = glm::gaussRand(params.m_internodeLengthMean, params.m_internodeLengthVariance);
     newInfo.m_thickness = params.m_endNodeThickness;
     entity.SetDataComponent(newInfo);
     entity.SetDataComponent(params);
@@ -375,7 +376,7 @@ Entity SpaceColonizationBehaviour::NewPlant(const SpaceColonizationParameters &p
 void SpaceColonizationParameters::OnInspect() {
     ImGui::DragFloat("Remove Distance", &m_removeDistance);
     ImGui::DragFloat("Attract Distance", &m_attractDistance);
-    ImGui::DragFloat("Internode Length", &m_internodeLength);
+    ImGui::DragFloat2("Internode Length Mean/Var", &m_internodeLengthMean);
     ImGui::DragFloat("Thickness Factor", &m_thicknessFactor);
     ImGui::DragFloat("End node thickness", &m_endNodeThickness);
 }

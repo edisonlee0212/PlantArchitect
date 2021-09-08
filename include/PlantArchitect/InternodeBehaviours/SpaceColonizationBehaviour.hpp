@@ -16,7 +16,9 @@ namespace PlantArchitect {
     struct PLANT_ARCHITECT_API SpaceColonizationParameters : public IDataComponent {
         float m_removeDistance = 0.8f;
         float m_attractDistance = 3.0f;
-        float m_internodeLength = 0.5f;
+        float m_internodeLengthMean = 0.5f;
+        float m_internodeLengthVariance = 0.1f;
+
 
         float m_thicknessFactor = 0.5f;
         float m_endNodeThickness = 0.02f;
