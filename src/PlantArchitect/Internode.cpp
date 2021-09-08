@@ -64,14 +64,20 @@ void Internode::ExportLSystemCommandsHelper(const Entity &target, std::vector<LS
     auto internodeInfo = target.GetDataComponent<InternodeInfo>();
     auto transform = target.GetDataComponent<Transform>();
     auto eulerRotation = transform.GetEulerRotation();
-    if (eulerRotation.x != 0) {
+    if (eulerRotation.x > 0) {
         commands.push_back({LSystemCommandType::PitchUp, eulerRotation.x});
+    }else if(eulerRotation.x < 0){
+        commands.push_back({LSystemCommandType::PitchDown, -eulerRotation.x});
     }
-    if (eulerRotation.y != 0) {
+    if (eulerRotation.y > 0) {
         commands.push_back({LSystemCommandType::TurnLeft, eulerRotation.y});
+    }else if(eulerRotation.y < 0){
+        commands.push_back({LSystemCommandType::TurnRight, -eulerRotation.y});
     }
-    if (eulerRotation.z != 0) {
+    if (eulerRotation.z > 0) {
         commands.push_back({LSystemCommandType::RollLeft, eulerRotation.z});
+    }else if(eulerRotation.z < 0){
+        commands.push_back({LSystemCommandType::RollRight, -eulerRotation.z});
     }
     commands.push_back({LSystemCommandType::Forward, internodeInfo.m_length});
 
