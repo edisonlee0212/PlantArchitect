@@ -22,11 +22,10 @@ namespace PlantArchitect {
          * The current root of the internode.
          */
         Entity m_currentRoot = Entity();
-
-        /**
-         * The amount of leaves on this internode.
+        /*
+         * Whether this node is end node.
          */
-        int m_leafCount = 0;
+        bool m_endNode;
     };
 
     struct PLANT_ARCHITECT_API BranchColor : IDataComponent {

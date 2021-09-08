@@ -151,6 +151,7 @@ IInternodeBehaviour::GenerateSkinnedMeshes(const EntityQuery &internodeQuery, fl
                 if (entity.GetChildrenAmount() != 0) return;
                 auto internode =
                         entity.GetOrSetPrivateComponent<Internode>().lock();
+                internode->m_foliageMatrices.clear();
                 auto rootGlobalTransform = globalTransform;
                 if (internodeInfo.m_currentRoot != entity) {
                     rootGlobalTransform = internodeInfo.m_currentRoot.GetDataComponent<GlobalTransform>();
@@ -259,10 +260,13 @@ void IInternodeBehaviour::TreeNodeCollector(std::vector<Entity> &boundEntities, 
     auto internodeInfo = node.GetDataComponent<InternodeInfo>();
     internodeInfo.m_index = currentIndex;
     internodeInfo.m_currentRoot = root;
+    if(node.GetChildrenAmount() == 0) internodeInfo.m_endNode = true;
+    else internodeInfo.m_endNode = false;
     node.SetDataComponent(internodeInfo);
     node.ForEachChild([&](Entity child) {
         TreeNodeCollector(boundEntities, parentIndices, currentIndex, child, root);
     });
+
 }
 
 void IInternodeBehaviour::FoliageSkinnedMeshGenerator(std::vector<Entity> &entities,

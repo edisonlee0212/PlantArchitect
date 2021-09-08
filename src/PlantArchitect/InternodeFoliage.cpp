@@ -16,5 +16,12 @@ void InternodeFoliage::Generate(const std::shared_ptr<Internode> &internode,
 
 void InternodeFoliage::OnInspect() {
     EditorManager::DragAndDropButton(m_foliagePhyllotaxis, "Phyllotaxis", {"EmptyInternodePhyllotaxis", "DefaultInternodePhyllotaxis"}, true);
+    auto phyllotaxis = m_foliagePhyllotaxis.Get<IInternodePhyllotaxis>();
+    if(phyllotaxis){
+        if(ImGui::TreeNodeEx("Phyllotaxis", ImGuiTreeNodeFlags_DefaultOpen)) {
+            phyllotaxis->OnInspect();
+            ImGui::TreePop();
+        }
+    }
 }
 
