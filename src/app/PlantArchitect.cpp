@@ -136,10 +136,9 @@ void RegisterDataComponentMenus() {
         ImGui::DragFloat("Length", &ltw->m_length, 0.01f);
     });
 
-    EditorManager::RegisterComponentDataInspector<SpaceColonizationParameters>([](Entity entity, IDataComponent *data, bool isRoot) {
-        auto *ltw = reinterpret_cast<SpaceColonizationParameters *>(data);
-        ImGui::DragFloat("Remove Distance", &ltw->m_removeDistance);
-        ImGui::DragFloat("Attract Distance", &ltw->m_attractDistance);
-        ImGui::DragFloat("Internode Length", &ltw->m_internodeLength);
-    });
+    EditorManager::RegisterComponentDataInspector<SpaceColonizationParameters>(
+            [](Entity entity, IDataComponent *data, bool isRoot) {
+                auto *ltw = reinterpret_cast<SpaceColonizationParameters *>(data);
+                ltw->OnInspect();
+            });
 }
