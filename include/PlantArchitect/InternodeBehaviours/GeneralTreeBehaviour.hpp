@@ -28,8 +28,10 @@ namespace PlantArchitect {
         glm::vec2 m_internodeLengthMeanVariance;
         float m_endNodeThickness;
 
-        float m_lateralBudLightingFactor;
+        float m_lateralBudFlushingLightingFactor;
 
+        float m_apicalBudKillProbability;
+        float m_lateralBudKillProbability;
         void OnInspect();
         GeneralTreeParameters();
     };
@@ -79,7 +81,7 @@ namespace PlantArchitect {
 
     class PLANT_ARCHITECT_API InternodeWaterFeeder : public IPrivateComponent{
     public:
-        float m_value = 0;
+        float m_waterPerIteration = 1;
         void Clone(const std::shared_ptr<IPrivateComponent> &target) override;
     };
 
@@ -96,14 +98,12 @@ namespace PlantArchitect {
 
         void OnCreate() override;
 
-        void PreProcess(float deltaTime) override;
-
-        void Grow(float deltaTime) override;
-
-        void PostProcess(float deltaTime) override;
+        void Grow(int iterations) override;
 
         Entity Retrieve() override;
 
         Entity Retrieve(const Entity &parent) override;
+
+        Entity NewPlant(const GeneralTreeParameters &params, const Transform &transform);
     };
 }

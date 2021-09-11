@@ -7,6 +7,7 @@
 #include "CubeVolume.hpp"
 #include "InternodeSystem.hpp"
 #include "TransformManager.hpp"
+
 using namespace PlantArchitect;
 
 void SpaceColonizationBehaviour::OnCreate() {
@@ -15,16 +16,16 @@ void SpaceColonizationBehaviour::OnCreate() {
     }
     m_internodeArchetype =
             EntityManager::CreateEntityArchetype("Space Colonization Internode", InternodeInfo(),
-                                                 SpaceColonizationTag(), SpaceColonizationIncentive(), SpaceColonizationParameters(),
+                                                 SpaceColonizationTag(), SpaceColonizationIncentive(),
+                                                 SpaceColonizationParameters(),
                                                  BranchColor(), BranchCylinder(), BranchCylinderWidth(),
                                                  BranchPointer());
     m_internodesQuery = EntityManager::CreateEntityQuery();
     m_internodesQuery.SetAllFilters(SpaceColonizationTag());
 }
 
-void SpaceColonizationBehaviour::Grow(float deltaTime) {
-    int iteration = deltaTime;
-    for(int iterationIndex = 0; iterationIndex < iteration; iterationIndex++) {
+void SpaceColonizationBehaviour::Grow(int iteration) {
+    for (int iterationIndex = 0; iterationIndex < iteration; iterationIndex++) {
         if (m_attractionPoints.empty()) return;
         std::vector<int> removeMarks;
         removeMarks.resize(m_attractionPoints.size());
@@ -35,13 +36,15 @@ void SpaceColonizationBehaviour::Grow(float deltaTime) {
                  [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &globalTransform,
                      SpaceColonizationParameters &spaceColonizationParameters) {
                      glm::vec3 position = globalTransform.GetPosition() +
-                                          internodeInfo.m_length * (globalTransform.GetRotation() * glm::vec3(0, 0, -1));
+                                          internodeInfo.m_length *
+                                          (globalTransform.GetRotation() * glm::vec3(0, 0, -1));
                      int index = 0;
                      for (const auto &point: m_attractionPoints) {
                          const glm::vec3 diff = position - point;
                          const float distance2 = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
                          if (distance2 <
-                             spaceColonizationParameters.m_removeDistance * spaceColonizationParameters.m_removeDistance) {
+                             spaceColonizationParameters.m_removeDistance *
+                             spaceColonizationParameters.m_removeDistance) {
                              removeMarks[index] = 1;
                          }
                          index++;
@@ -185,9 +188,7 @@ void SpaceColonizationBehaviour::Grow(float deltaTime) {
         for (const auto &i: results)
             i.wait();
     }
-}
 
-void SpaceColonizationBehaviour::PostProcess(float deltaTime) {
     std::vector<Entity> plants;
     CollectRoots(m_internodesQuery, plants);
     int plantSize = plants.size();
@@ -196,18 +197,19 @@ void SpaceColonizationBehaviour::PostProcess(float deltaTime) {
     std::vector<std::shared_future<void>> results;
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
         results.push_back(JobManager::PrimaryWorkers().Push([&, plantIndex](int id) {
-            TreeGraphWalkerEndToRoot(plants[plantIndex], plants[plantIndex], [&](Entity parent){
+            TreeGraphWalkerEndToRoot(plants[plantIndex], plants[plantIndex], [&](Entity parent) {
                 float thicknessCollection = 0.0f;
                 auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
                 auto parameters = parent.GetDataComponent<SpaceColonizationParameters>();
-                parent.ForEachChild([&](Entity child){
-                    if(!InternodeCheck(child)) return;
+                parent.ForEachChild([&](Entity child) {
+                    if (!InternodeCheck(child)) return;
                     auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
-                    thicknessCollection += glm::pow(childInternodeInfo.m_thickness, 1.0f / parameters.m_thicknessFactor);
+                    thicknessCollection += glm::pow(childInternodeInfo.m_thickness,
+                                                    1.0f / parameters.m_thicknessFactor);
                 });
                 parentInternodeInfo.m_thickness = glm::pow(thicknessCollection, parameters.m_thicknessFactor);
                 parent.SetDataComponent(parentInternodeInfo);
-            }, [](Entity endNode){
+            }, [](Entity endNode) {
                 auto internodeInfo = endNode.GetDataComponent<InternodeInfo>();
                 auto parameters = endNode.GetDataComponent<SpaceColonizationParameters>();
                 internodeInfo.m_thickness = parameters.m_endNodeThickness;
@@ -217,8 +219,6 @@ void SpaceColonizationBehaviour::PostProcess(float deltaTime) {
     }
     for (const auto &i: results)
         i.wait();
-
-
 }
 
 void SpaceColonizationBehaviour::OnInspect() {
@@ -330,8 +330,8 @@ void SpaceColonizationBehaviour::VolumeSlotButton() {
     }
 }
 
-void SpaceColonizationBehaviour::PushVolume(const std::shared_ptr<IVolume>& volume) {
-    if(!volume.get()) return;
+void SpaceColonizationBehaviour::PushVolume(const std::shared_ptr<IVolume> &volume) {
+    if (!volume.get()) return;
     bool search = false;
     for (auto &i: m_volumes) {
         if (i.Get<IVolume>()->GetTypeName() == volume->GetTypeName()) search = true;

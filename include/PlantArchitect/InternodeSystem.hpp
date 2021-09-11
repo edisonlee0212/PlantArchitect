@@ -12,7 +12,7 @@ namespace PlantArchitect {
     public:
         void LateUpdate() override;
 
-        void Simulate(float deltaTime);
+        void Simulate(int iterations);
 
         void OnCreate() override;
 

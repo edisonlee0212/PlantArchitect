@@ -83,19 +83,9 @@ namespace PlantArchitect {
         void Recycle(const Entity &internode);
 
         /**
-         * What to do before the growth, and before the resource collection. Mesh, graph calculation...
-         */
-        virtual void PreProcess(float deltaTime) {};
-
-        /**
          * Handle main growth here.
          */
-        virtual void Grow(float deltaTime) {};
-
-        /**
-         * What to do after the growth. Mesh, graph calculation...
-         */
-        virtual void PostProcess(float deltaTime) {};
+        virtual void Grow(int iterations) {};
 
         /**
          * Generate skinned mesh for internodes.

@@ -8,52 +8,20 @@
 
 using namespace PlantArchitect;
 
-void InternodeSystem::Simulate(float deltaTime) {
-    //0. Pre processing
+void InternodeSystem::Simulate(int iterations) {
     for (auto &i: m_internodeBehaviours) {
         auto behaviour = i.Get<IInternodeBehaviour>();
-        if (behaviour) behaviour->PreProcess(deltaTime);
-    }
-
-    //1. Collect resource from environment
-    EntityManager::ForEach<InternodeInfo>(JobManager::PrimaryWorkers(), m_internodesQuery,
-                                          [=](int i, Entity entity, InternodeInfo &tag) {
-                                              entity.GetOrSetPrivateComponent<Internode>().lock()->CollectResource(
-                                                      deltaTime);
-                                          }, true);
-    //2. Upstream resource
-    EntityManager::ForEach<InternodeInfo>(JobManager::PrimaryWorkers(), m_internodesQuery,
-                                          [=](int i, Entity entity, InternodeInfo &tag) {
-                                              entity.GetOrSetPrivateComponent<Internode>().lock()->UpStreamResource(
-                                                      deltaTime);
-                                          }, true);
-    //3. Downstream resource
-    EntityManager::ForEach<InternodeInfo>(JobManager::PrimaryWorkers(), m_internodesQuery,
-                                          [=](int i, Entity entity, InternodeInfo &tag) {
-                                              entity.GetOrSetPrivateComponent<Internode>().lock()->DownStreamResource(
-                                                      deltaTime);
-                                          }, true);
-
-    //4. Growth
-    for (auto &i: m_internodeBehaviours) {
-        auto behaviour = i.Get<IInternodeBehaviour>();
-        if (behaviour) behaviour->Grow(deltaTime);
-    }
-
-    //5. Post processing
-    for (auto &i: m_internodeBehaviours) {
-        auto behaviour = i.Get<IInternodeBehaviour>();
-        if (behaviour) behaviour->PostProcess(deltaTime);
+        if (behaviour) behaviour->Grow(iterations);
     }
 }
 
 #pragma region Methods
 
 void InternodeSystem::OnInspect() {
-    static float deltaTime = 1.0f;
-    ImGui::DragFloat("Delta time", &deltaTime);
+    static int iterations = 1;
+    ImGui::DragInt("Iterations", &iterations);
     if (ImGui::Button("Simulate")) {
-        Simulate(deltaTime);
+        Simulate(iterations);
     }
 
     if (ImGui::TreeNodeEx("Internode Behaviours", ImGuiTreeNodeFlags_DefaultOpen)) {

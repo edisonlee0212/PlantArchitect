@@ -45,6 +45,11 @@ int main() {
 
     ClassRegistry::RegisterDataComponent<GeneralTreeTag>("GeneralTreeTag");
     ClassRegistry::RegisterDataComponent<GeneralTreeParameters>("GeneralTreeParameters");
+    ClassRegistry::RegisterDataComponent<InternodeStatus>("InternodeStatus");
+    ClassRegistry::RegisterDataComponent<InternodeWaterPressure>("InternodeWaterPressure");
+    ClassRegistry::RegisterDataComponent<InternodeWater>("InternodeWater");
+    ClassRegistry::RegisterDataComponent<InternodeIllumination>("InternodeIllumination");
+    ClassRegistry::RegisterPrivateComponent<InternodeWaterFeeder>("InternodeWaterFeeder");
     ClassRegistry::RegisterAsset<GeneralTreeBehaviour>("GeneralTreeBehaviour", ".gtbehaviour");
 
     ClassRegistry::RegisterDataComponent<SpaceColonizationTag>("SpaceColonizationTag");
