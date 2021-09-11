@@ -71,6 +71,8 @@ namespace PlantArchitect {
         virtual bool InternalInternodeCheck(const Entity &target) = 0;
 
     public:
+        void ApplyTropism(const glm::vec3 &targetDir, float tropism, glm::vec3 &front, glm::vec3 &up);
+
         virtual Entity Retrieve() = 0;
 
         virtual Entity Retrieve(const Entity &parent) = 0;
@@ -141,6 +143,9 @@ namespace PlantArchitect {
         void TreeGraphWalkerEndToRoot(const Entity &root, const Entity &node,
                                       const std::function<void(Entity parent)> &endToRootAction,
                                       const std::function<void(Entity endNode)> &endNodeAction);
+
+
+        void ParallelForEachRoot(std::vector<Entity>& roots, const std::function<void(int rootIndex, Entity root)> &action);
 
         /**
          * Check if the entity is valid internode.

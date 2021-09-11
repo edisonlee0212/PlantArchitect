@@ -3,19 +3,20 @@
 #include "InternodeRingSegment.hpp"
 #include <plant_architect_export.h>
 #include <IInternodeResource.hpp>
+#include <InternodeDataComponents.hpp>
 using namespace UniEngine;
 namespace PlantArchitect {
     class InternodeSystem;
     struct LString;
-    enum PLANT_ARCHITECT_API class BudType {
-        Apical,
-        Lateral
+    enum class PLANT_ARCHITECT_API BudStatus{
+        Sleeping,
+        Flushing,
+        Flushed,
+        Died
     };
     struct PLANT_ARCHITECT_API Bud : public ISerializable {
-        BudType m_type;
-        bool m_dormant;
-        float m_branchingAngle;
-        float m_rollAngle;
+        BudStatus m_status = BudStatus::Sleeping;
+        InternodeInfo m_newInternodeInfo;
     };
     struct LSystemCommand;
     class InternodeFoliage;
@@ -27,7 +28,7 @@ namespace PlantArchitect {
         void CollectInternodes(std::vector<Entity> &results);
         glm::vec3 m_normalDir = glm::vec3(0, 0, 1);
         int m_step;
-
+        bool m_fromApicalBud;
         AssetRef m_foliage;
         std::vector<glm::mat4> m_foliageMatrices;
 
@@ -37,7 +38,7 @@ namespace PlantArchitect {
          */
         std::shared_ptr<IInternodeResource> m_resource;
         /**
-         * The apical or terminal bud.
+         * The apical bud.
          */
         Bud m_apicalBud;
         /**

@@ -3,7 +3,7 @@
 //
 
 #include "InternodeSystem.hpp"
-#include "DefaultInternodeBehaviour.hpp"
+#include "GeneralTreeBehaviour.hpp"
 #include "SpaceColonizationBehaviour.hpp"
 
 using namespace PlantArchitect;

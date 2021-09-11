@@ -13,7 +13,7 @@
 #include <MLVQRenderer.hpp>
 #include <ClassRegistry.hpp>
 #include <ObjectRotator.hpp>
-#include "DefaultInternodeBehaviour.hpp"
+#include "GeneralTreeBehaviour.hpp"
 #include "DefaultInternodeResource.hpp"
 #include "Internode.hpp"
 #include <InternodeSystem.hpp>
@@ -42,8 +42,9 @@ int main() {
     ClassRegistry::RegisterPrivateComponent<CubeVolume>("CubeVolume");
     ClassRegistry::RegisterPrivateComponent<MLVQRenderer>("MLVQRenderer");
 
-    ClassRegistry::RegisterDataComponent<DefaultInternodeTag>("DefaultInternodeTag");
-    ClassRegistry::RegisterAsset<DefaultInternodeBehaviour>("DefaultInternodeBehaviour", ".defaultbehaviour");
+    ClassRegistry::RegisterDataComponent<GeneralTreeTag>("GeneralTreeTag");
+    ClassRegistry::RegisterDataComponent<GeneralTreeParameters>("GeneralTreeParameters");
+    ClassRegistry::RegisterAsset<GeneralTreeBehaviour>("GeneralTreeBehaviour", ".gtbehaviour");
 
     ClassRegistry::RegisterDataComponent<SpaceColonizationTag>("SpaceColonizationTag");
     ClassRegistry::RegisterDataComponent<SpaceColonizationParameters>("SpaceColonizationParameters");
@@ -57,7 +58,7 @@ int main() {
 
     ClassRegistry::RegisterSerializable<EmptyInternodeResource>("EmptyInternodeResource");
     ClassRegistry::RegisterSerializable<DefaultInternodeResource>("DefaultInternodeResource");
-    ClassRegistry::RegisterSerializable<Bud>("Bud");
+    ClassRegistry::RegisterSerializable<Bud>("LateralBud");
     ClassRegistry::RegisterPrivateComponent<Internode>("Internode");
 
     ClassRegistry::RegisterDataComponent<InternodeInfo>("InternodeInfo");

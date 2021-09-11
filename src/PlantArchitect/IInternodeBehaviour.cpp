@@ -260,7 +260,7 @@ void IInternodeBehaviour::TreeNodeCollector(std::vector<Entity> &boundEntities, 
     auto internodeInfo = node.GetDataComponent<InternodeInfo>();
     internodeInfo.m_index = currentIndex;
     internodeInfo.m_currentRoot = root;
-    if(node.GetChildrenAmount() == 0) internodeInfo.m_endNode = true;
+    if (node.GetChildrenAmount() == 0) internodeInfo.m_endNode = true;
     else internodeInfo.m_endNode = false;
     node.SetDataComponent(internodeInfo);
     node.ForEachChild([&](Entity child) {
@@ -657,4 +657,32 @@ void IInternodeBehaviour::RecycleButton() {
     EditorManager::DragAndDropButton(target);
     Recycle(target);
     target = Entity();
+}
+
+void IInternodeBehaviour::ParallelForEachRoot(std::vector<Entity> &roots,
+                                              const std::function<void(int rootIndex, Entity root)> &action) {
+    auto plantSize = roots.size();
+    std::vector<std::shared_future<void>> results;
+    for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
+        results.push_back(JobManager::PrimaryWorkers().Push([&, plantIndex](int id) {
+            action(plantIndex, roots[plantIndex]);
+        }).share());
+    }
+    for (const auto &i: results)
+        i.wait();
+}
+
+void IInternodeBehaviour::ApplyTropism(const glm::vec3 &targetDir, float tropism, glm::vec3 &front, glm::vec3 &up) {
+    const glm::vec3 dir = glm::normalize(targetDir);
+    const float dotP = glm::abs(glm::dot(front, dir));
+    if (dotP < 0.99f && dotP > -0.99f) {
+        const glm::vec3 left = glm::cross(front, dir);
+        const float maxAngle = glm::acos(dotP);
+        const float rotateAngle = maxAngle * tropism;
+        front = glm::normalize(
+                glm::rotate(front, glm::min(maxAngle, rotateAngle), left));
+        up = glm::normalize(glm::cross(glm::cross(front, up), front));
+        // up = glm::normalize(glm::rotate(up, glm::min(maxAngle, rotateAngle),
+        // left));
+    }
 }
