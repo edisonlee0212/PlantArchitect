@@ -30,6 +30,8 @@ void Internode::OnRecycle() {
     m_apicalBud.m_status = BudStatus::Sleeping;
     m_lateralBuds.clear();
     m_fromApicalBud = true;
+    m_age = 0;
+    GetOwner().SetDataComponent(InternodeInfo());
 }
 
 void Internode::DownStreamResource(float deltaTime) {

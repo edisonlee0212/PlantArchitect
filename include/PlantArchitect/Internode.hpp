@@ -31,7 +31,7 @@ namespace PlantArchitect {
         bool m_fromApicalBud;
         AssetRef m_foliage;
         std::vector<glm::mat4> m_foliageMatrices;
-
+        int m_age = 0;
         std::vector<InternodeRingSegment> m_rings;
         /**
          * The resource storage for the internode.

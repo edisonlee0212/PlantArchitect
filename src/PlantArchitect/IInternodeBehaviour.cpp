@@ -556,7 +556,7 @@ IInternodeBehaviour::TreeGraphWalker(const Entity &root, const Entity &node,
     while (currentNode.GetChildrenAmount() == 1) {
         Entity child = currentNode.GetChildren()[0];
         rootToEndAction(currentNode, child);
-        if (child.IsValid()) {
+        if (InternodeCheck(child)) {
             currentNode = child;
         }
     }
@@ -589,7 +589,7 @@ IInternodeBehaviour::TreeGraphWalker(const Entity &root, const Entity &node,
 }
 
 bool IInternodeBehaviour::InternodeCheck(const Entity &target) {
-    return target.IsValid() && target.HasDataComponent<InternodeInfo>() && target.HasPrivateComponent<Internode>() &&
+    return target.IsValid() && target.IsEnabled() && target.HasDataComponent<InternodeInfo>() && target.HasPrivateComponent<Internode>() &&
            InternalInternodeCheck(target);
 }
 
