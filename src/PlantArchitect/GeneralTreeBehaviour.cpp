@@ -341,6 +341,25 @@ void GeneralTreeBehaviour::Grow(int iterations) {
             TransformManager::CalculateTransformGraphForDescendents(root);
         });
 #pragma endregion
+#pragma region PostProcess
+        ParallelForEachRoot(m_currentPlants, [&](int plantIndex, Entity root) {
+            TreeGraphWalkerEndToRoot(root, root, [&](Entity parent) {
+                float thicknessCollection = 0.0f;
+                auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
+                auto parameters = parent.GetDataComponent<GeneralTreeParameters>();
+                parent.ForEachChild([&](Entity child) {
+                    if (!InternodeCheck(child)) return;
+                    auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
+                    thicknessCollection += glm::pow(childInternodeInfo.m_thickness,
+                                                    1.0f / parameters.m_thicknessFactor);
+                });
+                parentInternodeInfo.m_thickness = glm::pow(thicknessCollection, parameters.m_thicknessFactor);
+                parent.SetDataComponent(parentInternodeInfo);
+            }, [](Entity endNode) {
+                
+            });
+        });
+#pragma endregion
     }
 }
 
@@ -433,6 +452,8 @@ void GeneralTreeParameters::OnInspect() {
     ImGui::DragFloat("Gravitropism", &m_gravitropism, 0.01f);
     ImGui::DragFloat("Phototropism", &m_phototropism, 0.01f);
     ImGui::DragFloat2("Internode length mean/var", &m_internodeLengthMeanVariance.x, 0.01f);
+
+    ImGui::DragFloat("Thickness factor", &m_thicknessFactor, 0.01f);
     ImGui::DragFloat("End thickness", &m_endNodeThickness, 0.01f);
     ImGui::DragFloat("Lateral bud lighting factor", &m_lateralBudFlushingLightingFactor, 0.01f);
     ImGui::DragFloat("Kill probability apical/lateral", &m_apicalBudKillProbability, 0.01f);

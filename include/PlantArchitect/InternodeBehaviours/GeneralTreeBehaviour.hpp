@@ -26,6 +26,8 @@ namespace PlantArchitect {
         float m_gravitropism;
         float m_phototropism;
         glm::vec2 m_internodeLengthMeanVariance;
+
+        float m_thicknessFactor = 0.5f;
         float m_endNodeThickness;
 
         float m_lateralBudFlushingLightingFactor;
