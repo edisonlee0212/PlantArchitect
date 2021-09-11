@@ -27,7 +27,7 @@ namespace PlantArchitect {
     public:
         void CollectInternodes(std::vector<Entity> &results);
         glm::vec3 m_normalDir = glm::vec3(0, 0, 1);
-        int m_step;
+        int m_step = 4;
         bool m_fromApicalBud;
         AssetRef m_foliage;
         std::vector<glm::mat4> m_foliageMatrices;

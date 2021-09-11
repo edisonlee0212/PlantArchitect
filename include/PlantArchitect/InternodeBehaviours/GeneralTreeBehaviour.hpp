@@ -58,18 +58,21 @@ namespace PlantArchitect {
          * Is child with largest total biomass
          */
         Entity m_heaviestChild = Entity();
+        void OnInspect();
     };
     /*
      * If water pressure is negative, meaning that the internode needs more water but it's empty. The pressure is controlled by apical control.
      */
     struct PLANT_ARCHITECT_API InternodeWaterPressure : public IDataComponent {
         float m_value = 0;
+        void OnInspect();
     };
     /*
      * The internode water keep track of the amount of water carried by the internode.
      */
     struct PLANT_ARCHITECT_API InternodeWater : public IDataComponent {
         float m_value = 0;
+        void OnInspect();
     };
     /*
      * The illumination status of the internode.
@@ -77,12 +80,14 @@ namespace PlantArchitect {
     struct PLANT_ARCHITECT_API InternodeIllumination : public IDataComponent{
         float m_intensity = 0;
         glm::vec3 m_direction = glm::vec3(0.0f, 1.0f, 0.0f);
+        void OnInspect();
     };
 
     class PLANT_ARCHITECT_API InternodeWaterFeeder : public IPrivateComponent{
     public:
         float m_waterPerIteration = 1;
         void Clone(const std::shared_ptr<IPrivateComponent> &target) override;
+
     };
 
 

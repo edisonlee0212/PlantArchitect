@@ -30,7 +30,19 @@ namespace PlantArchitect {
          * The local rotation of the internode
          */
         glm::quat m_localRotation = glm::vec3(0.0f);
+
+        void OnInspect(){
+            ImGui::Text(("Thickness: " + std::to_string(m_thickness)).c_str());
+            ImGui::Text(("Length: " + std::to_string(m_length)).c_str());
+            ImGui::Text(("Index: " + std::to_string(m_index)).c_str());
+            ImGui::Text(("Root entity index: " + std::to_string(m_currentRoot.GetIndex())).c_str());
+            ImGui::Text(("Is end node: " + std::to_string(m_endNode)).c_str());
+
+            glm::vec3 localRotation = glm::eulerAngles(m_localRotation);
+            ImGui::Text(("Local Rotation: [" + std::to_string(glm::degrees(localRotation.x)) + ", " + std::to_string(glm::degrees(localRotation.y)) + ", " +std::to_string(glm::degrees(localRotation.z)) + "]").c_str());
+        }
     };
+
 
 #pragma region Debug rendering
 

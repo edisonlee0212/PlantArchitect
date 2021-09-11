@@ -110,10 +110,11 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                          internodeWaterPressure.m_value = 0;
                      }
                  }, true);
+        auto workerSize = JobManager::PrimaryWorkers().Size();
         std::vector<std::vector<float>> totalWaterCollector;
         std::vector<std::vector<float>> totalRequestCollector;
-        totalRequestCollector.resize(JobManager::PrimaryWorkers().Size());
-        totalWaterCollector.resize(JobManager::PrimaryWorkers().Size());
+        totalRequestCollector.resize(workerSize);
+        totalWaterCollector.resize(workerSize);
         for (auto &i: totalRequestCollector) {
             i.resize(plantSize);
             for (auto &j: i) j = 0;
@@ -130,10 +131,10 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                      int plantIndex = 0;
                      for (const auto &plant: m_currentPlants) {
                          if (internodeInfo.m_currentRoot == plant) {
-                             totalRequestCollector[i][plantIndex] +=
-                                     internodeWaterPressure.m_value / internodeStatus.m_distanceToRoot *
+                             totalRequestCollector[i % workerSize][plantIndex] +=
+                                     internodeWaterPressure.m_value *
                                      internodeIllumination.m_intensity;
-                             totalWaterCollector[i][plantIndex] += internodeWater.m_value;
+                             totalWaterCollector[i % workerSize][plantIndex] += internodeWater.m_value;
                              break;
                          }
                          plantIndex++;
@@ -166,9 +167,7 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                      int plantIndex = 0;
                      for (const auto &plant: m_currentPlants) {
                          if (internodeInfo.m_currentRoot == plant) {
-                             internodeWater.m_value += waterDividends[plantIndex] * internodeWaterPressure.m_value /
-                                                       internodeStatus.m_distanceToRoot *
-                                                       internodeIllumination.m_intensity;
+                             internodeWater.m_value += waterDividends[plantIndex] * internodeWaterPressure.m_value * internodeIllumination.m_intensity;
                              break;
                          }
                          plantIndex++;
@@ -218,20 +217,22 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                                               desiredGlobalFront, desiredGlobalUp);
                                  ApplyTropism(internodeIllumination.m_direction, generalTreeParameters.m_phototropism,
                                               desiredGlobalFront, desiredGlobalUp);
+
+                                 desiredGlobalRotation = glm::quatLookAt(desiredGlobalFront, desiredGlobalUp);
                                  internode->m_apicalBud.m_newInternodeInfo.m_localRotation =
                                          glm::inverse(globalTransform.GetRotation()) * desiredGlobalRotation;
                                  internode->m_apicalBud.m_status = BudStatus::Flushing;
                                  //Form lateral buds here.
                                  float turnAngle = glm::radians(360.0f / generalTreeParameters.m_lateralBudCount);
                                  for (int lateralBudIndex = 0;
-                                      lateralBudIndex < generalTreeParameters.m_lateralBudCount; i++) {
+                                      lateralBudIndex < generalTreeParameters.m_lateralBudCount; lateralBudIndex++) {
                                      Bud newLateralBud;
                                      newLateralBud.m_status = BudStatus::Sleeping;
                                      newLateralBud.m_newInternodeInfo.m_localRotation = glm::vec3(glm::radians(
                                                                                                           glm::gaussRand(generalTreeParameters.m_branchingAngleMeanVariance.x,
                                                                                                                          generalTreeParameters.m_branchingAngleMeanVariance.y)),
-                                                                                                  lateralBudIndex *
-                                                                                                  turnAngle, 0.0f);
+
+                                                                                                  0.0f, lateralBudIndex * turnAngle);
                                      internode->m_lateralBuds.push_back(std::move(newLateralBud));
                                  }
                              }
@@ -276,9 +277,10 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                                      ApplyTropism(internodeIllumination.m_direction,
                                                   generalTreeParameters.m_phototropism, desiredGlobalFront,
                                                   desiredGlobalUp);
+                                     desiredGlobalRotation = glm::quatLookAt(desiredGlobalFront, desiredGlobalUp);
+                                     lateralBud.m_newInternodeInfo = InternodeInfo();
                                      lateralBud.m_newInternodeInfo.m_localRotation =
                                              glm::inverse(globalTransform.GetRotation()) * desiredGlobalRotation;
-                                     lateralBud.m_newInternodeInfo = InternodeInfo();
                                      lateralBud.m_newInternodeInfo.m_thickness = generalTreeParameters.m_endNodeThickness;
                                      lateralBud.m_newInternodeInfo.m_currentRoot = internodeInfo.m_currentRoot;
                                      lateralBud.m_status = BudStatus::Flushing;
@@ -321,7 +323,7 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                      auto parent = entity.GetParent();
                      if (parent.IsNull() || !parent.HasDataComponent<InternodeInfo>()) return;
                      auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
-                     transform.SetValue(glm::vec3(0.0f, 0.0f, parentInternodeInfo.m_length),
+                     transform.SetValue(glm::vec3(0.0f, 0.0f, -parentInternodeInfo.m_length),
                                         parentInternodeInfo.m_localRotation, glm::vec3(1.0f));
                  }, true);
 
@@ -348,8 +350,8 @@ void GeneralTreeBehaviour::OnCreate() {
     }
     m_internodeArchetype =
             EntityManager::CreateEntityArchetype("General Tree Internode", InternodeInfo(), GeneralTreeTag(),
-                                                 GeneralTreeParameters(),
-                                                 InternodeWaterPressure(), InternodeWater(),
+                                                 GeneralTreeParameters(), InternodeStatus(),
+                                                 InternodeWaterPressure(), InternodeWater(), InternodeIllumination(),
                                                  BranchColor(), BranchCylinder(), BranchCylinderWidth(),
                                                  BranchPointer());
     m_internodesQuery = EntityManager::CreateEntityQuery();
@@ -416,6 +418,10 @@ Entity GeneralTreeBehaviour::NewPlant(const GeneralTreeParameters &params, const
     newInfo.m_thickness = params.m_endNodeThickness;
     entity.SetDataComponent(newInfo);
     entity.SetDataComponent(params);
+
+    auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
+    internode->m_fromApicalBud = true;
+    auto waterFeeder = entity.GetOrSetPrivateComponent<InternodeWaterFeeder>().lock();
     return entity;
 }
 
@@ -436,7 +442,7 @@ GeneralTreeParameters::GeneralTreeParameters() {
     m_lateralBudCount = 2;
     m_branchingAngleMeanVariance = glm::vec2(30, 1);
     m_rollAngleMeanVariance = glm::vec2(30, 1);
-    m_apicalAngleMeanVariance = glm::vec2(30, 1);
+    m_apicalAngleMeanVariance = glm::vec2(0, 1);
     m_gravitropism = 0.1f;
     m_phototropism = 0.0f;
     m_internodeLengthMeanVariance = glm::vec2(1, 0.1);
@@ -450,4 +456,26 @@ GeneralTreeParameters::GeneralTreeParameters() {
 
 void InternodeWaterFeeder::Clone(const std::shared_ptr<IPrivateComponent> &target) {
 
+}
+
+void InternodeStatus::OnInspect() {
+    ImGui::Text(("m_distanceToRoot: " + std::to_string(m_distanceToRoot)).c_str());
+    ImGui::Text(("m_maxDistanceToAnyBranchEnd: " + std::to_string(m_maxDistanceToAnyBranchEnd)).c_str());
+    ImGui::Text(("m_totalDistanceToAllBranchEnds: " + std::to_string(m_totalDistanceToAllBranchEnds)).c_str());
+    ImGui::Text(("m_order: " + std::to_string(m_order)).c_str());
+    ImGui::Text(("m_biomass: " + std::to_string(m_biomass)).c_str());
+    ImGui::Text(("m_childTotalBiomass: " + std::to_string(m_childTotalBiomass)).c_str());
+}
+
+void InternodeWaterPressure::OnInspect() {
+    ImGui::Text(("m_value: " + std::to_string(m_value)).c_str());
+}
+
+void InternodeWater::OnInspect() {
+    ImGui::Text(("m_value: " + std::to_string(m_value)).c_str());
+}
+
+void InternodeIllumination::OnInspect() {
+    ImGui::Text(("Intensity: " + std::to_string(m_intensity)).c_str());
+    ImGui::Text(("Direction: [" + std::to_string(glm::degrees(m_direction.x)) + ", " + std::to_string(glm::degrees(m_direction.y)) + ", " +std::to_string(glm::degrees(m_direction.z)) + "]").c_str());
 }

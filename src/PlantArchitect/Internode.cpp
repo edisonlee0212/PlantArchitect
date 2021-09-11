@@ -23,6 +23,13 @@ void Internode::OnRetrieve() {
 
 void Internode::OnRecycle() {
     m_resource->Reset();
+    m_normalDir = glm::vec3(0, 0, 1);
+    m_step = 4;
+    m_foliageMatrices.clear();
+    m_rings.clear();
+    m_apicalBud.m_status = BudStatus::Sleeping;
+    m_lateralBuds.clear();
+    m_fromApicalBud = true;
 }
 
 void Internode::DownStreamResource(float deltaTime) {

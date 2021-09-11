@@ -655,7 +655,7 @@ void IInternodeBehaviour::RecycleButton() {
     ImGui::Text("Recycle here: ");
     ImGui::SameLine();
     EditorManager::DragAndDropButton(target);
-    Recycle(target);
+    if(!target.IsNull()) Recycle(target);
     target = Entity();
 }
 

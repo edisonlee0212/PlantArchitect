@@ -142,9 +142,11 @@ void EngineSetup(bool enableRayTracing) {
         cubeVolumeEntity.SetDataComponent(cubeVolumeTransform);
         auto spaceColonizationBehaviour = AssetManager::CreateAsset<SpaceColonizationBehaviour>();
         auto lSystemBehaviour = AssetManager::CreateAsset<LSystemBehaviour>();
+        auto generalTreeBehaviour = AssetManager::CreateAsset<GeneralTreeBehaviour>();
         internodeSystem->PushInternodeBehaviour(
                 std::dynamic_pointer_cast<IInternodeBehaviour>(spaceColonizationBehaviour));
         internodeSystem->PushInternodeBehaviour(std::dynamic_pointer_cast<IInternodeBehaviour>(lSystemBehaviour));
+        internodeSystem->PushInternodeBehaviour(std::dynamic_pointer_cast<IInternodeBehaviour>(generalTreeBehaviour));
         auto cubeVolume = cubeVolumeEntity.GetOrSetPrivateComponent<CubeVolume>().lock();
         cubeVolume->m_minMaxBound.m_min = glm::vec3(-10.0f);
         cubeVolume->m_minMaxBound.m_max = glm::vec3(10.0f);
@@ -163,8 +165,32 @@ void EngineSetup(bool enableRayTracing) {
 void RegisterDataComponentMenus() {
     EditorManager::RegisterComponentDataInspector<InternodeInfo>([](Entity entity, IDataComponent *data, bool isRoot) {
         auto *ltw = reinterpret_cast<InternodeInfo *>(data);
-        ImGui::DragFloat("Thickness", &ltw->m_thickness, 0.01f);
-        ImGui::DragFloat("Length", &ltw->m_length, 0.01f);
+        ltw->OnInspect();
+    });
+
+    EditorManager::RegisterComponentDataInspector<GeneralTreeParameters>([](Entity entity, IDataComponent *data, bool isRoot) {
+        auto *ltw = reinterpret_cast<GeneralTreeParameters *>(data);
+        ltw->OnInspect();
+    });
+
+    EditorManager::RegisterComponentDataInspector<InternodeStatus>([](Entity entity, IDataComponent *data, bool isRoot) {
+        auto *ltw = reinterpret_cast<InternodeStatus *>(data);
+        ltw->OnInspect();
+    });
+
+    EditorManager::RegisterComponentDataInspector<InternodeWaterPressure>([](Entity entity, IDataComponent *data, bool isRoot) {
+        auto *ltw = reinterpret_cast<InternodeWaterPressure *>(data);
+        ltw->OnInspect();
+    });
+
+    EditorManager::RegisterComponentDataInspector<InternodeWater>([](Entity entity, IDataComponent *data, bool isRoot) {
+        auto *ltw = reinterpret_cast<InternodeWater *>(data);
+        ltw->OnInspect();
+    });
+
+    EditorManager::RegisterComponentDataInspector<InternodeIllumination>([](Entity entity, IDataComponent *data, bool isRoot) {
+        auto *ltw = reinterpret_cast<InternodeIllumination *>(data);
+        ltw->OnInspect();
     });
 
     EditorManager::RegisterComponentDataInspector<SpaceColonizationParameters>(
