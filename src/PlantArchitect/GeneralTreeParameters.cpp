@@ -29,6 +29,7 @@ void GeneralTreeParameters::OnInspect() {
     const float maxAgeBeforeMaxCutOff = (m_randomPruningBaseAgeMax.z - m_randomPruningBaseAgeMax.x) / m_randomPruningBaseAgeMax.y;
     ImGui::Text("Max age before reaching max: %.2f", maxAgeBeforeMaxCutOff);
     ImGui::DragFloat("Low Branch Pruning", &m_lowBranchPruning, 0.01f);
+    ImGui::DragFloat3("Sagging thickness/reduction/max", &m_saggingFactorThicknessReductionMax.x, 0.01f);
 }
 
 GeneralTreeParameters::GeneralTreeParameters() {
@@ -72,6 +73,7 @@ void GeneralTreeParameters::Save(const std::filesystem::path &path) const {
     out << YAML::Key << "m_randomPruningOrderProtection" << YAML::Value << m_randomPruningOrderProtection;
     out << YAML::Key << "m_randomPruningBaseAgeMax" << YAML::Value << m_randomPruningBaseAgeMax;
     out << YAML::Key << "m_lowBranchPruning" << YAML::Value << m_lowBranchPruning;
+    out << YAML::Key << "m_saggingFactorThicknessReductionMax" << YAML::Value << m_saggingFactorThicknessReductionMax;
     out << YAML::EndMap;
     std::ofstream fout(path.string());
     fout << out.c_str();
@@ -98,9 +100,12 @@ void GeneralTreeParameters::Load(const std::filesystem::path &path) {
     m_randomPruningOrderProtection = in["m_randomPruningOrderProtection"].as<int>();
     m_randomPruningBaseAgeMax = in["m_randomPruningBaseAgeMax"].as<glm::vec3>();
     m_lowBranchPruning = in["m_lowBranchPruning"].as<float>();
+    m_saggingFactorThicknessReductionMax = in["m_saggingFactorThicknessReductionMax"].as<glm::vec3>();
 }
 
 void InternodeStatus::OnInspect() {
+    ImGui::Text(("Sagging: " + std::to_string(m_sagging)).c_str());
+
     ImGui::Text(("Inhibitor: " + std::to_string(m_inhibitor)).c_str());
     ImGui::Text(("DistanceToRoot: " + std::to_string(m_distanceToRoot)).c_str());
     ImGui::Text(("MaxDistanceToAnyBranchEnd: " + std::to_string(m_maxDistanceToAnyBranchEnd)).c_str());

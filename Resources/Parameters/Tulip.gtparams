@@ -14,3 +14,4 @@ m_budKillProbabilityApicalLateral: [0, 0.0299999993]
 m_randomPruningOrderProtection: 1
 m_randomPruningBaseAgeMax: [-0.100000001, 0.00700000022, 0.5]
 m_lowBranchPruning: 0.150000006
+m_saggingFactorThicknessReductionMax: [5, 2, 1]

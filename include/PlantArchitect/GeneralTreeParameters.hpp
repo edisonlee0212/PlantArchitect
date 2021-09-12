@@ -11,17 +11,17 @@ namespace PlantArchitect {
         void Load(const std::filesystem::path &path);
 
         int m_lateralBudCount;
-/**
- * The mean and variance of the angle between the direction of a lateral bud and its parent shoot.
- */
+        /**
+        * The mean and variance of the angle between the direction of a lateral bud and its parent shoot.
+        */
         glm::vec2 m_branchingAngleMeanVariance;
-/**
- * The mean and variance of an angular difference orientation of lateral buds between two internodes
- */
+        /**
+        * The mean and variance of an angular difference orientation of lateral buds between two internodes
+        */
         glm::vec2 m_rollAngleMeanVariance;
-/**
- * The mean and variance of the angular difference between the growth direction and the direction of the apical bud
- */
+        /**
+        * The mean and variance of the angular difference between the growth direction and the direction of the apical bud
+        */
         glm::vec2 m_apicalAngleMeanVariance;
         float m_gravitropism;
         float m_phototropism;
@@ -31,9 +31,9 @@ namespace PlantArchitect {
         float m_lateralBudFlushingProbability;
         glm::vec2 m_apicalControlBaseAge;
 
-/**
- * How much inhibitor will an internode generate.
- */
+        /**
+        * How much inhibitor will an internode generate.
+        */
         glm::vec3 m_apicalDominanceBaseAgeDist;
 
 
@@ -41,20 +41,24 @@ namespace PlantArchitect {
 
         glm::vec2 m_budKillProbabilityApicalLateral;
 
-/**
- * The minimum order of the internode that will have random pruning.
- */
+        /**
+        * The minimum order of the internode that will have random pruning.
+        */
         int m_randomPruningOrderProtection;
-/**
- * The base probability of an end internode being cut off due to
- * unknown environmental factors.
- */
+        /**
+        * The base probability of an end internode being cut off due to
+        * unknown environmental factors.
+        */
         glm::vec3 m_randomPruningBaseAgeMax;
-/**
- * The limit of lateral branches being cut off when too close to the
- * root.
- */
+        /**
+        * The limit of lateral branches being cut off when too close to the
+        * root.
+        */
         float m_lowBranchPruning;
+        /**
+         * The strength of gravity bending.
+         */
+        glm::vec3 m_saggingFactorThicknessReductionMax = glm::vec3(0.8f, 1.75f, 1.0f);
 
         void OnInspect();
 
@@ -73,6 +77,8 @@ namespace PlantArchitect {
         float m_order = 0;
         float m_biomass = 0;
         float m_childTotalBiomass = 0;
+        glm::quat m_desiredLocalRotation;
+        float m_sagging;
         /**
          * Is child with largest total distance to all branchEnds
          */
