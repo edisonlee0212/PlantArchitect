@@ -17,6 +17,7 @@ void GeneralTreeParameters::OnInspect() {
     ImGui::DragFloat2("Thickness min/factor", &m_endNodeThicknessAndControl.x, 0.01f);
 
     ImGui::Text("Bud");
+    ImGui::DragFloat("Lateral bud flushing probability", &m_lateralBudFlushingProbability, 0.01f);
     ImGui::DragFloat2("Apical control base/age", &m_apicalControlBaseAge.x, 0.01f);
     ImGui::DragFloat3("Apical dominance base/age/dist", &m_apicalDominanceBaseAgeDist.x, 0.01f);
     ImGui::DragFloat("Lateral bud lighting factor", &m_lateralBudFlushingLightingFactor, 0.01f);
@@ -39,6 +40,7 @@ GeneralTreeParameters::GeneralTreeParameters() {
     m_phototropism = 0.0f;
     m_internodeLengthMeanVariance = glm::vec2(1, 0.1);
     m_endNodeThicknessAndControl = glm::vec2(0.01, 0.5);
+    m_lateralBudFlushingProbability = 1.0f;
     m_apicalControlBaseAge = glm::vec2(1.05, 0.95);
     m_apicalDominanceBaseAgeDist = glm::vec3(0.1, 0.95, 0.5);
     m_lateralBudFlushingLightingFactor = 0.0f;
@@ -62,6 +64,7 @@ void GeneralTreeParameters::Save(const std::filesystem::path &path) const {
     out << YAML::Key << "m_phototropism" << YAML::Value << m_phototropism;
     out << YAML::Key << "m_internodeLengthMeanVariance" << YAML::Value << m_internodeLengthMeanVariance;
     out << YAML::Key << "m_endNodeThicknessAndControl" << YAML::Value << m_endNodeThicknessAndControl;
+    out << YAML::Key << "m_lateralBudFlushingProbability" << YAML::Value << m_lateralBudFlushingProbability;
     out << YAML::Key << "m_apicalControlBaseAge" << YAML::Value << m_apicalControlBaseAge;
     out << YAML::Key << "m_apicalDominanceBaseAgeDist" << YAML::Value << m_apicalDominanceBaseAgeDist;
     out << YAML::Key << "m_lateralBudFlushingLightingFactor" << YAML::Value << m_lateralBudFlushingLightingFactor;
@@ -87,6 +90,7 @@ void GeneralTreeParameters::Load(const std::filesystem::path &path) {
     m_phototropism = in["m_phototropism"].as<float>();
     m_internodeLengthMeanVariance = in["m_internodeLengthMeanVariance"].as<glm::vec2>();
     m_endNodeThicknessAndControl = in["m_endNodeThicknessAndControl"].as<glm::vec2>();
+    m_lateralBudFlushingProbability = in["m_lateralBudFlushingProbability"].as<float>();
     m_apicalControlBaseAge = in["m_apicalControlBaseAge"].as<glm::vec2>();
     m_apicalDominanceBaseAgeDist = in["m_apicalDominanceBaseAgeDist"].as<glm::vec3>();
     m_lateralBudFlushingLightingFactor = in["m_lateralBudFlushingLightingFactor"].as<float>();

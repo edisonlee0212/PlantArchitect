@@ -170,8 +170,8 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                      int plantIndex = 0;
                      for (const auto &plant: m_currentPlants) {
                          if (internodeInfo.m_currentRoot == plant) {
-                             float apicalControl = glm::pow(generalTreeParameters.m_apicalControlBaseAge.x, internodeStatus.m_level) * glm::pow(generalTreeParameters.m_apicalControlBaseAge.y, internode->m_age);
-                             totalRequestCollector[i % workerSize][plantIndex] += apicalControl *
+                             float apicalControl = generalTreeParameters.m_apicalControlBaseAge.x * glm::pow(generalTreeParameters.m_apicalControlBaseAge.y, internode->m_age);
+                             totalRequestCollector[i % workerSize][plantIndex] += glm::pow(1.0f / glm::max(1.0f, apicalControl), internodeStatus.m_level) *
                                      internodeWaterPressure.m_value *
                                      internodeIllumination.m_intensity;
                              break;
@@ -187,19 +187,7 @@ void GeneralTreeBehaviour::Grow(int iterations) {
             }
         }
 #pragma endregion
-#pragma region Feed water
-        auto *waterFeederEntities = EntityManager::UnsafeGetPrivateComponentOwnersList<InternodeWaterFeeder>();
-        if (waterFeederEntities) {
-            for (const auto &i: *waterFeederEntities) {
-                if (!i.IsEnabled() || !i.HasDataComponent<InternodeWater>()) continue;
-                auto waterFeeder = i.GetOrSetPrivateComponent<InternodeWaterFeeder>().lock();
-                if (!waterFeeder->IsEnabled()) continue;
-                auto internodeWater = i.GetDataComponent<InternodeWater>();
-                internodeWater.m_value += waterFeeder->m_waterPerIteration;
-                i.SetDataComponent(internodeWater);
-            }
-        }
-#pragma endregion
+
 #pragma region Collect and distribute water
         std::vector<std::vector<float>> totalWaterCollector;
         totalWaterCollector.resize(workerSize);
@@ -231,7 +219,7 @@ void GeneralTreeBehaviour::Grow(int iterations) {
         std::vector<float> waterDividends;
         waterDividends.resize(plantSize);
         for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
-            waterDividends[plantIndex] = totalWater[plantIndex] / totalRequests[plantIndex];
+            waterDividends[plantIndex] = 1.0f;// totalWater[plantIndex] / totalRequests[plantIndex];
             if (totalRequests[plantIndex] == 0) waterDividends[plantIndex] = 0;
         }
         EntityManager::ForEach<InternodeInfo, InternodeWaterPressure, InternodeStatus, InternodeIllumination, InternodeWater, GeneralTreeParameters>
@@ -244,8 +232,9 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                      auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
                      for (const auto &plant: m_currentPlants) {
                          if (internodeInfo.m_currentRoot == plant) {
-                             float apicalControl = glm::pow(generalTreeParameters.m_apicalControlBaseAge.x, internodeStatus.m_level) * glm::pow(generalTreeParameters.m_apicalControlBaseAge.y, internode->m_age);
-                             internodeWater.m_value = waterDividends[plantIndex] * apicalControl * internodeWaterPressure.m_value *
+                             float apicalControl = generalTreeParameters.m_apicalControlBaseAge.x * glm::pow(generalTreeParameters.m_apicalControlBaseAge.y, internode->m_age);
+                             internodeWater.m_value = glm::pow(1.0f / glm::max(1.0f, apicalControl), internodeStatus.m_level) *
+                                     waterDividends[plantIndex] * internodeWaterPressure.m_value *
                                                        internodeIllumination.m_intensity;
                              break;
                          }
@@ -331,7 +320,7 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                                  }
 
                                  bool flush = false;
-                                 float flushProbability = (
+                                 float flushProbability = generalTreeParameters.m_lateralBudFlushingProbability * (
                                                                   internodeIllumination.m_intensity *
                                                                   generalTreeParameters.m_lateralBudFlushingLightingFactor +
                                                                   (1.0f - internodeStatus.m_inhibitor)
@@ -544,6 +533,6 @@ void InternodeWaterFeeder::Clone(const std::shared_ptr<IPrivateComponent> &targe
 
 void InternodeWaterFeeder::OnInspect() {
     ImGui::Text(("Last request:" + std::to_string(m_lastRequest)).c_str());
-    ImGui::DragFloat("Water per iteration", &m_waterPerIteration, 0.1f, 0.0f, 9999999.0f);
+    ImGui::DragFloat("Water Factor", &m_waterDividends, 0.1f, 0.0f, 9999999.0f);
 }
 

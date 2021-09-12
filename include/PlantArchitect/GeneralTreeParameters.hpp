@@ -28,13 +28,14 @@ namespace PlantArchitect {
         glm::vec2 m_internodeLengthMeanVariance;
 
         glm::vec2 m_endNodeThicknessAndControl;
-
+        float m_lateralBudFlushingProbability;
         glm::vec2 m_apicalControlBaseAge;
 
 /**
  * How much inhibitor will an internode generate.
  */
         glm::vec3 m_apicalDominanceBaseAgeDist;
+
 
         float m_lateralBudFlushingLightingFactor;
 
