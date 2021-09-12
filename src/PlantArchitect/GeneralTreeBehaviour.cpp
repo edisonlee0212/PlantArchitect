@@ -67,21 +67,21 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                     if (childInternodeInfo.m_endNode) {
                         auto endNodeParameters = child.GetDataComponent<GeneralTreeParameters>();
                         auto endNodeInternode = child.GetOrSetPrivateComponent<Internode>().lock();
-                        float randomFactor = glm::min(endNodeParameters.m_randomPruningMax,
-                                                      endNodeParameters.m_randomPruningFactor +
-                                                      endNodeParameters.m_randomPruningAgeFactor *
+                        float randomFactor = glm::min(endNodeParameters.m_randomPruningBaseAgeMax.z,
+                                                      endNodeParameters.m_randomPruningBaseAgeMax.x +
+                                                      endNodeParameters.m_randomPruningBaseAgeMax.y *
                                                       endNodeInternode->m_age);
                         if (childInternodeStatus.m_order > endNodeParameters.m_randomPruningOrderProtection &&
                             randomFactor > glm::linearRand(0.0f, 1.0f)) {
                             RecycleSingle(child);
                             return;
                         }
-                        parentInternodeStatus.m_inhibitor += endNodeParameters.m_apicalDominanceBase *
-                                                             glm::pow(endNodeParameters.m_apicalDominanceAgeFactor,
+                        parentInternodeStatus.m_inhibitor += endNodeParameters.m_apicalDominanceBaseAgeDist.x *
+                                                             glm::pow(endNodeParameters.m_apicalDominanceBaseAgeDist.y,
                                                                       endNodeInternode->m_age);
                     } else {
                         parentInternodeStatus.m_inhibitor +=
-                                childInternodeStatus.m_inhibitor * parentParameters.m_apicalDominanceDistanceFactor;
+                                childInternodeStatus.m_inhibitor * parentParameters.m_apicalDominanceBaseAgeDist.z;
                     }
 
                     float childTotalDistanceToAllBranchEnds =
@@ -168,7 +168,7 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                      int plantIndex = 0;
                      for (const auto &plant: m_currentPlants) {
                          if (internodeInfo.m_currentRoot == plant) {
-                             float apicalControl = glm::pow(generalTreeParameters.m_apicalDominanceBase, internodeStatus.m_level);
+                             float apicalControl = glm::pow(generalTreeParameters.m_apicalControlBaseAge.x, internodeStatus.m_level);
                              totalRequestCollector[i % workerSize][plantIndex] += apicalControl *
                                      internodeWaterPressure.m_value *
                                      internodeIllumination.m_intensity;
@@ -241,7 +241,7 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                      int plantIndex = 0;
                      for (const auto &plant: m_currentPlants) {
                          if (internodeInfo.m_currentRoot == plant) {
-                             float apicalControl = glm::pow(generalTreeParameters.m_apicalDominanceBase, internodeStatus.m_level);
+                             float apicalControl = glm::pow(generalTreeParameters.m_apicalDominanceBaseAgeDist.x, internodeStatus.m_level);
                              internodeWater.m_value += waterDividends[plantIndex] * apicalControl * internodeWaterPressure.m_value *
                                                        internodeIllumination.m_intensity;
                              break;
@@ -266,7 +266,7 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                      //1. Internode elongation.
                      switch (internode->m_apicalBud.m_status) {
                          case BudStatus::Sleeping: {
-                             if (generalTreeParameters.m_apicalBudKillProbability > glm::linearRand(0.0f, 1.0f)) {
+                             if (generalTreeParameters.m_budKillProbabilityApicalLateral.x > glm::linearRand(0.0f, 1.0f)) {
                                  internode->m_apicalBud.m_status = BudStatus::Died;
                                  break;
                              }
@@ -280,7 +280,7 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                                  internodeWater.m_value = internodeInfo.m_length - desiredLength;
                                  internodeInfo.m_length = desiredLength;
                                  internode->m_apicalBud.m_newInternodeInfo = InternodeInfo();
-                                 internode->m_apicalBud.m_newInternodeInfo.m_thickness = generalTreeParameters.m_endNodeThickness;
+                                 internode->m_apicalBud.m_newInternodeInfo.m_thickness = generalTreeParameters.m_endNodeThicknessAndControl.x;
                                  internode->m_apicalBud.m_newInternodeInfo.m_currentRoot = internodeInfo.m_currentRoot;
                                  glm::quat desiredGlobalRotation = globalTransform.GetRotation();
                                  glm::vec3 desiredGlobalFront = desiredGlobalRotation * glm::vec3(0, 0, -1);
@@ -323,7 +323,7 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                          case BudStatus::Flushed: {
                              for (auto &lateralBud: internode->m_lateralBuds) {
                                  if (lateralBud.m_status != BudStatus::Sleeping) continue;
-                                 if (generalTreeParameters.m_lateralBudKillProbability > glm::linearRand(0.0f, 1.0f)) {
+                                 if (generalTreeParameters.m_budKillProbabilityApicalLateral.y > glm::linearRand(0.0f, 1.0f)) {
                                      lateralBud.m_status = BudStatus::Died;
                                      continue;
                                  }
@@ -364,7 +364,7 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                                      lateralBud.m_newInternodeInfo = InternodeInfo();
                                      lateralBud.m_newInternodeInfo.m_localRotation =
                                              glm::inverse(globalTransform.GetRotation()) * desiredGlobalRotation;
-                                     lateralBud.m_newInternodeInfo.m_thickness = generalTreeParameters.m_endNodeThickness;
+                                     lateralBud.m_newInternodeInfo.m_thickness = generalTreeParameters.m_endNodeThicknessAndControl.x;
                                      lateralBud.m_newInternodeInfo.m_currentRoot = internodeInfo.m_currentRoot;
                                      lateralBud.m_status = BudStatus::Flushing;
                                  }
@@ -436,9 +436,9 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                     if (!InternodeCheck(child)) return;
                     auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
                     thicknessCollection += glm::pow(childInternodeInfo.m_thickness,
-                                                    1.0f / parameters.m_thicknessFactor);
+                                                    1.0f / parameters.m_endNodeThicknessAndControl.y);
                 });
-                parentInternodeInfo.m_thickness = glm::pow(thicknessCollection, parameters.m_thicknessFactor);
+                parentInternodeInfo.m_thickness = glm::pow(thicknessCollection, parameters.m_endNodeThicknessAndControl.y);
                 parent.SetDataComponent(parentInternodeInfo);
             }, [](Entity endNode) {
             });
@@ -528,7 +528,7 @@ Entity GeneralTreeBehaviour::NewPlant(const GeneralTreeParameters &params, const
     entity.SetDataComponent(tag);
     InternodeInfo newInfo;
     newInfo.m_length = 0;
-    newInfo.m_thickness = params.m_endNodeThickness;
+    newInfo.m_thickness = params.m_endNodeThicknessAndControl.x;
     entity.SetDataComponent(newInfo);
     entity.SetDataComponent(params);
 
@@ -547,19 +547,18 @@ void GeneralTreeParameters::OnInspect() {
     ImGui::DragFloat("Gravitropism", &m_gravitropism, 0.01f);
     ImGui::DragFloat("Phototropism", &m_phototropism, 0.01f);
     ImGui::DragFloat2("Internode length mean/var", &m_internodeLengthMeanVariance.x, 0.01f);
-    ImGui::DragFloat("Thickness factor", &m_thicknessFactor, 0.01f);
-    ImGui::DragFloat("End thickness", &m_endNodeThickness, 0.01f);
+    ImGui::DragFloat2("Thickness min/factor", &m_endNodeThicknessAndControl.x, 0.01f);
 
     ImGui::Text("Bud");
-    ImGui::DragFloat2("Apical control base/age", &m_apicalControl, 0.01f);
-    ImGui::DragFloat3("Apical dominance base/age/dist", &m_apicalDominanceBase, 0.01f);
+    ImGui::DragFloat2("Apical control base/age", &m_apicalControlBaseAge.x, 0.01f);
+    ImGui::DragFloat3("Apical dominance base/age/dist", &m_apicalDominanceBaseAgeDist.x, 0.01f);
     ImGui::DragFloat("Lateral bud lighting factor", &m_lateralBudFlushingLightingFactor, 0.01f);
-    ImGui::DragFloat("Kill probability apical/lateral", &m_apicalBudKillProbability, 0.01f);
+    ImGui::DragFloat("Kill probability apical/lateral", &m_budKillProbabilityApicalLateral.x, 0.01f);
 
     ImGui::Text("Internode");
     ImGui::DragInt("Random pruning Order Protection", &m_randomPruningOrderProtection);
-    ImGui::DragFloat3("Random pruning base/age/max", &m_randomPruningFactor, 0.0001f, -1.0f, 1.0f, "%.5f");
-    const float maxAgeBeforeMaxCutOff = (m_randomPruningMax - m_randomPruningFactor) / m_randomPruningAgeFactor;
+    ImGui::DragFloat3("Random pruning base/age/max", &m_randomPruningBaseAgeMax.x, 0.0001f, -1.0f, 1.0f, "%.5f");
+    const float maxAgeBeforeMaxCutOff = (m_randomPruningBaseAgeMax.z - m_randomPruningBaseAgeMax.x) / m_randomPruningBaseAgeMax.y;
     ImGui::Text("Max age before reaching max: %.2f", maxAgeBeforeMaxCutOff);
     ImGui::DragFloat("Low Branch Pruning", &m_lowBranchPruning, 0.01f);
 }
@@ -572,27 +571,49 @@ GeneralTreeParameters::GeneralTreeParameters() {
     m_gravitropism = 0.1f;
     m_phototropism = 0.0f;
     m_internodeLengthMeanVariance = glm::vec2(1, 0.1);
-    m_endNodeThickness = 0.01f;
-
-    m_apicalControl = 1.2f;
-    m_apicalControlAgeFactor = 0.95f;
-
-    m_apicalDominanceBase = 0.2f;
-    m_apicalDominanceAgeFactor = 0.95f;
-    m_apicalDominanceDistanceFactor = 0.8f;
+    m_endNodeThicknessAndControl = glm::vec2(0.01, 0.5);
+    m_apicalControlBaseAge = glm::vec2(1.2, 0.95);
+    m_apicalDominanceBaseAgeDist = glm::vec3(0.2, 0.95, 0.5);
     m_lateralBudFlushingLightingFactor = 0.0f;
-
-    m_apicalBudKillProbability = 0.0f;
-    m_lateralBudKillProbability = 0.5f;
-
+    m_budKillProbabilityApicalLateral = glm::vec2(0.0, 0.5);
     m_randomPruningOrderProtection = 1;
-    m_randomPruningFactor = 0.1f;
-    m_randomPruningAgeFactor = 0.05f;
-    m_randomPruningMax = 0.5f;
-
+    m_randomPruningBaseAgeMax = glm::vec3(0.1, 0.05, 0.5);
     m_lowBranchPruning = 0.15f;
 }
 
+void GeneralTreeParameters::Save(const std::filesystem::path &path) {
+    auto directory = path;
+    directory.remove_filename();
+    std::filesystem::create_directories(directory);
+    YAML::Emitter out;
+    out << YAML::BeginMap;
+    out << YAML::Key << "m_lateralBudCount" << YAML::Value << m_lateralBudCount;
+    out << YAML::Key << "m_branchingAngleMeanVariance" << YAML::Value << m_branchingAngleMeanVariance;
+    out << YAML::Key << "m_rollAngleMeanVariance" << YAML::Value << m_rollAngleMeanVariance;
+    out << YAML::Key << "m_apicalAngleMeanVariance" << YAML::Value << m_apicalAngleMeanVariance;
+    out << YAML::Key << "m_gravitropism" << YAML::Value << m_gravitropism;
+    out << YAML::Key << "m_phototropism" << YAML::Value << m_phototropism;
+    out << YAML::Key << "m_internodeLengthMeanVariance" << YAML::Value << m_internodeLengthMeanVariance;
+    out << YAML::Key << "m_endNodeThicknessAndControl" << YAML::Value << m_endNodeThicknessAndControl;
+    out << YAML::Key << "m_apicalControlBaseAge" << YAML::Value << m_apicalControlBaseAge;
+    out << YAML::Key << "m_apicalDominanceBaseAgeDist" << YAML::Value << m_apicalDominanceBaseAgeDist;
+    out << YAML::Key << "m_lateralBudFlushingLightingFactor" << YAML::Value << m_lateralBudFlushingLightingFactor;
+    out << YAML::Key << "m_budKillProbabilityApicalLateral" << YAML::Value << m_budKillProbabilityApicalLateral;
+    out << YAML::Key << "m_randomPruningOrderProtection" << YAML::Value << m_randomPruningOrderProtection;
+    out << YAML::Key << "m_randomPruningBaseAgeMax" << YAML::Value << m_randomPruningBaseAgeMax;
+    out << YAML::Key << "m_lowBranchPruning" << YAML::Value << m_lowBranchPruning;
+    out << YAML::EndMap;
+    std::ofstream fout(path.string());
+    fout << out.c_str();
+    fout.flush();
+}
+void GeneralTreeParameters::Load(const std::filesystem::path &path) {
+    std::ifstream stream(path.string());
+    std::stringstream stringStream;
+    stringStream << stream.rdbuf();
+    YAML::Node in = YAML::Load(stringStream.str());
+    m_lateralBudCount = in["m_lateralBudCount"].as<int>();
+}
 void InternodeWaterFeeder::Clone(const std::shared_ptr<IPrivateComponent> &target) {
 
 }

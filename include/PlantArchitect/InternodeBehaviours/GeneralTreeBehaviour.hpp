@@ -10,6 +10,8 @@ namespace PlantArchitect {
     };
 
     struct PLANT_ARCHITECT_API GeneralTreeParameters : public IDataComponent {
+        void Save(const std::filesystem::path &path);
+        void Load(const std::filesystem::path &path);
         int m_lateralBudCount;
         /**
          * The mean and variance of the angle between the direction of a lateral bud and its parent shoot.
@@ -27,28 +29,18 @@ namespace PlantArchitect {
         float m_phototropism;
         glm::vec2 m_internodeLengthMeanVariance;
 
-        float m_thicknessFactor = 0.5f;
-        float m_endNodeThickness;
+        glm::vec2 m_endNodeThicknessAndControl;
 
-        float m_apicalControl;
-        float m_apicalControlAgeFactor;
+        glm::vec2 m_apicalControlBaseAge;
 
         /**
          * How much inhibitor will an internode generate.
          */
-        float m_apicalDominanceBase = 0.9f;
-        /**
-         * The reduction of inhibitor related to plant age.
-         */
-        float m_apicalDominanceAgeFactor = 0.0f;
-        /**
-         * How much inhibitor will be preserved when being transited to parent internodes.
-         */
-        float m_apicalDominanceDistanceFactor = 0.8f;
+        glm::vec3 m_apicalDominanceBaseAgeDist;
+
         float m_lateralBudFlushingLightingFactor;
 
-        float m_apicalBudKillProbability;
-        float m_lateralBudKillProbability;
+        glm::vec2 m_budKillProbabilityApicalLateral;
 
         /**
          * The minimum order of the internode that will have random pruning.
@@ -58,17 +50,7 @@ namespace PlantArchitect {
          * The base probability of an end internode being cut off due to
          * unknown environmental factors.
          */
-        float m_randomPruningFactor;
-        /**
-         * How much the probability of an end internode being cut off due to
-         * unknown environmental factors will increase due to internode aging.
-         */
-        float m_randomPruningAgeFactor;
-        /**
-         * The maximum probability of an end internode being cut off due to
-         * unknown environmental factors will increase due to internode aging.
-         */
-        float m_randomPruningMax;
+        glm::vec3 m_randomPruningBaseAgeMax;
         /**
          * The limit of lateral branches being cut off when too close to the
          * root.
