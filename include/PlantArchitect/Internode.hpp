@@ -17,6 +17,7 @@ namespace PlantArchitect {
     struct PLANT_ARCHITECT_API Bud : public ISerializable {
         BudStatus m_status = BudStatus::Sleeping;
         InternodeInfo m_newInternodeInfo;
+        void OnInspect();
     };
     struct LSystemCommand;
     class InternodeFoliage;

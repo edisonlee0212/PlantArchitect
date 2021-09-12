@@ -13,6 +13,7 @@ namespace PlantArchitect {
 
     class PLANT_ARCHITECT_API InternodeWaterFeeder : public IPrivateComponent{
     public:
+        float m_lastRequest = 0;
         float m_waterPerIteration = 1.0f;
         void Clone(const std::shared_ptr<IPrivateComponent> &target) override;
         void OnInspect() override;

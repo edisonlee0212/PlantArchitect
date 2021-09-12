@@ -106,4 +106,35 @@ void Internode::OnInspect() {
     }
 
     m_foliage.Get<InternodeFoliage>()->OnInspect();
+
+    if(ImGui::TreeNodeEx("Buds")){
+        ImGui::Text("Apical bud:");
+        m_apicalBud.OnInspect();
+        ImGui::Text("Lateral bud:");
+        for(int i = 0; i < m_lateralBuds.size(); i++){
+            if(ImGui::TreeNodeEx(("Bud " + std::to_string(i)).c_str())){
+                m_lateralBuds[i].OnInspect();
+                ImGui::TreePop();
+            }
+        }
+
+        ImGui::TreePop();
+    }
+}
+
+void Bud::OnInspect() {
+    switch (m_status) {
+        case BudStatus::Sleeping:
+            ImGui::Text("Status: Sleeping");
+            break;
+        case BudStatus::Flushing:
+            ImGui::Text("Status: Flushing");
+            break;
+        case BudStatus::Flushed:
+            ImGui::Text("Status: Flushed");
+            break;
+        case BudStatus::Died:
+            ImGui::Text("Status: Died");
+            break;
+    }
 }

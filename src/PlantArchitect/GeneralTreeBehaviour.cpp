@@ -57,6 +57,7 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                 auto parentInternodeStatus = parent.GetDataComponent<InternodeStatus>();
                 auto parentParameters = parent.GetDataComponent<GeneralTreeParameters>();
                 parentInternodeInfo.m_endNode = false;
+                parentInternodeStatus.m_inhibitor = 0;
                 parentInternodeStatus.m_totalDistanceToAllBranchEnds = parentInternodeStatus.m_childTotalBiomass = 0;
                 float maxDistanceToAnyBranchEnd = -1.0f;
                 float maxTotalDistanceToAllBranchEnds = -1.0f;
@@ -81,7 +82,7 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                                                                       endNodeInternode->m_age);
                     } else {
                         parentInternodeStatus.m_inhibitor +=
-                                childInternodeStatus.m_inhibitor * parentParameters.m_apicalDominanceBaseAgeDist.z;
+                                childInternodeStatus.m_inhibitor * glm::pow(parentParameters.m_apicalDominanceBaseAgeDist.z, parentInternodeInfo.m_length);
                     }
 
                     float childTotalDistanceToAllBranchEnds =
@@ -244,7 +245,7 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                      for (const auto &plant: m_currentPlants) {
                          if (internodeInfo.m_currentRoot == plant) {
                              float apicalControl = glm::pow(generalTreeParameters.m_apicalControlBaseAge.x, internodeStatus.m_level) * glm::pow(generalTreeParameters.m_apicalControlBaseAge.y, internode->m_age);
-                             internodeWater.m_value += waterDividends[plantIndex] * apicalControl * internodeWaterPressure.m_value *
+                             internodeWater.m_value = waterDividends[plantIndex] * apicalControl * internodeWaterPressure.m_value *
                                                        internodeIllumination.m_intensity;
                              break;
                          }
@@ -262,7 +263,6 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                      InternodeInfo &internodeInfo, InternodeStatus &internodeStatus,
                      InternodeWater &internodeWater, InternodeIllumination &internodeIllumination,
                      GeneralTreeParameters &generalTreeParameters) {
-                     if (internodeWater.m_value == 0) return;
                      auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
                      internode->m_age++;
                      //1. Internode elongation.
@@ -272,7 +272,7 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                                  internode->m_apicalBud.m_status = BudStatus::Died;
                                  break;
                              }
-
+                             if (internodeWater.m_value == 0) return;
                              float desiredLength = glm::gaussRand(generalTreeParameters.m_internodeLengthMeanVariance.x,
                                                                   generalTreeParameters.m_internodeLengthMeanVariance.y);
                              internodeInfo.m_length += internodeWater.m_value;
@@ -331,15 +331,13 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                                  }
 
                                  bool flush = false;
-                                 float inhibitor = 0.0f;
                                  float flushProbability = (
                                                                   internodeIllumination.m_intensity *
                                                                   generalTreeParameters.m_lateralBudFlushingLightingFactor +
-                                                                  (1.0f - inhibitor)
+                                                                  (1.0f - internodeStatus.m_inhibitor)
                                                           )
                                                           / (generalTreeParameters.m_lateralBudFlushingLightingFactor +
                                                              1.0f);
-                                 flushProbability *= 1.0f - internodeStatus.m_inhibitor;
                                  if (flushProbability > glm::linearRand(0.0f, 1.0f)) {
                                      flush = true;
                                  }
@@ -545,6 +543,7 @@ void InternodeWaterFeeder::Clone(const std::shared_ptr<IPrivateComponent> &targe
 }
 
 void InternodeWaterFeeder::OnInspect() {
+    ImGui::Text(("Last request:" + std::to_string(m_lastRequest)).c_str());
     ImGui::DragFloat("Water per iteration", &m_waterPerIteration, 0.1f, 0.0f, 9999999.0f);
 }
 

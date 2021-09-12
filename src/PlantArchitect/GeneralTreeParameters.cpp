@@ -20,7 +20,7 @@ void GeneralTreeParameters::OnInspect() {
     ImGui::DragFloat2("Apical control base/age", &m_apicalControlBaseAge.x, 0.01f);
     ImGui::DragFloat3("Apical dominance base/age/dist", &m_apicalDominanceBaseAgeDist.x, 0.01f);
     ImGui::DragFloat("Lateral bud lighting factor", &m_lateralBudFlushingLightingFactor, 0.01f);
-    ImGui::DragFloat("Kill probability apical/lateral", &m_budKillProbabilityApicalLateral.x, 0.01f);
+    ImGui::DragFloat2("Kill probability apical/lateral", &m_budKillProbabilityApicalLateral.x, 0.01f);
 
     ImGui::Text("Internode");
     ImGui::DragInt("Random pruning Order Protection", &m_randomPruningOrderProtection);
