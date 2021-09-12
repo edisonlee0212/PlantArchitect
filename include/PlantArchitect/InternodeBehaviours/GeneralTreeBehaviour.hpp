@@ -30,6 +30,21 @@ namespace PlantArchitect {
         float m_thicknessFactor = 0.5f;
         float m_endNodeThickness;
 
+        float m_apicalControl;
+        float m_apicalControlAgeFactor;
+
+        /**
+         * How much inhibitor will an internode generate.
+         */
+        float m_apicalDominanceBase = 0.9f;
+        /**
+         * The reduction of inhibitor related to plant age.
+         */
+        float m_apicalDominanceAgeFactor = 0.0f;
+        /**
+         * How much inhibitor will be preserved when being transited to parent internodes.
+         */
+        float m_apicalDominanceDistanceFactor = 0.8f;
         float m_lateralBudFlushingLightingFactor;
 
         float m_apicalBudKillProbability;
@@ -67,6 +82,8 @@ namespace PlantArchitect {
      * The auxin that controls the bud flush probability, relates to apical dominance.
      */
     struct PLANT_ARCHITECT_API InternodeStatus : public IDataComponent {
+        float m_inhibitor = 0;
+        float m_level = 0;
         float m_distanceToRoot = 0;
         float m_maxDistanceToAnyBranchEnd = 0;
         float m_totalDistanceToAllBranchEnds = 0;
