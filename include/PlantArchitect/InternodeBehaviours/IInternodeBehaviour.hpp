@@ -192,7 +192,7 @@ namespace PlantArchitect {
             static int newTreeAmount = 1;
             static int currentFocusedNewTreeIndex = 0;
             ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
-            ImGui::BeginChild("ChildL", ImVec2(300, 400), true,
+            ImGui::BeginChild("ChildL", ImVec2(300, 600), true,
                               ImGuiWindowFlags_None | ImGuiWindowFlags_MenuBar);
             if (ImGui::BeginMenuBar()) {
                 if (ImGui::BeginMenu("Settings")) {
@@ -287,7 +287,7 @@ namespace PlantArchitect {
             ImGui::PopStyleVar();
             ImGui::SameLine();
             ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
-            ImGui::BeginChild("ChildR", ImVec2(400, 400), true,
+            ImGui::BeginChild("ChildR", ImVec2(600, 600), true,
                               ImGuiWindowFlags_None | ImGuiWindowFlags_MenuBar);
             if (ImGui::BeginMenuBar()) {
                 if (ImGui::BeginMenu("Parameters")) {
