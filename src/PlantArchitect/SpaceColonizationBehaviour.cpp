@@ -328,6 +328,16 @@ void SpaceColonizationBehaviour::VolumeSlotButton() {
         }
         ImGui::EndDragDropTarget();
     }
+    if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("RadialBoundingVolume")) {
+            IM_ASSERT(payload->DataSize == sizeof(std::shared_ptr<IPrivateComponent>));
+            std::shared_ptr<IVolume> payload_n =
+                    std::dynamic_pointer_cast<IVolume>(
+                            *static_cast<std::shared_ptr<IPrivateComponent> *>(payload->Data));
+            PushVolume(payload_n);
+        }
+        ImGui::EndDragDropTarget();
+    }
 }
 
 void SpaceColonizationBehaviour::PushVolume(const std::shared_ptr<IVolume> &volume) {

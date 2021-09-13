@@ -14,7 +14,7 @@ namespace PlantArchitect {
         std::vector<std::shared_ptr<Mesh>> m_boundMeshes;
         bool m_meshGenerated = false;
 
-
+        void CalculateSizes();
     public:
         glm::vec3 m_center;
         glm::vec4 m_displayColor = glm::vec4(0.0f, 0.0f, 1.0f, 0.5f);
@@ -42,15 +42,18 @@ namespace PlantArchitect {
         int m_layerAmount = 8;
         int m_sectorAmount = 8;
         std::vector<std::vector<RadialBoundingVolumeSlice>> m_layers;
-
+        std::vector<std::pair<float, std::vector<float>>> m_sizes;
+        float m_totalSize = 0;
         void CalculateVolume();
-
+        PrivateComponentRef m_rootInternode;
         void CalculateVolume(float maxHeight);
 
         bool m_displayPoints = true;
         bool m_displayBounds = true;
 
         void OnInspect() override;
+
+        void ResizeVolumes();
 
         bool InVolume(const GlobalTransform &globalTransform, const glm::vec3 &position) override;
 
@@ -61,5 +64,7 @@ namespace PlantArchitect {
         void Deserialize(const YAML::Node &in) override;
 
         void Clone(const std::shared_ptr<IPrivateComponent> &target) override;
+
+        void Augmentation(float value);
     };
 } // namespace PlantFactory

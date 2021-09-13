@@ -8,7 +8,41 @@ using namespace UniEngine;
 glm::vec3 RadialBoundingVolume::GetRandomPoint() {
     if (!m_meshGenerated)
         return glm::vec3(0);
-    return glm::vec3(0);
+    float sizePoint = glm::linearRand(0.0f, m_totalSize);
+    int layerIndex = 0;
+    int sectorIndex = 0;
+    bool found = false;
+    for (int i = 0; i < m_layerAmount; i++) {
+        if (sizePoint > m_sizes[i].first) {
+            sizePoint -= m_sizes[i].first;
+            continue;
+        }
+        for (int j = 0; j < m_sectorAmount; j++) {
+            auto &sector = m_sizes[i].second;
+            if (sizePoint > sector[j]) {
+                sizePoint -= sector[j];
+                continue;
+            } else {
+                layerIndex = i;
+                sectorIndex = j;
+                found = true;
+                break;
+            }
+        }
+        break;
+    }
+    if (!found) {
+        layerIndex = m_layerAmount - 1;
+        sectorIndex = m_sectorAmount - 1;
+    }
+    const float heightLevel = m_maxHeight / m_layerAmount;
+    const float sliceAngle = 360.0f / m_sectorAmount;
+    float height = heightLevel * layerIndex + glm::linearRand(0.0f, heightLevel);
+    float angle = sliceAngle * sectorIndex + glm::linearRand(0.0f, sliceAngle);
+    float distance = m_layers[layerIndex][sectorIndex].m_maxDistance * glm::length(glm::diskRand(1.0f));
+    const auto globalTransform = GetOwner().GetDataComponent<GlobalTransform>();
+    return globalTransform.m_value *
+           glm::vec4(distance * glm::sin(glm::radians(angle)), height, distance * glm::cos(glm::radians(angle)), 1.0f);
 }
 
 glm::ivec2 RadialBoundingVolume::SelectSlice(glm::vec3 position) const {
@@ -339,23 +373,21 @@ void RadialBoundingVolume::Load(const std::string &path) {
 }
 
 void RadialBoundingVolume::CalculateVolume() {
-    auto owner = GetOwner();
-    if(!owner.HasPrivateComponent<Internode>()) {
-        UNIENGINE_WARNING("Entity is not an internode!");
+    ResizeVolumes();
+    std::vector<Entity> internodes;
+    auto internode = m_rootInternode.Get<Internode>();
+    if (!internode) {
+        UNIENGINE_WARNING("No root internode!");
         return;
     }
-    std::vector<Entity> internodes;
-    auto internode = owner.GetOrSetPrivateComponent<Internode>().lock();
     internode->CollectInternodes(internodes);
     m_maxHeight = 0;
     m_maxRadius = 0;
-    const auto treeGlobalTransform =
-            owner.GetDataComponent<GlobalTransform>().m_value;
+    const auto rootPosition =
+            internode->GetOwner().GetDataComponent<GlobalTransform>().GetPosition();
     std::vector<glm::vec3> positions;
     for (auto &i: internodes) {
-        auto globalTransform = i.GetDataComponent<GlobalTransform>().m_value;
-        const glm::vec3 position =
-                (glm::inverse(treeGlobalTransform) * globalTransform)[3];
+        const glm::vec3 position = i.GetDataComponent<GlobalTransform>().GetPosition() - rootPosition;
         positions.push_back(position);
         if (position.y > m_maxHeight)
             m_maxHeight = position.y;
@@ -364,47 +396,32 @@ void RadialBoundingVolume::CalculateVolume() {
             m_maxRadius = radius;
     }
 
-    m_layers.resize(m_layerAmount);
-    for (auto &tier: m_layers) {
-        tier.resize(m_sectorAmount);
-        for (auto &slice: tier) {
-            slice.m_maxDistance = 0.0f;
-        }
-    }
     auto positionIndex = 0;
     for (auto &internode: internodes) {
         const auto internodeGrowth = internode.GetDataComponent<InternodeInfo>();
-        auto parentGlobalTransform =
-                internode.GetParent().GetDataComponent<GlobalTransform>().m_value;
-        const glm::vec3 parentNodePosition =
-                (glm::inverse(treeGlobalTransform) * parentGlobalTransform)[3];
-        const int segments = 3;
-        for (int i = 0; i < segments; i++) {
-            const glm::vec3 position =
-                    positions[positionIndex] +
-                    (parentNodePosition - positions[positionIndex]) * (float) i /
-                    (float) segments;
-            const auto sliceIndex = SelectSlice(position);
-            const float currentDistance =
-                    glm::length(glm::vec2(position.x, position.z));
-            if (currentDistance <= internodeGrowth.m_thickness) {
-                for (auto &slice: m_layers[sliceIndex.x]) {
-                    if (slice.m_maxDistance <
-                        currentDistance + internodeGrowth.m_thickness)
-                        slice.m_maxDistance = currentDistance + internodeGrowth.m_thickness;
-                }
-            } else if (m_layers[sliceIndex.x][sliceIndex.y].m_maxDistance <
-                       currentDistance)
-                m_layers[sliceIndex.x][sliceIndex.y].m_maxDistance = currentDistance;
-        }
+        const glm::vec3 position = positions[positionIndex];
+        const auto sliceIndex = SelectSlice(position);
+        const float currentDistance =
+                glm::length(glm::vec2(position.x, position.z));
+        if (currentDistance <= internodeGrowth.m_thickness) {
+            for (auto &slice: m_layers[sliceIndex.x]) {
+                if (slice.m_maxDistance <
+                    currentDistance + internodeGrowth.m_thickness)
+                    slice.m_maxDistance = currentDistance + internodeGrowth.m_thickness;
+            }
+        } else if (m_layers[sliceIndex.x][sliceIndex.y].m_maxDistance <
+                   currentDistance)
+            m_layers[sliceIndex.x][sliceIndex.y].m_maxDistance = currentDistance;
         positionIndex++;
     }
     GenerateMesh();
+    CalculateSizes();
 }
 
 void RadialBoundingVolume::CalculateVolume(float maxHeight) {
     auto owner = GetOwner();
-    if(!owner.HasPrivateComponent<Internode>()) {
+    ResizeVolumes();
+    if (!owner.HasPrivateComponent<Internode>()) {
         UNIENGINE_WARNING("Entity is not an internode!");
         return;
     }
@@ -413,25 +430,17 @@ void RadialBoundingVolume::CalculateVolume(float maxHeight) {
     internode->CollectInternodes(internodes);
     m_maxHeight = maxHeight;
     m_maxRadius = 0;
-    const auto treeGlobalTransform =
-            owner.GetDataComponent<GlobalTransform>().m_value;
+    const auto rootPosition =
+            internode->GetOwner().GetDataComponent<GlobalTransform>().GetPosition();
     std::vector<glm::vec3> positions;
     for (auto &i: internodes) {
-        auto globalTransform = i.GetDataComponent<GlobalTransform>().m_value;
-        const glm::vec3 position =
-                (glm::inverse(treeGlobalTransform) * globalTransform)[3];
+        const glm::vec3 position = i.GetDataComponent<GlobalTransform>().GetPosition() - rootPosition;
         positions.push_back(position);
+        if (position.y > m_maxHeight)
+            m_maxHeight = position.y;
         const float radius = glm::length(glm::vec2(position.x, position.z));
         if (radius > m_maxRadius)
             m_maxRadius = radius;
-    }
-
-    m_layers.resize(m_layerAmount);
-    for (auto &tier: m_layers) {
-        tier.resize(m_sectorAmount);
-        for (auto &slice: tier) {
-            slice.m_maxDistance = 0.0f;
-        }
     }
     const auto threadsAmount = JobManager::PrimaryWorkers().Size();
     std::vector<std::vector<std::vector<RadialBoundingVolumeSlice>>>
@@ -449,16 +458,9 @@ void RadialBoundingVolume::CalculateVolume(float maxHeight) {
     auto positionIndex = 0;
     for (auto &internode: internodes) {
         const auto internodeGrowth = internode.GetDataComponent<InternodeInfo>();
-        auto parentGlobalTransform =
-                internode.GetParent().GetDataComponent<GlobalTransform>().m_value;
-        const glm::vec3 parentNodePosition =
-                (glm::inverse(treeGlobalTransform) * parentGlobalTransform)[3];
         const int segments = 3;
         for (int i = 0; i < segments; i++) {
-            const glm::vec3 position =
-                    positions[positionIndex] +
-                    (parentNodePosition - positions[positionIndex]) * (float) i /
-                    (float) segments;
+            const glm::vec3 position = positions[positionIndex];
             const auto sliceIndex = SelectSlice(position);
             const float currentDistance =
                     glm::length(glm::vec2(position.x, position.z));
@@ -475,11 +477,12 @@ void RadialBoundingVolume::CalculateVolume(float maxHeight) {
         positionIndex++;
     }
     GenerateMesh();
+    CalculateSizes();
 }
 
 void RadialBoundingVolume::OnInspect() {
-    if (!m_meshGenerated)
-        CalculateVolume();
+    EditorManager::DragAndDropButton<Internode>(m_rootInternode, "Root");
+
     ImGui::Checkbox("Prune Buds", &m_pruneBuds);
     ImGui::Checkbox("Display bounds", &m_display);
     ImGui::ColorEdit4("Display Color", &m_displayColor.x);
@@ -496,27 +499,41 @@ void RadialBoundingVolume::OnInspect() {
     }
 
     bool displayLayer = false;
-    if (ImGui::TreeNodeEx("Layers", ImGuiTreeNodeFlags_DefaultOpen)) {
-        for (int i = 0; i < m_layerAmount; i++) {
-            if (ImGui::TreeNodeEx(("Layer " + std::to_string(i)).c_str())) {
-                for (int j = 0; j < m_sectorAmount; j++) {
-                    if (ImGui::DragFloat(
-                            ("Sector " + std::to_string(j) + "##" + std::to_string(i))
-                                    .c_str(),
-                            &m_layers[i][j].m_maxDistance, 0.1f, 0.0f, 100.0f))
-                        GenerateMesh();
-                }
-
-                RenderManager::DrawGizmoMesh(
-                        m_boundMeshes[i], m_displayColor,
-                        GetOwner().GetDataComponent<GlobalTransform>().m_value);
-                displayLayer = true;
-                ImGui::TreePop();
+    if(m_meshGenerated) {
+        if (ImGui::TreeNodeEx("Transformations")) {
+            ImGui::DragFloat("Max height", &m_maxHeight, 0.01f);
+            static float augmentation = 1.0f;
+            ImGui::DragFloat("Augmentation radius", &augmentation, 0.01f);
+            if(ImGui::Button("Process")){
+                Augmentation(augmentation);
             }
+            if(ImGui::Button("Generate mesh")){
+                GenerateMesh();
+            }
+            ImGui::TreePop();
         }
-        ImGui::TreePop();
-    }
 
+        if (ImGui::TreeNodeEx("Layers", ImGuiTreeNodeFlags_DefaultOpen)) {
+            for (int i = 0; i < m_layerAmount; i++) {
+                if (ImGui::TreeNodeEx(("Layer " + std::to_string(i)).c_str())) {
+                    for (int j = 0; j < m_sectorAmount; j++) {
+                        if (ImGui::DragFloat(
+                                ("Sector " + std::to_string(j) + "##" + std::to_string(i))
+                                        .c_str(),
+                                &m_layers[i][j].m_maxDistance, 0.1f, 0.0f, 100.0f))
+                            GenerateMesh();
+                    }
+
+                    RenderManager::DrawGizmoMesh(
+                            m_boundMeshes[i], m_displayColor,
+                            GetOwner().GetDataComponent<GlobalTransform>().m_value);
+                    displayLayer = true;
+                    ImGui::TreePop();
+                }
+            }
+            ImGui::TreePop();
+        }
+    }
     FileUtils::SaveFile("Save RBV", "RBV", {".rbv"},
                         [this](const std::filesystem::path &path) {
                             const std::string data = Save();
@@ -633,4 +650,39 @@ void RadialBoundingVolume::Serialize(YAML::Emitter &out) {
     }
 }
 
+void RadialBoundingVolume::Augmentation(float value) {
+    m_maxHeight += value * 2.0f;
+    for (auto &i: m_layers) {
+        for (auto &j: i) {
+            j.m_maxDistance += value;
+        }
+    }
 
+}
+
+void RadialBoundingVolume::CalculateSizes() {
+    m_sizes.resize(m_layerAmount);
+    m_totalSize = 0.0f;
+    for (int i = 0; i < m_layerAmount; i++) {
+        auto &layer = m_layers[i];
+        m_sizes[i].second.resize(layer.size());
+        m_sizes[i].first = 0;
+        //1. Calculate each each sector's volume
+        for (int j = 0; j < layer.size(); j++) {
+            auto &sector = layer[j];
+            m_sizes[i].second[j] = sector.m_maxDistance * sector.m_maxDistance;
+            m_sizes[i].first += sector.m_maxDistance * sector.m_maxDistance;
+        }
+        m_totalSize += m_sizes[i].first;
+    }
+}
+
+void RadialBoundingVolume::ResizeVolumes() {
+    m_layers.resize(m_layerAmount);
+    for (auto &tier: m_layers) {
+        tier.resize(m_sectorAmount);
+        for (auto &slice: tier) {
+            slice.m_maxDistance = 0.0f;
+        }
+    }
+}

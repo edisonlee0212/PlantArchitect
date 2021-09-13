@@ -24,6 +24,7 @@
 #include "MLVQRenderer.hpp"
 #include "DefaultInternodePhyllotaxis.hpp"
 #include "InternodeFoliage.hpp"
+#include "RadialBoundingVolume.hpp"
 using namespace PlantArchitect;
 using namespace RayTracerFacility;
 using namespace Scripts;
@@ -41,6 +42,7 @@ int main() {
     ClassRegistry::RegisterPrivateComponent<ObjectRotator>("ObjectRotator");
     ClassRegistry::RegisterPrivateComponent<IVolume>("IVolume");
     ClassRegistry::RegisterPrivateComponent<CubeVolume>("CubeVolume");
+    ClassRegistry::RegisterPrivateComponent<RadialBoundingVolume>("RadialBoundingVolume");
     ClassRegistry::RegisterPrivateComponent<MLVQRenderer>("MLVQRenderer");
 
     ClassRegistry::RegisterDataComponent<GeneralTreeTag>("GeneralTreeTag");

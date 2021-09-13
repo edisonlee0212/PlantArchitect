@@ -156,6 +156,11 @@ void GeneralTreeBehaviour::Grow(int iterations) {
                      internodeIllumination.m_intensity = 1.0f;
                  }, true);
 #pragma endregion
+#pragma region Space Colonization
+        std::vector<std::vector<glm::vec3>> attractionPoints;
+        //1. Generate attraction points around the plant.
+        //2.
+#pragma endregion
 #pragma region Water
 #pragma region Collect water requests
         EntityManager::ForEach<InternodeInfo, InternodeWaterPressure, InternodeStatus, InternodeIllumination>
