@@ -19,6 +19,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
 #pragma region PreProcess
 #pragma region InternodeStatus
     ParallelForEachRoot(m_currentPlants, [&](int plantIndex, Entity root) {
+        if(!root.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
         auto internodeInfo = root.GetDataComponent<InternodeInfo>();
         auto internodeStatus = root.GetDataComponent<InternodeStatus>();
         internodeInfo.m_currentRoot = root;
@@ -166,6 +167,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
             (JobManager::PrimaryWorkers(), m_internodesQuery,
              [&](int i, Entity entity, InternodeInfo &internodeInfo, InternodeWaterPressure &internodeWaterPressure,
                  InternodeStatus &internodeStatus, InternodeIllumination &internodeIllumination) {
+                 if(!internodeInfo.m_currentRoot.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
                  if (internode->m_apicalBud.m_status == BudStatus::Sleeping) {
                      internodeWaterPressure.m_value = 1;
@@ -186,6 +188,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                  InternodeStatus &internodeStatus, InternodeIllumination &internodeIllumination,
                  InternodeWater &internodeWater,
                  GeneralTreeParameters &generalTreeParameters) {
+                 if(!internodeInfo.m_currentRoot.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
                  int plantIndex = 0;
                  for (const auto &plant: m_currentPlants) {
@@ -223,6 +226,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
              [&](int i, Entity entity, InternodeInfo &internodeInfo, InternodeWaterPressure &internodeWaterPressure,
                  InternodeStatus &internodeStatus, InternodeIllumination &internodeIllumination,
                  InternodeWater &internodeWater) {
+                 if(!internodeInfo.m_currentRoot.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
                  int plantIndex = 0;
                  for (const auto &plant: m_currentPlants) {
                      if (internodeInfo.m_currentRoot == plant) {
@@ -251,6 +255,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                  InternodeStatus &internodeStatus, InternodeIllumination &internodeIllumination,
                  InternodeWater &internodeWater,
                  GeneralTreeParameters &generalTreeParameters) {
+                 if(!internodeInfo.m_currentRoot.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
                  int plantIndex = 0;
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
                  for (const auto &plant: m_currentPlants) {
@@ -278,6 +283,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                  InternodeInfo &internodeInfo, InternodeStatus &internodeStatus,
                  InternodeWater &internodeWater, InternodeIllumination &internodeIllumination,
                  GeneralTreeParameters &generalTreeParameters) {
+                 if(!internodeInfo.m_currentRoot.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
                  internode->m_age++;
                  //0. Apply sagging here.
@@ -471,6 +477,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
 #pragma region PostProcess
 #pragma region Transform
     ParallelForEachRoot(m_currentPlants, [&](int plantIndex, Entity root) {
+        if(!root.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
         TreeGraphWalkerEndToRoot(root, root, [&](Entity parent) {
             float thicknessCollection = 0.0f;
             auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
@@ -572,6 +579,7 @@ Entity GeneralTreeBehaviour::NewPlant(const GeneralTreeParameters &params, const
     entity.SetDataComponent(tag);
     InternodeInfo newInfo;
     newInfo.m_length = 0;
+    newInfo.m_isRealRoot = true;
     newInfo.m_thickness = params.m_endNodeThicknessAndControl.x;
     entity.SetDataComponent(newInfo);
     entity.SetDataComponent(params);

@@ -6,6 +6,7 @@ namespace PlantArchitect {
      * Describe the current basic structural information. Will be used for mesh generation.
      */
     struct PLANT_ARCHITECT_API InternodeInfo : public IDataComponent {
+        bool m_isRealRoot = false;
         /**
          * The thickness of the internode
          */
