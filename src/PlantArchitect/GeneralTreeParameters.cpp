@@ -95,7 +95,7 @@ void GeneralTreeParameters::Load(const std::filesystem::path &path) {
     m_internodeLengthMeanVariance = in["m_internodeLengthMeanVariance"].as<glm::vec2>();
     m_endNodeThicknessAndControl = in["m_endNodeThicknessAndControl"].as<glm::vec2>();
     m_lateralBudFlushingProbability = in["m_lateralBudFlushingProbability"].as<float>();
-    //m_neighborAvoidance = in["m_neighborAvoidance"].as<glm::vec3>();
+    m_neighborAvoidance = in["m_neighborAvoidance"].as<glm::vec3>();
     m_apicalControlBaseAge = in["m_apicalControlBaseAge"].as<glm::vec2>();
     m_apicalDominanceBaseAgeDist = in["m_apicalDominanceBaseAgeDist"].as<glm::vec3>();
     m_lateralBudFlushingLightingFactor = in["m_lateralBudFlushingLightingFactor"].as<float>();

@@ -369,10 +369,10 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                              )
                                                       / (generalTreeParameters.m_lateralBudFlushingLightingFactor +
                                                          1.0f);
-                             if(internodeInfo.m_neighborsProximity > generalTreeParameters.m_neighborAvoidance.z){
+                             if((internodeInfo.m_neighborsProximity * generalTreeParameters.m_internodeLengthMeanVariance.x) > generalTreeParameters.m_neighborAvoidance.z){
                                  flushProbability = 0;
                              }else{
-                                 float avoidance = generalTreeParameters.m_neighborAvoidance.x * glm::pow(internodeInfo.m_neighborsProximity, generalTreeParameters.m_neighborAvoidance.y);
+                                 float avoidance = generalTreeParameters.m_neighborAvoidance.x * glm::pow((internodeInfo.m_neighborsProximity * generalTreeParameters.m_internodeLengthMeanVariance.x), generalTreeParameters.m_neighborAvoidance.y);
                                  flushProbability /= avoidance;
                              }
                              if (flushProbability > glm::linearRand(0.0f, 1.0f)) {
