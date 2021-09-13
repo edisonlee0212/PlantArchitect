@@ -7,12 +7,12 @@ m_phototropism: 0
 m_internodeLengthMeanVariance: [1, 0.100000001]
 m_endNodeThicknessAndControl: [0.00999999978, 0.5]
 m_lateralBudFlushingProbability: 1
-m_neighborAvoidance: [0.0299999993, 1, 100]
-m_apicalControlBaseAge: [1.20000005, 0.99000001]
+m_neighborAvoidance: [0.0399999991, 1, 100]
+m_apicalControlBaseAge: [1.89999998, 0.400000006]
 m_apicalDominanceBaseAgeDist: [0.270000011, 1, 0.5]
 m_lateralBudFlushingLightingFactor: 0
-m_budKillProbabilityApicalLateral: [0, 0.300000012]
+m_budKillProbabilityApicalLateral: [0, 0.100000001]
 m_randomPruningOrderProtection: 1
-m_randomPruningBaseAgeMax: [0.100000001, 0.0500000007, 0.5]
+m_randomPruningBaseAgeMax: [0.100000001, 0.00999999978, 0.200000003]
 m_lowBranchPruning: 0.150000006
 m_saggingFactorThicknessReductionMax: [2, 2, 1]

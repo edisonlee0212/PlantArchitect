@@ -1,18 +1,18 @@
-m_lateralBudCount: 2
-m_branchingAngleMeanVariance: [30, 1]
-m_rollAngleMeanVariance: [30, 1]
-m_apicalAngleMeanVariance: [0, 1]
-m_gravitropism: 0.100000001
+m_lateralBudCount: 1
+m_branchingAngleMeanVariance: [50, 1]
+m_rollAngleMeanVariance: [120, 1]
+m_apicalAngleMeanVariance: [1, 5]
+m_gravitropism: -0.189999998
 m_phototropism: 0
 m_internodeLengthMeanVariance: [1, 0.100000001]
-m_endNodeThicknessAndControl: [0.00999999978, 0.5]
-m_lateralBudFlushingProbability: 1
-m_neighborAvoidance: [0.0199999996, 1, 100]
-m_apicalControlBaseAge: [1.04999995, 0.949999988]
-m_apicalDominanceBaseAgeDist: [0.0500000007, 0.949999988, 0.5]
+m_endNodeThicknessAndControl: [0.00999999978, 0.540000021]
+m_lateralBudFlushingProbability: 0.389999986
+m_neighborAvoidance: [0.00999999978, 1, 100]
+m_apicalControlBaseAge: [1, 1]
+m_apicalDominanceBaseAgeDist: [0.310000002, 0.949999988, 0.699999988]
 m_lateralBudFlushingLightingFactor: 0
-m_budKillProbabilityApicalLateral: [0, 0.5]
+m_budKillProbabilityApicalLateral: [0, 0.300000012]
 m_randomPruningOrderProtection: 1
-m_randomPruningBaseAgeMax: [0.100000001, 0.0500000007, 0.5]
+m_randomPruningBaseAgeMax: [0.100000001, 0.100000001, 0.600000024]
 m_lowBranchPruning: 0.150000006
-m_saggingFactorThicknessReductionMax: [5, 2, 1]
+m_saggingFactorThicknessReductionMax: [0.370000005, 2.25, 1]
