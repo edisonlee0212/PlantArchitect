@@ -71,6 +71,8 @@ namespace PlantArchitect {
         virtual bool InternalInternodeCheck(const Entity &target) = 0;
 
     public:
+        void ApplyTropism(const glm::vec3 &targetDir, float tropism, glm::vec3 &front, glm::vec3 &up);
+
         virtual Entity Retrieve() = 0;
 
         virtual Entity Retrieve(const Entity &parent) = 0;
@@ -81,19 +83,9 @@ namespace PlantArchitect {
         void Recycle(const Entity &internode);
 
         /**
-         * What to do before the growth, and before the resource collection. Mesh, graph calculation...
-         */
-        virtual void PreProcess(float deltaTime) {};
-
-        /**
          * Handle main growth here.
          */
-        virtual void Grow(float deltaTime) {};
-
-        /**
-         * What to do after the growth. Mesh, graph calculation...
-         */
-        virtual void PostProcess(float deltaTime) {};
+        virtual void Grow(int iteration) {};
 
         /**
          * Generate skinned mesh for internodes.
@@ -141,6 +133,9 @@ namespace PlantArchitect {
         void TreeGraphWalkerEndToRoot(const Entity &root, const Entity &node,
                                       const std::function<void(Entity parent)> &endToRootAction,
                                       const std::function<void(Entity endNode)> &endNodeAction);
+
+
+        void ParallelForEachRoot(std::vector<Entity>& roots, const std::function<void(int rootIndex, Entity root)> &action);
 
         /**
          * Check if the entity is valid internode.
@@ -353,6 +348,10 @@ namespace PlantArchitect {
             retVal = EntityManager::CreateEntity(m_internodeArchetype, "Internode");
             retVal.SetParent(parent);
         }
+        InternodeInfo internodeInfo;
+        internodeInfo.m_isRealRoot = false;
+        retVal.SetDataComponent(internodeInfo);
+
         auto internode = retVal.GetOrSetPrivateComponent<Internode>().lock();
         internode->m_resource = std::make_unique<T>();
         internode->m_foliage = parent.GetOrSetPrivateComponent<Internode>().lock()->m_foliage;
@@ -373,6 +372,10 @@ namespace PlantArchitect {
         } else {
             retVal = EntityManager::CreateEntity(m_internodeArchetype, "Internode");
         }
+        InternodeInfo internodeInfo;
+        internodeInfo.m_isRealRoot = true;
+        retVal.SetDataComponent(internodeInfo);
+
         auto internode = retVal.GetOrSetPrivateComponent<Internode>().lock();
         internode->m_resource = SerializationManager::ProduceSerializable<T>();
         internode->m_foliage = AssetManager::CreateAsset<InternodeFoliage>("Foliage");

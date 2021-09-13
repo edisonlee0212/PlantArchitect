@@ -43,9 +43,7 @@ namespace PlantArchitect {
 
         void OnCreate() override;
 
-        void PostProcess(float deltaTime) override;
-
-        void Grow(float deltaTime) override;
+        void Grow(int iterations) override;
 
         void PushVolume(const std::shared_ptr<IVolume> &volume);
 

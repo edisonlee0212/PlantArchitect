@@ -12,7 +12,7 @@
 #include <CubeVolume.hpp>
 #include <ClassRegistry.hpp>
 #include <ObjectRotator.hpp>
-#include "DefaultInternodeBehaviour.hpp"
+#include "GeneralTreeBehaviour.hpp"
 #include "DefaultInternodeResource.hpp"
 #include "Internode.hpp"
 #include <InternodeSystem.hpp>
@@ -24,6 +24,7 @@
 #include "MLVQRenderer.hpp"
 #include "DefaultInternodePhyllotaxis.hpp"
 #include "InternodeFoliage.hpp"
+#include "RadialBoundingVolume.hpp"
 using namespace PlantArchitect;
 using namespace RayTracerFacility;
 using namespace Scripts;
@@ -41,10 +42,17 @@ int main() {
     ClassRegistry::RegisterPrivateComponent<ObjectRotator>("ObjectRotator");
     ClassRegistry::RegisterPrivateComponent<IVolume>("IVolume");
     ClassRegistry::RegisterPrivateComponent<CubeVolume>("CubeVolume");
+    ClassRegistry::RegisterPrivateComponent<RadialBoundingVolume>("RadialBoundingVolume");
     ClassRegistry::RegisterPrivateComponent<MLVQRenderer>("MLVQRenderer");
 
-    ClassRegistry::RegisterDataComponent<DefaultInternodeTag>("DefaultInternodeTag");
-    ClassRegistry::RegisterAsset<DefaultInternodeBehaviour>("DefaultInternodeBehaviour", ".defaultbehaviour");
+    ClassRegistry::RegisterDataComponent<GeneralTreeTag>("GeneralTreeTag");
+    ClassRegistry::RegisterDataComponent<GeneralTreeParameters>("GeneralTreeParameters");
+    ClassRegistry::RegisterDataComponent<InternodeStatus>("InternodeStatus");
+    ClassRegistry::RegisterDataComponent<InternodeWaterPressure>("InternodeWaterPressure");
+    ClassRegistry::RegisterDataComponent<InternodeWater>("InternodeWater");
+    ClassRegistry::RegisterDataComponent<InternodeIllumination>("InternodeIllumination");
+    ClassRegistry::RegisterPrivateComponent<InternodeWaterFeeder>("InternodeWaterFeeder");
+    ClassRegistry::RegisterAsset<GeneralTreeBehaviour>("GeneralTreeBehaviour", ".gtbehaviour");
 
     ClassRegistry::RegisterDataComponent<SpaceColonizationTag>("SpaceColonizationTag");
     ClassRegistry::RegisterDataComponent<SpaceColonizationParameters>("SpaceColonizationParameters");
@@ -58,14 +66,14 @@ int main() {
 
     ClassRegistry::RegisterSerializable<EmptyInternodeResource>("EmptyInternodeResource");
     ClassRegistry::RegisterSerializable<DefaultInternodeResource>("DefaultInternodeResource");
-    ClassRegistry::RegisterSerializable<Bud>("Bud");
+    ClassRegistry::RegisterSerializable<Bud>("LateralBud");
     ClassRegistry::RegisterPrivateComponent<Internode>("Internode");
 
     ClassRegistry::RegisterDataComponent<InternodeInfo>("InternodeInfo");
     ClassRegistry::RegisterSystem<InternodeSystem>("InternodeSystem");
 
     ClassRegistry::RegisterPrivateComponent<AutoTreeGenerationPipeline>("AutoTreeGenerationPipeline");
-    ClassRegistry::RegisterAsset<SpaceColonizationTreeToLString>("SpaceColonizationTreeToLString", ".sctolstring");
+    ClassRegistry::RegisterAsset<SpaceColonizationTreeToLString>("SpaceColonizationTreeToLString", "sctolstring");
 
     ClassRegistry::RegisterAsset<InternodeFoliage>("InternodeFoliage", ".internodefoliage");
     ClassRegistry::RegisterAsset<DefaultInternodePhyllotaxis>("DefaultInternodePhyllotaxis", ".defaultip");
@@ -136,9 +144,11 @@ void EngineSetup(bool enableRayTracing) {
         cubeVolumeEntity.SetDataComponent(cubeVolumeTransform);
         auto spaceColonizationBehaviour = AssetManager::CreateAsset<SpaceColonizationBehaviour>();
         auto lSystemBehaviour = AssetManager::CreateAsset<LSystemBehaviour>();
+        auto generalTreeBehaviour = AssetManager::CreateAsset<GeneralTreeBehaviour>();
         internodeSystem->PushInternodeBehaviour(
                 std::dynamic_pointer_cast<IInternodeBehaviour>(spaceColonizationBehaviour));
         internodeSystem->PushInternodeBehaviour(std::dynamic_pointer_cast<IInternodeBehaviour>(lSystemBehaviour));
+        internodeSystem->PushInternodeBehaviour(std::dynamic_pointer_cast<IInternodeBehaviour>(generalTreeBehaviour));
         auto cubeVolume = cubeVolumeEntity.GetOrSetPrivateComponent<CubeVolume>().lock();
         cubeVolume->m_minMaxBound.m_min = glm::vec3(-10.0f);
         cubeVolume->m_minMaxBound.m_max = glm::vec3(10.0f);
@@ -157,8 +167,32 @@ void EngineSetup(bool enableRayTracing) {
 void RegisterDataComponentMenus() {
     EditorManager::RegisterComponentDataInspector<InternodeInfo>([](Entity entity, IDataComponent *data, bool isRoot) {
         auto *ltw = reinterpret_cast<InternodeInfo *>(data);
-        ImGui::DragFloat("Thickness", &ltw->m_thickness, 0.01f);
-        ImGui::DragFloat("Length", &ltw->m_length, 0.01f);
+        ltw->OnInspect();
+    });
+
+    EditorManager::RegisterComponentDataInspector<GeneralTreeParameters>([](Entity entity, IDataComponent *data, bool isRoot) {
+        auto *ltw = reinterpret_cast<GeneralTreeParameters *>(data);
+        ltw->OnInspect();
+    });
+
+    EditorManager::RegisterComponentDataInspector<InternodeStatus>([](Entity entity, IDataComponent *data, bool isRoot) {
+        auto *ltw = reinterpret_cast<InternodeStatus *>(data);
+        ltw->OnInspect();
+    });
+
+    EditorManager::RegisterComponentDataInspector<InternodeWaterPressure>([](Entity entity, IDataComponent *data, bool isRoot) {
+        auto *ltw = reinterpret_cast<InternodeWaterPressure *>(data);
+        ltw->OnInspect();
+    });
+
+    EditorManager::RegisterComponentDataInspector<InternodeWater>([](Entity entity, IDataComponent *data, bool isRoot) {
+        auto *ltw = reinterpret_cast<InternodeWater *>(data);
+        ltw->OnInspect();
+    });
+
+    EditorManager::RegisterComponentDataInspector<InternodeIllumination>([](Entity entity, IDataComponent *data, bool isRoot) {
+        auto *ltw = reinterpret_cast<InternodeIllumination *>(data);
+        ltw->OnInspect();
     });
 
     EditorManager::RegisterComponentDataInspector<SpaceColonizationParameters>(
