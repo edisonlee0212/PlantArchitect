@@ -18,6 +18,7 @@ void GeneralTreeParameters::OnInspect() {
 
     ImGui::Text("Bud");
     ImGui::DragFloat("Lateral bud flushing probability", &m_lateralBudFlushingProbability, 0.01f);
+    ImGui::DragFloat3("Neighbor avoidance mul/factor/max", &m_neighborAvoidance.x, 0.001f);
     ImGui::DragFloat2("Apical control base/age", &m_apicalControlBaseAge.x, 0.01f);
     ImGui::DragFloat3("Apical dominance base/age/dist", &m_apicalDominanceBaseAgeDist.x, 0.01f);
     ImGui::DragFloat("Lateral bud lighting factor", &m_lateralBudFlushingLightingFactor, 0.01f);
@@ -66,6 +67,7 @@ void GeneralTreeParameters::Save(const std::filesystem::path &path) const {
     out << YAML::Key << "m_internodeLengthMeanVariance" << YAML::Value << m_internodeLengthMeanVariance;
     out << YAML::Key << "m_endNodeThicknessAndControl" << YAML::Value << m_endNodeThicknessAndControl;
     out << YAML::Key << "m_lateralBudFlushingProbability" << YAML::Value << m_lateralBudFlushingProbability;
+    out << YAML::Key << "m_neighborAvoidance" << YAML::Value << m_neighborAvoidance;
     out << YAML::Key << "m_apicalControlBaseAge" << YAML::Value << m_apicalControlBaseAge;
     out << YAML::Key << "m_apicalDominanceBaseAgeDist" << YAML::Value << m_apicalDominanceBaseAgeDist;
     out << YAML::Key << "m_lateralBudFlushingLightingFactor" << YAML::Value << m_lateralBudFlushingLightingFactor;
@@ -93,6 +95,7 @@ void GeneralTreeParameters::Load(const std::filesystem::path &path) {
     m_internodeLengthMeanVariance = in["m_internodeLengthMeanVariance"].as<glm::vec2>();
     m_endNodeThicknessAndControl = in["m_endNodeThicknessAndControl"].as<glm::vec2>();
     m_lateralBudFlushingProbability = in["m_lateralBudFlushingProbability"].as<float>();
+    //m_neighborAvoidance = in["m_neighborAvoidance"].as<glm::vec3>();
     m_apicalControlBaseAge = in["m_apicalControlBaseAge"].as<glm::vec2>();
     m_apicalDominanceBaseAgeDist = in["m_apicalDominanceBaseAgeDist"].as<glm::vec3>();
     m_lateralBudFlushingLightingFactor = in["m_lateralBudFlushingLightingFactor"].as<float>();

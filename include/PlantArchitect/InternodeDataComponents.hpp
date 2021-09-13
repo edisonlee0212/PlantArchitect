@@ -30,8 +30,13 @@ namespace PlantArchitect {
          * The local rotation of the internode
          */
         glm::quat m_localRotation = glm::vec3(0.0f);
-
+        /*
+         * The neighbors proximity. Used against the dense crown.
+         */
+        float m_neighborsProximity = 0.0f;
         void OnInspect(){
+            ImGui::Text(("Proximity: " + std::to_string(m_neighborsProximity)).c_str());
+
             ImGui::Text(("Thickness: " + std::to_string(m_thickness)).c_str());
             ImGui::Text(("Length: " + std::to_string(m_length)).c_str());
             ImGui::Text(("Index: " + std::to_string(m_index)).c_str());

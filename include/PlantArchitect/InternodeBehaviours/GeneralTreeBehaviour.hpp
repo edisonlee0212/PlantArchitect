@@ -21,7 +21,6 @@ namespace PlantArchitect {
 
     class PLANT_ARCHITECT_API GeneralTreeBehaviour : public IInternodeBehaviour {
         std::vector<Entity> m_currentPlants;
-
     protected:
         bool InternalInternodeCheck(const Entity &target) override;
 
@@ -30,7 +29,7 @@ namespace PlantArchitect {
 
         void OnCreate() override;
 
-        void Grow(int iterations) override;
+        void Grow(int iteration) override;
 
         Entity Retrieve() override;
 

@@ -9,9 +9,35 @@
 using namespace PlantArchitect;
 
 void InternodeSystem::Simulate(int iterations) {
-    for (auto &i: m_internodeBehaviours) {
-        auto behaviour = i.Get<IInternodeBehaviour>();
-        if (behaviour) behaviour->Grow(iterations);
+    for (int iteration = 0; iteration < iterations; iteration++) {
+        std::vector<Entity> internodeEntities;
+        std::vector<GlobalTransform> internodeGlobalTransforms;
+        std::vector<InternodeInfo> internodeInfos;
+        std::vector<glm::vec3> internodePositions;
+        m_internodesQuery.ToComponentDataArray(internodeGlobalTransforms);
+        m_internodesQuery.ToComponentDataArray(internodeInfos);
+        m_internodesQuery.ToEntityArray(internodeEntities);
+        internodePositions.resize(internodeGlobalTransforms.size());
+        for(int i = 0; i < internodeGlobalTransforms.size(); i++){
+            internodePositions[i] = internodeGlobalTransforms[i].GetPosition() + internodeInfos[i].m_length * (internodeGlobalTransforms[i].GetRotation() * glm::vec3(0, 0, -1));
+        }
+        std::vector<float> proximity;
+        proximity.resize(internodePositions.size());
+        for (int i = 0; i < internodePositions.size(); i++) {
+            internodeInfos[i].m_neighborsProximity = 0;
+            const auto &position = internodePositions[i];
+            for (int j = 0; j < internodePositions.size(); j++) {
+                if (i == j) continue;
+                auto distance = glm::max(1.0f, glm::distance(internodePositions[i], internodePositions[j]));
+                internodeInfos[i].m_neighborsProximity += 1.0f / (distance * distance);
+            }
+            internodeEntities[i].SetDataComponent(internodeInfos[i]);
+        }
+
+        for (auto &i: m_internodeBehaviours) {
+            auto behaviour = i.Get<IInternodeBehaviour>();
+            if (behaviour) behaviour->Grow(iteration);
+        }
     }
 }
 
@@ -373,9 +399,11 @@ void InternodeSystem::UpdateBranchColors() {
             true);
     BranchColor color;
     color.m_value = glm::vec4(1, 1, 1, 1);
-    if (focusingInternode.IsValid() && focusingInternode.HasDataComponent<BranchColor>()) focusingInternode.SetDataComponent(color);
+    if (focusingInternode.IsValid() && focusingInternode.HasDataComponent<BranchColor>())
+        focusingInternode.SetDataComponent(color);
     color.m_value = glm::vec4(1, 0, 0, 1);
-    if (selectedEntity.IsValid() && selectedEntity.HasDataComponent<BranchColor>()) selectedEntity.SetDataComponent(color);
+    if (selectedEntity.IsValid() && selectedEntity.HasDataComponent<BranchColor>())
+        selectedEntity.SetDataComponent(color);
 }
 
 void InternodeSystem::UpdateBranchCylinder(const float &width) {
@@ -447,11 +475,9 @@ void InternodeSystem::RenderBranchPointers() {
 }
 
 
-
 bool InternodeSystem::InternodeCheck(const Entity &target) {
     return target.IsValid() && target.HasDataComponent<InternodeInfo>() && target.HasPrivateComponent<Internode>();
 }
-
 
 
 #pragma endregion

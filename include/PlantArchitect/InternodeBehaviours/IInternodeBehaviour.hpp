@@ -85,7 +85,7 @@ namespace PlantArchitect {
         /**
          * Handle main growth here.
          */
-        virtual void Grow(int iterations) {};
+        virtual void Grow(int iteration) {};
 
         /**
          * Generate skinned mesh for internodes.

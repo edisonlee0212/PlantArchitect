@@ -30,6 +30,10 @@ namespace PlantArchitect {
         glm::vec2 m_endNodeThicknessAndControl;
         float m_lateralBudFlushingProbability;
         glm::vec2 m_apicalControlBaseAge;
+        /**
+         * Avoidance multiplier, strength, max avoidance (which will completely stop bud from flushing).
+         */
+        glm::vec3 m_neighborAvoidance;
 
         /**
         * How much inhibitor will an internode generate.
@@ -59,6 +63,9 @@ namespace PlantArchitect {
          * The strength of gravity bending.
          */
         glm::vec3 m_saggingFactorThicknessReductionMax = glm::vec3(0.8f, 1.75f, 1.0f);
+
+
+
 
         void OnInspect();
 
