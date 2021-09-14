@@ -91,15 +91,15 @@ namespace PlantArchitect {
         /**
          * Is child with largest total distance to all branchEnds
          */
-        Entity m_largestChild = Entity();
+        bool m_largestChild = false;
         /**
          * Is child with largest max distance to any branch end
          */
-        Entity m_longestChild = Entity();
+        bool m_longestChild = false;
         /**
          * Is child with largest total biomass
          */
-        Entity m_heaviestChild = Entity();
+        bool m_heaviestChild = false;
 
         void OnInspect();
         void CalculateApicalControl(const glm::vec2 parameters, int rootAge);

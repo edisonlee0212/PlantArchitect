@@ -69,6 +69,9 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                             float maxDistanceToAnyBranchEnd = -1.0f;
                             float maxTotalDistanceToAllBranchEnds = -1.0f;
                             float maxChildTotalBiomass = -1.0f;
+                            Entity largestChild;
+                            Entity longestChild;
+                            Entity heaviestChild;
                             parent.ForEachChild([&](Entity child) {
                                 auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
                                 auto childInternodeStatus = child.GetDataComponent<InternodeStatus>();
@@ -108,16 +111,23 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                                 parentInternodeStatus.m_childTotalBiomass += childTotalBiomass;
                                 if (maxTotalDistanceToAllBranchEnds < childTotalDistanceToAllBranchEnds) {
                                     maxTotalDistanceToAllBranchEnds = childTotalDistanceToAllBranchEnds;
-                                    parentInternodeStatus.m_largestChild = child;
+                                    largestChild = child;
                                 }
                                 if (maxDistanceToAnyBranchEnd < childMaxDistanceToAnyBranchEnd) {
                                     maxDistanceToAnyBranchEnd = childMaxDistanceToAnyBranchEnd;
-                                    parentInternodeStatus.m_longestChild = child;
+                                    longestChild = child;
                                 }
                                 if (maxChildTotalBiomass < childTotalBiomass) {
                                     maxChildTotalBiomass = childTotalBiomass;
-                                    parentInternodeStatus.m_heaviestChild = child;
+                                    heaviestChild = child;
                                 }
+                            });
+                            parent.ForEachChild([&](Entity child) {
+                                auto childInternodeStatus = child.GetDataComponent<InternodeStatus>();
+                                childInternodeStatus.m_largestChild = largestChild == child;
+                                childInternodeStatus.m_longestChild = longestChild == child;
+                                childInternodeStatus.m_heaviestChild = heaviestChild == child;
+                                child.SetDataComponent(childInternodeStatus);
                             });
                             parentInternodeStatus.m_maxDistanceToAnyBranchEnd = maxDistanceToAnyBranchEnd;
                             parentInternodeStatus.m_sagging =
@@ -136,7 +146,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                             endNodeInternodeInfo.m_endNode = true;
                             endNodeInternodeStatus.m_inhibitor = 0.0f;
                             endNodeInternodeStatus.m_maxDistanceToAnyBranchEnd = endNodeInternodeStatus.m_totalDistanceToAllBranchEnds = endNodeInternodeStatus.m_childTotalBiomass = 0;
-                            endNodeInternodeStatus.m_largestChild = endNodeInternodeStatus.m_longestChild = endNodeInternodeStatus.m_heaviestChild = Entity();
+                            endNodeInternodeStatus.m_largestChild = endNodeInternodeStatus.m_longestChild = endNodeInternodeStatus.m_heaviestChild = true;
                             endNode.SetDataComponent(endNodeInternodeInfo);
                             endNode.SetDataComponent(endNodeInternodeStatus);
                         });
@@ -145,7 +155,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
         TreeGraphWalkerRootToEnd(root, root, [](Entity parent, Entity child) {
             auto parentInternodeStatus = parent.GetDataComponent<InternodeStatus>();
             auto childInternodeStatus = child.GetDataComponent<InternodeStatus>();
-            if (parentInternodeStatus.m_largestChild == child) {
+            if (childInternodeStatus.m_largestChild) {
                 childInternodeStatus.m_level = parentInternodeStatus.m_level;
             } else {
                 childInternodeStatus.m_level = parentInternodeStatus.m_level + 1;
