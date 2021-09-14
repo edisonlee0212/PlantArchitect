@@ -3,6 +3,7 @@
 //
 
 #include "GeneralTreeParameters.hpp"
+
 using namespace PlantArchitect;
 
 void GeneralTreeParameters::OnInspect() {
@@ -27,7 +28,8 @@ void GeneralTreeParameters::OnInspect() {
     ImGui::Text("Internode");
     ImGui::DragInt("Random pruning Order Protection", &m_randomPruningOrderProtection);
     ImGui::DragFloat3("Random pruning base/age/max", &m_randomPruningBaseAgeMax.x, 0.0001f, -1.0f, 1.0f, "%.5f");
-    const float maxAgeBeforeMaxCutOff = (m_randomPruningBaseAgeMax.z - m_randomPruningBaseAgeMax.x) / m_randomPruningBaseAgeMax.y;
+    const float maxAgeBeforeMaxCutOff =
+            (m_randomPruningBaseAgeMax.z - m_randomPruningBaseAgeMax.x) / m_randomPruningBaseAgeMax.y;
     ImGui::Text("Max age before reaching max: %.2f", maxAgeBeforeMaxCutOff);
     ImGui::DragFloat("Low Branch Pruning", &m_lowBranchPruning, 0.01f);
     ImGui::DragFloat3("Sagging thickness/reduction/max", &m_saggingFactorThicknessReductionMax.x, 0.01f);
@@ -81,6 +83,7 @@ void GeneralTreeParameters::Save(const std::filesystem::path &path) const {
     fout << out.c_str();
     fout.flush();
 }
+
 void GeneralTreeParameters::Load(const std::filesystem::path &path) {
     std::ifstream stream(path.string());
     std::stringstream stringStream;
@@ -107,6 +110,7 @@ void GeneralTreeParameters::Load(const std::filesystem::path &path) {
 }
 
 void InternodeStatus::OnInspect() {
+    ImGui::Text(("Age: " + std::to_string(m_age)).c_str());
     ImGui::Text(("Sagging: " + std::to_string(m_sagging)).c_str());
 
     ImGui::Text(("Inhibitor: " + std::to_string(m_inhibitor)).c_str());
@@ -117,6 +121,11 @@ void InternodeStatus::OnInspect() {
     ImGui::Text(("Level: " + std::to_string(m_level)).c_str());
     ImGui::Text(("Biomass: " + std::to_string(m_biomass)).c_str());
     ImGui::Text(("ChildTotalBiomass: " + std::to_string(m_childTotalBiomass)).c_str());
+}
+
+void InternodeStatus::CalculateApicalControl(const glm::vec2 parameters, int rootAge) {
+    float apicalControl = parameters.x * glm::pow(parameters.y, (float)rootAge);
+    m_apicalControl = glm::pow(1.0f / glm::max(1.0f, apicalControl), m_level);
 }
 
 void InternodeWaterPressure::OnInspect() {

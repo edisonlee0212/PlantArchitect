@@ -77,7 +77,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                                     float randomFactor = glm::min(endNodeParameters.m_randomPruningBaseAgeMax.z,
                                                                   endNodeParameters.m_randomPruningBaseAgeMax.x +
                                                                   endNodeParameters.m_randomPruningBaseAgeMax.y *
-                                                                  endNodeInternode->m_age);
+                                                                  childInternodeStatus.m_age);
                                     if (childInternodeStatus.m_order >
                                         endNodeParameters.m_randomPruningOrderProtection &&
                                         randomFactor > glm::linearRand(0.0f, 1.0f)) {
@@ -87,7 +87,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                                     parentInternodeStatus.m_inhibitor +=
                                             endNodeParameters.m_apicalDominanceBaseAgeDist.x *
                                             glm::pow(endNodeParameters.m_apicalDominanceBaseAgeDist.y,
-                                                     endNodeInternode->m_age);
+                                                     childInternodeStatus.m_age);
                                 } else {
                                     parentInternodeStatus.m_inhibitor +=
                                             childInternodeStatus.m_inhibitor *
@@ -189,15 +189,14 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                  InternodeWater &internodeWater,
                  GeneralTreeParameters &generalTreeParameters) {
                  if(!internodeInfo.m_currentRoot.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
+                 int age = internodeInfo.m_currentRoot.GetDataComponent<InternodeStatus>().m_age;
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
+                 internodeStatus.CalculateApicalControl(generalTreeParameters.m_apicalControlBaseAge, age);
                  int plantIndex = 0;
                  for (const auto &plant: m_currentPlants) {
                      if (internodeInfo.m_currentRoot == plant) {
-                         float apicalControl = generalTreeParameters.m_apicalControlBaseAge.x *
-                                               glm::pow(generalTreeParameters.m_apicalControlBaseAge.y,
-                                                        internode->m_age);
                          totalRequestCollector[i % workerSize][plantIndex] +=
-                                 glm::pow(1.0f / glm::max(1.0f, apicalControl), internodeStatus.m_level) *
+                                 internodeStatus.m_apicalControl *
                                  internodeWaterPressure.m_value *
                                  internodeIllumination.m_intensity;
                          break;
@@ -256,15 +255,13 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                  InternodeWater &internodeWater,
                  GeneralTreeParameters &generalTreeParameters) {
                  if(!internodeInfo.m_currentRoot.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
+                 int age = internodeInfo.m_currentRoot.GetDataComponent<InternodeStatus>().m_age;
                  int plantIndex = 0;
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
                  for (const auto &plant: m_currentPlants) {
                      if (internodeInfo.m_currentRoot == plant) {
-                         float apicalControl = generalTreeParameters.m_apicalControlBaseAge.x *
-                                               glm::pow(generalTreeParameters.m_apicalControlBaseAge.y,
-                                                        internode->m_age);
                          internodeWater.m_value =
-                                 glm::pow(1.0f / glm::max(1.0f, apicalControl), internodeStatus.m_level) *
+                                 internodeStatus.m_apicalControl *
                                  waterDividends[plantIndex] * internodeWaterPressure.m_value *
                                  internodeIllumination.m_intensity;
                          break;
@@ -285,7 +282,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                  GeneralTreeParameters &generalTreeParameters) {
                  if(!internodeInfo.m_currentRoot.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
-                 internode->m_age++;
+                 internodeStatus.m_age++;
                  //0. Apply sagging here.
                  auto parent = entity.GetParent();
                  if (!parent.IsNull()) {

@@ -76,6 +76,8 @@ namespace PlantArchitect {
      * The auxin that controls the bud flush probability, relates to apical dominance.
      */
     struct PLANT_ARCHITECT_API InternodeStatus : public IDataComponent {
+        int m_age = 0;
+        float m_apicalControl = 0;
         float m_inhibitor = 0;
         float m_level = 0;
         float m_distanceToRoot = 0;
@@ -100,6 +102,7 @@ namespace PlantArchitect {
         Entity m_heaviestChild = Entity();
 
         void OnInspect();
+        void CalculateApicalControl(const glm::vec2 parameters, int rootAge);
     };
 
     /**

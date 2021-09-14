@@ -5,8 +5,18 @@
 #include <IInternodeBehaviour.hpp>
 #include <InternodeDataComponents.hpp>
 using namespace UniEngine;
-namespace PlantArchitect {
 
+namespace PlantArchitect {
+    enum class BranchColorMode{
+        None,
+        Order,
+        Level,
+        Water,
+        ApicalControl,
+        WaterPressure,
+        Proximity,
+        Inhibitor
+    };
     class IInternodeBehaviour;
     class PLANT_ARCHITECT_API InternodeSystem : public ISystem {
     public:
@@ -64,7 +74,13 @@ namespace PlantArchitect {
         bool m_drawPointers = false;
 
         float m_transparency = 0.7f;
+
+        bool m_autoUpdate = true;
+        BranchColorMode m_branchColorMode = BranchColorMode::None;
+        float m_branchColorValueMultiplier = 1.0f;
+        float m_branchColorValueCompressFactor = 0.0f;
         glm::vec3 m_branchColor = glm::vec3(0, 1, 0);
+        std::vector<glm::vec3> m_randomColors;
         glm::vec4 m_pointerColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.5f);
 
         std::vector<Entity> m_entitiesWithRenderer;
