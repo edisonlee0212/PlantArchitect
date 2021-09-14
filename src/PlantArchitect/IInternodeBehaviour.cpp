@@ -76,8 +76,9 @@ IInternodeBehaviour::GenerateSkinnedMeshes(const EntityQuery &internodeQuery, fl
                         entity.GetOrSetPrivateComponent<Internode>().lock();
                 internode->m_rings.clear();
                 auto rootGlobalTransform = globalTransform;
-                if (internodeInfo.m_currentRoot != entity) {
-                    rootGlobalTransform = internodeInfo.m_currentRoot.GetDataComponent<GlobalTransform>();
+                auto root = internode->m_currentRoot.Get();
+                if (root != entity) {
+                    rootGlobalTransform = root.GetDataComponent<GlobalTransform>();
                 }
                 GlobalTransform relativeGlobalTransform;
                 relativeGlobalTransform.m_value = glm::inverse(rootGlobalTransform.m_value) * globalTransform.m_value;
@@ -86,7 +87,7 @@ IInternodeBehaviour::GenerateSkinnedMeshes(const EntityQuery &internodeQuery, fl
                 glm::vec3 positionStart = relativeGlobalTransform.GetPosition();
                 glm::vec3 positionEnd = positionStart + internodeInfo.m_length * directionStart;
                 float thicknessStart = internodeInfo.m_thickness;
-                if (internodeInfo.m_currentRoot != entity) {
+                if (root != entity) {
                     auto parent = entity.GetParent();
                     if (!parent.IsNull()) {
                         if (parent.HasDataComponent<InternodeInfo>()) {
@@ -153,8 +154,9 @@ IInternodeBehaviour::GenerateSkinnedMeshes(const EntityQuery &internodeQuery, fl
                         entity.GetOrSetPrivateComponent<Internode>().lock();
                 internode->m_foliageMatrices.clear();
                 auto rootGlobalTransform = globalTransform;
-                if (internodeInfo.m_currentRoot != entity) {
-                    rootGlobalTransform = internodeInfo.m_currentRoot.GetDataComponent<GlobalTransform>();
+                auto root = internode->m_currentRoot.Get();
+                if (root != entity) {
+                    rootGlobalTransform = root.GetDataComponent<GlobalTransform>();
                 }
                 GlobalTransform relativeGlobalTransform;
                 relativeGlobalTransform.m_value = glm::inverse(rootGlobalTransform.m_value) * globalTransform.m_value;
@@ -258,8 +260,9 @@ void IInternodeBehaviour::TreeNodeCollector(std::vector<Entity> &boundEntities, 
     parentIndices.push_back(parentIndex);
     const size_t currentIndex = boundEntities.size() - 1;
     auto internodeInfo = node.GetDataComponent<InternodeInfo>();
+    auto internode = node.GetOrSetPrivateComponent<Internode>().lock();
     internodeInfo.m_index = currentIndex;
-    internodeInfo.m_currentRoot = root;
+    internode->m_currentRoot = root;
     if (node.GetChildrenAmount() == 0) internodeInfo.m_endNode = true;
     else internodeInfo.m_endNode = false;
     node.SetDataComponent(internodeInfo);
@@ -537,8 +540,8 @@ void IInternodeBehaviour::CollectRoots(const EntityQuery &internodeQuery, std::v
     std::mutex plantCollectionMutex;
     EntityManager::ForEach<InternodeInfo>(JobManager::PrimaryWorkers(), internodeQuery,
                                           [&](int index, Entity entity, InternodeInfo &internodeInfo) {
-                                              internodeInfo.m_currentRoot = entity;
                                               if (!entity.HasPrivateComponent<Internode>()) return;
+                                              entity.GetOrSetPrivateComponent<Internode>().lock()->m_currentRoot = entity;
                                               auto parent = entity.GetParent();
                                               if (parent.IsNull() || !parent.HasPrivateComponent<Internode>()) {
                                                   std::lock_guard<std::mutex> lock(plantCollectionMutex);

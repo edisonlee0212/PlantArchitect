@@ -19,10 +19,6 @@ namespace PlantArchitect {
          * The index of current internode within a plant, start from the root.
          */
         int m_index = -1;
-        /**
-         * The current root of the internode.
-         */
-        Entity m_currentRoot = Entity();
         /*
          * Whether this node is end node.
          */
@@ -41,7 +37,6 @@ namespace PlantArchitect {
             ImGui::Text(("Thickness: " + std::to_string(m_thickness)).c_str());
             ImGui::Text(("Length: " + std::to_string(m_length)).c_str());
             ImGui::Text(("Index: " + std::to_string(m_index)).c_str());
-            ImGui::Text(("Root entity index: " + std::to_string(m_currentRoot.GetIndex())).c_str());
             ImGui::Text(("Is end node: " + std::to_string(m_endNode)).c_str());
 
             glm::vec3 localRotation = glm::eulerAngles(m_localRotation);

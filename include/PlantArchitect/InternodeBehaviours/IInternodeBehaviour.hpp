@@ -351,10 +351,11 @@ namespace PlantArchitect {
         InternodeInfo internodeInfo;
         internodeInfo.m_isRealRoot = false;
         retVal.SetDataComponent(internodeInfo);
-
+        auto parentInternode = parent.GetOrSetPrivateComponent<Internode>().lock();
         auto internode = retVal.GetOrSetPrivateComponent<Internode>().lock();
         internode->m_resource = std::make_unique<T>();
-        internode->m_foliage = parent.GetOrSetPrivateComponent<Internode>().lock()->m_foliage;
+        internode->m_foliage = parentInternode->m_foliage;
+        internode->m_currentRoot = parentInternode->m_currentRoot;
         internode->OnRetrieve();
         return retVal;
     }
@@ -377,6 +378,7 @@ namespace PlantArchitect {
         retVal.SetDataComponent(internodeInfo);
 
         auto internode = retVal.GetOrSetPrivateComponent<Internode>().lock();
+        internode->m_currentRoot = retVal;
         internode->m_resource = SerializationManager::ProduceSerializable<T>();
         internode->m_foliage = AssetManager::CreateAsset<InternodeFoliage>("Foliage");
         internode->OnRetrieve();

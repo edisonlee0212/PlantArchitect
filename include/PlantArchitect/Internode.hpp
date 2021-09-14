@@ -25,7 +25,13 @@ namespace PlantArchitect {
         std::weak_ptr<InternodeSystem> m_internodeSystem;
         void ExportLSystemCommandsHelper(const Entity &target, std::vector<LSystemCommand> &commands);
         void CollectInternodesHelper(const Entity &target, std::vector<Entity> &results);
+
     public:
+        /**
+         * The current root of the internode.
+         */
+        EntityRef m_currentRoot;
+
         void CollectInternodes(std::vector<Entity> &results);
         glm::vec3 m_normalDir = glm::vec3(0, 0, 1);
         int m_step = 4;

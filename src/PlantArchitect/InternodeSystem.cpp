@@ -456,7 +456,6 @@ void InternodeSystem::UpdateBranchColors() {
                     m_internodesQuery,
                     [=](int i, Entity entity, BranchColor &internodeRenderColor,
                         InternodeStatus &internodeStatus, InternodeInfo& internodeInfo, GeneralTreeParameters& parameters) {
-                        int age = internodeInfo.m_currentRoot.GetDataComponent<InternodeStatus>().m_age;
                         internodeRenderColor.m_value = glm::vec4(glm::vec3(m_branchColorValueMultiplier *
                                                                            glm::pow(internodeStatus.m_apicalControl,
                                                                                     m_branchColorValueCompressFactor)),
