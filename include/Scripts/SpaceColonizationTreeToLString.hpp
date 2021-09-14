@@ -6,9 +6,9 @@ using namespace PlantArchitect;
 namespace Scripts {
     class SpaceColonizationTreeToLString : public IAutoTreeGenerationPipelineBehaviour {
         int m_remainingInstanceAmount = 0;
-        int m_remainingGrowthIterations = 0;
         Entity m_currentGrowingTree;
         std::weak_ptr<SpaceColonizationBehaviour> m_spaceColonizationTreeBehaviour;
+        bool m_imageCapturing = false;
     public:
         SpaceColonizationParameters m_parameters;
         int m_generationAmount = 10;

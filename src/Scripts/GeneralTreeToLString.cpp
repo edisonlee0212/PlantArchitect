@@ -96,14 +96,21 @@ void GeneralTreeToLString::OnInspect() {
     ImGui::DragInt("Generation Amount", &m_generationAmount);
     ImGui::DragInt("Growth iteration", &m_perTreeGrowthIteration);
     if (m_remainingInstanceAmount == 0) {
-        if (ImGui::Button("Start")) {
-            std::filesystem::create_directories(m_currentExportFolder);
-            m_remainingInstanceAmount = m_generationAmount;
+        if(Application::IsPlaying()) {
+            if (ImGui::Button("Start")) {
+                std::filesystem::create_directories(m_currentExportFolder);
+                m_remainingInstanceAmount = m_generationAmount;
+            }
+        }else{
+            ImGui::Text("Start Engine first!");
         }
     } else {
         ImGui::Text("Task dispatched...");
         ImGui::Text(("Total: " + std::to_string(m_generationAmount) + ", Remaining: " +
                      std::to_string(m_remainingInstanceAmount)).c_str());
+        if(ImGui::Button("Force stop")){
+            m_remainingInstanceAmount = 1;
+        }
     }
 }
 
