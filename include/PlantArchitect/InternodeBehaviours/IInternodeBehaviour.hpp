@@ -92,14 +92,14 @@ namespace PlantArchitect {
          * @param entities
          */
         virtual void
-        GenerateSkinnedMeshes(const EntityQuery &internodeQuery, float subdivision, float resolution);
+        GenerateSkinnedMeshes(float subdivision = 4.0f, float resolution = 0.02f);
 
         /**
          * Collect roots with target kind of internodes.
          * @param internodeQuery The query for collecting specific kind of internodes.
          * @param roots Where to store the results.
          */
-        void CollectRoots(const EntityQuery &internodeQuery, std::vector<Entity> &roots);
+        void CollectRoots(std::vector<Entity> &roots);
 
         /**
          * A helper method that traverse target plant from root internode to end internodes, and come back from end to root.

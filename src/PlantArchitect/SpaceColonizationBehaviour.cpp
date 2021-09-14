@@ -166,7 +166,7 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
 
 
     std::vector<Entity> plants;
-    CollectRoots(m_internodesQuery, plants);
+    CollectRoots(plants);
     int plantSize = plants.size();
 
     //Use internal JobSystem to dispatch job for entity collection.
@@ -244,7 +244,7 @@ void SpaceColonizationBehaviour::OnInspect() {
     ImGui::DragFloat("Resolution", &resolution, 0.001f);
     ImGui::DragFloat("Subdivision", &subdivision, 0.001f);
     if (ImGui::Button("Generate meshes")) {
-        GenerateSkinnedMeshes(m_internodesQuery, subdivision, resolution);
+        GenerateSkinnedMeshes(subdivision, resolution);
     }
 
     if (ImGui::TreeNodeEx("Attraction Points", ImGuiTreeNodeFlags_DefaultOpen)) {

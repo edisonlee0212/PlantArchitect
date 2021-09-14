@@ -25,6 +25,7 @@
 #include "DefaultInternodePhyllotaxis.hpp"
 #include "InternodeFoliage.hpp"
 #include "RadialBoundingVolume.hpp"
+#include "GeneralTreeToLString.hpp"
 using namespace PlantArchitect;
 using namespace RayTracerFacility;
 using namespace Scripts;
@@ -74,6 +75,7 @@ int main() {
 
     ClassRegistry::RegisterPrivateComponent<AutoTreeGenerationPipeline>("AutoTreeGenerationPipeline");
     ClassRegistry::RegisterAsset<SpaceColonizationTreeToLString>("SpaceColonizationTreeToLString", "sctolstring");
+    ClassRegistry::RegisterAsset<GeneralTreeToLString>("GeneralTreeToLString", "gttolstring");
 
     ClassRegistry::RegisterAsset<InternodeFoliage>("InternodeFoliage", ".internodefoliage");
     ClassRegistry::RegisterAsset<DefaultInternodePhyllotaxis>("DefaultInternodePhyllotaxis", ".defaultip");
@@ -161,6 +163,10 @@ void EngineSetup(bool enableRayTracing) {
         auto spaceColonizationPipelineEntity = EntityManager::CreateEntity("SpaceColonizationTreeToLStringPipeline");
         auto spaceColonizationPipeline = spaceColonizationPipelineEntity.GetOrSetPrivateComponent<AutoTreeGenerationPipeline>().lock();
         spaceColonizationPipeline->m_pipelineBehaviour = AssetManager::CreateAsset<SpaceColonizationTreeToLString>();
+
+        auto generalTreePipelineEntity = EntityManager::CreateEntity("GeneralTreeToLStringPipeline");
+        auto generalTreePipeline = generalTreePipelineEntity.GetOrSetPrivateComponent<AutoTreeGenerationPipeline>().lock();
+        generalTreePipeline->m_pipelineBehaviour = AssetManager::CreateAsset<GeneralTreeToLString>();
     });
 }
 

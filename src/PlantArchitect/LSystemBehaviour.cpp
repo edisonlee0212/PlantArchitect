@@ -25,7 +25,7 @@ void LSystemBehaviour::OnInspect() {
     ImGui::DragFloat("Resolution", &resolution, 0.001f);
     ImGui::DragFloat("Subdivision", &subdivision, 0.001f);
     if (ImGui::Button("Generate meshes")) {
-        GenerateSkinnedMeshes(m_internodesQuery, subdivision, resolution);
+        GenerateSkinnedMeshes(subdivision, resolution);
     }
 
 }

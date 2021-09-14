@@ -25,6 +25,7 @@
 #include "DefaultInternodePhyllotaxis.hpp"
 #include "InternodeFoliage.hpp"
 #include "RadialBoundingVolume.hpp"
+#include "GeneralTreeToLString.hpp"
 
 using namespace PlantArchitect;
 using namespace RayTracerFacility;
@@ -74,6 +75,7 @@ int main() {
 
     ClassRegistry::RegisterPrivateComponent<AutoTreeGenerationPipeline>("AutoTreeGenerationPipeline");
     ClassRegistry::RegisterAsset<SpaceColonizationTreeToLString>("SpaceColonizationTreeToLString", "sctolstring");
+    ClassRegistry::RegisterAsset<GeneralTreeToLString>("GeneralTreeToLString", "gttolstring");
 
     ClassRegistry::RegisterAsset<InternodeFoliage>("InternodeFoliage", ".internodefoliage");
     ClassRegistry::RegisterAsset<DefaultInternodePhyllotaxis>("DefaultInternodePhyllotaxis", ".defaultip");

@@ -22,6 +22,10 @@ void GeneralTreeParameters::OnInspect() {
     ImGui::DragFloat3("Neighbor avoidance mul/factor/max", &m_neighborAvoidance.x, 0.001f);
     ImGui::DragFloat2("Apical control base/age", &m_apicalControlBaseAge.x, 0.01f);
     ImGui::DragFloat3("Apical dominance base/age/dist", &m_apicalDominanceBaseAgeDist.x, 0.01f);
+    int maxAgeBeforeInhibitorEnds = m_apicalControlBaseAge.x / m_apicalDominanceBaseAgeDist.y;
+    float maxDistance = m_apicalControlBaseAge.x / m_apicalDominanceBaseAgeDist.z;
+    ImGui::Text("Max age / distance: [%i, %.3f]", maxAgeBeforeInhibitorEnds, maxDistance);
+
     ImGui::DragFloat("Lateral bud lighting factor", &m_lateralBudFlushingLightingFactor, 0.01f);
     ImGui::DragFloat2("Kill probability apical/lateral", &m_budKillProbabilityApicalLateral.x, 0.01f);
 
@@ -30,9 +34,11 @@ void GeneralTreeParameters::OnInspect() {
     ImGui::DragFloat3("Random pruning base/age/max", &m_randomPruningBaseAgeMax.x, 0.0001f, -1.0f, 1.0f, "%.5f");
     const float maxAgeBeforeMaxCutOff =
             (m_randomPruningBaseAgeMax.z - m_randomPruningBaseAgeMax.x) / m_randomPruningBaseAgeMax.y;
-    ImGui::Text("Max age before reaching max: %.2f", maxAgeBeforeMaxCutOff);
+    ImGui::Text("Max age before reaching max: %.3f", maxAgeBeforeMaxCutOff);
     ImGui::DragFloat("Low Branch Pruning", &m_lowBranchPruning, 0.01f);
     ImGui::DragFloat3("Sagging thickness/reduction/max", &m_saggingFactorThicknessReductionMax.x, 0.01f);
+
+    ImGui::DragInt("Mature age", &m_matureAge, 1, 0, 1000);
 }
 
 GeneralTreeParameters::GeneralTreeParameters() {
@@ -78,6 +84,7 @@ void GeneralTreeParameters::Save(const std::filesystem::path &path) const {
     out << YAML::Key << "m_randomPruningBaseAgeMax" << YAML::Value << m_randomPruningBaseAgeMax;
     out << YAML::Key << "m_lowBranchPruning" << YAML::Value << m_lowBranchPruning;
     out << YAML::Key << "m_saggingFactorThicknessReductionMax" << YAML::Value << m_saggingFactorThicknessReductionMax;
+    out << YAML::Key << "m_matureAge" << YAML::Value << m_matureAge;
     out << YAML::EndMap;
     std::ofstream fout(path.string());
     fout << out.c_str();
@@ -89,30 +96,30 @@ void GeneralTreeParameters::Load(const std::filesystem::path &path) {
     std::stringstream stringStream;
     stringStream << stream.rdbuf();
     YAML::Node in = YAML::Load(stringStream.str());
-    m_lateralBudCount = in["m_lateralBudCount"].as<int>();
-    m_branchingAngleMeanVariance = in["m_branchingAngleMeanVariance"].as<glm::vec2>();
-    m_rollAngleMeanVariance = in["m_rollAngleMeanVariance"].as<glm::vec2>();
-    m_apicalAngleMeanVariance = in["m_apicalAngleMeanVariance"].as<glm::vec2>();
-    m_gravitropism = in["m_gravitropism"].as<float>();
-    m_phototropism = in["m_phototropism"].as<float>();
-    m_internodeLengthMeanVariance = in["m_internodeLengthMeanVariance"].as<glm::vec2>();
-    m_endNodeThicknessAndControl = in["m_endNodeThicknessAndControl"].as<glm::vec2>();
-    m_lateralBudFlushingProbability = in["m_lateralBudFlushingProbability"].as<float>();
-    m_neighborAvoidance = in["m_neighborAvoidance"].as<glm::vec3>();
-    m_apicalControlBaseAge = in["m_apicalControlBaseAge"].as<glm::vec2>();
-    m_apicalDominanceBaseAgeDist = in["m_apicalDominanceBaseAgeDist"].as<glm::vec3>();
-    m_lateralBudFlushingLightingFactor = in["m_lateralBudFlushingLightingFactor"].as<float>();
-    m_budKillProbabilityApicalLateral = in["m_budKillProbabilityApicalLateral"].as<glm::vec2>();
-    m_randomPruningOrderProtection = in["m_randomPruningOrderProtection"].as<int>();
-    m_randomPruningBaseAgeMax = in["m_randomPruningBaseAgeMax"].as<glm::vec3>();
-    m_lowBranchPruning = in["m_lowBranchPruning"].as<float>();
-    m_saggingFactorThicknessReductionMax = in["m_saggingFactorThicknessReductionMax"].as<glm::vec3>();
+    if(in["m_lateralBudCount"]) m_lateralBudCount = in["m_lateralBudCount"].as<int>();
+    if(in["m_branchingAngleMeanVariance"]) m_branchingAngleMeanVariance = in["m_branchingAngleMeanVariance"].as<glm::vec2>();
+    if(in["m_rollAngleMeanVariance"]) m_rollAngleMeanVariance = in["m_rollAngleMeanVariance"].as<glm::vec2>();
+    if(in["m_apicalAngleMeanVariance"]) m_apicalAngleMeanVariance = in["m_apicalAngleMeanVariance"].as<glm::vec2>();
+    if(in["m_gravitropism"]) m_gravitropism = in["m_gravitropism"].as<float>();
+    if(in["m_phototropism"]) m_phototropism = in["m_phototropism"].as<float>();
+    if(in["m_internodeLengthMeanVariance"]) m_internodeLengthMeanVariance = in["m_internodeLengthMeanVariance"].as<glm::vec2>();
+    if(in["m_endNodeThicknessAndControl"]) m_endNodeThicknessAndControl = in["m_endNodeThicknessAndControl"].as<glm::vec2>();
+    if(in["m_lateralBudFlushingProbability"]) m_lateralBudFlushingProbability = in["m_lateralBudFlushingProbability"].as<float>();
+    if(in["m_neighborAvoidance"]) m_neighborAvoidance = in["m_neighborAvoidance"].as<glm::vec3>();
+    if(in["m_apicalControlBaseAge"]) m_apicalControlBaseAge = in["m_apicalControlBaseAge"].as<glm::vec2>();
+    if(in["m_apicalDominanceBaseAgeDist"]) m_apicalDominanceBaseAgeDist = in["m_apicalDominanceBaseAgeDist"].as<glm::vec3>();
+    if(in["m_lateralBudFlushingLightingFactor"]) m_lateralBudFlushingLightingFactor = in["m_lateralBudFlushingLightingFactor"].as<float>();
+    if(in["m_budKillProbabilityApicalLateral"]) m_budKillProbabilityApicalLateral = in["m_budKillProbabilityApicalLateral"].as<glm::vec2>();
+    if(in["m_randomPruningOrderProtection"])  m_randomPruningOrderProtection = in["m_randomPruningOrderProtection"].as<int>();
+    if(in["m_randomPruningBaseAgeMax"]) m_randomPruningBaseAgeMax = in["m_randomPruningBaseAgeMax"].as<glm::vec3>();
+    if(in["m_lowBranchPruning"]) m_lowBranchPruning = in["m_lowBranchPruning"].as<float>();
+    if(in["m_saggingFactorThicknessReductionMax"]) m_saggingFactorThicknessReductionMax = in["m_saggingFactorThicknessReductionMax"].as<glm::vec3>();
+    if(in["m_matureAge"]) m_matureAge = in["m_matureAge"].as<int>();
 }
 
 void InternodeStatus::OnInspect() {
     ImGui::Text(("Age: " + std::to_string(m_age)).c_str());
     ImGui::Text(("Sagging: " + std::to_string(m_sagging)).c_str());
-
     ImGui::Text(("Inhibitor: " + std::to_string(m_inhibitor)).c_str());
     ImGui::Text(("DistanceToRoot: " + std::to_string(m_distanceToRoot)).c_str());
     ImGui::Text(("MaxDistanceToAnyBranchEnd: " + std::to_string(m_maxDistanceToAnyBranchEnd)).c_str());
@@ -121,6 +128,9 @@ void InternodeStatus::OnInspect() {
     ImGui::Text(("Level: " + std::to_string(m_level)).c_str());
     ImGui::Text(("Biomass: " + std::to_string(m_biomass)).c_str());
     ImGui::Text(("ChildTotalBiomass: " + std::to_string(m_childTotalBiomass)).c_str());
+    glm::vec3 localRotation = glm::eulerAngles(m_desiredLocalRotation);
+    ImGui::Text(("Desired local rotation: [" + std::to_string(glm::degrees(localRotation.x)) + ", " + std::to_string(glm::degrees(localRotation.y)) + ", " +std::to_string(glm::degrees(localRotation.z)) + "]").c_str());
+
 }
 
 void InternodeStatus::CalculateApicalControl(const glm::vec2 parameters, int rootAge) {

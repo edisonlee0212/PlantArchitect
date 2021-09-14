@@ -41,10 +41,10 @@ void IInternodeBehaviour::RecycleSingle(const Entity &internode) {
 }
 
 void
-IInternodeBehaviour::GenerateSkinnedMeshes(const EntityQuery &internodeQuery, float subdivision,
+IInternodeBehaviour::GenerateSkinnedMeshes(float subdivision,
                                            float resolution) {
     std::vector<Entity> plants;
-    CollectRoots(internodeQuery, plants);
+    CollectRoots(plants);
 
     int plantSize = plants.size();
     std::vector<std::vector<Entity>> boundEntitiesLists;
@@ -69,7 +69,7 @@ IInternodeBehaviour::GenerateSkinnedMeshes(const EntityQuery &internodeQuery, fl
     EntityManager::ForEach<GlobalTransform, Transform,
             InternodeInfo>(
             JobManager::PrimaryWorkers(),
-            internodeQuery,
+            m_internodesQuery,
             [resolution, subdivision](int i, Entity entity, GlobalTransform &globalTransform,
                                       Transform &transform, InternodeInfo &internodeInfo) {
                 auto internode =
@@ -201,15 +201,18 @@ IInternodeBehaviour::GenerateSkinnedMeshes(const EntityQuery &internodeQuery, fl
             BranchSkinnedMeshGenerator(boundEntitiesLists[plantIndex],
                                        parentIndicesLists[plantIndex],
                                        skinnedVertices, skinnedIndices);
-            auto skinnedMesh = AssetManager::CreateAsset<SkinnedMesh>();
-            skinnedMesh->SetVertices(
-                    17, skinnedVertices, skinnedIndices);
-            skinnedMesh
-                    ->m_boneAnimatorIndices = boneIndicesLists[plantIndex];
-            skinnedMeshRenderer->m_skinnedMesh.Set<SkinnedMesh>(skinnedMesh);
+            if(!skinnedVertices.empty()) {
+                auto skinnedMesh = AssetManager::CreateAsset<SkinnedMesh>();
+                skinnedMesh->SetVertices(
+                        17, skinnedVertices, skinnedIndices);
+                skinnedMesh
+                        ->m_boneAnimatorIndices = boneIndicesLists[plantIndex];
+                skinnedMeshRenderer->m_skinnedMesh.Set<SkinnedMesh>(skinnedMesh);
+            }
 #pragma endregion
         }
         {
+
 #pragma region Foliage mesh
             auto animator = foliage.GetOrSetPrivateComponent<Animator>().lock();
             auto skinnedMeshRenderer = foliage.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
@@ -242,12 +245,14 @@ IInternodeBehaviour::GenerateSkinnedMeshes(const EntityQuery &internodeQuery, fl
             FoliageSkinnedMeshGenerator(boundEntitiesLists[plantIndex],
                                         parentIndicesLists[plantIndex],
                                         skinnedVertices, skinnedIndices);
-            auto skinnedMesh = AssetManager::CreateAsset<SkinnedMesh>();
-            skinnedMesh->SetVertices(
-                    17, skinnedVertices, skinnedIndices);
-            skinnedMesh
-                    ->m_boneAnimatorIndices = boneIndicesLists[plantIndex];
-            skinnedMeshRenderer->m_skinnedMesh.Set<SkinnedMesh>(skinnedMesh);
+            if(!skinnedVertices.empty()) {
+                auto skinnedMesh = AssetManager::CreateAsset<SkinnedMesh>();
+                skinnedMesh->SetVertices(
+                        17, skinnedVertices, skinnedIndices);
+                skinnedMesh
+                        ->m_boneAnimatorIndices = boneIndicesLists[plantIndex];
+                skinnedMeshRenderer->m_skinnedMesh.Set<SkinnedMesh>(skinnedMesh);
+            }
 #pragma endregion
         }
     }
@@ -536,9 +541,9 @@ IInternodeBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, 
     foliage.SetParent(entity);
 }
 
-void IInternodeBehaviour::CollectRoots(const EntityQuery &internodeQuery, std::vector<Entity> &roots) {
+void IInternodeBehaviour::CollectRoots(std::vector<Entity> &roots) {
     std::mutex plantCollectionMutex;
-    EntityManager::ForEach<InternodeInfo>(JobManager::PrimaryWorkers(), internodeQuery,
+    EntityManager::ForEach<InternodeInfo>(JobManager::PrimaryWorkers(), m_internodesQuery,
                                           [&](int index, Entity entity, InternodeInfo &internodeInfo) {
                                               if (!entity.HasPrivateComponent<Internode>()) return;
                                               entity.GetOrSetPrivateComponent<Internode>().lock()->m_currentRoot = entity;

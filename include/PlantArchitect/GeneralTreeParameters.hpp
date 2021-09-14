@@ -64,8 +64,7 @@ namespace PlantArchitect {
          */
         glm::vec3 m_saggingFactorThicknessReductionMax = glm::vec3(0.8f, 1.75f, 1.0f);
 
-
-
+        int m_matureAge = 0;
 
         void OnInspect();
 

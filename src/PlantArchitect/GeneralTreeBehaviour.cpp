@@ -13,7 +13,7 @@ using namespace PlantArchitect;
 void GeneralTreeBehaviour::Grow(int iteration) {
     if (iteration == 0) {
         m_currentPlants.clear();
-        CollectRoots(m_internodesQuery, m_currentPlants);
+        CollectRoots(m_currentPlants);
     }
     int plantSize = m_currentPlants.size();
 #pragma region PreProcess
@@ -559,7 +559,7 @@ void GeneralTreeBehaviour::OnInspect() {
     ImGui::DragFloat("Resolution", &resolution, 0.001f);
     ImGui::DragFloat("Subdivision", &subdivision, 0.001f);
     if (ImGui::Button("Generate branch mesh")) {
-        GenerateSkinnedMeshes(m_internodesQuery, subdivision, resolution);
+        GenerateSkinnedMeshes(subdivision, resolution);
     }
 
 }
