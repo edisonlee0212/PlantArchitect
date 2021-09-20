@@ -83,7 +83,9 @@ int main() {
     const bool enableRayTracing = true;
     EngineSetup(enableRayTracing);
     RegisterDataComponentMenus();
-    Application::Init();
+    ApplicationConfigs applicationConfigs;
+    applicationConfigs.m_projectPath = "PlantArchitect/PlantArchitect.ueproj"
+    Application::Init(applicationConfigs);
 
 #pragma region Engine Loop
     Application::Run();

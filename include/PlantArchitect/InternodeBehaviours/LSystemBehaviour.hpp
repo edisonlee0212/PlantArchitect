@@ -60,11 +60,13 @@ namespace PlantArchitect {
     };
 
     class PLANT_ARCHITECT_API LString : public IAsset{
+    protected:
+        bool SaveInternal(const std::filesystem::path &path) override;
+        bool LoadInternal(const std::filesystem::path &path) override;
     public:
         void ParseLString(const std::string& string);
         std::vector<LSystemCommand> commands;
-        void Save(const std::filesystem::path &path) override;
-        void Load(const std::filesystem::path &path) override;
+
     };
 
     class PLANT_ARCHITECT_API LSystemBehaviour : public IInternodeBehaviour {

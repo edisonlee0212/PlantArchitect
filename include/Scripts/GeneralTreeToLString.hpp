@@ -13,7 +13,7 @@ namespace Scripts {
         std::string m_parameterFileName;
         GeneralTreeParameters m_parameters;
         int m_generationAmount = 10;
-        std::filesystem::path m_currentExportFolder = "./GeneralTreeToString_Export/";
+        std::filesystem::path m_currentExportFolder = "GeneralTreeToString_Export/";
         int m_perTreeGrowthIteration = 40;
         void OnIdle(AutoTreeGenerationPipeline& pipeline) override;
         void OnBeforeGrowth(AutoTreeGenerationPipeline& pipeline) override;

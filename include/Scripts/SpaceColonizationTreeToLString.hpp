@@ -12,7 +12,7 @@ namespace Scripts {
     public:
         SpaceColonizationParameters m_parameters;
         int m_generationAmount = 10;
-        std::filesystem::path m_currentExportFolder = "./SpaceColonizationTreeToString_Export/";
+        std::filesystem::path m_currentExportFolder = "SpaceColonizationTreeToString_Export/";
         int m_perTreeGrowthIteration = 40;
         int m_attractionPointAmount = 8000;
         void OnIdle(AutoTreeGenerationPipeline& pipeline) override;

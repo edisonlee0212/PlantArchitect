@@ -59,14 +59,14 @@ void SpaceColonizationTreeToLString::OnAfterGrowth(AutoTreeGenerationPipeline &p
         m_currentGrowingTree.GetOrSetPrivateComponent<Internode>().lock()->ExportLString(lString);
         auto lstringFolder = m_currentExportFolder / "L-System strings";
         auto imagesFolder = m_currentExportFolder / "Images";
-        std::filesystem::create_directories(lstringFolder);
-        std::filesystem::create_directories(imagesFolder);
+        std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path() / lstringFolder);
+        std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path() / imagesFolder);
         //path here
-        lString->Save(
+        lString->SetPathAndSave(
                 lstringFolder / (std::to_string(m_generationAmount - m_remainingInstanceAmount) + ".lstring"));
         auto mainCamera = RenderManager::GetMainCamera().lock();
-        mainCamera->GetTexture()->Save(imagesFolder / (std::to_string(m_generationAmount - m_remainingInstanceAmount) +
-                                                       ".jpg"));
+        mainCamera->GetTexture()->SetPathAndSave(
+                imagesFolder / (std::to_string(m_generationAmount - m_remainingInstanceAmount) + ".jpg"));
 
         auto behaviour = m_spaceColonizationTreeBehaviour.lock();
         behaviour->Recycle(m_currentGrowingTree);
@@ -88,19 +88,18 @@ void SpaceColonizationTreeToLString::OnInspect() {
     ImGui::DragInt("Growth iteration", &m_perTreeGrowthIteration);
     ImGui::DragInt("Attraction point per plant", &m_attractionPointAmount);
     if (m_remainingInstanceAmount == 0) {
-        if(Application::IsPlaying()) {
+        if (Application::IsPlaying()) {
             if (ImGui::Button("Start")) {
-                std::filesystem::create_directories(m_currentExportFolder);
                 m_remainingInstanceAmount = m_generationAmount;
             }
-        }else{
+        } else {
             ImGui::Text("Start Engine first!");
         }
     } else {
         ImGui::Text("Task dispatched...");
         ImGui::Text(("Total: " + std::to_string(m_generationAmount) + ", Remaining: " +
                      std::to_string(m_remainingInstanceAmount)).c_str());
-        if(ImGui::Button("Force stop")){
+        if (ImGui::Button("Force stop")) {
             m_remainingInstanceAmount = 1;
         }
     }

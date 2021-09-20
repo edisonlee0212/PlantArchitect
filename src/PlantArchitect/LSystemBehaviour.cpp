@@ -173,16 +173,16 @@ void LSystemParameters::OnInspect() {
     ImGui::DragFloat("End node thickness", &m_endNodeThickness);
 }
 
-void LString::Load(const std::filesystem::path &path) {
+bool LString::LoadInternal(const std::filesystem::path &path) {
     if (path.extension().string() == ".lstring") {
         auto string = FileUtils::LoadFileAsString(path);
         ParseLString(string);
-    } else {
-        IAsset::Load(path);
+        return true;
     }
+    return false;
 }
 
-void LString::Save(const std::filesystem::path &path) {
+bool LString::SaveInternal(const std::filesystem::path &path) {
     if (path.extension().string() == ".lstring") {
         std::ofstream of;
         of.open(path.c_str(),
@@ -247,9 +247,9 @@ void LString::Save(const std::filesystem::path &path) {
             of.write(output.c_str(), output.size());
             of.flush();
         }
-    } else {
-        IAsset::Save(path);
+        return true;
     }
+    return false;
 }
 
 void LString::ParseLString(const std::string &string) {
