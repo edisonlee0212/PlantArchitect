@@ -50,7 +50,6 @@ namespace PlantArchitect {
 
         std::vector<AssetRef> m_internodeBehaviours;
 
-        void BehaviourSlotButton();
 
 #pragma region Internode debugging camera
 

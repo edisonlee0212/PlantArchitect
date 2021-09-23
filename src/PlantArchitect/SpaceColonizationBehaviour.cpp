@@ -310,28 +310,13 @@ void SpaceColonizationBehaviour::OnInspect() {
 }
 
 void SpaceColonizationBehaviour::VolumeSlotButton() {
-    ImGui::Text("Drop Volume");
+    ImGui::Text("Add new volume");
     ImGui::SameLine();
-    ImGui::Button("Here");
-    if (ImGui::BeginDragDropTarget()) {
-        if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("CubeVolume")) {
-            IM_ASSERT(payload->DataSize == sizeof(std::shared_ptr<IPrivateComponent>));
-            std::shared_ptr<IVolume> payload_n =
-                    std::dynamic_pointer_cast<IVolume>(
-                            *static_cast<std::shared_ptr<IPrivateComponent> *>(payload->Data));
-            PushVolume(payload_n);
-        }
-        ImGui::EndDragDropTarget();
-    }
-    if (ImGui::BeginDragDropTarget()) {
-        if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("RadialBoundingVolume")) {
-            IM_ASSERT(payload->DataSize == sizeof(std::shared_ptr<IPrivateComponent>));
-            std::shared_ptr<IVolume> payload_n =
-                    std::dynamic_pointer_cast<IVolume>(
-                            *static_cast<std::shared_ptr<IPrivateComponent> *>(payload->Data));
-            PushVolume(payload_n);
-        }
-        ImGui::EndDragDropTarget();
+    static PrivateComponentRef temp;
+    EditorManager::DragAndDropButton(temp, "Here", {"CubeVolume", "RadialBoundingVolume"}, false);
+    if(temp.Get<IVolume>()){
+        PushVolume(temp.Get<IVolume>());
+        temp.Clear();
     }
 }
 

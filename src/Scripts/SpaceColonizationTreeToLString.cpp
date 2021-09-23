@@ -47,7 +47,7 @@ void SpaceColonizationTreeToLString::OnGrowth(AutoTreeGenerationPipeline &pipeli
     mainCamera->m_useClearColor = false;
     mainCamera->m_allowAutoResize = false;
     mainCamera->ResizeResolution(1024, 1024);
-    RenderManager::GetInstance().m_lightSettings.m_ambientLight = 1.0f;
+    EntityManager::GetCurrentScene()->m_environmentalMapSettings.m_environmentalLightingIntensity = 1.0f;
     m_imageCapturing = true;
 }
 

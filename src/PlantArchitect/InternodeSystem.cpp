@@ -53,63 +53,61 @@ void InternodeSystem::OnInspect() {
         Simulate(iterations);
     }
 
+    ImGui::Text("Add Internode Behaviour");
+    ImGui::SameLine();
+    static AssetRef temp;
+    EditorManager::DragAndDropButton(temp, "Here",
+                                     {"GeneralTreeBehaviour", "SpaceColonizationBehaviour", "LSystemBehaviour"}, false);
+    if (temp.Get<IInternodeBehaviour>()) {
+        PushInternodeBehaviour(temp.Get<IInternodeBehaviour>());
+        temp.Clear();
+    }
     if (ImGui::TreeNodeEx("Internode Behaviours", ImGuiTreeNodeFlags_DefaultOpen)) {
-        BehaviourSlotButton();
         int index = 0;
         bool skip = false;
         for (auto &i: m_internodeBehaviours) {
-            if (EditorManager::DragAndDropButton<IAsset>(i, "Slot " + std::to_string(index++))) {
-                skip = true;
+            auto ptr = i.Get<IInternodeBehaviour>();
+            ImGui::Button(("Slot " + std::to_string(index) + ": " + ptr->m_name).c_str());
+            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+                EditorManager::GetInstance().m_inspectingAsset = ptr;
+            }
+            const std::string tag = "##" + ptr->GetTypeName() + std::to_string(ptr->GetHandle());
+            if (ImGui::BeginPopupContextItem(tag.c_str())) {
+                if (ImGui::BeginMenu(("Rename" + tag).c_str())) {
+                    static char newName[256];
+                    ImGui::InputText(("New name" + tag).c_str(), newName, 256);
+                    if (ImGui::Button(("Confirm" + tag).c_str()))
+                        ptr->m_name = std::string(newName);
+                    ImGui::EndMenu();
+                }
+                if (ImGui::Button(("Remove" + tag).c_str())) {
+                    i.Clear();
+                    skip = true;
+                }
+                ImGui::EndPopup();
+            }
+            if (skip) {
                 break;
             }
+            index++;
         }
         if (skip) {
-            int index = 0;
+            int index2 = 0;
             for (auto &i: m_internodeBehaviours) {
                 if (!i.Get<IInternodeBehaviour>()) {
-                    m_internodeBehaviours.erase(m_internodeBehaviours.begin() + index);
+                    m_internodeBehaviours.erase(m_internodeBehaviours.begin() + index2);
                     break;
                 }
-                index++;
+                index2++;
             }
         }
         ImGui::TreePop();
     }
 }
 
-void InternodeSystem::BehaviourSlotButton() {
-    ImGui::Text("Drop Behaviour");
-    ImGui::SameLine();
-    ImGui::Button("Here");
-    if (ImGui::BeginDragDropTarget()) {
-        if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("DefaultInternodeBehaviour")) {
-            IM_ASSERT(payload->DataSize == sizeof(std::shared_ptr<IAsset>));
-            std::shared_ptr<IInternodeBehaviour> payload_n =
-                    std::dynamic_pointer_cast<IInternodeBehaviour>(
-                            *static_cast<std::shared_ptr<IAsset> *>(payload->Data));
-            PushInternodeBehaviour(payload_n);
-        }
-        if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("SpaceColonizationBehaviour")) {
-            IM_ASSERT(payload->DataSize == sizeof(std::shared_ptr<IAsset>));
-            std::shared_ptr<IInternodeBehaviour> payload_n =
-                    std::dynamic_pointer_cast<IInternodeBehaviour>(
-                            *static_cast<std::shared_ptr<IAsset> *>(payload->Data));
-            PushInternodeBehaviour(payload_n);
-        }
-        if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("LSystemBehaviour")) {
-            IM_ASSERT(payload->DataSize == sizeof(std::shared_ptr<IAsset>));
-            std::shared_ptr<IInternodeBehaviour> payload_n =
-                    std::dynamic_pointer_cast<IInternodeBehaviour>(
-                            *static_cast<std::shared_ptr<IAsset> *>(payload->Data));
-            PushInternodeBehaviour(payload_n);
-        }
-        ImGui::EndDragDropTarget();
-    }
-}
-
 void InternodeSystem::OnCreate() {
     m_randomColors.resize(60);
-    for(int i = 0; i < 60; i++){
+    for (int i = 0; i < 60; i++) {
         m_randomColors[i] = glm::sphericalRand(1.0f);
     }
 
@@ -150,7 +148,7 @@ void InternodeSystem::LateUpdate() {
 
 #pragma region Rendering
     if (m_drawBranches) {
-        if(m_autoUpdate) {
+        if (m_autoUpdate) {
             UpdateBranchColors();
             UpdateBranchCylinder(m_connectionWidth);
         }
@@ -158,7 +156,7 @@ void InternodeSystem::LateUpdate() {
             RenderBranchCylinders();
     }
     if (m_drawPointers) {
-        if(m_autoUpdate) {
+        if (m_autoUpdate) {
             UpdateBranchPointer(m_pointerLength, m_pointerWidth);
         }
         if (m_internodeDebuggingCamera->IsEnabled())
@@ -185,11 +183,12 @@ void InternodeSystem::LateUpdate() {
                             ImGui::SliderFloat("Alpha", &m_transparency, 0, 1);
                             ImGui::DragFloat("Connection width", &m_connectionWidth, 0.01f, 0.01f, 1.0f);
 
-                            static const char *ColorModes[]{"None", "Order", "Level", "Water", "ApicalControl", "WaterPressure",
-                                                               "Proximity", "Inhibitor"};
+                            static const char *ColorModes[]{"None", "Order", "Level", "Water", "ApicalControl",
+                                                            "WaterPressure",
+                                                            "Proximity", "Inhibitor"};
                             static int colorModeIndex = 0;
-                            if(ImGui::Combo("Color mode", &colorModeIndex, ColorModes,
-                                         IM_ARRAYSIZE(ColorModes))){
+                            if (ImGui::Combo("Color mode", &colorModeIndex, ColorModes,
+                                             IM_ARRAYSIZE(ColorModes))) {
                                 m_branchColorMode = (BranchColorMode) colorModeIndex;
                             }
                             ImGui::DragFloat("Multiplier", &m_branchColorValueMultiplier, 0.01f);
@@ -431,7 +430,7 @@ void InternodeSystem::UpdateBranchColors() {
                     [=](int i, Entity entity, BranchColor &internodeRenderColor,
                         InternodeStatus &internodeStatus) {
                         internodeRenderColor.m_value = glm::vec4(glm::vec3(m_branchColorValueMultiplier *
-                                                                           glm::pow((float)internodeStatus.m_order,
+                                                                           glm::pow((float) internodeStatus.m_order,
                                                                                     m_branchColorValueCompressFactor)),
                                                                  m_transparency);
                     },
@@ -444,7 +443,7 @@ void InternodeSystem::UpdateBranchColors() {
                     [=](int i, Entity entity, BranchColor &internodeRenderColor,
                         InternodeStatus &internodeStatus) {
                         internodeRenderColor.m_value = glm::vec4(glm::vec3(m_branchColorValueMultiplier *
-                                                                           glm::pow((float)internodeStatus.m_level,
+                                                                           glm::pow((float) internodeStatus.m_level,
                                                                                     m_branchColorValueCompressFactor)),
                                                                  m_transparency);
                     },
@@ -455,7 +454,8 @@ void InternodeSystem::UpdateBranchColors() {
                     JobManager::PrimaryWorkers(),
                     m_internodesQuery,
                     [=](int i, Entity entity, BranchColor &internodeRenderColor,
-                        InternodeStatus &internodeStatus, InternodeInfo& internodeInfo, GeneralTreeParameters& parameters) {
+                        InternodeStatus &internodeStatus, InternodeInfo &internodeInfo,
+                        GeneralTreeParameters &parameters) {
                         internodeRenderColor.m_value = glm::vec4(glm::vec3(m_branchColorValueMultiplier *
                                                                            glm::pow(internodeStatus.m_apicalControl,
                                                                                     m_branchColorValueCompressFactor)),
