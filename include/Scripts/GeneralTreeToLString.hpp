@@ -15,6 +15,7 @@ namespace Scripts {
         int m_generationAmount = 10;
         std::filesystem::path m_currentExportFolder = "GeneralTreeToString_Export/";
         int m_perTreeGrowthIteration = 40;
+        bool m_exportOBJ = true;
         void OnIdle(AutoTreeGenerationPipeline& pipeline) override;
         void OnBeforeGrowth(AutoTreeGenerationPipeline& pipeline) override;
         void OnGrowth(AutoTreeGenerationPipeline& pipeline) override;
