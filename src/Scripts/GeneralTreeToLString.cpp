@@ -119,10 +119,10 @@ void GeneralTreeToLString::OnInspect() {
         m_parameters.Load(path);
         m_parameterFileName = path.stem().string();
         m_perTreeGrowthIteration = m_parameters.m_matureAge;
-    });
+    }, false);
     FileUtils::SaveFile("Save parameters", "GeneralTreeParam", {".gtparams"}, [&](const std::filesystem::path &path) {
         m_parameters.Save(path);
-    });
+    }, false);
     ImGui::Text("General tree parameters");
     m_parameters.OnInspect();
     ImGui::Text("Pipeline Settings:");
