@@ -26,7 +26,8 @@
 #include "InternodeFoliage.hpp"
 #include "RadialBoundingVolume.hpp"
 #include "GeneralTreeToLString.hpp"
-
+#include "DepthCamera.hpp"
+#include "MultipleAngleCapture.hpp"
 using namespace PlantArchitect;
 using namespace RayTracerFacility;
 using namespace Scripts;
@@ -34,7 +35,6 @@ using namespace Scripts;
 void EngineSetup(bool enableRayTracing);
 void RegisterDataComponentMenus();
 int main() {
-
     ClassRegistry::RegisterDataComponent<BranchCylinder>("BranchCylinder");
     ClassRegistry::RegisterDataComponent<BranchCylinderWidth>("BranchCylinderWidth");
     ClassRegistry::RegisterDataComponent<BranchPointer>("BranchPointer");
@@ -45,6 +45,7 @@ int main() {
     ClassRegistry::RegisterPrivateComponent<CubeVolume>("CubeVolume");
     ClassRegistry::RegisterPrivateComponent<RadialBoundingVolume>("RadialBoundingVolume");
     ClassRegistry::RegisterPrivateComponent<MLVQRenderer>("MLVQRenderer");
+    ClassRegistry::RegisterPrivateComponent<DepthCamera>("DepthCamera");
 
     ClassRegistry::RegisterDataComponent<GeneralTreeTag>("GeneralTreeTag");
     ClassRegistry::RegisterDataComponent<GeneralTreeParameters>("GeneralTreeParameters");
@@ -74,8 +75,9 @@ int main() {
     ClassRegistry::RegisterSystem<InternodeSystem>("InternodeSystem");
 
     ClassRegistry::RegisterPrivateComponent<AutoTreeGenerationPipeline>("AutoTreeGenerationPipeline");
-    ClassRegistry::RegisterAsset<SpaceColonizationTreeToLString>("SpaceColonizationTreeToLString", "sctolstring");
-    ClassRegistry::RegisterAsset<GeneralTreeToLString>("GeneralTreeToLString", "gttolstring");
+    ClassRegistry::RegisterAsset<SpaceColonizationTreeToLString>("SpaceColonizationTreeToLString", ".sctolstring");
+    ClassRegistry::RegisterAsset<GeneralTreeToLString>("GeneralTreeToLString", ".gttolstring");
+    ClassRegistry::RegisterAsset<MultipleAngleCapture>("MultipleAngleCapture", ".mulanglecap");
 
     ClassRegistry::RegisterAsset<InternodeFoliage>("InternodeFoliage", ".internodefoliage");
     ClassRegistry::RegisterAsset<DefaultInternodePhyllotaxis>("DefaultInternodePhyllotaxis", ".defaultip");

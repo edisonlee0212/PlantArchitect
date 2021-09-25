@@ -123,8 +123,10 @@ void GeneralTreeToLString::OnInspect() {
     FileUtils::SaveFile("Save parameters", "GeneralTreeParam", {".gtparams"}, [&](const std::filesystem::path &path) {
         m_parameters.Save(path);
     }, false);
-    ImGui::Text("General tree parameters");
-    m_parameters.OnInspect();
+    if(ImGui::TreeNodeEx("General tree parameters")) {
+        m_parameters.OnInspect();
+        ImGui::TreePop();
+    }
     ImGui::Text("Pipeline Settings:");
     ImGui::DragInt("Generation Amount", &m_generationAmount);
     ImGui::DragInt("Growth iteration", &m_perTreeGrowthIteration);

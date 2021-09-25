@@ -10,6 +10,8 @@ namespace Scripts {
         std::weak_ptr<SpaceColonizationBehaviour> m_spaceColonizationTreeBehaviour;
         bool m_imageCapturing = false;
     public:
+        bool m_exportOBJ = true;
+
         SpaceColonizationParameters m_parameters;
         int m_generationAmount = 10;
         std::filesystem::path m_currentExportFolder = "SpaceColonizationTreeToString_Export/";

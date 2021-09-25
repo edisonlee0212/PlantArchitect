@@ -20,6 +20,11 @@ namespace PlantArchitect {
     class IInternodeBehaviour;
     class PLANT_ARCHITECT_API InternodeSystem : public ISystem {
     public:
+        /**
+         * The EntityQuery for filtering all internodes.
+         */
+        EntityQuery m_internodesQuery;
+
         void LateUpdate() override;
 
         void Simulate(int iterations);
@@ -41,10 +46,7 @@ namespace PlantArchitect {
          */
         bool InternodeCheck(const Entity& target);
     private:
-        /**
-         * The EntityQuery for filtering all internodes.
-         */
-        EntityQuery m_internodesQuery;
+
 
         friend class Internode;
 

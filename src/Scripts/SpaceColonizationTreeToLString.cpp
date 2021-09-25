@@ -61,6 +61,37 @@ void SpaceColonizationTreeToLString::OnAfterGrowth(AutoTreeGenerationPipeline &p
         auto imagesFolder = m_currentExportFolder / "Images";
         std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path() / lstringFolder);
         std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path() / imagesFolder);
+        auto objFolder = m_currentExportFolder / "OBJ";
+        if (m_exportOBJ) {
+            std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path() / objFolder);
+            Entity foliage, branch;
+            m_currentGrowingTree.ForEachChild([&](Entity child) {
+                if (child.GetName() == "Foliage") foliage = child;
+                else if (child.GetName() == "Branch") branch = child;
+            });
+            if (foliage.IsValid() && foliage.HasPrivateComponent<SkinnedMeshRenderer>()) {
+                auto smr = foliage.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
+                if (smr->m_skinnedMesh.Get<SkinnedMesh>() && !smr->m_skinnedMesh.Get<SkinnedMesh>()->UnsafeGetSkinnedVertices().empty()) {
+                    auto exportPath = std::filesystem::absolute(
+                            ProjectManager::GetProjectPath().parent_path() / objFolder /
+                            (std::to_string(m_generationAmount - m_remainingInstanceAmount) +
+                             "_foliage.obj"));
+                    UNIENGINE_LOG(exportPath.string());
+                    smr->m_skinnedMesh.Get<SkinnedMesh>()->Export(exportPath);
+                }
+            }
+            if (branch.IsValid() && branch.HasPrivateComponent<SkinnedMeshRenderer>()) {
+                auto smr = branch.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
+                if (smr->m_skinnedMesh.Get<SkinnedMesh>() && !smr->m_skinnedMesh.Get<SkinnedMesh>()->UnsafeGetSkinnedVertices().empty()) {
+                    auto exportPath = std::filesystem::absolute(
+                            ProjectManager::GetProjectPath().parent_path() / objFolder /
+                            (std::to_string(m_generationAmount - m_remainingInstanceAmount) +
+                             "_branch.obj"));
+                    smr->m_skinnedMesh.Get<SkinnedMesh>()->Export(exportPath);
+                }
+            }
+        }
+
         //path here
         lString->SetPathAndSave(
                 lstringFolder / (std::to_string(m_generationAmount - m_remainingInstanceAmount) + ".lstring"));
@@ -87,6 +118,7 @@ void SpaceColonizationTreeToLString::OnInspect() {
     ImGui::DragInt("Generation Amount", &m_generationAmount);
     ImGui::DragInt("Growth iteration", &m_perTreeGrowthIteration);
     ImGui::DragInt("Attraction point per plant", &m_attractionPointAmount);
+    ImGui::Checkbox("Export OBJ", &m_exportOBJ);
     if (m_remainingInstanceAmount == 0) {
         if (Application::IsPlaying()) {
             if (ImGui::Button("Start")) {
