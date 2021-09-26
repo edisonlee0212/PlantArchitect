@@ -13,6 +13,7 @@ using namespace Scripts;
 
 void GeneralTreeToLString::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) {
     if (m_remainingInstanceAmount <= 0) {
+        ProjectManager::ScanProjectFolder(true);
         m_remainingInstanceAmount = 0;
         pipeline.m_status = AutoTreeGenerationPipelineStatus::Idle;
         return;
@@ -28,6 +29,7 @@ void GeneralTreeToLString::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) 
 
 void GeneralTreeToLString::OnGrowth(AutoTreeGenerationPipeline &pipeline) {
     if (m_remainingInstanceAmount == 0) {
+        ProjectManager::ScanProjectFolder(true);
         pipeline.m_status = AutoTreeGenerationPipelineStatus::Idle;
         return;
     }
@@ -107,6 +109,7 @@ void GeneralTreeToLString::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
         behaviour->Recycle(m_currentGrowingTree);
         m_remainingInstanceAmount--;
         if (m_remainingInstanceAmount == 0) {
+            ProjectManager::ScanProjectFolder(true);
             pipeline.m_status = AutoTreeGenerationPipelineStatus::Idle;
         } else {
             pipeline.m_status = AutoTreeGenerationPipelineStatus::BeforeGrowth;

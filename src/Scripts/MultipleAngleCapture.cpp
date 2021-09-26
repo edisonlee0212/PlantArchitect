@@ -128,6 +128,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
                                        (prefix + "_camera_matrices.yml"));
 
                         m_captureStatus = MultipleAngleCaptureStatus::Info;
+                        ProjectManager::ScanProjectFolder(true);
                         pipeline.m_status = AutoTreeGenerationPipelineStatus::Idle;
                     } else {
                         m_captureStatus = MultipleAngleCaptureStatus::Info;

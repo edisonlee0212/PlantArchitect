@@ -104,6 +104,7 @@ void SpaceColonizationTreeToLString::OnAfterGrowth(AutoTreeGenerationPipeline &p
         behaviour->m_attractionPoints.clear();
         m_remainingInstanceAmount--;
         if (m_remainingInstanceAmount == 0) {
+            ProjectManager::ScanProjectFolder(true);
             pipeline.m_status = AutoTreeGenerationPipelineStatus::Idle;
         } else {
             pipeline.m_status = AutoTreeGenerationPipelineStatus::BeforeGrowth;
