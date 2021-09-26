@@ -438,7 +438,7 @@ void RayTracerManager::OnGui() {
 
         if (ImGui::Button("Load all MLVQ Materials")) {
             std::vector<std::string> pathes;
-            std::filesystem::path folder("../Resources/btfs");
+            std::filesystem::path folder("./PlantArchitectResources/btfs");
             for (auto &entry: std::filesystem::directory_iterator(folder)) {
                 pathes.push_back(entry.path().string());
             }

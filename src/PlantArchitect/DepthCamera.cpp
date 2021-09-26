@@ -79,7 +79,7 @@ void DepthCamera::OnCreate() {
     if (!m_depthTransferProgram) {
         auto fragShaderCode =
                 std::string("#version 450 core\n") +
-                FileUtils::LoadFileAsString(std::filesystem::path("../Resources") /
+                FileUtils::LoadFileAsString(std::filesystem::path("./PlantArchitectResources") /
                                             "Shaders/Fragment/DepthCopy.frag");
         auto fragShader = AssetManager::CreateAsset<OpenGLUtils::GLShader>();
         fragShader->Set(OpenGLUtils::ShaderType::Fragment, fragShaderCode);

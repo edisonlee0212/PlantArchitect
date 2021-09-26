@@ -240,6 +240,14 @@ target_link_libraries(InternodeBehavioursExample
         Scripts
         )
 
+# ------------------------------------------------------------------
+# Copy Internal resources
+# ------------------------------------------------------------------
+add_custom_command(TARGET PlantArchitect POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Internals
+        ${CMAKE_BINARY_DIR})
+
 file(COPY src/app/imgui.ini DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 if (NOT ${CMAKE_BINARY_DIR} STREQUAL ${PROJECT_BINARY_DIR})
