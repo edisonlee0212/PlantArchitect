@@ -52,21 +52,24 @@ void AutoTreeGenerationPipeline::DropBehaviourButton() {
             ImGui::EndPopup();
         }
     }else {
-        ImGui::Text("Drop Behaviour");
-        ImGui::SameLine();
-        ImGui::Button("Here");
-        if (ImGui::BeginDragDropTarget()) {
-            if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("SpaceColonizationTreeToLString")) {
-                IM_ASSERT(payload->DataSize == sizeof(std::shared_ptr<IAsset>));
-                std::shared_ptr<IAutoTreeGenerationPipelineBehaviour> payload_n =
-                        std::dynamic_pointer_cast<IAutoTreeGenerationPipelineBehaviour>(
-                                *static_cast<std::shared_ptr<IAsset> *>(payload->Data));
-                m_pipelineBehaviour = payload_n;
-            }
-            ImGui::EndDragDropTarget();
-        }
+        EditorManager::DragAndDropButton(m_pipelineBehaviour, "Pipeline behaviour",
+                                         {"SpaceColonizationTreeToLString", "MultipleAngleCapture", "GeneralTreeToString"}, false);
     }
 }
+
+void AutoTreeGenerationPipeline::Serialize(YAML::Emitter &out) {
+    m_pipelineBehaviour.Save("m_pipelineBehaviour", out);
+}
+
+void AutoTreeGenerationPipeline::Deserialize(const YAML::Node &in) {
+    m_pipelineBehaviour.Load("m_pipelineBehaviour", in);
+}
+
+void AutoTreeGenerationPipeline::CollectAssetRef(std::vector<AssetRef> &list) {
+    list.push_back(m_pipelineBehaviour);
+}
+
+
 
 void IAutoTreeGenerationPipelineBehaviour::OnBeforeGrowth(AutoTreeGenerationPipeline& pipeline) {
 
