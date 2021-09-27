@@ -11,9 +11,6 @@
 using namespace PlantArchitect;
 
 void SpaceColonizationBehaviour::OnCreate() {
-    if (m_recycleStorageEntity.Get().IsNull()) {
-        m_recycleStorageEntity = EntityManager::CreateEntity("Recycled Space Colonization Internodes");
-    }
     m_internodeArchetype =
             EntityManager::CreateEntityArchetype("Space Colonization Internode", InternodeInfo(),
                                                  SpaceColonizationTag(), SpaceColonizationIncentive(),
@@ -27,6 +24,9 @@ void SpaceColonizationBehaviour::OnCreate() {
 void SpaceColonizationBehaviour::Grow(int iteration) {
 
     if (m_attractionPoints.empty()) return;
+    if (m_recycleStorageEntity.IsNull()) {
+        m_recycleStorageEntity = EntityManager::CreateEntity("Recycled General Tree Internodes");
+    }
     std::vector<int> removeMarks;
     removeMarks.resize(m_attractionPoints.size());
     memset(removeMarks.data(), 0, removeMarks.size() * sizeof(bool));
@@ -361,6 +361,27 @@ Entity SpaceColonizationBehaviour::NewPlant(const SpaceColonizationParameters &p
     entity.SetDataComponent(newInfo);
     entity.SetDataComponent(params);
     return entity;
+}
+
+void SpaceColonizationBehaviour::Serialize(YAML::Emitter &out) {
+    out << YAML::Key << "m_volumes" << YAML::Value << YAML::BeginSeq;
+    for(auto& i : m_volumes){
+        out << YAML::BeginMap;
+        i.Serialize(out);
+        out << YAML::EndMap;
+    }
+    out << YAML::EndSeq;
+}
+
+void SpaceColonizationBehaviour::Deserialize(const YAML::Node &in) {
+    if(in["m_volumes"]){
+        m_volumes.clear();
+        for(const auto& i : in["m_volumes"]){
+            PrivateComponentRef volume;
+            volume.Deserialize(i);
+            m_volumes.push_back(volume);
+        }
+    }
 }
 
 void SpaceColonizationParameters::OnInspect() {

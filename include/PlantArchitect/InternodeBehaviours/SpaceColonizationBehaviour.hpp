@@ -39,6 +39,9 @@ namespace PlantArchitect {
         std::vector<glm::vec3> m_attractionPoints;
         glm::vec3 m_center;
 
+        void Serialize(YAML::Emitter &out) override;
+        void Deserialize(const YAML::Node &in) override;
+
         void OnInspect() override;
 
         void OnCreate() override;

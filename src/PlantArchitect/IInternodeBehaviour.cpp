@@ -23,7 +23,7 @@ void IInternodeBehaviour::Recycle(const Entity &internode) {
 
 void IInternodeBehaviour::RecycleSingle(const Entity &internode) {
     std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
-    if (m_recycleStorageEntity.Get().IsNull()) {
+    if (m_recycleStorageEntity.IsNull()) {
         EntityManager::DeleteEntity(internode);
         return;
     }
@@ -36,7 +36,7 @@ void IInternodeBehaviour::RecycleSingle(const Entity &internode) {
             EntityManager::RemovePrivateComponent(internode, element.m_typeId);
     });
     internode.GetOrSetPrivateComponent<Internode>().lock()->OnRecycle();
-    internode.SetParent(m_recycleStorageEntity.Get());
+    internode.SetParent(m_recycleStorageEntity);
     internode.SetEnabled(false);
 }
 

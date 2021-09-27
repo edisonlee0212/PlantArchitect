@@ -602,6 +602,34 @@ bool InternodeSystem::InternodeCheck(const Entity &target) {
     return target.IsValid() && target.HasDataComponent<InternodeInfo>() && target.HasPrivateComponent<Internode>();
 }
 
+void InternodeSystem::Relink(const std::unordered_map<Handle, Handle> &map) {
+    m_currentFocusingInternode.Relink(map);
+}
+
+void InternodeSystem::CollectAssetRef(std::vector<AssetRef> &list) {
+    list.insert(list.begin(), m_internodeBehaviours.begin(), m_internodeBehaviours.end());
+}
+
+void InternodeSystem::Serialize(YAML::Emitter &out) {
+    out << YAML::Key << "m_internodeBehaviours" << YAML::Value << YAML::BeginSeq;
+    for(auto& i : m_internodeBehaviours){
+        out << YAML::BeginMap;
+        i.Serialize(out);
+        out << YAML::EndMap;
+    }
+    out << YAML::EndSeq;
+}
+
+void InternodeSystem::Deserialize(const YAML::Node &in) {
+    m_internodeBehaviours.clear();
+    if(in["m_internodeBehaviours"]){
+        for(const auto& i : in["m_internodeBehaviours"]){
+            AssetRef behaviour;
+            behaviour.Deserialize(i);
+            m_internodeBehaviours.push_back(behaviour);
+        }
+    }
+}
 
 #pragma endregion
 

@@ -19,7 +19,7 @@ namespace PlantArchitect {
          * The EntityArchetype for creating internodes, must be set when created.
          */
         EntityArchetype m_internodeArchetype;
-        EntityRef m_recycleStorageEntity;
+        Entity m_recycleStorageEntity;
         std::mutex m_internodeFactoryLock;
 
         /**
@@ -337,7 +337,7 @@ namespace PlantArchitect {
     Entity IInternodeBehaviour::RetrieveHelper(const Entity &parent) {
         Entity retVal;
         std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
-        auto recycleEntity = m_recycleStorageEntity.Get();
+        auto recycleEntity = m_recycleStorageEntity;
         if (!recycleEntity.IsNull()) retVal = recycleEntity.GetChild(0);
         if (!retVal.IsNull()) {
             retVal.SetParent(parent);
@@ -364,7 +364,7 @@ namespace PlantArchitect {
     Entity IInternodeBehaviour::RetrieveHelper() {
         Entity retVal;
         std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
-        auto recycleEntity = m_recycleStorageEntity.Get();
+        auto recycleEntity = m_recycleStorageEntity;
         if (!recycleEntity.IsNull()) retVal = recycleEntity.GetChild(0);
         if (!retVal.IsNull()) {
             recycleEntity.RemoveChild(retVal);

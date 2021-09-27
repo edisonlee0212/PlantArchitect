@@ -31,9 +31,6 @@ void LSystemBehaviour::OnInspect() {
 }
 
 void LSystemBehaviour::OnCreate() {
-    if (m_recycleStorageEntity.Get().IsNull()) {
-        m_recycleStorageEntity = EntityManager::CreateEntity("Recycled L-System Internodes");
-    }
     m_internodeArchetype =
             EntityManager::CreateEntityArchetype("L-System Internode", InternodeInfo(),
                                                  LSystemTag(), LSystemParameters(),

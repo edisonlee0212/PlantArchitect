@@ -45,6 +45,11 @@ namespace PlantArchitect {
          * @return True if the entity is valid and contains [InternodeInfo] and [Internode], false otherwise.
          */
         bool InternodeCheck(const Entity& target);
+
+        void Relink(const std::unordered_map<Handle, Handle> &map) override;
+        void CollectAssetRef(std::vector<AssetRef> &list) override;
+        void Serialize(YAML::Emitter &out) override;
+        void Deserialize(const YAML::Node &in) override;
     private:
 
 

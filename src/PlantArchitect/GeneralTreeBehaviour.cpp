@@ -15,6 +15,9 @@ void GeneralTreeBehaviour::Grow(int iteration) {
         m_currentPlants.clear();
         CollectRoots(m_currentPlants);
     }
+    if (m_recycleStorageEntity.IsNull()) {
+        m_recycleStorageEntity = EntityManager::CreateEntity("Recycled General Tree Internodes");
+    }
     int plantSize = m_currentPlants.size();
 #pragma region PreProcess
 #pragma region InternodeStatus
@@ -519,9 +522,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
 }
 
 void GeneralTreeBehaviour::OnCreate() {
-    if (m_recycleStorageEntity.Get().IsNull()) {
-        m_recycleStorageEntity = EntityManager::CreateEntity("Recycled General Tree Internodes");
-    }
+
     m_internodeArchetype =
             EntityManager::CreateEntityArchetype("General Tree Internode", InternodeInfo(), GeneralTreeTag(),
                                                  GeneralTreeParameters(), InternodeStatus(),
