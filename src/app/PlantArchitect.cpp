@@ -2,15 +2,17 @@
 // begins and ends there.
 //
 #include <Application.hpp>
+#ifdef RAYTRACERFACILITY
 #include <CUDAModule.hpp>
+#include <RayTracerManager.hpp>
+#include "MLVQRenderer.hpp"
+#endif
 #include <EditorManager.hpp>
 #include <Utilities.hpp>
 #include <ProjectManager.hpp>
 #include <PhysicsManager.hpp>
 #include <PostProcessing.hpp>
-#include <RayTracerManager.hpp>
 #include <CubeVolume.hpp>
-#include <MLVQRenderer.hpp>
 #include <ClassRegistry.hpp>
 #include <ObjectRotator.hpp>
 #include "GeneralTreeBehaviour.hpp"
@@ -29,7 +31,9 @@
 #include "DepthCamera.hpp"
 #include "MultipleAngleCapture.hpp"
 using namespace PlantArchitect;
+#ifdef RAYTRACERFACILITY
 using namespace RayTracerFacility;
+#endif
 using namespace Scripts;
 
 void EngineSetup(bool enableRayTracing);
@@ -44,7 +48,10 @@ int main() {
     ClassRegistry::RegisterPrivateComponent<IVolume>("IVolume");
     ClassRegistry::RegisterPrivateComponent<CubeVolume>("CubeVolume");
     ClassRegistry::RegisterPrivateComponent<RadialBoundingVolume>("RadialBoundingVolume");
-    ClassRegistry::RegisterPrivateComponent<MLVQRenderer>("MLVQRenderer");
+#ifdef RAYTRACERFACILITY
+    ClassRegistry::RegisterPrivateComponent<MLVQRenderer>(
+      "MLVQRenderer");
+#endif
     ClassRegistry::RegisterPrivateComponent<DepthCamera>("DepthCamera");
 
     ClassRegistry::RegisterDataComponent<GeneralTreeTag>("GeneralTreeTag");
@@ -91,8 +98,10 @@ int main() {
 #pragma region Engine Loop
     Application::Run();
 #pragma endregion
+#ifdef RAYTRACERFACILITY
     if (enableRayTracing)
-        RayTracerManager::End();
+    RayTracerManager::End();
+#endif
     Application::End();
 }
 
@@ -135,8 +144,10 @@ void EngineSetup(bool enableRayTracing) {
         transform.SetEulerRotation(glm::radians(glm::vec3(0, 0, 0)));
         lightEntity.SetDataComponent(transform);
         */
+#ifdef RAYTRACERFACILITY
         if (enableRayTracing)
-            RayTracerManager::Init();
+      RayTracerManager::Init();
+#endif
         auto internodeSystem = EntityManager::GetOrCreateSystem<InternodeSystem>(0.0f);
 
     });

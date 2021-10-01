@@ -2,13 +2,17 @@
 // begins and ends there.
 //
 #include <Application.hpp>
+#ifdef RAYTRACERFACILITY
 #include <CUDAModule.hpp>
+#include <RayTracerManager.hpp>
+#include "MLVQRenderer.hpp"
+#endif
 #include <EditorManager.hpp>
 #include <Utilities.hpp>
 #include <ProjectManager.hpp>
 #include <PhysicsManager.hpp>
 #include <PostProcessing.hpp>
-#include <RayTracerManager.hpp>
+
 #include <CubeVolume.hpp>
 #include <ClassRegistry.hpp>
 #include <ObjectRotator.hpp>
@@ -21,7 +25,7 @@
 #include "LSystemBehaviour.hpp"
 #include "SpaceColonizationTreeToLString.hpp"
 #include "AutoTreeGenerationPipeline.hpp"
-#include "MLVQRenderer.hpp"
+
 #include "DefaultInternodePhyllotaxis.hpp"
 #include "InternodeFoliage.hpp"
 #include "RadialBoundingVolume.hpp"
@@ -29,7 +33,9 @@
 #include "DepthCamera.hpp"
 #include "MultipleAngleCapture.hpp"
 using namespace PlantArchitect;
+#ifdef RAYTRACERFACILITY
 using namespace RayTracerFacility;
+#endif
 using namespace Scripts;
 void EngineSetup(bool enableRayTracing);
 
@@ -46,7 +52,11 @@ int main() {
     ClassRegistry::RegisterPrivateComponent<IVolume>("IVolume");
     ClassRegistry::RegisterPrivateComponent<CubeVolume>("CubeVolume");
     ClassRegistry::RegisterPrivateComponent<RadialBoundingVolume>("RadialBoundingVolume");
-    ClassRegistry::RegisterPrivateComponent<MLVQRenderer>("MLVQRenderer");
+
+#ifdef RAYTRACERFACILITY
+    ClassRegistry::RegisterPrivateComponent<MLVQRenderer>(
+      "MLVQRenderer");
+#endif
     ClassRegistry::RegisterPrivateComponent<DepthCamera>("DepthCamera");
 
     ClassRegistry::RegisterDataComponent<GeneralTreeTag>("GeneralTreeTag");
@@ -95,8 +105,10 @@ int main() {
 #pragma region Engine Loop
     Application::Run();
 #pragma endregion
+#ifdef RAYTRACERFACILITY
     if (enableRayTracing)
-        RayTracerManager::End();
+    RayTracerManager::End();
+#endif
     Application::End();
 }
 
@@ -127,21 +139,11 @@ void EngineSetup(bool enableRayTracing) {
         }
 #pragma endregion
 #pragma endregion
-        /*
-        const Entity lightEntity = EntityManager::CreateEntity("Light source");
-        auto pointLight = lightEntity.GetOrSetPrivateComponent<PointLight>().lock();
-        pointLight->m_diffuseBrightness = 6;
-        pointLight->m_lightSize = 0.25f;
-        pointLight->m_quadratic = 0.0001f;
-        pointLight->m_linear = 0.01f;
-        pointLight->m_lightSize = 0.08f;
-        transform.SetPosition(glm::vec3(0, 30, 0));
-        transform.SetEulerRotation(glm::radians(glm::vec3(0, 0, 0)));
-        lightEntity.SetDataComponent(transform);
-        */
-        if (enableRayTracing)
-            RayTracerManager::Init();
 
+#ifdef RAYTRACERFACILITY
+        if (enableRayTracing)
+      RayTracerManager::Init();
+#endif
         /*
          * Add all internode behaviours for example.
          */

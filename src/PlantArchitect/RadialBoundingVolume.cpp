@@ -1,6 +1,5 @@
 #include <InternodeSystem.hpp>
 #include <RadialBoundingVolume.hpp>
-#include <RayTracer.hpp>
 
 using namespace PlantArchitect;
 using namespace UniEngine;
