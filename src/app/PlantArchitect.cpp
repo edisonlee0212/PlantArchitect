@@ -148,7 +148,7 @@ void EngineSetup(bool enableRayTracing) {
         if (enableRayTracing)
       RayTracerManager::Init();
 #endif
-        auto internodeSystem = EntityManager::GetOrCreateSystem<InternodeSystem>(0.0f);
+        auto internodeSystem = EntityManager::GetOrCreateSystem<InternodeSystem>(EntityManager::GetCurrentScene(), 0.0f);
 
     });
 }
