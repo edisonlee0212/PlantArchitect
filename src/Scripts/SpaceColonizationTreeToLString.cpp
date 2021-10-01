@@ -19,7 +19,7 @@ void SpaceColonizationTreeToLString::OnBeforeGrowth(AutoTreeGenerationPipeline &
     }
     pipeline.m_status = AutoTreeGenerationPipelineStatus::Growth;
     if (m_spaceColonizationTreeBehaviour.expired()) {
-        m_spaceColonizationTreeBehaviour = EntityManager::GetSystem<InternodeSystem>()->GetInternodeBehaviour<SpaceColonizationBehaviour>();
+        m_spaceColonizationTreeBehaviour = EntityManager::GetSystem<InternodeSystem>(EntityManager::GetCurrentScene())->GetInternodeBehaviour<SpaceColonizationBehaviour>();
     }
     auto behaviour = m_spaceColonizationTreeBehaviour.lock();
     for (int i = 0; i < m_attractionPointAmount; i++) {
@@ -33,7 +33,7 @@ void SpaceColonizationTreeToLString::OnGrowth(AutoTreeGenerationPipeline &pipeli
         pipeline.m_status = AutoTreeGenerationPipelineStatus::Idle;
         return;
     }
-    auto internodeSystem = EntityManager::GetSystem<InternodeSystem>();
+    auto internodeSystem = EntityManager::GetSystem<InternodeSystem>(EntityManager::GetCurrentScene());
     internodeSystem->Simulate(m_perTreeGrowthIteration);
     pipeline.m_status = AutoTreeGenerationPipelineStatus::AfterGrowth;
     m_spaceColonizationTreeBehaviour.lock()->GenerateSkinnedMeshes();

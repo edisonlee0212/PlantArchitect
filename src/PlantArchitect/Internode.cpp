@@ -14,7 +14,7 @@ void Internode::Clone(const std::shared_ptr<IPrivateComponent> &target) {
 }
 
 void Internode::OnCreate() {
-    m_internodeSystem = EntityManager::GetSystem<InternodeSystem>();
+    m_internodeSystem = EntityManager::GetSystem<InternodeSystem>(EntityManager::GetCurrentScene());
  }
 
 void Internode::OnRetrieve() {

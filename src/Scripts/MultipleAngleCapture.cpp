@@ -9,7 +9,8 @@ using namespace Scripts;
 
 void MultipleAngleCapture::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) {
     if (m_generalTreeBehaviour.expired()) {
-        m_generalTreeBehaviour = EntityManager::GetSystem<InternodeSystem>()->GetInternodeBehaviour<GeneralTreeBehaviour>();
+        m_generalTreeBehaviour = EntityManager::GetSystem<InternodeSystem>(
+                EntityManager::GetCurrentScene())->GetInternodeBehaviour<GeneralTreeBehaviour>();
     }
     auto behaviour = m_generalTreeBehaviour.lock();
     m_currentGrowingTree = behaviour->NewPlant(m_parameters, Transform());
@@ -21,7 +22,7 @@ void MultipleAngleCapture::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) 
 }
 
 void MultipleAngleCapture::OnGrowth(AutoTreeGenerationPipeline &pipeline) {
-    auto internodeSystem = EntityManager::GetSystem<InternodeSystem>();
+    auto internodeSystem = EntityManager::GetSystem<InternodeSystem>(EntityManager::GetCurrentScene());
     internodeSystem->Simulate(m_perTreeGrowthIteration);
 
     m_generalTreeBehaviour.lock()->GenerateSkinnedMeshes();
@@ -292,9 +293,10 @@ bool MultipleAngleCapture::SetUpCamera() {
 }
 
 void MultipleAngleCapture::RenderBranchCapture() {
-    auto internodeQuery = EntityManager::GetSystem<InternodeSystem>()->m_internodesQuery;
+    auto internodeQuery = EntityManager::GetSystem<InternodeSystem>(
+            EntityManager::GetCurrentScene())->m_internodesQuery;
     EntityManager::ForEach<BranchColor, InternodeInfo>(
-            JobManager::PrimaryWorkers(),
+            EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(),
             internodeQuery,
             [=](int i, Entity entity, BranchColor &internodeRenderColor,
                 InternodeInfo &internodeInfo) {
@@ -304,7 +306,7 @@ void MultipleAngleCapture::RenderBranchCapture() {
             },
             true);
     EntityManager::ForEach<GlobalTransform, BranchCylinder, InternodeInfo>(
-            JobManager::PrimaryWorkers(),
+            EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(),
             internodeQuery,
             [=](int i, Entity entity, GlobalTransform &ltw, BranchCylinder &c,
                 InternodeInfo &internodeInfo) {
@@ -335,14 +337,14 @@ void MultipleAngleCapture::RenderBranchCapture() {
 
     m_branchCaptureCamera->Clear();
     std::vector<BranchCylinder> branchCylinders;
-    internodeQuery.ToComponentDataArray<BranchCylinder>(
-            branchCylinders);
+    internodeQuery.ToComponentDataArray<BranchCylinder>(EntityManager::GetCurrentScene(),
+                                                        branchCylinders);
     std::vector<BranchColor> branchColors;
-    internodeQuery.ToComponentDataArray<BranchColor>(
-            branchColors);
+    internodeQuery.ToComponentDataArray<BranchColor>(EntityManager::GetCurrentScene(),
+                                                     branchColors);
     std::vector<GlobalTransform> branchGlobalTransforms;
-    internodeQuery.ToComponentDataArray<GlobalTransform>(
-            branchGlobalTransforms);
+    internodeQuery.ToComponentDataArray<GlobalTransform>(EntityManager::GetCurrentScene(),
+                                                         branchGlobalTransforms);
     RenderManager::DrawGizmoMeshInstancedColored(
             DefaultResources::Primitives::Cylinder, m_branchCaptureCamera,
             m_cameraPosition,
@@ -367,7 +369,8 @@ void MultipleAngleCapture::OnCreate() {
 
 void MultipleAngleCapture::ExportGraph(const std::filesystem::path &path) {
     if (m_generalTreeBehaviour.expired()) {
-        m_generalTreeBehaviour = EntityManager::GetSystem<InternodeSystem>()->GetInternodeBehaviour<GeneralTreeBehaviour>();
+        m_generalTreeBehaviour = EntityManager::GetSystem<InternodeSystem>(
+                EntityManager::GetCurrentScene())->GetInternodeBehaviour<GeneralTreeBehaviour>();
     }
     auto behaviour = m_generalTreeBehaviour.lock();
     try {

@@ -16,7 +16,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
         CollectRoots(m_currentPlants);
     }
     if (m_recycleStorageEntity.IsNull()) {
-        m_recycleStorageEntity = EntityManager::CreateEntity("Recycled General Tree Internodes");
+        m_recycleStorageEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "Recycled General Tree Internodes");
     }
     int plantSize = m_currentPlants.size();
 #pragma region PreProcess
@@ -169,7 +169,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
 #pragma endregion
 #pragma region Illumination
     EntityManager::ForEach<InternodeInfo, InternodeIllumination>
-            (JobManager::PrimaryWorkers(), m_internodesQuery,
+            (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
              [&](int i, Entity entity, InternodeInfo &internodeTag, InternodeIllumination &internodeIllumination) {
                  internodeIllumination.m_direction = glm::vec3(0, 1, 0);
                  internodeIllumination.m_intensity = 1.0f;
@@ -178,7 +178,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
 #pragma region Water
 #pragma region Collect water requests
     EntityManager::ForEach<InternodeInfo, InternodeWaterPressure, InternodeStatus, InternodeIllumination>
-            (JobManager::PrimaryWorkers(), m_internodesQuery,
+            (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
              [&](int i, Entity entity, InternodeInfo &internodeInfo, InternodeWaterPressure &internodeWaterPressure,
                  InternodeStatus &internodeStatus, InternodeIllumination &internodeIllumination) {
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
@@ -198,7 +198,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
         for (auto &j: i) j = 0;
     }
     EntityManager::ForEach<InternodeInfo, InternodeWaterPressure, InternodeStatus, InternodeIllumination, InternodeWater, GeneralTreeParameters>
-            (JobManager::PrimaryWorkers(), m_internodesQuery,
+            (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
              [&](int i, Entity entity, InternodeInfo &internodeInfo, InternodeWaterPressure &internodeWaterPressure,
                  InternodeStatus &internodeStatus, InternodeIllumination &internodeIllumination,
                  InternodeWater &internodeWater,
@@ -237,7 +237,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
         for (auto &j: i) j = 0;
     }
     EntityManager::ForEach<InternodeInfo, InternodeWaterPressure, InternodeStatus, InternodeIllumination, InternodeWater>
-            (JobManager::PrimaryWorkers(), m_internodesQuery,
+            (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
              [&](int i, Entity entity, InternodeInfo &internodeInfo, InternodeWaterPressure &internodeWaterPressure,
                  InternodeStatus &internodeStatus, InternodeIllumination &internodeIllumination,
                  InternodeWater &internodeWater) {
@@ -267,7 +267,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
         if (totalRequests[plantIndex] == 0) waterDividends[plantIndex] = 0;
     }
     EntityManager::ForEach<InternodeInfo, InternodeWaterPressure, InternodeStatus, InternodeIllumination, InternodeWater, GeneralTreeParameters>
-            (JobManager::PrimaryWorkers(), m_internodesQuery,
+            (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
              [&](int i, Entity entity, InternodeInfo &internodeInfo, InternodeWaterPressure &internodeWaterPressure,
                  InternodeStatus &internodeStatus, InternodeIllumination &internodeIllumination,
                  InternodeWater &internodeWater,
@@ -292,7 +292,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
 #pragma endregion
 #pragma region Main Growth
     EntityManager::ForEach<Transform, GlobalTransform, InternodeInfo, InternodeStatus, InternodeWater, InternodeIllumination, GeneralTreeParameters>
-            (JobManager::PrimaryWorkers(), m_internodesQuery,
+            (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
              [&](int i, Entity entity,
                  Transform &transform, GlobalTransform &globalTransform,
                  InternodeInfo &internodeInfo, InternodeStatus &internodeStatus,
@@ -431,7 +431,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                  }
              }, true);
     std::vector<Entity> entities;
-    m_internodesQuery.ToEntityArray(entities);
+    m_internodesQuery.ToEntityArray(EntityManager::GetCurrentScene(), entities);
     for (const auto &entity: entities) {
         if (!entity.IsEnabled()) continue;
         auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
@@ -466,7 +466,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
     }
 
     EntityManager::ForEach<Transform, InternodeInfo>
-            (JobManager::PrimaryWorkers(), m_internodesQuery,
+            (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
              [&](int i, Entity entity,
                  Transform &transform, InternodeInfo &internodeInfo) {
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();

@@ -21,7 +21,7 @@ void GeneralTreeToLString::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) 
 
     pipeline.m_status = AutoTreeGenerationPipelineStatus::Growth;
     if (m_generalTreeBehaviour.expired()) {
-        m_generalTreeBehaviour = EntityManager::GetSystem<InternodeSystem>()->GetInternodeBehaviour<GeneralTreeBehaviour>();
+        m_generalTreeBehaviour = EntityManager::GetSystem<InternodeSystem>(EntityManager::GetCurrentScene())->GetInternodeBehaviour<GeneralTreeBehaviour>();
     }
     auto behaviour = m_generalTreeBehaviour.lock();
     m_currentGrowingTree = behaviour->NewPlant(m_parameters, Transform());
@@ -33,7 +33,7 @@ void GeneralTreeToLString::OnGrowth(AutoTreeGenerationPipeline &pipeline) {
         pipeline.m_status = AutoTreeGenerationPipelineStatus::Idle;
         return;
     }
-    auto internodeSystem = EntityManager::GetSystem<InternodeSystem>();
+    auto internodeSystem = EntityManager::GetSystem<InternodeSystem>(EntityManager::GetCurrentScene());
     internodeSystem->Simulate(m_perTreeGrowthIteration);
 
     m_generalTreeBehaviour.lock()->GenerateSkinnedMeshes();

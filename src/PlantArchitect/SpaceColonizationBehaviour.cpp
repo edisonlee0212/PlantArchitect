@@ -25,14 +25,14 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
 
     if (m_attractionPoints.empty()) return;
     if (m_recycleStorageEntity.IsNull()) {
-        m_recycleStorageEntity = EntityManager::CreateEntity("Recycled General Tree Internodes");
+        m_recycleStorageEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "Recycled General Tree Internodes");
     }
     std::vector<int> removeMarks;
     removeMarks.resize(m_attractionPoints.size());
     memset(removeMarks.data(), 0, removeMarks.size() * sizeof(bool));
     //1. Check and remove points.
     EntityManager::ForEach<InternodeInfo, GlobalTransform, SpaceColonizationParameters>
-            (JobManager::PrimaryWorkers(), m_internodesQuery,
+            (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
              [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &globalTransform,
                  SpaceColonizationParameters &spaceColonizationParameters) {
                  glm::vec3 position = globalTransform.GetPosition() +
@@ -73,7 +73,7 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
         i.second = 999999;
     }
     EntityManager::ForEach<InternodeInfo, GlobalTransform, SpaceColonizationIncentive, SpaceColonizationParameters>
-            (JobManager::PrimaryWorkers(), m_internodesQuery,
+            (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
              [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &globalTransform,
                  SpaceColonizationIncentive &spaceColonizationIncentive,
                  SpaceColonizationParameters &spaceColonizationParameters) {
@@ -113,7 +113,7 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
     }
     //2. Form new internodes.
     std::vector<Entity> entities;
-    m_internodesQuery.ToEntityArray(entities);
+    m_internodesQuery.ToEntityArray(EntityManager::GetCurrentScene(), entities);
     for (const auto &entity: entities) {
         if (!entity.IsEnabled()) continue;
         auto parameter = entity.GetDataComponent<SpaceColonizationParameters>();
@@ -300,7 +300,7 @@ void SpaceColonizationBehaviour::OnInspect() {
             RenderManager::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube, renderColor,
                                                   displayMatrices, glm::mat4(1.0f), renderSize);
             RenderManager::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube,
-                                                  EntityManager::GetSystem<InternodeSystem>()->m_internodeDebuggingCamera,
+                                                  EntityManager::GetSystem<InternodeSystem>(EntityManager::GetCurrentScene())->m_internodeDebuggingCamera,
                                                   EditorManager::GetInstance().m_sceneCameraPosition,
                                                   EditorManager::GetInstance().m_sceneCameraRotation, renderColor,
                                                   displayMatrices, glm::mat4(1.0f), renderSize);

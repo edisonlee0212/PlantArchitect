@@ -345,7 +345,7 @@ namespace PlantArchitect {
             retVal.SetEnabled(true);
             retVal.GetOrSetPrivateComponent<Internode>().lock()->OnRetrieve();
         } else {
-            retVal = EntityManager::CreateEntity(m_internodeArchetype, "Internode");
+            retVal = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), m_internodeArchetype, "Internode");
             retVal.SetParent(parent);
         }
         InternodeInfo internodeInfo;
@@ -371,7 +371,7 @@ namespace PlantArchitect {
             retVal.SetDataComponent(Transform());
             retVal.SetEnabled(true);
         } else {
-            retVal = EntityManager::CreateEntity(m_internodeArchetype, "Internode");
+            retVal = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), m_internodeArchetype, "Internode");
         }
         InternodeInfo internodeInfo;
         internodeInfo.m_isRealRoot = true;

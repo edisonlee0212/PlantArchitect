@@ -147,8 +147,8 @@ void EngineSetup(bool enableRayTracing) {
         /*
          * Add all internode behaviours for example.
          */
-        auto internodeSystem = EntityManager::GetOrCreateSystem<InternodeSystem>(0.0f);
-        Entity cubeVolumeEntity = EntityManager::CreateEntity("CubeVolume");
+        auto internodeSystem = EntityManager::GetOrCreateSystem<InternodeSystem>(EntityManager::GetCurrentScene(), 0.0f);
+        Entity cubeVolumeEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "CubeVolume");
         Transform cubeVolumeTransform = cubeVolumeEntity.GetDataComponent<Transform>();
         cubeVolumeTransform.SetPosition(glm::vec3(0, 15, 0));
         cubeVolumeEntity.SetDataComponent(cubeVolumeTransform);
@@ -168,15 +168,15 @@ void EngineSetup(bool enableRayTracing) {
         /*
          * Add all pipelines
          */
-        auto spaceColonizationPipelineEntity = EntityManager::CreateEntity("SpaceColonizationTreeToLStringPipeline");
+        auto spaceColonizationPipelineEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "SpaceColonizationTreeToLStringPipeline");
         auto spaceColonizationPipeline = spaceColonizationPipelineEntity.GetOrSetPrivateComponent<AutoTreeGenerationPipeline>().lock();
         spaceColonizationPipeline->m_pipelineBehaviour = AssetManager::CreateAsset<SpaceColonizationTreeToLString>();
 
-        auto generalTreePipelineEntity = EntityManager::CreateEntity("GeneralTreeToLStringPipeline");
+        auto generalTreePipelineEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "GeneralTreeToLStringPipeline");
         auto generalTreePipeline = generalTreePipelineEntity.GetOrSetPrivateComponent<AutoTreeGenerationPipeline>().lock();
         generalTreePipeline->m_pipelineBehaviour = AssetManager::CreateAsset<GeneralTreeToLString>();
 
-        auto multipleAngleCapturePipelineEntity = EntityManager::CreateEntity("MultipleAngleCapturePipeline");
+        auto multipleAngleCapturePipelineEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "MultipleAngleCapturePipeline");
         auto multipleAngleCapturePipeline = multipleAngleCapturePipelineEntity.GetOrSetPrivateComponent<AutoTreeGenerationPipeline>().lock();
         auto multipleAngleCapture = AssetManager::CreateAsset<MultipleAngleCapture>();
         multipleAngleCapture->m_cameraEntity = mainCamera->GetOwner();

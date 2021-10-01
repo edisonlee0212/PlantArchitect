@@ -15,9 +15,9 @@ void InternodeSystem::Simulate(int iterations) {
         std::vector<GlobalTransform> internodeGlobalTransforms;
         std::vector<InternodeInfo> internodeInfos;
         std::vector<glm::vec3> internodePositions;
-        m_internodesQuery.ToComponentDataArray(internodeGlobalTransforms);
-        m_internodesQuery.ToComponentDataArray(internodeInfos);
-        m_internodesQuery.ToEntityArray(internodeEntities);
+        m_internodesQuery.ToComponentDataArray(EntityManager::GetCurrentScene(), internodeGlobalTransforms);
+        m_internodesQuery.ToComponentDataArray(EntityManager::GetCurrentScene(), internodeInfos);
+        m_internodesQuery.ToEntityArray(EntityManager::GetCurrentScene(), internodeEntities);
         internodePositions.resize(internodeGlobalTransforms.size());
         for (int i = 0; i < internodeGlobalTransforms.size(); i++) {
             internodePositions[i] = internodeGlobalTransforms[i].GetPosition() + internodeInfos[i].m_length *
@@ -325,7 +325,7 @@ void InternodeSystem::LateUpdate() {
                         const Ray cameraRay = m_internodeDebuggingCamera->ScreenPointToRay(
                                 cameraLtw, mousePosition);
                         EntityManager::ForEach<GlobalTransform, InternodeInfo>(
-                                JobManager::PrimaryWorkers(),
+                                EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(),
                                 m_internodesQuery,
                                 [&, cameraLtw, cameraRay](int i, Entity entity,
                                                           GlobalTransform &ltw,
@@ -414,7 +414,7 @@ void InternodeSystem::UpdateBranchColors() {
     }
 
     EntityManager::ForEach<BranchColor, InternodeInfo>(
-            JobManager::PrimaryWorkers(),
+            EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(),
             m_internodesQuery,
             [=](int i, Entity entity, BranchColor &internodeRenderColor,
                 InternodeInfo &internodeInfo) {
@@ -424,8 +424,8 @@ void InternodeSystem::UpdateBranchColors() {
 
     switch (m_branchColorMode) {
         case BranchColorMode::Order:
-            EntityManager::ForEach<BranchColor, InternodeStatus>(
-                    JobManager::PrimaryWorkers(),
+            EntityManager::ForEach<BranchColor, InternodeStatus>(EntityManager::GetCurrentScene(),
+                                                                 JobManager::PrimaryWorkers(),
                     m_internodesQuery,
                     [=](int i, Entity entity, BranchColor &internodeRenderColor,
                         InternodeStatus &internodeStatus) {
@@ -437,8 +437,8 @@ void InternodeSystem::UpdateBranchColors() {
                     true);
             break;
         case BranchColorMode::Level:
-            EntityManager::ForEach<BranchColor, InternodeStatus>(
-                    JobManager::PrimaryWorkers(),
+            EntityManager::ForEach<BranchColor, InternodeStatus>(EntityManager::GetCurrentScene(),
+                                                                 JobManager::PrimaryWorkers(),
                     m_internodesQuery,
                     [=](int i, Entity entity, BranchColor &internodeRenderColor,
                         InternodeStatus &internodeStatus) {
@@ -450,8 +450,8 @@ void InternodeSystem::UpdateBranchColors() {
                     true);
             break;
         case BranchColorMode::ApicalControl:
-            EntityManager::ForEach<BranchColor, InternodeStatus, InternodeInfo, GeneralTreeParameters>(
-                    JobManager::PrimaryWorkers(),
+            EntityManager::ForEach<BranchColor, InternodeStatus, InternodeInfo, GeneralTreeParameters>(EntityManager::GetCurrentScene(),
+                                                                                                       JobManager::PrimaryWorkers(),
                     m_internodesQuery,
                     [=](int i, Entity entity, BranchColor &internodeRenderColor,
                         InternodeStatus &internodeStatus, InternodeInfo &internodeInfo,
@@ -464,8 +464,8 @@ void InternodeSystem::UpdateBranchColors() {
                     true);
             break;
         case BranchColorMode::Water:
-            EntityManager::ForEach<BranchColor, InternodeWater>(
-                    JobManager::PrimaryWorkers(),
+            EntityManager::ForEach<BranchColor, InternodeWater>(EntityManager::GetCurrentScene(),
+                                                                JobManager::PrimaryWorkers(),
                     m_internodesQuery,
                     [=](int i, Entity entity, BranchColor &internodeRenderColor,
                         InternodeWater &internodeWater) {
@@ -477,8 +477,8 @@ void InternodeSystem::UpdateBranchColors() {
                     true);
             break;
         case BranchColorMode::WaterPressure:
-            EntityManager::ForEach<BranchColor, InternodeWaterPressure>(
-                    JobManager::PrimaryWorkers(),
+            EntityManager::ForEach<BranchColor, InternodeWaterPressure>(EntityManager::GetCurrentScene(),
+                                                                        JobManager::PrimaryWorkers(),
                     m_internodesQuery,
                     [=](int i, Entity entity, BranchColor &internodeRenderColor,
                         InternodeWaterPressure &internodeWaterPressure) {
@@ -490,8 +490,8 @@ void InternodeSystem::UpdateBranchColors() {
                     true);
             break;
         case BranchColorMode::Proximity:
-            EntityManager::ForEach<BranchColor, InternodeInfo>(
-                    JobManager::PrimaryWorkers(),
+            EntityManager::ForEach<BranchColor, InternodeInfo>(EntityManager::GetCurrentScene(),
+                                                               JobManager::PrimaryWorkers(),
                     m_internodesQuery,
                     [=](int i, Entity entity, BranchColor &internodeRenderColor,
                         InternodeInfo &internodeInfo) {
@@ -503,8 +503,8 @@ void InternodeSystem::UpdateBranchColors() {
                     true);
             break;
         case BranchColorMode::Inhibitor:
-            EntityManager::ForEach<BranchColor, InternodeStatus>(
-                    JobManager::PrimaryWorkers(),
+            EntityManager::ForEach<BranchColor, InternodeStatus>(EntityManager::GetCurrentScene(),
+                                                                 JobManager::PrimaryWorkers(),
                     m_internodesQuery,
                     [=](int i, Entity entity, BranchColor &internodeRenderColor,
                         InternodeStatus &internodeStatus) {
@@ -530,8 +530,8 @@ void InternodeSystem::UpdateBranchColors() {
 }
 
 void InternodeSystem::UpdateBranchCylinder(const float &width) {
-    EntityManager::ForEach<GlobalTransform, BranchCylinder, BranchCylinderWidth, InternodeInfo>(
-            JobManager::PrimaryWorkers(),
+    EntityManager::ForEach<GlobalTransform, BranchCylinder, BranchCylinderWidth, InternodeInfo>(EntityManager::GetCurrentScene(),
+                                                                                                JobManager::PrimaryWorkers(),
             m_internodesQuery,
             [width](int i, Entity entity, GlobalTransform &ltw, BranchCylinder &c,
                     BranchCylinderWidth &branchCylinderWidth, InternodeInfo &internodeInfo) {
@@ -569,11 +569,11 @@ void InternodeSystem::UpdateBranchPointer(const float &length, const float &widt
 
 void InternodeSystem::RenderBranchCylinders() {
     std::vector<BranchCylinder> branchCylinders;
-    m_internodesQuery.ToComponentDataArray<BranchCylinder>(
-            branchCylinders);
+    m_internodesQuery.ToComponentDataArray<BranchCylinder>(EntityManager::GetCurrentScene(),
+                                                           branchCylinders);
     std::vector<BranchColor> branchColors;
-    m_internodesQuery.ToComponentDataArray<BranchColor>(
-            branchColors);
+    m_internodesQuery.ToComponentDataArray<BranchColor>(EntityManager::GetCurrentScene(),
+                                                        branchColors);
     if (!branchCylinders.empty())
         RenderManager::DrawGizmoMeshInstancedColored(
                 DefaultResources::Primitives::Cylinder, m_internodeDebuggingCamera,
@@ -586,8 +586,8 @@ void InternodeSystem::RenderBranchCylinders() {
 
 void InternodeSystem::RenderBranchPointers() {
     std::vector<BranchPointer> branchPointers;
-    m_internodesQuery.ToComponentDataArray<BranchPointer>(
-            branchPointers);
+    m_internodesQuery.ToComponentDataArray<BranchPointer>(EntityManager::GetCurrentScene(),
+                                                          branchPointers);
     if (!branchPointers.empty())
         RenderManager::DrawGizmoMeshInstanced(
                 DefaultResources::Primitives::Cylinder, m_internodeDebuggingCamera,
@@ -602,9 +602,6 @@ bool InternodeSystem::InternodeCheck(const Entity &target) {
     return target.IsValid() && target.HasDataComponent<InternodeInfo>() && target.HasPrivateComponent<Internode>();
 }
 
-void InternodeSystem::Relink(const std::unordered_map<Handle, Handle> &map) {
-    m_currentFocusingInternode.Relink(map);
-}
 
 void InternodeSystem::CollectAssetRef(std::vector<AssetRef> &list) {
     list.insert(list.begin(), m_internodeBehaviours.begin(), m_internodeBehaviours.end());

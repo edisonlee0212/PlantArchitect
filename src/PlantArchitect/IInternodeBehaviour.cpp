@@ -67,8 +67,8 @@ IInternodeBehaviour::GenerateSkinnedMeshes(float subdivision,
 
 #pragma region Prepare rings for branch mesh.
     EntityManager::ForEach<GlobalTransform, Transform,
-            InternodeInfo>(
-            JobManager::PrimaryWorkers(),
+            InternodeInfo>(EntityManager::GetCurrentScene(),
+                           JobManager::PrimaryWorkers(),
             m_internodesQuery,
             [resolution, subdivision](int i, Entity entity, GlobalTransform &globalTransform,
                                       Transform &transform, InternodeInfo &internodeInfo) {
@@ -144,8 +144,8 @@ IInternodeBehaviour::GenerateSkinnedMeshes(float subdivision,
 #pragma endregion
 #pragma region Prepare foliage transforms.
     std::mutex mutex;
-    EntityManager::ForEach<GlobalTransform, InternodeInfo>(
-            JobManager::PrimaryWorkers(),
+    EntityManager::ForEach<GlobalTransform, InternodeInfo>(EntityManager::GetCurrentScene(),
+                                                           JobManager::PrimaryWorkers(),
             m_internodesQuery,
             [&](int index, Entity entity, GlobalTransform &globalTransform,
                 InternodeInfo &internodeInfo) {
@@ -509,7 +509,7 @@ IInternodeBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, 
     });
 
     {
-        if (branchMesh.IsNull()) branchMesh = EntityManager::CreateEntity("Branch");
+        if (branchMesh.IsNull()) branchMesh = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "Branch");
         auto animator = branchMesh.GetOrSetPrivateComponent<Animator>().lock();
         auto skinnedMeshRenderer =
                 branchMesh.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
@@ -523,7 +523,7 @@ IInternodeBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, 
         skinnedMeshRenderer->m_animator = branchMesh.GetOrSetPrivateComponent<Animator>().lock();
     }
     {
-        if (foliage.IsNull()) foliage = EntityManager::CreateEntity("Foliage");
+        if (foliage.IsNull()) foliage = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "Foliage");
         auto animator = foliage.GetOrSetPrivateComponent<Animator>().lock();
         auto skinnedMeshRenderer =
                 foliage.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
@@ -543,7 +543,7 @@ IInternodeBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, 
 
 void IInternodeBehaviour::CollectRoots(std::vector<Entity> &roots) {
     std::mutex plantCollectionMutex;
-    EntityManager::ForEach<InternodeInfo>(JobManager::PrimaryWorkers(), m_internodesQuery,
+    EntityManager::ForEach<InternodeInfo>(EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
                                           [&](int index, Entity entity, InternodeInfo &internodeInfo) {
                                               if (!entity.HasPrivateComponent<Internode>()) return;
                                               entity.GetOrSetPrivateComponent<Internode>().lock()->m_currentRoot = entity;

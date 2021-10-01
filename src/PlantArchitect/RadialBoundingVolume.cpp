@@ -267,7 +267,7 @@ void RadialBoundingVolume::FormEntity() {
     }
     children.clear();
     for (auto i = 0; i < m_boundMeshes.size(); i++) {
-        auto slice = EntityManager::CreateEntity("RBV_" + std::to_string(i));
+        auto slice = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "RBV_" + std::to_string(i));
         auto mmc = slice.GetOrSetPrivateComponent<MeshRenderer>().lock();
         mmc->m_material = AssetManager::LoadMaterial(
                 DefaultResources::GLPrograms::StandardProgram);
