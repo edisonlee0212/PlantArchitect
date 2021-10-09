@@ -266,7 +266,7 @@ void IInternodeBehaviour::TreeNodeCollector(std::vector<Entity> &boundEntities, 
     const size_t currentIndex = boundEntities.size() - 1;
     auto internodeInfo = node.GetDataComponent<InternodeInfo>();
     auto internode = node.GetOrSetPrivateComponent<Internode>().lock();
-    internodeInfo.m_index = currentIndex;
+    //internodeInfo.m_index = currentIndex;
     internode->m_currentRoot = root;
     if (node.GetChildrenAmount() == 0) internodeInfo.m_endNode = true;
     else internodeInfo.m_endNode = false;

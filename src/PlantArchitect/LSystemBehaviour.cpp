@@ -50,7 +50,9 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
     InternodeInfo newInfo;
     newInfo.m_length = 0;
     newInfo.m_thickness = 0.1f;
+    newInfo.m_index = 0;
     currentNode.SetDataComponent(newInfo);
+    int index = 0;
     for (const auto &command: commands) {
         Transform transform = currentNode.GetDataComponent<Transform>();
         InternodeInfo internodeInfo = currentNode.GetDataComponent<InternodeInfo>();
@@ -102,6 +104,7 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
                 InternodeInfo newInfo;
                 newInfo.m_length = 0;
                 newInfo.m_thickness = 0.1f;
+                newInfo.m_index = index;
                 currentNode.SetDataComponent(newInfo);
                 continue;
             }
@@ -110,6 +113,7 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
                 continue;
             }
         }
+        index++;
         currentNode.SetDataComponent(transform);
         if (currentNode == root) {
             GlobalTransform globalTransform;

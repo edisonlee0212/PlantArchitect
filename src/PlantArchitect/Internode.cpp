@@ -115,7 +115,11 @@ void Internode::OnInspect() {
         AssetManager::Share(lString);
         ExportLString(lString);
     }
-
+    if(ImGui::Button("Calculate L-String Indices")){
+        int index = 0;
+        std::vector<LSystemCommand> commands;
+        ExportLSystemCommandsHelper(index, GetOwner(), commands);
+    }
     m_foliage.Get<InternodeFoliage>()->OnInspect();
 
     if(ImGui::TreeNodeEx("Buds")){

@@ -243,7 +243,7 @@ namespace PlantArchitect {
                                             parameterDeserializer(newPlantParameters[0], path);
                                             for (int i = 1; i < newPlantParameters.size(); i++)
                                                 newPlantParameters[i] = newPlantParameters[0];
-                                        });
+                                        }, false);
                     ImGui::EndMenu();
                 }
                 ImGui::EndMenuBar();

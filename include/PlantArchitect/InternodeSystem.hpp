@@ -16,7 +16,8 @@ namespace PlantArchitect {
         WaterPressure,
         Proximity,
         Inhibitor,
-        IndexDivider
+        IndexDivider,
+        IndexRange
     };
     class IInternodeBehaviour;
     class PLANT_ARCHITECT_API InternodeSystem : public ISystem {
@@ -53,6 +54,8 @@ namespace PlantArchitect {
 
         BranchColorMode m_branchColorMode = BranchColorMode::None;
         int m_indexDivider = 512;
+        int m_indexRangeMin = 128;
+        int m_indexRangeMax = 512;
         void UpdateBranchColors();
         void UpdateBranchCylinder(const float &width = 0.01f);
         void UpdateBranchPointer(const float &length,
