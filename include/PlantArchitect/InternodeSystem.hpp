@@ -15,7 +15,8 @@ namespace PlantArchitect {
         ApicalControl,
         WaterPressure,
         Proximity,
-        Inhibitor
+        Inhibitor,
+        IndexDivider
     };
     class IInternodeBehaviour;
     class PLANT_ARCHITECT_API InternodeSystem : public ISystem {
@@ -49,6 +50,13 @@ namespace PlantArchitect {
         void CollectAssetRef(std::vector<AssetRef> &list) override;
         void Serialize(YAML::Emitter &out) override;
         void Deserialize(const YAML::Node &in) override;
+
+        BranchColorMode m_branchColorMode = BranchColorMode::None;
+        int m_indexDivider = 512;
+        void UpdateBranchColors();
+        void UpdateBranchCylinder(const float &width = 0.01f);
+        void UpdateBranchPointer(const float &length,
+                                 const float &width = 0.01f);
     private:
 
 
@@ -70,6 +78,8 @@ namespace PlantArchitect {
         EntityRef m_currentFocusingInternode = Entity();
 
 #pragma region Rendering
+
+
         float m_connectionWidth = 1.0f;
 
         float m_pointerLength = 0.4f;
@@ -81,7 +91,7 @@ namespace PlantArchitect {
         float m_transparency = 0.7f;
 
         bool m_autoUpdate = true;
-        BranchColorMode m_branchColorMode = BranchColorMode::None;
+
         float m_branchColorValueMultiplier = 1.0f;
         float m_branchColorValueCompressFactor = 0.0f;
         glm::vec3 m_branchColor = glm::vec3(0, 1, 0);
@@ -91,10 +101,7 @@ namespace PlantArchitect {
         std::vector<Entity> m_entitiesWithRenderer;
         OpenGLUtils::GLVBO m_internodeColorBuffer;
 
-        void UpdateBranchColors();
-        void UpdateBranchCylinder(const float &width = 0.01f);
-        void UpdateBranchPointer(const float &length,
-                                 const float &width = 0.01f);
+
         void RenderBranchCylinders();
         void RenderBranchPointers();
 #pragma endregion

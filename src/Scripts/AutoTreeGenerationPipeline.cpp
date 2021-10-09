@@ -47,7 +47,6 @@ void AutoTreeGenerationPipeline::Update() {
             case AutoTreeGenerationPipelineStatus::Growth: {
                 auto internodeSystem = EntityManager::GetSystem<InternodeSystem>(EntityManager::GetCurrentScene());
                 internodeSystem->Simulate(pipelineBehaviour->m_perTreeGrowthIteration);
-                m_currentInternodeBehaviour->GenerateSkinnedMeshes();
                 m_status = AutoTreeGenerationPipelineStatus::AfterGrowth;
                 pipelineBehaviour->m_skipCurrentFrame = true;
             }

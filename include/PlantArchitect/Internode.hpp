@@ -23,7 +23,7 @@ namespace PlantArchitect {
     class InternodeFoliage;
     class PLANT_ARCHITECT_API Internode : public IPrivateComponent {
         std::weak_ptr<InternodeSystem> m_internodeSystem;
-        void ExportLSystemCommandsHelper(const Entity &target, std::vector<LSystemCommand> &commands);
+        void ExportLSystemCommandsHelper(int& index, const Entity &target, std::vector<LSystemCommand> &commands);
         void CollectInternodesHelper(const Entity &target, std::vector<Entity> &results);
 
     public:

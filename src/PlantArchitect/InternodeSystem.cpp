@@ -118,7 +118,7 @@ void InternodeSystem::OnCreate() {
 
 
 
-    m_randomColors.resize(60);
+    m_randomColors.resize(64);
     for (int i = 0; i < 60; i++) {
         m_randomColors[i] = glm::sphericalRand(1.0f);
     }
@@ -205,6 +205,11 @@ void InternodeSystem::LateUpdate() {
                             }
                             ImGui::DragFloat("Multiplier", &m_branchColorValueMultiplier, 0.01f);
                             ImGui::DragFloat("Compress", &m_branchColorValueCompressFactor, 0.01f);
+                            switch(m_branchColorMode){
+                                case BranchColorMode::IndexDivider:
+                                    ImGui::DragInt("Divider", &m_indexDivider, 1, 1, 1024);
+                                    break;
+                            }
                             ImGui::TreePop();
                         }
                     }
@@ -526,6 +531,17 @@ void InternodeSystem::UpdateBranchColors() {
                                                                  m_transparency);
                     },
                     true);
+            break;
+        case BranchColorMode::IndexDivider:
+            EntityManager::ForEach<BranchColor, InternodeInfo>(EntityManager::GetCurrentScene(),
+                                                                 JobManager::PrimaryWorkers(),
+                                                                 m_internodesQuery,
+                                                                 [=](int i, Entity entity, BranchColor &internodeRenderColor,
+                                                                     InternodeInfo &internodeInfo) {
+                                                                     internodeRenderColor.m_value = glm::vec4(glm::vec3(m_randomColors[internodeInfo.m_index / m_indexDivider]),
+                                                                                                              1.0f);
+                                                                 },
+                                                                 true);
             break;
         default:
             break;

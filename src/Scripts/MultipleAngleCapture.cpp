@@ -83,8 +83,12 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
                 //path here
                 lString->SetPathAndSave(
                         lStringFolder / (std::to_string(m_generationAmount - m_remainingInstanceAmount) + ".lstring"));
+                auto internodeSystem = EntityManager::GetSystem<InternodeSystem>(EntityManager::GetCurrentScene());
+                internodeSystem->m_branchColorMode = BranchColorMode::IndexDivider;
+                internodeSystem->m_indexDivider = m_targetDivider;
+                internodeSystem->UpdateBranchColors();
             }
-
+            behaviour->GenerateSkinnedMeshes();
             if (m_exportOBJ) {
                 Entity foliage, branch;
                 m_currentGrowingTree.ForEachChild([&](Entity child) {
@@ -190,7 +194,9 @@ void MultipleAngleCapture::OnInspect() {
         ImGui::Checkbox("Export OBJ", &m_exportOBJ);
         ImGui::Checkbox("Export Graph", &m_exportGraph);
         ImGui::Checkbox("Export LString", &m_exportLString);
-
+        if(m_exportLString){
+            ImGui::DragInt("Character div", &m_targetDivider, 1, 1, 1024);
+        }
         ImGui::Text("Rendering export:");
         ImGui::Checkbox("Export Depth", &m_exportDepth);
         ImGui::Checkbox("Export Image", &m_exportImage);
@@ -316,6 +322,7 @@ bool MultipleAngleCapture::SetUpCamera() {
 void MultipleAngleCapture::RenderBranchCapture() {
     auto internodeQuery = EntityManager::GetSystem<InternodeSystem>(
             EntityManager::GetCurrentScene())->m_internodesQuery;
+    /*
     EntityManager::ForEach<BranchColor, InternodeInfo>(
             EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(),
             internodeQuery,
@@ -326,6 +333,7 @@ void MultipleAngleCapture::RenderBranchCapture() {
                                                          (entity.GetIndex() % 64) / 64.0f, 1.0f);
             },
             true);
+    */
     EntityManager::ForEach<GlobalTransform, BranchCylinder, InternodeInfo>(
             EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(),
             internodeQuery,
@@ -406,6 +414,8 @@ void MultipleAngleCapture::ExportGraph(const std::shared_ptr<IInternodeBehaviour
             auto internodeInfo = m_currentGrowingTree.GetDataComponent<InternodeInfo>();
             out << YAML::Key << "Thickness" << internodeInfo.m_thickness;
             out << YAML::Key << "Length" << internodeInfo.m_length;
+            out << YAML::Key << "Internode Index" << internodeInfo.m_index;
+
             out << YAML::EndMap;
         }
         behaviour->TreeGraphWalkerRootToEnd(m_currentGrowingTree, m_currentGrowingTree,
@@ -421,6 +431,7 @@ void MultipleAngleCapture::ExportGraph(const std::shared_ptr<IInternodeBehaviour
                                                 auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
                                                 out << YAML::Key << "Thickness" << childInternodeInfo.m_thickness;
                                                 out << YAML::Key << "Length" << childInternodeInfo.m_length;
+                                                out << YAML::Key << "Internode Index" << childInternodeInfo.m_index;
                                                 out << YAML::EndMap;
                                             });
         out << YAML::EndSeq;

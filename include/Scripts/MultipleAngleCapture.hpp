@@ -32,9 +32,9 @@ namespace Scripts {
         int m_generationAmount = 2;
         PrivateComponentRef m_volume;
         std::filesystem::path m_currentExportFolder = "MultipleAngleCapture_Export/";
-
+        int m_targetDivider = 512;
         float m_branchWidth = 0.04f;
-        float m_nodeSize = 0.1f;
+        float m_nodeSize = 0.05f;
         glm::vec3 m_focusPoint = glm::vec3(0, 3, 0);
         float m_pitchAngleStart = 0;
         float m_pitchAngleStep = 10;

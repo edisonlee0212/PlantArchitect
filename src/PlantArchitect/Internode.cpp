@@ -64,36 +64,48 @@ void Internode::CollectInternodes(std::vector<Entity> &results) {
 }
 
 void Internode::ExportLString(const std::shared_ptr<LString>& lString) {
-    ExportLSystemCommandsHelper(GetOwner(), lString->commands);
+    int index = 0;
+    ExportLSystemCommandsHelper(index, GetOwner(), lString->commands);
 }
 
-void Internode::ExportLSystemCommandsHelper(const Entity &target, std::vector<LSystemCommand> &commands) {
+void Internode::ExportLSystemCommandsHelper(int& index, const Entity &target, std::vector<LSystemCommand> &commands) {
     if (!target.IsValid() || !target.HasDataComponent<InternodeInfo>()) return;
     auto internodeInfo = target.GetDataComponent<InternodeInfo>();
     auto transform = target.GetDataComponent<Transform>();
     auto eulerRotation = transform.GetEulerRotation();
     if (eulerRotation.x > 0) {
         commands.push_back({LSystemCommandType::PitchUp, eulerRotation.x});
+        index++;
     }else if(eulerRotation.x < 0){
         commands.push_back({LSystemCommandType::PitchDown, -eulerRotation.x});
+        index++;
     }
     if (eulerRotation.y > 0) {
         commands.push_back({LSystemCommandType::TurnLeft, eulerRotation.y});
+        index++;
     }else if(eulerRotation.y < 0){
         commands.push_back({LSystemCommandType::TurnRight, -eulerRotation.y});
+        index++;
     }
     if (eulerRotation.z > 0) {
         commands.push_back({LSystemCommandType::RollLeft, eulerRotation.z});
+        index++;
     }else if(eulerRotation.z < 0){
         commands.push_back({LSystemCommandType::RollRight, -eulerRotation.z});
+        index++;
     }
     commands.push_back({LSystemCommandType::Forward, internodeInfo.m_length});
+    internodeInfo.m_index = index;
+    target.SetDataComponent(internodeInfo);
+    index++;
 
     target.ForEachChild([&](Entity child){
         if (!child.IsValid() || !child.HasDataComponent<InternodeInfo>()) return;
         commands.push_back({LSystemCommandType::Push, 0.0f});
-        ExportLSystemCommandsHelper(child, commands);
+        index++;
+        ExportLSystemCommandsHelper(index, child, commands);
         commands.push_back({LSystemCommandType::Pop, 0.0f});
+        index++;
     });
 }
 

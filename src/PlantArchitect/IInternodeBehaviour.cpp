@@ -8,7 +8,7 @@
 #include "InternodeSystem.hpp"
 #include "IInternodePhyllotaxis.hpp"
 #include "InternodeFoliage.hpp"
-
+#include "InternodeDataComponents.hpp"
 using namespace PlantArchitect;
 
 void IInternodeBehaviour::Recycle(const Entity &internode) {
@@ -357,6 +357,7 @@ void IInternodeBehaviour::BranchSkinnedMeshGenerator(std::vector<Entity> &entiti
                 glm::vec3(0.0f, 0.0f, -1.0f);
         newNormalDir = glm::cross(glm::cross(front, newNormalDir), front);
         auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
+        auto branchColor = entity.GetDataComponent<BranchColor>();
         internode->m_normalDir = newNormalDir;
         if (internode->m_rings.empty()) {
             continue;
@@ -369,6 +370,7 @@ void IInternodeBehaviour::BranchSkinnedMeshGenerator(std::vector<Entity> &entiti
         float angleStep = 360.0f / static_cast<float>(pStep);
         int vertexIndex = vertices.size();
         SkinnedVertex archetype;
+        archetype.m_color = branchColor.m_value;
         float textureXStep = 1.0f / pStep * 4.0f;
 
         const auto startPosition = internode->m_rings.at(0).m_startPosition;
