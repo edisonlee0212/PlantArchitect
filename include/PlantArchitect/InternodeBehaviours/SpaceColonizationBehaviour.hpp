@@ -24,6 +24,8 @@ namespace PlantArchitect {
         float m_endNodeThickness = 0.02f;
 
         void OnInspect();
+        void Save(const std::filesystem::path &path) const;
+        void Load(const std::filesystem::path &path);
     };
 
     class IVolume;

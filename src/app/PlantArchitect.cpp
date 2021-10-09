@@ -22,12 +22,10 @@
 #include <SpaceColonizationBehaviour.hpp>
 #include "EmptyInternodeResource.hpp"
 #include "LSystemBehaviour.hpp"
-#include "SpaceColonizationTreeToLString.hpp"
 #include "AutoTreeGenerationPipeline.hpp"
 #include "DefaultInternodePhyllotaxis.hpp"
 #include "InternodeFoliage.hpp"
 #include "RadialBoundingVolume.hpp"
-#include "GeneralTreeToLString.hpp"
 #include "DepthCamera.hpp"
 #include "MultipleAngleCapture.hpp"
 using namespace PlantArchitect;
@@ -82,8 +80,6 @@ int main() {
     ClassRegistry::RegisterSystem<InternodeSystem>("InternodeSystem");
 
     ClassRegistry::RegisterPrivateComponent<AutoTreeGenerationPipeline>("AutoTreeGenerationPipeline");
-    ClassRegistry::RegisterAsset<SpaceColonizationTreeToLString>("SpaceColonizationTreeToLString", ".sctolstring");
-    ClassRegistry::RegisterAsset<GeneralTreeToLString>("GeneralTreeToLString", ".gttolstring");
     ClassRegistry::RegisterAsset<MultipleAngleCapture>("MultipleAngleCapture", ".mulanglecap");
 
     ClassRegistry::RegisterAsset<InternodeFoliage>("InternodeFoliage", ".internodefoliage");
@@ -132,18 +128,6 @@ void EngineSetup(bool enableRayTracing) {
         }
 #pragma endregion
 #pragma endregion
-        /*
-        const Entity lightEntity = EntityManager::CreateEntity("Light source");
-        auto pointLight = lightEntity.GetOrSetPrivateComponent<PointLight>().lock();
-        pointLight->m_diffuseBrightness = 6;
-        pointLight->m_lightSize = 0.25f;
-        pointLight->m_quadratic = 0.0001f;
-        pointLight->m_linear = 0.01f;
-        pointLight->m_lightSize = 0.08f;
-        transform.SetPosition(glm::vec3(0, 30, 0));
-        transform.SetEulerRotation(glm::radians(glm::vec3(0, 0, 0)));
-        lightEntity.SetDataComponent(transform);
-        */
 #ifdef RAYTRACERFACILITY
         if (enableRayTracing)
       RayTracerManager::Init();

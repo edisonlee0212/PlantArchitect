@@ -23,13 +23,11 @@
 #include <SpaceColonizationBehaviour.hpp>
 #include "EmptyInternodeResource.hpp"
 #include "LSystemBehaviour.hpp"
-#include "SpaceColonizationTreeToLString.hpp"
 #include "AutoTreeGenerationPipeline.hpp"
 
 #include "DefaultInternodePhyllotaxis.hpp"
 #include "InternodeFoliage.hpp"
 #include "RadialBoundingVolume.hpp"
-#include "GeneralTreeToLString.hpp"
 #include "DepthCamera.hpp"
 #include "MultipleAngleCapture.hpp"
 using namespace PlantArchitect;
@@ -87,8 +85,6 @@ int main() {
     ClassRegistry::RegisterSystem<InternodeSystem>("InternodeSystem");
 
     ClassRegistry::RegisterPrivateComponent<AutoTreeGenerationPipeline>("AutoTreeGenerationPipeline");
-    ClassRegistry::RegisterAsset<SpaceColonizationTreeToLString>("SpaceColonizationTreeToLString", ".sctolstring");
-    ClassRegistry::RegisterAsset<GeneralTreeToLString>("GeneralTreeToLString", ".gttolstring");
     ClassRegistry::RegisterAsset<MultipleAngleCapture>("MultipleAngleCapture", ".mulanglecap");
 
     ClassRegistry::RegisterAsset<InternodeFoliage>("InternodeFoliage", ".internodefoliage");
@@ -148,40 +144,26 @@ void EngineSetup(bool enableRayTracing) {
          * Add all internode behaviours for example.
          */
         auto internodeSystem = EntityManager::GetOrCreateSystem<InternodeSystem>(EntityManager::GetCurrentScene(), 0.0f);
+
+        auto spaceColonizationBehaviour = internodeSystem->GetInternodeBehaviour<SpaceColonizationBehaviour>();
         Entity cubeVolumeEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "CubeVolume");
         Transform cubeVolumeTransform = cubeVolumeEntity.GetDataComponent<Transform>();
-        cubeVolumeTransform.SetPosition(glm::vec3(0, 15, 0));
+        cubeVolumeTransform.SetPosition(glm::vec3(0, 12.5, 0));
         cubeVolumeEntity.SetDataComponent(cubeVolumeTransform);
-        auto spaceColonizationBehaviour = AssetManager::CreateAsset<SpaceColonizationBehaviour>();
-        auto lSystemBehaviour = AssetManager::CreateAsset<LSystemBehaviour>();
-        auto generalTreeBehaviour = AssetManager::CreateAsset<GeneralTreeBehaviour>();
-        internodeSystem->PushInternodeBehaviour(
-                std::dynamic_pointer_cast<IInternodeBehaviour>(spaceColonizationBehaviour));
-        internodeSystem->PushInternodeBehaviour(std::dynamic_pointer_cast<IInternodeBehaviour>(lSystemBehaviour));
-        internodeSystem->PushInternodeBehaviour(std::dynamic_pointer_cast<IInternodeBehaviour>(generalTreeBehaviour));
+
         auto cubeVolume = cubeVolumeEntity.GetOrSetPrivateComponent<CubeVolume>().lock();
         cubeVolume->m_minMaxBound.m_min = glm::vec3(-10.0f);
         cubeVolume->m_minMaxBound.m_max = glm::vec3(10.0f);
         spaceColonizationBehaviour->PushVolume(std::dynamic_pointer_cast<IVolume>(cubeVolume));
-
-
         /*
          * Add all pipelines
          */
-        auto spaceColonizationPipelineEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "SpaceColonizationTreeToLStringPipeline");
-        auto spaceColonizationPipeline = spaceColonizationPipelineEntity.GetOrSetPrivateComponent<AutoTreeGenerationPipeline>().lock();
-        spaceColonizationPipeline->m_pipelineBehaviour = AssetManager::CreateAsset<SpaceColonizationTreeToLString>();
-
-        auto generalTreePipelineEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "GeneralTreeToLStringPipeline");
-        auto generalTreePipeline = generalTreePipelineEntity.GetOrSetPrivateComponent<AutoTreeGenerationPipeline>().lock();
-        generalTreePipeline->m_pipelineBehaviour = AssetManager::CreateAsset<GeneralTreeToLString>();
-
         auto multipleAngleCapturePipelineEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "MultipleAngleCapturePipeline");
         auto multipleAngleCapturePipeline = multipleAngleCapturePipelineEntity.GetOrSetPrivateComponent<AutoTreeGenerationPipeline>().lock();
         auto multipleAngleCapture = AssetManager::CreateAsset<MultipleAngleCapture>();
         multipleAngleCapture->m_cameraEntity = mainCamera->GetOwner();
         multipleAngleCapturePipeline->m_pipelineBehaviour = multipleAngleCapture;
-
+        multipleAngleCapture->m_volume = cubeVolume;
     });
 }
 

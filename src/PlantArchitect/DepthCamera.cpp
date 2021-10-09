@@ -16,7 +16,6 @@ void DepthCamera::OnInspect() {
         ImGui::DragInt2("Resolution", &m_resX);
     }
 
-    ImGui::DragFloat("Factor", &m_factor, 1.0f, 1.0f, 1000000.0f);
     if (ImGui::TreeNode("Content"))
     {
         static float debugSacle = 0.25f;
@@ -55,7 +54,6 @@ void DepthCamera::Update() {
         m_colorTexture->UnsafeGetGLTexture()->ReSize(
                 0, GL_RGB32F, GL_RGB, GL_FLOAT, 0, m_resolutionX, m_resolutionY);
     }
-    m_factor = glm::clamp(m_factor, 1.0f, cameraComponent->m_farDistance - cameraComponent->m_nearDistance);
     // 2. Render to depth texture
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glDisable(GL_BLEND);
@@ -72,7 +70,6 @@ void DepthCamera::Update() {
     m_depthTransferProgram->SetInt("depthStencil", 0);
     m_depthTransferProgram->SetFloat("near", cameraComponent->m_nearDistance);
     m_depthTransferProgram->SetFloat("far", cameraComponent->m_farDistance);
-    m_depthTransferProgram->SetFloat("factor", m_factor);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 void DepthCamera::OnCreate() {

@@ -391,3 +391,10 @@ void SpaceColonizationParameters::OnInspect() {
     ImGui::DragFloat("Thickness Factor", &m_thicknessFactor);
     ImGui::DragFloat("End node thickness", &m_endNodeThickness);
 }
+
+void SpaceColonizationParameters::Save(const std::filesystem::path &path) const {
+
+}
+void SpaceColonizationParameters::Load(const std::filesystem::path &path) {
+
+}

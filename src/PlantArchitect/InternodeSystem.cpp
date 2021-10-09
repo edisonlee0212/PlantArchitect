@@ -6,7 +6,9 @@
 #include "GeneralTreeBehaviour.hpp"
 #include "SpaceColonizationBehaviour.hpp"
 #include "GeneralTreeParameters.hpp"
-
+#include "LSystemBehaviour.hpp"
+#include "CubeVolume.hpp"
+#include "RadialBoundingVolume.hpp"
 using namespace PlantArchitect;
 
 void InternodeSystem::Simulate(int iterations) {
@@ -106,6 +108,16 @@ void InternodeSystem::OnInspect() {
 }
 
 void InternodeSystem::OnCreate() {
+    auto spaceColonizationBehaviour = AssetManager::CreateAsset<SpaceColonizationBehaviour>();
+    auto lSystemBehaviour = AssetManager::CreateAsset<LSystemBehaviour>();
+    auto generalTreeBehaviour = AssetManager::CreateAsset<GeneralTreeBehaviour>();
+    PushInternodeBehaviour(
+            std::dynamic_pointer_cast<IInternodeBehaviour>(spaceColonizationBehaviour));
+    PushInternodeBehaviour(std::dynamic_pointer_cast<IInternodeBehaviour>(lSystemBehaviour));
+    PushInternodeBehaviour(std::dynamic_pointer_cast<IInternodeBehaviour>(generalTreeBehaviour));
+
+
+
     m_randomColors.resize(60);
     for (int i = 0; i < 60; i++) {
         m_randomColors[i] = glm::sphericalRand(1.0f);
@@ -623,7 +635,7 @@ void InternodeSystem::Deserialize(const YAML::Node &in) {
         for(const auto& i : in["m_internodeBehaviours"]){
             AssetRef behaviour;
             behaviour.Deserialize(i);
-            m_internodeBehaviours.push_back(behaviour);
+            PushInternodeBehaviour(behaviour.Get<IInternodeBehaviour>());
         }
     }
 }

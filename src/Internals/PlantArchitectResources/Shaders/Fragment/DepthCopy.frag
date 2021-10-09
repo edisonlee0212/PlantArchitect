@@ -7,7 +7,6 @@ in VS_OUT {
 uniform sampler2D depthStencil;
 uniform float near;
 uniform float far;
-uniform float factor;
 float CalculateLinearDepth(float ndcDepth, float near, float far)
 {
     float z = ndcDepth * 2.0 - 1.0;
@@ -17,7 +16,7 @@ float CalculateLinearDepth(float ndcDepth, float near, float far)
 void main()
 {
     float ndcDepth = texture(depthStencil, fs_in.TexCoords).r;
-    float depth = CalculateLinearDepth(ndcDepth, near, far) / factor;
-
-    fragColor = vec3(depth, depth, depth);
+    float normalizedDepth = 1.0 - CalculateLinearDepth(ndcDepth, near, far) / far;
+    int depth = int(normalizedDepth * 32768.0);
+    fragColor = vec3((depth / 1024) % 32 / 32.0f, (depth / 32) % 32 / 32.0f, depth % 32 / 32.0f);
 }

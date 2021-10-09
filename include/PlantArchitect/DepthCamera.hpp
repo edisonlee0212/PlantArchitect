@@ -11,7 +11,6 @@ namespace PlantArchitect {
         bool m_useCameraResolution = true;
         int m_resX = 1;
         int m_resY = 1;
-        float m_factor = 1.0f;
 
         void Update() override;
 
