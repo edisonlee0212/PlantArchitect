@@ -91,7 +91,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
             behaviour->GenerateSkinnedMeshes();
             if (m_exportOBJ) {
                 Entity foliage, branch;
-                m_currentGrowingTree.ForEachChild([&](Entity child) {
+                m_currentGrowingTree.ForEachChild([&](const std::shared_ptr<Scene>& scene, Entity child) {
                     if (child.GetName() == "Foliage") foliage = child;
                     else if (child.GetName() == "Branch") branch = child;
                 });

@@ -9,7 +9,6 @@ using namespace PlantArchitect;
 std::shared_ptr<OpenGLUtils::GLProgram> DepthCamera::m_depthTransferProgram;
 std::shared_ptr<OpenGLUtils::GLVAO> DepthCamera::m_depthTransferVAO;
 
-void DepthCamera::Clone(const std::shared_ptr<IPrivateComponent> &target) {}
 void DepthCamera::OnInspect() {
     ImGui::Checkbox("Use Camera Resolution", &m_useCameraResolution);
     if(!m_useCameraResolution){
@@ -115,4 +114,12 @@ void DepthCamera::OnCreate() {
     m_colorTexture->UnsafeGetGLTexture()->SetInt(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     m_colorTexture->UnsafeGetGLTexture()->SetInt(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     AttachTexture(m_colorTexture->UnsafeGetGLTexture().get(), GL_COLOR_ATTACHMENT0);
+}
+
+DepthCamera &DepthCamera::operator=(const DepthCamera & source) {
+    m_useCameraResolution = source.m_useCameraResolution;
+    m_resX = source.m_resX;
+    m_resY = source.m_resY;
+    m_colorTexture = source.m_colorTexture;
+    return *this;
 }

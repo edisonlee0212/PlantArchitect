@@ -338,7 +338,8 @@ namespace PlantArchitect {
         Entity retVal;
         std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
         auto recycleEntity = m_recycleStorageEntity;
-        if (!recycleEntity.IsNull()) retVal = recycleEntity.GetChild(0);
+        if (recycleEntity.IsValid()) retVal = recycleEntity.GetChild(0);
+        else m_recycleStorageEntity = Entity();
         if (!retVal.IsNull()) {
             retVal.SetParent(parent);
             retVal.SetDataComponent(Transform());
@@ -365,7 +366,8 @@ namespace PlantArchitect {
         Entity retVal;
         std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
         auto recycleEntity = m_recycleStorageEntity;
-        if (!recycleEntity.IsNull()) retVal = recycleEntity.GetChild(0);
+        if (recycleEntity.IsValid()) retVal = recycleEntity.GetChild(0);
+        else m_recycleStorageEntity = Entity();
         if (!retVal.IsNull()) {
             recycleEntity.RemoveChild(retVal);
             retVal.SetDataComponent(Transform());

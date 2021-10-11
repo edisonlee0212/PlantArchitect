@@ -10,9 +10,6 @@
 
 using namespace Scripts;
 
-void AutoTreeGenerationPipeline::Clone(const std::shared_ptr<IPrivateComponent> &target) {
-
-}
 std::shared_ptr<IInternodeBehaviour> AutoTreeGenerationPipeline::GetBehaviour(){
     return m_currentInternodeBehaviour;
 }

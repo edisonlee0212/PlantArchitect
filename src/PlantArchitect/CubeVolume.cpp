@@ -64,10 +64,6 @@ bool CubeVolume::InVolume(const GlobalTransform &globalTransform,
     return true;
 }
 
-void CubeVolume::Clone(const std::shared_ptr<IPrivateComponent> &target) {
-    *this = *std::static_pointer_cast<CubeVolume>(target);
-}
-
 void CubeVolume::Serialize(YAML::Emitter &out) {
     out << YAML::Key << "m_displayPoints" << YAML::Value << m_displayPoints;
     out << YAML::Key << "m_displayBounds" << YAML::Value << m_displayBounds;

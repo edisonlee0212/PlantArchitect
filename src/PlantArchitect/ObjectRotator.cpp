@@ -9,10 +9,7 @@ void PlantArchitect::ObjectRotator::FixedUpdate() {
   transform.SetEulerRotation(glm::radians(m_rotation));
   GetOwner().SetDataComponent(transform);
 }
-void PlantArchitect::ObjectRotator::Clone(
-    const std::shared_ptr<IPrivateComponent> &target) {
-  *this = *std::static_pointer_cast<ObjectRotator>(target);
-}
+
 void PlantArchitect::ObjectRotator::OnInspect() {
   ImGui::DragFloat("Speed", &m_rotateSpeed);
   ImGui::DragFloat3("Rotation", &m_rotation.x);

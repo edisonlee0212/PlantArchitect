@@ -8,18 +8,13 @@ namespace PlantArchitect {
         static std::shared_ptr<OpenGLUtils::GLProgram> m_depthTransferProgram;
         static std::shared_ptr<OpenGLUtils::GLVAO> m_depthTransferVAO;
     public:
+        DepthCamera& operator=(const DepthCamera& source);
         bool m_useCameraResolution = true;
         int m_resX = 1;
         int m_resY = 1;
-
         void Update() override;
-
         void OnCreate() override;
-
         std::shared_ptr<Texture2D> m_colorTexture;
-
         void OnInspect() override;
-
-        void Clone(const std::shared_ptr<IPrivateComponent> &target) override;
     };
 } // namespace PlantArchitect

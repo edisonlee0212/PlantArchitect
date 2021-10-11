@@ -82,7 +82,6 @@ namespace PlantArchitect {
 
         void OnCreate() override;
 
-        void Clone(const std::shared_ptr<IPrivateComponent> &target) override;
         /*
          * Parse the structure of the internodes and set up commands.
          */

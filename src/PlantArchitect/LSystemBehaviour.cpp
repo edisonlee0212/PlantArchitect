@@ -121,7 +121,7 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
             currentNode.SetDataComponent(globalTransform);
         }
     }
-    TransformManager::CalculateTransformGraphForDescendents(root);
+    TransformManager::CalculateTransformGraphForDescendents(EntityManager::GetCurrentScene(), root);
     TreeGraphWalkerRootToEnd(root, root, [](Entity parent, Entity child) {
         auto parentGlobalTransform = parent.GetDataComponent<GlobalTransform>();
         auto parentPosition = parentGlobalTransform.GetPosition();
@@ -137,7 +137,7 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
         float thicknessCollection = 0.0f;
         auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
         auto parameters = parent.GetDataComponent<LSystemParameters>();
-        parent.ForEachChild([&](Entity child) {
+        parent.ForEachChild([&](const std::shared_ptr<Scene>& scene, Entity child) {
             if (!InternodeCheck(child)) return;
             auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
             thicknessCollection += glm::pow(childInternodeInfo.m_thickness,

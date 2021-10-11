@@ -75,7 +75,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                             Entity largestChild;
                             Entity longestChild;
                             Entity heaviestChild;
-                            parent.ForEachChild([&](Entity child) {
+                            parent.ForEachChild([&](const std::shared_ptr<Scene>& scene, Entity child) {
                                 auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
                                 auto childInternodeStatus = child.GetDataComponent<InternodeStatus>();
                                 if (childInternodeInfo.m_endNode) {
@@ -125,7 +125,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                                     heaviestChild = child;
                                 }
                             });
-                            parent.ForEachChild([&](Entity child) {
+                            parent.ForEachChild([&](const std::shared_ptr<Scene>& scene, Entity child) {
                                 auto childInternodeStatus = child.GetDataComponent<InternodeStatus>();
                                 childInternodeStatus.m_largestChild = largestChild == child;
                                 childInternodeStatus.m_longestChild = longestChild == child;
@@ -492,7 +492,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
             rootGlobalTransform.m_value = rootTransform.m_value;
         }
         root.SetDataComponent(rootGlobalTransform);
-        TransformManager::CalculateTransformGraphForDescendents(root);
+        TransformManager::CalculateTransformGraphForDescendents(EntityManager::GetCurrentScene(), root);
     });
 #pragma endregion
 #pragma region PostProcess
@@ -503,7 +503,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
             float thicknessCollection = 0.0f;
             auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
             auto parameters = parent.GetDataComponent<GeneralTreeParameters>();
-            parent.ForEachChild([&](Entity child) {
+            parent.ForEachChild([&](const std::shared_ptr<Scene>& scene, Entity child) {
                 if (!InternodeCheck(child)) return;
                 auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
                 thicknessCollection += glm::pow(childInternodeInfo.m_thickness,
@@ -607,10 +607,6 @@ Entity GeneralTreeBehaviour::NewPlant(const GeneralTreeParameters &params, const
     internode->m_fromApicalBud = true;
     auto waterFeeder = entity.GetOrSetPrivateComponent<InternodeWaterFeeder>().lock();
     return entity;
-}
-
-void InternodeWaterFeeder::Clone(const std::shared_ptr<IPrivateComponent> &target) {
-
 }
 
 void InternodeWaterFeeder::OnInspect() {

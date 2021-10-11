@@ -9,10 +9,6 @@
 #include "InternodeFoliage.hpp"
 using namespace PlantArchitect;
 
-void Internode::Clone(const std::shared_ptr<IPrivateComponent> &target) {
-
-}
-
 void Internode::OnCreate() {
     m_internodeSystem = EntityManager::GetSystem<InternodeSystem>(EntityManager::GetCurrentScene());
  }
@@ -53,7 +49,7 @@ void Internode::CollectResource(float deltaTime) {
 void Internode::CollectInternodesHelper(const Entity &target, std::vector<Entity> &results) {
     if (target.IsValid() && target.HasDataComponent<InternodeInfo>() && target.HasPrivateComponent<Internode>()) {
         results.push_back(target);
-        target.ForEachChild([&](Entity child) {
+        target.ForEachChild([&](const std::shared_ptr<Scene>& scene, Entity child) {
             CollectInternodesHelper(child, results);
         });
     }
@@ -99,7 +95,7 @@ void Internode::ExportLSystemCommandsHelper(int& index, const Entity &target, st
     target.SetDataComponent(internodeInfo);
     index++;
 
-    target.ForEachChild([&](Entity child){
+    target.ForEachChild([&](const std::shared_ptr<Scene>& scene, Entity child){
         if (!child.IsValid() || !child.HasDataComponent<InternodeInfo>()) return;
         commands.push_back({LSystemCommandType::Push, 0.0f});
         index++;

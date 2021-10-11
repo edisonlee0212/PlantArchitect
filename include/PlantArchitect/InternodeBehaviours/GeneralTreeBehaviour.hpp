@@ -15,7 +15,6 @@ namespace PlantArchitect {
     public:
         float m_lastRequest = 0;
         float m_waterDividends = 1.0f;
-        void Clone(const std::shared_ptr<IPrivateComponent> &target) override;
         void OnInspect() override;
     };
 

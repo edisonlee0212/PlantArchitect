@@ -263,7 +263,7 @@ void RadialBoundingVolume::FormEntity() {
         return;
     auto children = GetOwner().GetChildren();
     for (auto &child: children) {
-        EntityManager::DeleteEntity(child);
+        EntityManager::DeleteEntity(EntityManager::GetCurrentScene(), child);
     }
     children.clear();
     for (auto i = 0; i < m_boundMeshes.size(); i++) {
@@ -587,11 +587,6 @@ bool RadialBoundingVolume::InVolume(const GlobalTransform &globalTransform,
                finalPos.y <= m_maxHeight;
     }
     return true;
-}
-
-void RadialBoundingVolume::Clone(
-        const std::shared_ptr<IPrivateComponent> &target) {
-    *this = *std::static_pointer_cast<RadialBoundingVolume>(target);
 }
 
 void RadialBoundingVolume::Deserialize(const YAML::Node &in) {

@@ -123,7 +123,7 @@ void EngineSetup(bool enableRayTracing) {
         transform = Transform();
         transform.SetPosition(glm::vec3(0, 2, 35));
         transform.SetEulerRotation(glm::radians(glm::vec3(15, 0, 0)));
-        auto mainCamera = RenderManager::GetMainCamera().lock();
+        auto mainCamera = EntityManager::GetCurrentScene()->m_mainCamera.Get<Camera>();
         if (mainCamera) {
             auto postProcessing =
                     mainCamera->GetOwner().GetOrSetPrivateComponent<PostProcessing>().lock();

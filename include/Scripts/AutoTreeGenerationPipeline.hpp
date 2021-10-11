@@ -33,7 +33,6 @@ namespace Scripts {
         AutoTreeGenerationPipelineStatus m_status = AutoTreeGenerationPipelineStatus::Idle;
         AssetRef m_pipelineBehaviour;
         void Update() override;
-        void Clone(const std::shared_ptr<IPrivateComponent> &target) override;
         void OnInspect() override;
         void Start() override;
         void Serialize(YAML::Emitter &out) override;

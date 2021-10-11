@@ -63,8 +63,6 @@ namespace PlantArchitect {
 
         void Deserialize(const YAML::Node &in) override;
 
-        void Clone(const std::shared_ptr<IPrivateComponent> &target) override;
-
         void Augmentation(float value);
     };
 } // namespace PlantFactory

@@ -133,7 +133,7 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
             }
             newFront = glm::normalize(spaceColonizationIncentive.m_direction);
             bool duplicate = false;
-            entity.ForEachChild([&](Entity child) {
+            entity.ForEachChild([&](const std::shared_ptr<Scene>& scene, Entity child) {
                 if (glm::dot(child.GetDataComponent<GlobalTransform>().GetRotation() * glm::vec3(0, 0, -1),
                              newFront) > 0.95f)
                     duplicate = true;
@@ -182,7 +182,7 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
                 rootLocalTransform.m_value = glm::inverse(parentGlobalTransform.m_value) * globalTransform.m_value;
                 root.SetDataComponent(rootLocalTransform);
             }
-            TransformManager::CalculateTransformGraphForDescendents(root);
+            TransformManager::CalculateTransformGraphForDescendents(EntityManager::GetCurrentScene(), root);
         }).share());
     }
     for (const auto &i: results)
@@ -196,7 +196,7 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
                 float thicknessCollection = 0.0f;
                 auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
                 auto parameters = parent.GetDataComponent<SpaceColonizationParameters>();
-                parent.ForEachChild([&](Entity child) {
+                parent.ForEachChild([&](const std::shared_ptr<Scene>& scene, Entity child) {
                     if (!InternodeCheck(child)) return;
                     auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
                     thicknessCollection += glm::pow(childInternodeInfo.m_thickness,

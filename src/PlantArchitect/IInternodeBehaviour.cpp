@@ -23,17 +23,18 @@ void IInternodeBehaviour::Recycle(const Entity &internode) {
 
 void IInternodeBehaviour::RecycleSingle(const Entity &internode) {
     std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
-    if (m_recycleStorageEntity.IsNull()) {
-        EntityManager::DeleteEntity(internode);
+    if (!m_recycleStorageEntity.IsValid()) {
+        m_recycleStorageEntity = Entity();
+        EntityManager::DeleteEntity(EntityManager::GetCurrentScene(), internode);
         return;
     }
     if (!InternodeCheck(internode)) {
-        EntityManager::DeleteEntity(internode);
+        EntityManager::DeleteEntity(EntityManager::GetCurrentScene(), internode);
         return;
     }
-    EntityManager::ForEachPrivateComponent(internode, [&](PrivateComponentElement &element) {
+    EntityManager::ForEachPrivateComponent(EntityManager::GetCurrentScene(), internode, [&](PrivateComponentElement &element) {
         if (element.m_typeId != typeid(Internode).hash_code())
-            EntityManager::RemovePrivateComponent(internode, element.m_typeId);
+            EntityManager::RemovePrivateComponent(EntityManager::GetCurrentScene(), internode, element.m_typeId);
     });
     internode.GetOrSetPrivateComponent<Internode>().lock()->OnRecycle();
     internode.SetParent(m_recycleStorageEntity);
@@ -271,7 +272,7 @@ void IInternodeBehaviour::TreeNodeCollector(std::vector<Entity> &boundEntities, 
     if (node.GetChildrenAmount() == 0) internodeInfo.m_endNode = true;
     else internodeInfo.m_endNode = false;
     node.SetDataComponent(internodeInfo);
-    node.ForEachChild([&](Entity child) {
+    node.ForEachChild([&](const std::shared_ptr<Scene>& scene, Entity child) {
         TreeNodeCollector(boundEntities, parentIndices, currentIndex, child, root);
     });
 
@@ -502,7 +503,7 @@ void IInternodeBehaviour::BranchSkinnedMeshGenerator(std::vector<Entity> &entiti
 
 void
 IInternodeBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, Entity &branchMesh, Entity &foliage) {
-    entity.ForEachChild([&](Entity child) {
+    entity.ForEachChild([&](const std::shared_ptr<Scene>& scene, Entity child) {
         if (child.GetName() == "Branch") {
             branchMesh = child;
         } else if (child.GetName() == "Foliage") {
