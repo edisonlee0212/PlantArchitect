@@ -31,11 +31,6 @@ void MLVQRenderer::Sync() {
     }
 }
 
-void MLVQRenderer::Clone(
-        const std::shared_ptr<IPrivateComponent> &target) {
-    *this = *std::static_pointer_cast<MLVQRenderer>(target);
-}
-
 void MLVQRenderer::Serialize(YAML::Emitter &out) {
     out << YAML::Key << "m_materialIndex" << YAML::Value << m_materialIndex;
     m_mesh.Save("m_mesh", out);

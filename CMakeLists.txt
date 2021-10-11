@@ -37,8 +37,8 @@ set(3RD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 add_subdirectory(${3RD_PARTY_DIR})
-include(${CMAKE_MODULE_PATH}/configure_build_type.cmake)
-include(${CMAKE_MODULE_PATH}/configure_optix.cmake)
+include_directories(${UNIENGINE_INCLUDES})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 if (BUILD_RAY_TRACER_FACILITY)
     include(${CMAKE_MODULE_PATH}/configure_build_type.cmake)
@@ -248,6 +248,10 @@ if (BUILD_RAY_TRACER_FACILITY)
             PlantArchitect
             Scripts
             )
+    target_compile_definitions(Application
+            PRIVATE
+            RAYTRACERFACILITY
+            )
 else ()
     target_link_libraries(Application
             PlantArchitect
@@ -266,6 +270,10 @@ if (BUILD_RAY_TRACER_FACILITY)
             RayTracerFacility
             PlantArchitect
             Scripts
+            )
+    target_compile_definitions(InternodeBehavioursExample
+            PRIVATE
+            RAYTRACERFACILITY
             )
 else ()
     target_link_libraries(InternodeBehavioursExample

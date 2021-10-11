@@ -34,7 +34,7 @@ using namespace RayTracerFacility;
 #endif
 using namespace Scripts;
 
-void EngineSetup(bool enableRayTracing);
+void EngineSetup();
 void RegisterDataComponentMenus();
 int main() {
     ClassRegistry::RegisterDataComponent<BranchCylinder>("BranchCylinder");
@@ -86,11 +86,14 @@ int main() {
     ClassRegistry::RegisterAsset<DefaultInternodePhyllotaxis>("DefaultInternodePhyllotaxis", ".defaultip");
 
     const bool enableRayTracing = true;
-    EngineSetup(enableRayTracing);
+    EngineSetup();
     RegisterDataComponentMenus();
     ApplicationConfigs applicationConfigs;
     Application::Init(applicationConfigs);
-
+#ifdef RAYTRACERFACILITY
+    if (enableRayTracing)
+      RayTracerManager::Init();
+#endif
 #pragma region Engine Loop
     Application::Run();
 #pragma endregion
@@ -101,7 +104,7 @@ int main() {
     Application::End();
 }
 
-void EngineSetup(bool enableRayTracing) {
+void EngineSetup() {
     ProjectManager::SetScenePostLoadActions([=]() {
 #pragma region Engine Setup
 #pragma region Global light settings
@@ -116,7 +119,7 @@ void EngineSetup(bool enableRayTracing) {
         transform = Transform();
         transform.SetPosition(glm::vec3(0, 2, 35));
         transform.SetEulerRotation(glm::radians(glm::vec3(15, 0, 0)));
-        auto mainCamera = RenderManager::GetMainCamera().lock();
+        auto mainCamera = EntityManager::GetCurrentScene()->m_mainCamera.Get<UniEngine::Camera>();
         if (mainCamera) {
             auto postProcessing =
                     mainCamera->GetOwner().GetOrSetPrivateComponent<PostProcessing>().lock();
@@ -128,10 +131,7 @@ void EngineSetup(bool enableRayTracing) {
         }
 #pragma endregion
 #pragma endregion
-#ifdef RAYTRACERFACILITY
-        if (enableRayTracing)
-      RayTracerManager::Init();
-#endif
+
         auto internodeSystem = EntityManager::GetOrCreateSystem<InternodeSystem>(EntityManager::GetCurrentScene(), 0.0f);
 
     });

@@ -38,6 +38,23 @@ namespace RayTracerFacility {
         void OnGui();
     };
 
+    class RAY_TRACER_FACILITY_API SunlightCalculator {
+      SunlightCalculator() = default;
+      SunlightCalculator(SunlightCalculator &&) = default;
+      SunlightCalculator(const SunlightCalculator &) = default;
+      SunlightCalculator &operator=(SunlightCalculator &&) = default;
+      SunlightCalculator &operator=(const SunlightCalculator &) = default;
+    public:
+      float m_intensityFactor = 1.0f;
+      /*
+       * The database of intensity and angle.
+       */
+      std::map<float, std::pair<float, float>> m_database;
+      static SunlightCalculator &GetInstance();
+      static void CalculateSunlightIntensity(int hour, int minute, float& intensity);
+      static void CalculateSunlightAngle(int hour, int minute, float& angle);
+    };
+
     class RAY_TRACER_FACILITY_API RayTracerManager {
     protected:
 #pragma region Class related
