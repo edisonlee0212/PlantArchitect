@@ -1,3 +1,6 @@
 [submodule "3rdParty/UniEngine"]
 	path = 3rdParty/UniEngine
 	url = https://github.com/edisonlee0212/UniEngine.git
+[submodule "3rdParty/RayTracerFacility"]
+	path = 3rdParty/RayTracerFacility
+	url = https://github.com/edisonlee0212/RayTracerFacility.git
