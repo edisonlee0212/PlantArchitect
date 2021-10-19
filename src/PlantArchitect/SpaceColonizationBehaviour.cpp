@@ -300,7 +300,7 @@ void SpaceColonizationBehaviour::OnInspect() {
             RenderManager::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube, renderColor,
                                                   displayMatrices, glm::mat4(1.0f), renderSize);
             RenderManager::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube,
-                                                  EntityManager::GetSystem<InternodeSystem>(EntityManager::GetCurrentScene())->m_internodeDebuggingCamera,
+                                                  EntityManager::GetCurrentScene()->GetSystem<InternodeSystem>()->m_internodeDebuggingCamera,
                                                   EditorManager::GetInstance().m_sceneCameraPosition,
                                                   EditorManager::GetInstance().m_sceneCameraRotation, renderColor,
                                                   displayMatrices, glm::mat4(1.0f), renderSize);
@@ -364,24 +364,10 @@ Entity SpaceColonizationBehaviour::NewPlant(const SpaceColonizationParameters &p
 }
 
 void SpaceColonizationBehaviour::Serialize(YAML::Emitter &out) {
-    out << YAML::Key << "m_volumes" << YAML::Value << YAML::BeginSeq;
-    for(auto& i : m_volumes){
-        out << YAML::BeginMap;
-        i.Serialize(out);
-        out << YAML::EndMap;
-    }
-    out << YAML::EndSeq;
+
 }
 
 void SpaceColonizationBehaviour::Deserialize(const YAML::Node &in) {
-    if(in["m_volumes"]){
-        m_volumes.clear();
-        for(const auto& i : in["m_volumes"]){
-            PrivateComponentRef volume;
-            volume.Deserialize(i);
-            m_volumes.push_back(volume);
-        }
-    }
 }
 
 void SpaceColonizationParameters::OnInspect() {

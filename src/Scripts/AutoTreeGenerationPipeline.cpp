@@ -42,7 +42,7 @@ void AutoTreeGenerationPipeline::Update() {
                 }
                 break;
             case AutoTreeGenerationPipelineStatus::Growth: {
-                auto internodeSystem = EntityManager::GetSystem<InternodeSystem>(EntityManager::GetCurrentScene());
+                auto internodeSystem = EntityManager::GetCurrentScene()->GetSystem<InternodeSystem>();
                 internodeSystem->Simulate(pipelineBehaviour->m_perTreeGrowthIteration);
                 m_status = AutoTreeGenerationPipelineStatus::AfterGrowth;
                 pipelineBehaviour->m_skipCurrentFrame = true;
@@ -161,18 +161,15 @@ void AutoTreeGenerationPipeline::UpdateInternodeBehaviour() {
     switch (m_behaviourType) {
         case BehaviourType::GeneralTree:
             m_currentInternodeBehaviour = std::dynamic_pointer_cast<IInternodeBehaviour>(
-                    EntityManager::GetSystem<InternodeSystem>(
-                            EntityManager::GetCurrentScene())->GetInternodeBehaviour<GeneralTreeBehaviour>());
+                    EntityManager::GetCurrentScene()->GetSystem<InternodeSystem>()->GetInternodeBehaviour<GeneralTreeBehaviour>());
             break;
         case BehaviourType::LSystem:
             m_currentInternodeBehaviour = std::dynamic_pointer_cast<IInternodeBehaviour>(
-                    EntityManager::GetSystem<InternodeSystem>(
-                            EntityManager::GetCurrentScene())->GetInternodeBehaviour<LSystemBehaviour>());
+                    EntityManager::GetCurrentScene()->GetSystem<InternodeSystem>()->GetInternodeBehaviour<LSystemBehaviour>());
             break;
         case BehaviourType::SpaceColonization:
             m_currentInternodeBehaviour = std::dynamic_pointer_cast<IInternodeBehaviour>(
-                    EntityManager::GetSystem<InternodeSystem>(
-                            EntityManager::GetCurrentScene())->GetInternodeBehaviour<SpaceColonizationBehaviour>());
+                    EntityManager::GetCurrentScene()->GetSystem<InternodeSystem>()->GetInternodeBehaviour<SpaceColonizationBehaviour>());
             break;
     }
 }

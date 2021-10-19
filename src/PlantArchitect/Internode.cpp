@@ -10,7 +10,7 @@
 using namespace PlantArchitect;
 
 void Internode::OnCreate() {
-    m_internodeSystem = EntityManager::GetSystem<InternodeSystem>(EntityManager::GetCurrentScene());
+    m_internodeSystem = EntityManager::GetCurrentScene()->GetSystem<InternodeSystem>();
  }
 
 void Internode::OnRetrieve() {

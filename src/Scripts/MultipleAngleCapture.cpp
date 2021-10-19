@@ -83,7 +83,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
                 //path here
                 lString->SetPathAndSave(
                         lStringFolder / (std::to_string(m_generationAmount - m_remainingInstanceAmount) + ".lstring"));
-                auto internodeSystem = EntityManager::GetSystem<InternodeSystem>(EntityManager::GetCurrentScene());
+                auto internodeSystem = EntityManager::GetCurrentScene()->GetSystem<InternodeSystem>();
                 internodeSystem->m_branchColorMode = BranchColorMode::IndexDivider;
                 internodeSystem->m_indexDivider = m_targetDivider;
                 internodeSystem->UpdateBranchColors();
@@ -320,8 +320,7 @@ bool MultipleAngleCapture::SetUpCamera() {
 }
 
 void MultipleAngleCapture::RenderBranchCapture() {
-    auto internodeQuery = EntityManager::GetSystem<InternodeSystem>(
-            EntityManager::GetCurrentScene())->m_internodesQuery;
+    auto internodeQuery = EntityManager::GetCurrentScene()->GetSystem<InternodeSystem>()->m_internodesQuery;
     /*
     EntityManager::ForEach<BranchColor, InternodeInfo>(
             EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(),

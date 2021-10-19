@@ -143,7 +143,7 @@ void EngineSetup() {
         /*
          * Add all internode behaviours for example.
          */
-        auto internodeSystem = EntityManager::GetOrCreateSystem<InternodeSystem>(EntityManager::GetCurrentScene(), 0.0f);
+        auto internodeSystem = EntityManager::GetCurrentScene()->GetOrCreateSystem<InternodeSystem>(0.0f);
 
         auto spaceColonizationBehaviour = internodeSystem->GetInternodeBehaviour<SpaceColonizationBehaviour>();
         Entity cubeVolumeEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "CubeVolume");

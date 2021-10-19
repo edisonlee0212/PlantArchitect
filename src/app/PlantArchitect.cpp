@@ -132,7 +132,7 @@ void EngineSetup() {
 #pragma endregion
 #pragma endregion
 
-        auto internodeSystem = EntityManager::GetOrCreateSystem<InternodeSystem>(EntityManager::GetCurrentScene(), 0.0f);
+        auto internodeSystem = EntityManager::GetCurrentScene()->GetOrCreateSystem<InternodeSystem>(0.0f);
 
     });
 }
