@@ -55,9 +55,7 @@ void DepthCamera::Update() {
     }
     // 2. Render to depth texture
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glDisable(GL_BLEND);
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
+    OpenGLUtils::SetEnable(OpenGLCapability::CullFace, false);
     m_depthTransferVAO->Bind();
 
     m_depthTransferProgram->Bind();
