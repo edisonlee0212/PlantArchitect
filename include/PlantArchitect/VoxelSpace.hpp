@@ -27,9 +27,9 @@ namespace PlantArchitect {
     };
 
     class PLANT_ARCHITECT_API VoxelSpace {
-        float m_diameter = 2.0f;
+        float m_diameter = 4.0f;
         glm::ivec3 m_size = {128, 128, 128};
-        glm::vec3 m_origin = glm::vec3(-128, -128, -128);
+        glm::vec3 m_origin = glm::vec3(-256, -256, -256);
 
     public:
         std::vector<glm::mat4> m_frozenVoxels;
