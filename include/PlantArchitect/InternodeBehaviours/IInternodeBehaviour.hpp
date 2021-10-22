@@ -295,13 +295,13 @@ namespace PlantArchitect {
                             "Import parameters", "Parameters", {parameterExtension},
                             [&](const std::filesystem::path &path) {
                                 parameterDeserializer(newPlantParameters[currentFocusedNewTreeIndex], path);
-                            });
+                            }, false);
 
                     FileUtils::SaveFile(
                             "Export parameters", "Parameters", {parameterExtension},
                             [&](const std::filesystem::path &path) {
                                 parameterSerializer(newPlantParameters[currentFocusedNewTreeIndex], path);
-                            });
+                            }, false);
                     ImGui::EndMenu();
                 }
                 ImGui::EndMenuBar();

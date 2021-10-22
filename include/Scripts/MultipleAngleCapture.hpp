@@ -28,6 +28,7 @@ namespace Scripts {
         glm::vec3 m_cameraPosition;
         glm::quat m_cameraRotation;
     public:
+        AssetRef m_foliagePhyllotaxis;
         bool m_autoAdjustCamera = true;
         int m_generationAmount = 2;
         PrivateComponentRef m_volume;
@@ -38,25 +39,25 @@ namespace Scripts {
         glm::vec3 m_focusPoint = glm::vec3(0, 3, 0);
         float m_pitchAngleStart = 0;
         float m_pitchAngleStep = 10;
-        float m_pitchAngleEnd = 30;
-        float m_turnAngleStep = 90;
+        float m_pitchAngleEnd = 10;
+        float m_turnAngleStep = 360;
         float m_distance = 4.5;
         float m_fov = 60;
         glm::ivec2 m_resolution = glm::ivec2(1024, 1024);
 
         //Options.
         bool m_exportOBJ = false;
-        bool m_exportGraph = true;
+        bool m_exportGraph = false;
         bool m_exportImage = true;
-        bool m_exportDepth = true;
+        bool m_exportDepth = false;
         bool m_exportMatrices = true;
-        bool m_exportBranchCapture = true;
-        bool m_exportLString = true;
+        bool m_exportBranchCapture = false;
+        bool m_exportLString = false;
         EntityRef m_cameraEntity;
         bool m_useClearColor = true;
         glm::vec3 m_backgroundColor = glm::vec3(1.0f);
         float m_cameraMin = 1;
-        float m_cameraMax = 200;
+        float m_cameraMax = 100;
 
         void OnCreate() override;
         void OnIdle(AutoTreeGenerationPipeline& pipeline) override;

@@ -9,7 +9,7 @@
 #include "AssetManager.hpp"
 #include "LSystemBehaviour.hpp"
 #include "IVolume.hpp"
-
+#include "InternodeFoliage.hpp"
 using namespace Scripts;
 
 void MultipleAngleCapture::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) {
@@ -17,7 +17,7 @@ void MultipleAngleCapture::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) 
         pipeline.m_status = AutoTreeGenerationPipelineStatus::Idle;
         return;
     }
-
+    m_currentGrowingTree.GetOrSetPrivateComponent<Internode>().lock()->m_foliage.Get<InternodeFoliage>()->m_foliagePhyllotaxis = m_foliagePhyllotaxis;
     auto behaviour = pipeline.GetBehaviour();
     auto behaviourType = pipeline.GetBehaviourType();
     switch (behaviourType) {
@@ -183,7 +183,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
 
 void MultipleAngleCapture::OnInspect() {
     EditorManager::DragAndDropButton(m_volume, "Volume", {"CubeVolume", "RadialBoundingVolume"}, false);
-
+    EditorManager::DragAndDropButton(m_foliagePhyllotaxis, "Phyllotaxis", {"EmptyInternodePhyllotaxis", "DefaultInternodePhyllotaxis"}, true);
     ImGui::Checkbox("Auto adjust camera", &m_autoAdjustCamera);
     if (ImGui::TreeNodeEx("Pipeline Settings")) {
         ImGui::DragFloat("Branch width", &m_branchWidth, 0.01f);
