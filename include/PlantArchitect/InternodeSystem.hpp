@@ -4,6 +4,7 @@
 #include <Internode.hpp>
 #include <IInternodeBehaviour.hpp>
 #include <InternodeDataComponents.hpp>
+#include <VoxelSpace.hpp>
 using namespace UniEngine;
 
 namespace PlantArchitect {
@@ -61,7 +62,7 @@ namespace PlantArchitect {
         void UpdateBranchPointer(const float &length,
                                  const float &width = 0.01f);
     private:
-
+        VoxelSpace m_voxelSpace;
 
         friend class Internode;
 

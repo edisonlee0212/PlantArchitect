@@ -14,32 +14,26 @@ using namespace PlantArchitect;
 
 void InternodeSystem::Simulate(int iterations) {
     for (int iteration = 0; iteration < iterations; iteration++) {
-        std::vector<Entity> internodeEntities;
-        std::vector<GlobalTransform> internodeGlobalTransforms;
-        std::vector<InternodeInfo> internodeInfos;
-        std::vector<glm::vec3> internodePositions;
-        m_internodesQuery.ToComponentDataArray(EntityManager::GetCurrentScene(), internodeGlobalTransforms);
-        m_internodesQuery.ToComponentDataArray(EntityManager::GetCurrentScene(), internodeInfos);
-        m_internodesQuery.ToEntityArray(EntityManager::GetCurrentScene(), internodeEntities);
-        internodePositions.resize(internodeGlobalTransforms.size());
-        for (int i = 0; i < internodeGlobalTransforms.size(); i++) {
-            internodePositions[i] = internodeGlobalTransforms[i].GetPosition() + internodeInfos[i].m_length *
-                                                                                 (internodeGlobalTransforms[i].GetRotation() *
-                                                                                  glm::vec3(0, 0, -1));
-        }
-        std::vector<float> proximity;
-        proximity.resize(internodePositions.size());
-        for (int i = 0; i < internodePositions.size(); i++) {
-            internodeInfos[i].m_neighborsProximity = 0;
-            const auto &position = internodePositions[i];
-            for (int j = 0; j < internodePositions.size(); j++) {
-                if (i == j) continue;
-                auto distance = glm::max(1.0f, glm::distance(internodePositions[i], internodePositions[j]));
-                internodeInfos[i].m_neighborsProximity += 1.0f / (distance * distance);
-            }
-            internodeEntities[i].SetDataComponent(internodeInfos[i]);
-        }
-
+        m_voxelSpace.Clear();
+        EntityManager::ForEach<InternodeInfo, GlobalTransform>
+                (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
+                 [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &internodeGlobalTransform) {
+                     const auto position = internodeGlobalTransform.GetPosition();
+                     m_voxelSpace.Push(position, entity);
+                 }, true);
+        EntityManager::ForEach<InternodeInfo, GlobalTransform>
+                (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
+                 [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &internodeGlobalTransform) {
+                     const auto position = internodeGlobalTransform.GetPosition();
+                     internodeInfo.m_neighborsProximity = 0;
+                     m_voxelSpace.ForEachInRange(position, 16, [&](const glm::vec3& neighborPosition, const Entity& neighbor){
+                         if(neighbor == entity) return;
+                         auto distance = glm::max(1.0f, glm::distance(position, neighborPosition));
+                         if(distance < 16){
+                             internodeInfo.m_neighborsProximity += 1.0f / (distance * distance);
+                         }
+                     });
+                 }, true);
         for (auto &i: m_internodeBehaviours) {
             auto behaviour = i.Get<IInternodeBehaviour>();
             if (behaviour) behaviour->Grow(iteration);
@@ -56,53 +50,72 @@ void InternodeSystem::OnInspect() {
         Simulate(iterations);
     }
 
-    ImGui::Text("Add Internode Behaviour");
-    ImGui::SameLine();
-    static AssetRef temp;
-    EditorManager::DragAndDropButton(temp, "Here",
-                                     {"GeneralTreeBehaviour", "SpaceColonizationBehaviour", "LSystemBehaviour"}, false);
-    if (temp.Get<IInternodeBehaviour>()) {
-        PushInternodeBehaviour(temp.Get<IInternodeBehaviour>());
-        temp.Clear();
+    if(ImGui::TreeNodeEx("Voxels", ImGuiTreeNodeFlags_DefaultOpen)){
+        m_voxelSpace.OnInspect();
+        ImGui::TreePop();
     }
-    if (ImGui::TreeNodeEx("Internode Behaviours", ImGuiTreeNodeFlags_DefaultOpen)) {
-        int index = 0;
-        bool skip = false;
-        for (auto &i: m_internodeBehaviours) {
-            auto ptr = i.Get<IInternodeBehaviour>();
-            ImGui::Button(("Slot " + std::to_string(index) + ": " + ptr->m_name).c_str());
-            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
-                EditorManager::GetInstance().m_inspectingAsset = ptr;
-            }
-            const std::string tag = "##" + ptr->GetTypeName() + std::to_string(ptr->GetHandle());
-            if (ImGui::BeginPopupContextItem(tag.c_str())) {
-                if (ImGui::BeginMenu(("Rename" + tag).c_str())) {
-                    static char newName[256];
-                    ImGui::InputText(("New name" + tag).c_str(), newName, 256);
-                    if (ImGui::Button(("Confirm" + tag).c_str()))
-                        ptr->m_name = std::string(newName);
-                    ImGui::EndMenu();
-                }
-                if (ImGui::Button(("Remove" + tag).c_str())) {
-                    i.Clear();
-                    skip = true;
-                }
-                ImGui::EndPopup();
-            }
-            if (skip) {
-                break;
-            }
-            index++;
+    if (m_voxelSpace.m_display) {
+        RenderManager::DrawGizmoMeshInstanced(
+                DefaultResources::Primitives::Cube, m_internodeDebuggingCamera,
+                EditorManager::GetInstance().m_sceneCameraPosition,
+                EditorManager::GetInstance().m_sceneCameraRotation,
+                glm::vec4(1, 1, 1, 0.2),
+                m_voxelSpace.m_frozenVoxels);
+        RenderManager::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube,
+                                              glm::vec4(1, 1, 1, 0.2),
+                                              m_voxelSpace.m_frozenVoxels, glm::mat4(1.0f), 1.0f);
+    }
+    if(ImGui::TreeNodeEx("Internode Behaviour")) {
+        ImGui::Text("Add Internode Behaviour");
+        ImGui::SameLine();
+        static AssetRef temp;
+        EditorManager::DragAndDropButton(temp, "Here",
+                                         {"GeneralTreeBehaviour", "SpaceColonizationBehaviour", "LSystemBehaviour"},
+                                         false);
+        if (temp.Get<IInternodeBehaviour>()) {
+            PushInternodeBehaviour(temp.Get<IInternodeBehaviour>());
+            temp.Clear();
         }
-        if (skip) {
-            int index2 = 0;
+        if (ImGui::TreeNodeEx("Internode Behaviours", ImGuiTreeNodeFlags_DefaultOpen)) {
+            int index = 0;
+            bool skip = false;
             for (auto &i: m_internodeBehaviours) {
-                if (!i.Get<IInternodeBehaviour>()) {
-                    m_internodeBehaviours.erase(m_internodeBehaviours.begin() + index2);
+                auto ptr = i.Get<IInternodeBehaviour>();
+                ImGui::Button(("Slot " + std::to_string(index) + ": " + ptr->m_name).c_str());
+                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+                    EditorManager::GetInstance().m_inspectingAsset = ptr;
+                }
+                const std::string tag = "##" + ptr->GetTypeName() + std::to_string(ptr->GetHandle());
+                if (ImGui::BeginPopupContextItem(tag.c_str())) {
+                    if (ImGui::BeginMenu(("Rename" + tag).c_str())) {
+                        static char newName[256];
+                        ImGui::InputText(("New name" + tag).c_str(), newName, 256);
+                        if (ImGui::Button(("Confirm" + tag).c_str()))
+                            ptr->m_name = std::string(newName);
+                        ImGui::EndMenu();
+                    }
+                    if (ImGui::Button(("Remove" + tag).c_str())) {
+                        i.Clear();
+                        skip = true;
+                    }
+                    ImGui::EndPopup();
+                }
+                if (skip) {
                     break;
                 }
-                index2++;
+                index++;
             }
+            if (skip) {
+                int index2 = 0;
+                for (auto &i: m_internodeBehaviours) {
+                    if (!i.Get<IInternodeBehaviour>()) {
+                        m_internodeBehaviours.erase(m_internodeBehaviours.begin() + index2);
+                        break;
+                    }
+                    index2++;
+                }
+            }
+            ImGui::TreePop();
         }
         ImGui::TreePop();
     }
@@ -133,6 +146,9 @@ void InternodeSystem::OnCreate() {
     m_internodeDebuggingCamera->m_clearColor = glm::vec3(0.1f);
     m_internodeDebuggingCamera->OnCreate();
 #pragma endregion
+
+    m_voxelSpace.Reset();
+
     Enable();
 }
 
@@ -174,6 +190,7 @@ void InternodeSystem::LateUpdate() {
         if (m_internodeDebuggingCamera->IsEnabled())
             RenderBranchPointers();
     }
+
 #pragma endregion
 
 #pragma region Internode debugging camera
