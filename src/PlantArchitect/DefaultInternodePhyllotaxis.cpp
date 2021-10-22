@@ -4,7 +4,7 @@
 
 #include "DefaultInternodePhyllotaxis.hpp"
 #include "Internode.hpp"
-#include "InternodeSystem.hpp"
+#include "InternodeManager.hpp"
 
 using namespace PlantArchitect;
 

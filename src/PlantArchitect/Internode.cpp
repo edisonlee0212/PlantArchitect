@@ -3,14 +3,13 @@
 //
 
 #include "Internode.hpp"
-#include "InternodeSystem.hpp"
+#include "InternodeManager.hpp"
 #include "LSystemBehaviour.hpp"
 #include "AssetManager.hpp"
 #include "InternodeFoliage.hpp"
 using namespace PlantArchitect;
 
 void Internode::OnCreate() {
-    m_internodeSystem = EntityManager::GetCurrentScene()->GetSystem<InternodeSystem>();
  }
 
 void Internode::OnRetrieve() {

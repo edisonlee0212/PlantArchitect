@@ -3,7 +3,7 @@
 //
 
 #include "LSystemBehaviour.hpp"
-#include "InternodeSystem.hpp"
+#include "InternodeManager.hpp"
 #include "EmptyInternodeResource.hpp"
 #include "TransformManager.hpp"
 #include "InternodeFoliage.hpp"

@@ -5,7 +5,7 @@
 #include "MultipleAngleCapture.hpp"
 #include "DepthCamera.hpp"
 #include "EntityManager.hpp"
-#include "InternodeSystem.hpp"
+#include "InternodeManager.hpp"
 #include "AssetManager.hpp"
 #include "LSystemBehaviour.hpp"
 #include "IVolume.hpp"
@@ -83,10 +83,9 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
                 //path here
                 lString->SetPathAndSave(
                         lStringFolder / (std::to_string(m_generationAmount - m_remainingInstanceAmount) + ".lstring"));
-                auto internodeSystem = EntityManager::GetCurrentScene()->GetSystem<InternodeSystem>();
-                internodeSystem->m_branchColorMode = BranchColorMode::IndexDivider;
-                internodeSystem->m_indexDivider = m_targetDivider;
-                internodeSystem->UpdateBranchColors();
+                InternodeManager::GetInstance().m_branchColorMode = BranchColorMode::IndexDivider;
+                InternodeManager::GetInstance().m_indexDivider = m_targetDivider;
+                InternodeManager::GetInstance().UpdateBranchColors();
             }
             behaviour->GenerateSkinnedMeshes();
             if (m_exportOBJ) {
@@ -320,7 +319,7 @@ bool MultipleAngleCapture::SetUpCamera() {
 }
 
 void MultipleAngleCapture::RenderBranchCapture() {
-    auto internodeQuery = EntityManager::GetCurrentScene()->GetSystem<InternodeSystem>()->m_internodesQuery;
+    auto internodeQuery = InternodeManager::GetInstance().m_internodesQuery;
     /*
     EntityManager::ForEach<BranchColor, InternodeInfo>(
             EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(),

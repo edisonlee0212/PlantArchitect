@@ -6,7 +6,6 @@
 #include <InternodeDataComponents.hpp>
 using namespace UniEngine;
 namespace PlantArchitect {
-    class InternodeSystem;
     struct LString;
     enum class PLANT_ARCHITECT_API BudStatus{
         Sleeping,
@@ -22,7 +21,6 @@ namespace PlantArchitect {
     struct LSystemCommand;
     class InternodeFoliage;
     class PLANT_ARCHITECT_API Internode : public IPrivateComponent {
-        std::weak_ptr<InternodeSystem> m_internodeSystem;
         void ExportLSystemCommandsHelper(int& index, const Entity &target, std::vector<LSystemCommand> &commands);
         void CollectInternodesHelper(const Entity &target, std::vector<Entity> &results);
 

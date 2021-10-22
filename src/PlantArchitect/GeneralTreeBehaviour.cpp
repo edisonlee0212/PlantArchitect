@@ -3,7 +3,7 @@
 //
 
 #include "GeneralTreeBehaviour.hpp"
-#include "InternodeSystem.hpp"
+#include "InternodeManager.hpp"
 #include <DefaultInternodeResource.hpp>
 #include "EmptyInternodeResource.hpp"
 #include "TransformManager.hpp"

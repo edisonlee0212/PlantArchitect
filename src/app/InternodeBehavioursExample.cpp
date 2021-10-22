@@ -19,7 +19,6 @@
 #include "GeneralTreeBehaviour.hpp"
 #include "DefaultInternodeResource.hpp"
 #include "Internode.hpp"
-#include <InternodeSystem.hpp>
 #include <SpaceColonizationBehaviour.hpp>
 #include "EmptyInternodeResource.hpp"
 #include "LSystemBehaviour.hpp"
@@ -32,6 +31,8 @@
 #include "MultipleAngleCapture.hpp"
 
 #include "Camera2DVectorField.hpp"
+
+#include "InternodeManager.hpp"
 using namespace PlantArchitect;
 #ifdef RAYTRACERFACILITY
 using namespace RayTracerFacility;
@@ -84,7 +85,6 @@ int main() {
     ClassRegistry::RegisterPrivateComponent<Internode>("Internode");
 
     ClassRegistry::RegisterDataComponent<InternodeInfo>("InternodeInfo");
-    ClassRegistry::RegisterSystem<InternodeSystem>("InternodeSystem");
 
     ClassRegistry::RegisterPrivateComponent<AutoTreeGenerationPipeline>("AutoTreeGenerationPipeline");
     ClassRegistry::RegisterAsset<MultipleAngleCapture>("MultipleAngleCapture", ".mulanglecap");
@@ -103,6 +103,33 @@ int main() {
     if (enableRayTracing)
       RayTracerManager::Init();
 #endif
+    InternodeManager::GetInstance().OnCreate();
+
+    /*
+         * Add all internode behaviours for example.
+         */
+
+    auto spaceColonizationBehaviour = InternodeManager::GetInternodeBehaviour<SpaceColonizationBehaviour>();
+    Entity cubeVolumeEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "CubeVolume");
+    Transform cubeVolumeTransform = cubeVolumeEntity.GetDataComponent<Transform>();
+    cubeVolumeTransform.SetPosition(glm::vec3(0, 12.5, 0));
+    cubeVolumeEntity.SetDataComponent(cubeVolumeTransform);
+
+    auto cubeVolume = cubeVolumeEntity.GetOrSetPrivateComponent<CubeVolume>().lock();
+    cubeVolume->m_minMaxBound.m_min = glm::vec3(-10.0f);
+    cubeVolume->m_minMaxBound.m_max = glm::vec3(10.0f);
+    spaceColonizationBehaviour->PushVolume(std::dynamic_pointer_cast<IVolume>(cubeVolume));
+    /*
+     * Add all pipelines
+     */
+    auto multipleAngleCapturePipelineEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "MultipleAngleCapturePipeline");
+    auto multipleAngleCapturePipeline = multipleAngleCapturePipelineEntity.GetOrSetPrivateComponent<AutoTreeGenerationPipeline>().lock();
+    auto multipleAngleCapture = AssetManager::CreateAsset<MultipleAngleCapture>();
+    auto mainCamera = EntityManager::GetCurrentScene()->m_mainCamera.Get<UniEngine::Camera>();
+    multipleAngleCapture->m_cameraEntity = mainCamera->GetOwner();
+    multipleAngleCapturePipeline->m_pipelineBehaviour = multipleAngleCapture;
+    multipleAngleCapture->m_volume = cubeVolume;
+
 #pragma region Engine Loop
     Application::Run();
 #pragma endregion
@@ -142,31 +169,15 @@ void EngineSetup() {
 #pragma endregion
 
 
-        /*
-         * Add all internode behaviours for example.
-         */
-        auto internodeSystem = EntityManager::GetCurrentScene()->GetOrCreateSystem<InternodeSystem>(0.0f);
 
-        auto spaceColonizationBehaviour = internodeSystem->GetInternodeBehaviour<SpaceColonizationBehaviour>();
-        Entity cubeVolumeEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "CubeVolume");
-        Transform cubeVolumeTransform = cubeVolumeEntity.GetDataComponent<Transform>();
-        cubeVolumeTransform.SetPosition(glm::vec3(0, 12.5, 0));
-        cubeVolumeEntity.SetDataComponent(cubeVolumeTransform);
 
-        auto cubeVolume = cubeVolumeEntity.GetOrSetPrivateComponent<CubeVolume>().lock();
-        cubeVolume->m_minMaxBound.m_min = glm::vec3(-10.0f);
-        cubeVolume->m_minMaxBound.m_max = glm::vec3(10.0f);
-        spaceColonizationBehaviour->PushVolume(std::dynamic_pointer_cast<IVolume>(cubeVolume));
-        /*
-         * Add all pipelines
-         */
-        auto multipleAngleCapturePipelineEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "MultipleAngleCapturePipeline");
-        auto multipleAngleCapturePipeline = multipleAngleCapturePipelineEntity.GetOrSetPrivateComponent<AutoTreeGenerationPipeline>().lock();
-        auto multipleAngleCapture = AssetManager::CreateAsset<MultipleAngleCapture>();
-        multipleAngleCapture->m_cameraEntity = mainCamera->GetOwner();
-        multipleAngleCapturePipeline->m_pipelineBehaviour = multipleAngleCapture;
-        multipleAngleCapture->m_volume = cubeVolume;
     });
+
+    Application::RegisterLateUpdateFunction([](){
+        InternodeManager::GetInstance().OnInspect();
+        InternodeManager::GetInstance().LateUpdate();
+    });
+
 }
 
 void RegisterDataComponentMenus() {

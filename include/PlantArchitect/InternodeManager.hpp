@@ -1,12 +1,9 @@
 #pragma once
-
-#include <plant_architect_export.h>
-#include <Internode.hpp>
-#include <IInternodeBehaviour.hpp>
-#include <InternodeDataComponents.hpp>
+#include "Application.hpp"
+#include "plant_architect_export.h"
 #include <VoxelSpace.hpp>
-using namespace UniEngine;
 
+using namespace UniEngine;
 namespace PlantArchitect {
     enum class BranchColorMode{
         None,
@@ -21,37 +18,33 @@ namespace PlantArchitect {
         IndexRange
     };
     class IInternodeBehaviour;
-    class PLANT_ARCHITECT_API InternodeSystem : public ISystem {
+    class PLANT_ARCHITECT_API InternodeManager : public ISingleton<InternodeManager> {
     public:
         /**
          * The EntityQuery for filtering all internodes.
          */
         EntityQuery m_internodesQuery;
 
-        void LateUpdate() override;
+        void LateUpdate();
 
-        void Simulate(int iterations);
+        static void Simulate(int iterations);
 
-        void OnCreate() override;
+        void OnCreate();
 
-        void OnInspect() override;
+        void OnInspect();
 
         std::shared_ptr<Camera> m_internodeDebuggingCamera;
 
         template<typename T>
-        void PushInternodeBehaviour(const std::shared_ptr<T>& behaviour);
+        static void PushInternodeBehaviour(const std::shared_ptr<T>& behaviour);
         template<typename T>
-        std::shared_ptr<T> GetInternodeBehaviour();
+        static std::shared_ptr<T> GetInternodeBehaviour();
         /**
          * Check if the entity is valid internode.
          * @param target Target for check.
          * @return True if the entity is valid and contains [InternodeInfo] and [Internode], false otherwise.
          */
-        bool InternodeCheck(const Entity& target);
-
-        void CollectAssetRef(std::vector<AssetRef> &list) override;
-        void Serialize(YAML::Emitter &out) override;
-        void Deserialize(const YAML::Node &in) override;
+        static bool InternodeCheck(const Entity& target);
 
         BranchColorMode m_branchColorMode = BranchColorMode::None;
         int m_indexDivider = 512;
@@ -105,31 +98,11 @@ namespace PlantArchitect {
         std::vector<Entity> m_entitiesWithRenderer;
         OpenGLUtils::GLVBO m_internodeColorBuffer;
 
-
+        void UpdateInternodeCamera();
         void RenderBranchCylinders();
         void RenderBranchPointers();
 #pragma endregion
 #pragma endregion
     };
-    template <typename T>
-    void InternodeSystem::PushInternodeBehaviour(const std::shared_ptr<T>& behaviour) {
-        if(!behaviour.get()) return;
-        bool search = false;
-        for (auto &i: m_internodeBehaviours) {
-            if (i.Get<IInternodeBehaviour>()->GetTypeName() == std::dynamic_pointer_cast<IInternodeBehaviour>(behaviour)->GetTypeName()) search = true;
-        }
-        if (!search) {
-            m_internodeBehaviours.emplace_back(std::dynamic_pointer_cast<IInternodeBehaviour>(behaviour));
-        }
-    }
 
-    template<typename T>
-    std::shared_ptr<T> InternodeSystem::GetInternodeBehaviour() {
-        for (auto &i: m_internodeBehaviours) {
-            if (i.Get<IInternodeBehaviour>()->GetTypeName() == SerializationManager::GetSerializableTypeName<T>()) {
-                return i.Get<T>();
-            }
-        }
-        return nullptr;
-    }
 }

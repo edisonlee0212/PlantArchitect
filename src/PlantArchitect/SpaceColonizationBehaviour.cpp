@@ -5,7 +5,7 @@
 #include "SpaceColonizationBehaviour.hpp"
 #include "EmptyInternodeResource.hpp"
 #include "CubeVolume.hpp"
-#include "InternodeSystem.hpp"
+#include "InternodeManager.hpp"
 #include "TransformManager.hpp"
 
 using namespace PlantArchitect;
@@ -300,7 +300,7 @@ void SpaceColonizationBehaviour::OnInspect() {
             RenderManager::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube, renderColor,
                                                   displayMatrices, glm::mat4(1.0f), renderSize);
             RenderManager::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube,
-                                                  EntityManager::GetCurrentScene()->GetSystem<InternodeSystem>()->m_internodeDebuggingCamera,
+                                                  InternodeManager::GetInstance().m_internodeDebuggingCamera,
                                                   EditorManager::GetInstance().m_sceneCameraPosition,
                                                   EditorManager::GetInstance().m_sceneCameraRotation, renderColor,
                                                   displayMatrices, glm::mat4(1.0f), renderSize);

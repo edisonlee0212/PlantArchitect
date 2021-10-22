@@ -18,7 +18,6 @@
 #include "GeneralTreeBehaviour.hpp"
 #include "DefaultInternodeResource.hpp"
 #include "Internode.hpp"
-#include <InternodeSystem.hpp>
 #include <SpaceColonizationBehaviour.hpp>
 #include "EmptyInternodeResource.hpp"
 #include "LSystemBehaviour.hpp"
@@ -29,6 +28,8 @@
 #include "DepthCamera.hpp"
 #include "MultipleAngleCapture.hpp"
 #include "Camera2DVectorField.hpp"
+#include "InternodeManager.hpp"
+
 using namespace PlantArchitect;
 #ifdef RAYTRACERFACILITY
 using namespace RayTracerFacility;
@@ -79,7 +80,6 @@ int main() {
     ClassRegistry::RegisterPrivateComponent<Internode>("Internode");
 
     ClassRegistry::RegisterDataComponent<InternodeInfo>("InternodeInfo");
-    ClassRegistry::RegisterSystem<InternodeSystem>("InternodeSystem");
 
     ClassRegistry::RegisterPrivateComponent<AutoTreeGenerationPipeline>("AutoTreeGenerationPipeline");
     ClassRegistry::RegisterAsset<MultipleAngleCapture>("MultipleAngleCapture", ".mulanglecap");
@@ -90,6 +90,7 @@ int main() {
     const bool enableRayTracing = true;
     EngineSetup();
     RegisterDataComponentMenus();
+    InternodeManager::GetInstance().OnCreate();
     ApplicationConfigs applicationConfigs;
     Application::Init(applicationConfigs);
 #ifdef RAYTRACERFACILITY
@@ -134,8 +135,10 @@ void EngineSetup() {
 #pragma endregion
 #pragma endregion
 
-        auto internodeSystem = EntityManager::GetCurrentScene()->GetOrCreateSystem<InternodeSystem>(0.0f);
-
+    });
+    Application::RegisterLateUpdateFunction([](){
+        InternodeManager::GetInstance().OnInspect();
+        InternodeManager::GetInstance().LateUpdate();
     });
 }
 

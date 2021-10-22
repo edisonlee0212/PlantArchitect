@@ -1,6 +1,7 @@
-#include <InternodeSystem.hpp>
+#include <InternodeManager.hpp>
+#include <InternodeDataComponents.hpp>
 #include <RadialBoundingVolume.hpp>
-
+#include <Internode.hpp>
 using namespace PlantArchitect;
 using namespace UniEngine;
 
