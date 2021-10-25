@@ -116,7 +116,7 @@ void
 VoxelSpace::ForEachInRange(const glm::vec3 &position, float radius,
                            const std::function<void(const glm::vec3 &position,
                                                     const Entity &entity)> &action) const {
-    int span = static_cast<int> (radius / m_diameter) + 1;
+    int span = glm::ceil(radius / m_diameter);
     for (int i = -span; i <= span; i++) {
         for (int j = -span; j <= span; j++) {
             for (int k = -span; k <= span; k++) {

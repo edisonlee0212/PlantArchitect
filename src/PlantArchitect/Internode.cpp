@@ -17,7 +17,7 @@ void Internode::OnRetrieve() {
 }
 
 void Internode::OnRecycle() {
-    m_resource->Reset();
+    if(m_resource) m_resource->Reset();
     m_normalDir = glm::vec3(0, 0, 1);
     m_step = 4;
     m_foliageMatrices.clear();
@@ -29,11 +29,13 @@ void Internode::OnRecycle() {
 }
 
 void Internode::DownStreamResource(float deltaTime) {
+    if(!m_resource) return;
     auto owner = GetOwner();
     m_resource->DownStream(deltaTime, owner, owner.GetParent());
 }
 
 void Internode::UpStreamResource(float deltaTime) {
+    if(!m_resource) return;
     auto owner = GetOwner();
     auto children = owner.GetChildren();
     for (const auto &child: children) {
@@ -42,6 +44,7 @@ void Internode::UpStreamResource(float deltaTime) {
 }
 
 void Internode::CollectResource(float deltaTime) {
+    if(!m_resource) return;
     m_resource->Collect(deltaTime, GetOwner());
 }
 
@@ -132,6 +135,40 @@ void Internode::OnInspect() {
     }
 }
 
+void Internode::CollectAssetRef(std::vector<AssetRef> &list) {
+    list.push_back(m_foliage);
+}
+
+void Internode::Relink(const std::unordered_map<Handle, Handle> &map, const std::shared_ptr<Scene> &scene) {
+    m_currentRoot.Relink(map);
+}
+
+void Internode::PostCloneAction(const std::shared_ptr<IPrivateComponent> &target) {
+
+}
+
+void Internode::Serialize(YAML::Emitter &out) {
+    m_currentRoot.Save("m_currentRoot", out);
+    m_foliage.Save("m_foliage", out);
+    m_apicalBud.Save("m_apicalBud", out);
+    SaveList("m_lateralBuds", m_lateralBuds, out);
+    
+    out << YAML::Key << "m_normalDir" << YAML::Value << m_normalDir;
+    out << YAML::Key << "m_step" << YAML::Value << m_step;
+    out << YAML::Key << "m_fromApicalBud" << YAML::Value << m_fromApicalBud;
+}
+
+void Internode::Deserialize(const YAML::Node &in) {
+    m_currentRoot.Load("m_currentRoot", in);
+    m_foliage.Load("m_foliage", in);
+    m_apicalBud.Load("m_apicalBud", in);
+    LoadList("m_lateralBuds", m_lateralBuds, in);
+
+    m_normalDir = in["m_normalDir"].as<glm::vec3>();
+    m_step = in["m_step"].as<int>();
+    m_fromApicalBud = in["m_fromApicalBud"].as<bool>();
+}
+
 void Bud::OnInspect() {
     switch (m_status) {
         case BudStatus::Sleeping:
@@ -147,4 +184,20 @@ void Bud::OnInspect() {
             ImGui::Text("Status: Died");
             break;
     }
+}
+
+void Bud::Serialize(YAML::Emitter &out) {
+    out << YAML::Key << "m_status" << YAML::Value << (unsigned)m_status;
+}
+void Bud::Deserialize(const YAML::Node &in) {
+    m_status = (BudStatus)in["m_status"].as<unsigned>();
+}
+
+void Bud::Save(const std::string& name, YAML::Emitter &out) {
+    out << YAML::Key << name << YAML::BeginMap;
+    Serialize(out);
+    out << YAML::EndMap;
+}
+void Bud::Load(const std::string& name, const YAML::Node &in) {
+    if(in[name]) Deserialize(in[name]);
 }

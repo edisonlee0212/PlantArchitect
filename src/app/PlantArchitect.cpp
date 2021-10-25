@@ -87,12 +87,12 @@ int main() {
     ClassRegistry::RegisterAsset<InternodeFoliage>("InternodeFoliage", ".internodefoliage");
     ClassRegistry::RegisterAsset<DefaultInternodePhyllotaxis>("DefaultInternodePhyllotaxis", ".defaultip");
 
-    const bool enableRayTracing = true;
     EngineSetup();
     RegisterDataComponentMenus();
-    InternodeManager::GetInstance().OnCreate();
+
     ApplicationConfigs applicationConfigs;
     Application::Init(applicationConfigs);
+    InternodeManager::GetInstance().OnCreate();
 #ifdef RAYTRACERFACILITY
     if (enableRayTracing)
       RayTracerManager::Init();

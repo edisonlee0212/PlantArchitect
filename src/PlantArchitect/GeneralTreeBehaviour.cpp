@@ -7,7 +7,7 @@
 #include <DefaultInternodeResource.hpp>
 #include "EmptyInternodeResource.hpp"
 #include "TransformManager.hpp"
-
+#include "DefaultInternodePhyllotaxis.hpp"
 using namespace PlantArchitect;
 
 void GeneralTreeBehaviour::Grow(int iteration) {
@@ -85,6 +85,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                             Entity longestChild;
                             Entity heaviestChild;
                             parent.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
+                                if(!InternodeCheck(child)) return;
                                 auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
                                 auto childInternodeStatus = child.GetDataComponent<InternodeStatus>();
                                 if (childInternodeInfo.m_endNode) {
@@ -135,6 +136,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                                 }
                             });
                             parent.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
+                                if(!InternodeCheck(child)) return;
                                 auto childInternodeStatus = child.GetDataComponent<InternodeStatus>();
                                 childInternodeStatus.m_largestChild = largestChild == child;
                                 childInternodeStatus.m_longestChild = longestChild == child;
@@ -637,6 +639,7 @@ Entity GeneralTreeBehaviour::NewPlant(const GeneralTreeParameters &params, const
 
     auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
     internode->m_fromApicalBud = true;
+    internode->m_foliage.Get<InternodeFoliage>()->m_foliagePhyllotaxis = AssetManager::CreateAsset<DefaultInternodePhyllotaxis>();
     auto waterFeeder = entity.GetOrSetPrivateComponent<InternodeWaterFeeder>().lock();
     return entity;
 }

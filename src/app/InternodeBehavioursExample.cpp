@@ -92,7 +92,6 @@ int main() {
     ClassRegistry::RegisterAsset<InternodeFoliage>("InternodeFoliage", ".internodefoliage");
     ClassRegistry::RegisterAsset<DefaultInternodePhyllotaxis>("DefaultInternodePhyllotaxis", ".defaultip");
 
-    const bool enableRayTracing = true;
     EngineSetup();
     RegisterDataComponentMenus();
 

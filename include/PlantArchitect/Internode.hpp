@@ -13,10 +13,14 @@ namespace PlantArchitect {
         Flushed,
         Died
     };
-    struct PLANT_ARCHITECT_API Bud : public ISerializable {
+    struct PLANT_ARCHITECT_API Bud : public ISerializable{
         BudStatus m_status = BudStatus::Sleeping;
         InternodeInfo m_newInternodeInfo;
         void OnInspect();
+        void Serialize(YAML::Emitter &out) override;
+        void Deserialize(const YAML::Node &in) override;
+        void Save(const std::string& name, YAML::Emitter &out);
+        void Load(const std::string& name, const YAML::Node &in);
     };
     struct LSystemCommand;
     class InternodeFoliage;
@@ -29,13 +33,30 @@ namespace PlantArchitect {
          * The current root of the internode.
          */
         EntityRef m_currentRoot;
-
-        void CollectInternodes(std::vector<Entity> &results);
+        /**
+         * Normal direction for mesh generation
+         */
         glm::vec3 m_normalDir = glm::vec3(0, 0, 1);
+        /**
+         * Subdivision step for mesh generation
+         */
         int m_step = 4;
+        /**
+         * Whether this internode is formed from an apical bud
+         */
         bool m_fromApicalBud;
+        /**
+         * The foliage module.
+         */
         AssetRef m_foliage;
+
+        /**
+         * The generated matrices of foliage
+         */
         std::vector<glm::mat4> m_foliageMatrices;
+        /**
+         * For mesh generation
+         */
         std::vector<InternodeRingSegment> m_rings;
         /**
          * The resource storage for the internode.
@@ -49,7 +70,11 @@ namespace PlantArchitect {
          * The axillary or lateral bud.
          */
         std::vector<Bud> m_lateralBuds;
-
+        /**
+         * Collect all subsequent internodes from this internode.
+         * @param results a list of internodes as descendents
+         */
+        void CollectInternodes(std::vector<Entity> &results);
         /**
          * Actions to take when the internode is retrieved from the factory.
          */
@@ -86,6 +111,54 @@ namespace PlantArchitect {
         void ExportLString(const std::shared_ptr<LString>& lString);
 
         void OnInspect() override;
-    };
 
+        void CollectAssetRef(std::vector<AssetRef> &list) override;
+
+        void Relink(const std::unordered_map<Handle, Handle> &map, const std::shared_ptr<Scene> &scene) override;
+
+        void PostCloneAction(const std::shared_ptr<IPrivateComponent> &target) override;
+
+        void Serialize(YAML::Emitter &out) override;
+
+        void Deserialize(const YAML::Node &in) override;
+    };
+    template <typename T>
+    void SaveList(const std::string& name, std::vector<T>& target, YAML::Emitter &out){
+        if(target.empty()) return;
+        out << YAML::Key << name << YAML::Value << YAML::BeginSeq;
+        for (auto &i: target) {
+            out << YAML::BeginMap;
+            static_cast<ISerializable*>(&i)->Serialize(out);
+            out << YAML::EndMap;
+        }
+        out << YAML::EndSeq;
+    }
+    template <typename T>
+    void LoadList(const std::string& name, std::vector<T> target, const YAML::Node &in){
+        if(in[name]){
+            target.clear();
+            for(const auto& i : in[name]){
+                T instance;
+                static_cast<ISerializable*>(&instance)->Deserialize(i);
+                target.push_back(instance);
+            }
+        }
+    }
+    template <typename T>
+    void SaveListAsBinary(const std::string& name, const std::vector<T>& target, YAML::Emitter &out){
+        if (!target.empty())
+        {
+            out << YAML::Key << name << YAML::Value
+                << YAML::Binary((const unsigned char *)target.data(), target.size() * sizeof(T));
+        }
+    }
+    template <typename T>
+    void LoadListFromBinary(const std::string& name, std::vector<T> target, const YAML::Node &in){
+        if (in[name])
+        {
+            YAML::Binary binaryList = in[name].as<YAML::Binary>();
+            target.resize(binaryList.size() / sizeof(T));
+            std::memcpy(target.data(), binaryList.data(), binaryList.size());
+        }
+    }
 }

@@ -60,3 +60,7 @@ inline glm::vec3 InternodeRingSegment::GetPoint(glm::vec3 &normalDir, float angl
             isStart ? m_startRadius : m_endRadius);
     return position;
 }
+
+InternodeRingSegment::InternodeRingSegment() {
+
+}

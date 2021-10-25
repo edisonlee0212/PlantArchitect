@@ -16,6 +16,10 @@ void InternodeFoliage::Generate(const std::shared_ptr<Internode> &internode,
 
 void InternodeFoliage::OnInspect() {
     EditorManager::DragAndDropButton(m_foliagePhyllotaxis, "Phyllotaxis", {"EmptyInternodePhyllotaxis", "DefaultInternodePhyllotaxis"}, true);
+    EditorManager::DragAndDropButton<Texture2D>(m_foliageTexture, "Texture2D", true);
+    if(!m_foliageTexture.Get<Texture2D>()){
+        ImGui::DragFloat3("Foliage color", &m_foliageColor.x);
+    }
     auto phyllotaxis = m_foliagePhyllotaxis.Get<IInternodePhyllotaxis>();
     if(phyllotaxis){
         if(ImGui::TreeNodeEx("Phyllotaxis", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -25,3 +29,19 @@ void InternodeFoliage::OnInspect() {
     }
 }
 
+void InternodeFoliage::Serialize(YAML::Emitter &out) {
+    m_foliagePhyllotaxis.Save("m_foliagePhyllotaxis", out);
+    m_foliageTexture.Save("m_foliageTexture", out);
+    out << YAML::Key << "m_foliageColor" << YAML::Value << m_foliageColor;
+}
+
+void InternodeFoliage::Deserialize(const YAML::Node &in) {
+    m_foliagePhyllotaxis.Load("m_foliagePhyllotaxis", in);
+    m_foliageTexture.Load("m_foliageTexture", in);
+    m_foliageColor = in["m_foliageColor"].as<glm::vec3>();
+}
+
+void InternodeFoliage::CollectAssetRef(std::vector<AssetRef> &list) {
+    list.push_back(m_foliagePhyllotaxis);
+    list.push_back(m_foliageTexture);
+}
