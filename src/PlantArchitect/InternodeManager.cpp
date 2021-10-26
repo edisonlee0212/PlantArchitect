@@ -71,6 +71,10 @@ void InternodeManager::Simulate(int iterations) {
             if (behaviour) behaviour->Grow(iteration);
         }
     }
+    PreparePhysics();
+}
+void InternodeManager::PreparePhysics() {
+    auto& internodeManager = GetInstance();
     for (auto &i: internodeManager.m_internodeBehaviours) {
         auto behaviour = i.Get<IInternodeBehaviour>();
         if (behaviour){
@@ -89,7 +93,6 @@ void InternodeManager::Simulate(int iterations) {
     PhysicsManager::UploadTransforms(activeScene, true);
     PhysicsManager::UploadJointLinks(activeScene);
 }
-
 #pragma region Methods
 
 void InternodeManager::OnInspect() {
@@ -660,7 +663,7 @@ void InternodeManager::UpdateInternodeCamera() {
                         auto windowSize = ImGui::GetWindowSize();
                         mousePosition.x -= windowPos.x;
                         mousePosition.x -= windowSize.x;
-                        mousePosition.y -= windowPos.y + 20;
+                        mousePosition.y -= windowPos.y;
                         float minDistance = FLT_MAX;
                         GlobalTransform cameraLtw;
                         cameraLtw.m_value =
@@ -748,5 +751,7 @@ void InternodeManager::UpdateInternodeCamera() {
 
 #pragma endregion
 }
+
+
 
 #pragma endregion

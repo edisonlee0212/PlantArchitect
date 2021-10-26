@@ -25,6 +25,8 @@ namespace PlantArchitect {
         static void PreparePhysics(const Entity& entity, const Entity& child, const BranchPhysicsParameters& branchPhysicsParameters);
 
     public:
+        static void PreparePhysics();
+
         /**
          * The EntityQuery for filtering all internodes.
          */
