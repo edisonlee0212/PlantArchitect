@@ -31,6 +31,10 @@ namespace PlantArchitect {
          * The neighbors proximity. Used against the dense crown.
          */
         float m_neighborsProximity = 0.0f;
+        /**
+         * The layer of internode.
+         */
+        unsigned m_layer = 0;
         void OnInspect(){
             ImGui::Text(("Proximity: " + std::to_string(m_neighborsProximity)).c_str());
 

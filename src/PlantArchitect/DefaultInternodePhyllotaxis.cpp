@@ -10,13 +10,13 @@ using namespace PlantArchitect;
 
 void DefaultInternodePhyllotaxis::GenerateFoliage(const std::shared_ptr<Internode> &internode,
                                                   const InternodeInfo &internodeInfo,
-                                                  const GlobalTransform &relativeGlobalTransform) {
+                                                  const GlobalTransform &relativeGlobalTransform, const GlobalTransform &relativeParentGlobalTransform) {
     auto radius = glm::abs(m_positionVariance);
     auto length = internodeInfo.m_length;
     auto rotation = glm::abs(m_randomRotation);
     if(internodeInfo.m_endNode) {
         for (int i = 0; i < m_leafCount; i++) {
-            auto position = glm::vec3(glm::gaussRand(0.0f, radius), glm::gaussRand(0.0f, radius), glm::linearRand(0.0f, length));
+            auto position = glm::vec3(glm::gaussRand(0.0f, radius), glm::gaussRand(0.0f, radius), glm::linearRand(0.0f - radius / 2.0f, length + radius / 2.0f));
             const auto transform =
                     relativeGlobalTransform.m_value *
                     (glm::translate(position) *

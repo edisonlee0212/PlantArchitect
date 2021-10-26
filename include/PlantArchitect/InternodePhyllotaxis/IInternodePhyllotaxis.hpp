@@ -9,6 +9,6 @@ namespace PlantArchitect {
     class PLANT_ARCHITECT_API IInternodePhyllotaxis : public IAsset {
     public:
         virtual void GenerateFoliage(const std::shared_ptr<Internode> &internode, const InternodeInfo &internodeInfo,
-                                     const GlobalTransform &relativeGlobalTransform) = 0;
+                                     const GlobalTransform &relativeGlobalTransform, const GlobalTransform &relativeParentGlobalTransform) = 0;
     };
 }

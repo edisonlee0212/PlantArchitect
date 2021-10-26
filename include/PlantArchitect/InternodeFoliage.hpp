@@ -14,7 +14,7 @@ namespace PlantArchitect {
         AssetRef m_foliageTexture;
         glm::vec3 m_foliageColor = glm::vec3(0, 1, 0);
         void Generate(const std::shared_ptr<Internode> &internode, const InternodeInfo &internodeInfo,
-                      const GlobalTransform &relativeGlobalTransform);
+                      const GlobalTransform &relativeGlobalTransform, const GlobalTransform &relativeParentGlobalTransform);
 
         void OnInspect() override;
         void Serialize(YAML::Emitter &out) override;

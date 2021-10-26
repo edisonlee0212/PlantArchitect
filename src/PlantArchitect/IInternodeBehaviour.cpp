@@ -153,30 +153,31 @@ IInternodeBehaviour::GenerateSkinnedMeshes(float subdivision,
 #pragma endregion
 #pragma region Prepare foliage transforms.
     std::mutex mutex;
-    EntityManager::ForEach<GlobalTransform, InternodeInfo>(EntityManager::GetCurrentScene(),
-                                                           JobManager::PrimaryWorkers(),
-                                                           m_internodesQuery,
-                                                           [&](int index, Entity entity,
-                                                               GlobalTransform &globalTransform,
-                                                               InternodeInfo &internodeInfo) {
-                                                               if (entity.GetChildrenAmount() != 0) return;
-                                                               auto internode =
-                                                                       entity.GetOrSetPrivateComponent<Internode>().lock();
-                                                               internode->m_foliageMatrices.clear();
-                                                               auto rootGlobalTransform = globalTransform;
-                                                               auto root = internode->m_currentRoot.Get();
-                                                               if (root != entity) {
-                                                                   rootGlobalTransform = root.GetDataComponent<GlobalTransform>();
-                                                               }
-                                                               GlobalTransform relativeGlobalTransform;
-                                                               relativeGlobalTransform.m_value =
-                                                                       glm::inverse(rootGlobalTransform.m_value) *
-                                                                       globalTransform.m_value;
-                                                               auto foliage = internode->m_foliage.Get<InternodeFoliage>();
-                                                               if (foliage)
-                                                                   foliage->Generate(internode, internodeInfo,
-                                                                                     relativeGlobalTransform);
-                                                           });
+    EntityManager::ForEach<Transform, GlobalTransform, InternodeInfo>
+            (EntityManager::GetCurrentScene(),
+             JobManager::PrimaryWorkers(),
+             m_internodesQuery,
+             [&](int index, Entity entity, Transform &transform, GlobalTransform &globalTransform,
+                 InternodeInfo &internodeInfo) {
+                 if (entity.GetChildrenAmount() != 0) return;
+                 auto internode =
+                         entity.GetOrSetPrivateComponent<Internode>().lock();
+                 internode->m_foliageMatrices.clear();
+                 auto rootGlobalTransform = globalTransform;
+                 auto root = internode->m_currentRoot.Get();
+                 if (root != entity) {
+                     rootGlobalTransform = root.GetDataComponent<GlobalTransform>();
+                 }
+                 auto inverseGlobalTransform = glm::inverse(rootGlobalTransform.m_value);
+                 GlobalTransform relativeGlobalTransform;
+                 GlobalTransform relativeParentGlobalTransform;
+                 relativeGlobalTransform.m_value = inverseGlobalTransform * globalTransform.m_value;
+                 relativeParentGlobalTransform.m_value = inverseGlobalTransform * (glm::inverse(transform.m_value) * globalTransform.m_value);
+                 auto foliage = internode->m_foliage.Get<InternodeFoliage>();
+                 if (foliage)
+                     foliage->Generate(internode, internodeInfo,
+                                       relativeGlobalTransform, relativeParentGlobalTransform);
+             });
 #pragma endregion
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
         const auto &plant = plants[plantIndex];
@@ -234,7 +235,7 @@ IInternodeBehaviour::GenerateSkinnedMeshes(float subdivision,
             skinnedMeshRenderer->SetEnabled(true);
             auto internode = plant.GetOrSetPrivateComponent<Internode>().lock();
             auto foliage = internode->m_foliage.Get<InternodeFoliage>();
-            if(foliage->m_foliageTexture.Get<Texture2D>()) material->m_albedoTexture = foliage->m_foliageTexture.Get<Texture2D>();
+            if (foliage->m_foliageTexture.Get<Texture2D>()) material->m_albedoTexture = foliage->m_foliageTexture.Get<Texture2D>();
             material->m_albedoColor = foliage->m_foliageColor;
             const auto plantGlobalTransform =
                     plant.GetDataComponent<GlobalTransform>();

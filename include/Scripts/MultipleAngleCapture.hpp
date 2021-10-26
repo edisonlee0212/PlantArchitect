@@ -22,6 +22,7 @@ namespace Scripts {
         bool SetUpCamera();
         void RenderBranchCapture();
         void ExportMatrices(const std::filesystem::path& path);
+        void ExportGraphNode(YAML::Emitter &out, int parentIndex, const Entity& internode);
         void ExportGraph(const std::shared_ptr<IInternodeBehaviour>& behaviour, const std::filesystem::path& path);
 
         std::shared_ptr<Camera> m_branchCaptureCamera;

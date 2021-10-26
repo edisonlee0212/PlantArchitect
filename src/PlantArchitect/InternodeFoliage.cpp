@@ -7,10 +7,10 @@
 using namespace PlantArchitect;
 void InternodeFoliage::Generate(const std::shared_ptr<Internode> &internode,
                                                        const PlantArchitect::InternodeInfo &internodeInfo,
-                                                       const GlobalTransform &relativeGlobalTransform) {
+                                                       const GlobalTransform &relativeGlobalTransform, const GlobalTransform &relativeParentGlobalTransform) {
     auto phyllotaxis = m_foliagePhyllotaxis.Get<IInternodePhyllotaxis>();
     if(phyllotaxis){
-        phyllotaxis->GenerateFoliage(internode, internodeInfo, relativeGlobalTransform);
+        phyllotaxis->GenerateFoliage(internode, internodeInfo, relativeGlobalTransform, relativeParentGlobalTransform);
     }
 }
 

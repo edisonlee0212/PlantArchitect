@@ -10,6 +10,7 @@
 #include "LSystemBehaviour.hpp"
 #include "IVolume.hpp"
 #include "InternodeFoliage.hpp"
+
 using namespace Scripts;
 
 void MultipleAngleCapture::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) {
@@ -90,7 +91,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
             behaviour->GenerateSkinnedMeshes();
             if (m_exportOBJ) {
                 Entity foliage, branch;
-                m_currentGrowingTree.ForEachChild([&](const std::shared_ptr<Scene>& scene, Entity child) {
+                m_currentGrowingTree.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
                     if (child.GetName() == "Foliage") foliage = child;
                     else if (child.GetName() == "Branch") branch = child;
                 });
@@ -182,7 +183,8 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
 
 void MultipleAngleCapture::OnInspect() {
     EditorManager::DragAndDropButton(m_volume, "Volume", {"CubeVolume", "RadialBoundingVolume"}, false);
-    EditorManager::DragAndDropButton(m_foliagePhyllotaxis, "Phyllotaxis", {"EmptyInternodePhyllotaxis", "DefaultInternodePhyllotaxis"}, true);
+    EditorManager::DragAndDropButton(m_foliagePhyllotaxis, "Phyllotaxis",
+                                     {"EmptyInternodePhyllotaxis", "DefaultInternodePhyllotaxis"}, true);
     ImGui::Checkbox("Auto adjust camera", &m_autoAdjustCamera);
     if (ImGui::TreeNodeEx("Pipeline Settings")) {
         ImGui::DragFloat("Branch width", &m_branchWidth, 0.01f);
@@ -193,7 +195,7 @@ void MultipleAngleCapture::OnInspect() {
         ImGui::Checkbox("Export OBJ", &m_exportOBJ);
         ImGui::Checkbox("Export Graph", &m_exportGraph);
         ImGui::Checkbox("Export LString", &m_exportLString);
-        if(m_exportLString){
+        if (m_exportLString) {
             ImGui::DragInt("Character div", &m_targetDivider, 1, 1, 1024);
         }
         ImGui::Text("Rendering export:");
@@ -402,36 +404,32 @@ void MultipleAngleCapture::ExportGraph(const std::shared_ptr<IInternodeBehaviour
         std::filesystem::create_directories(directory);
         YAML::Emitter out;
         out << YAML::BeginMap;
-        out << YAML::Key << "Nodes" << YAML::Value << YAML::BeginSeq;
-        {
-            out << YAML::BeginMap;
-            out << YAML::Key << "Parent Index" << -1;
-            out << YAML::Key << "Index" << m_currentGrowingTree.GetIndex();
-            out << YAML::Key << "Transform" << m_currentGrowingTree.GetDataComponent<Transform>().m_value;
-            out << YAML::Key << "GlobalTransform" << m_currentGrowingTree.GetDataComponent<GlobalTransform>().m_value;
-            auto internodeInfo = m_currentGrowingTree.GetDataComponent<InternodeInfo>();
-            out << YAML::Key << "Thickness" << internodeInfo.m_thickness;
-            out << YAML::Key << "Length" << internodeInfo.m_length;
-            out << YAML::Key << "Internode Index" << internodeInfo.m_index;
-
-            out << YAML::EndMap;
-        }
+        std::vector<std::vector<std::pair<int, Entity>>> internodes;
+        internodes.resize(128);
+        internodes[0].emplace_back(-1, m_currentGrowingTree);
         behaviour->TreeGraphWalkerRootToEnd(m_currentGrowingTree, m_currentGrowingTree,
                                             [&](Entity parent, Entity child) {
                                                 if (!behaviour->InternodeCheck(child)) return;
-                                                out << YAML::BeginMap;
-                                                out << YAML::Key << "Parent Index" << parent.GetIndex();
-                                                out << YAML::Key << "Index" << child.GetIndex();
-                                                out << YAML::Key << "Transform"
-                                                    << child.GetDataComponent<Transform>().m_value;
-                                                out << YAML::Key << "GlobalTransform"
-                                                    << child.GetDataComponent<GlobalTransform>().m_value;
                                                 auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
-                                                out << YAML::Key << "Thickness" << childInternodeInfo.m_thickness;
-                                                out << YAML::Key << "Length" << childInternodeInfo.m_length;
-                                                out << YAML::Key << "Internode Index" << childInternodeInfo.m_index;
-                                                out << YAML::EndMap;
+                                                internodes[childInternodeInfo.m_layer].emplace_back(parent.GetIndex(),
+                                                                                                    child);
                                             });
+        out << YAML::Key << "Layers" << YAML::Value << YAML::BeginSeq;
+        int layerIndex = 0;
+        for (const auto &layer: internodes) {
+            if (layer.empty()) break;
+            out << YAML::BeginMap;
+            out << YAML::Key << "Layer Index" << YAML::Value << layerIndex;
+            out << YAML::Key << "Nodes" << YAML::Value << YAML::BeginSeq;
+            for (const auto &instance: layer) {
+                ExportGraphNode(out, instance.first, instance.second);
+            }
+            out << YAML::EndSeq;
+            out << YAML::EndMap;
+            layerIndex++;
+        }
+
+
         out << YAML::EndSeq;
         out << YAML::EndMap;
         std::ofstream fout(path.string());
@@ -442,6 +440,40 @@ void MultipleAngleCapture::ExportGraph(const std::shared_ptr<IInternodeBehaviour
         UNIENGINE_ERROR("Failed to save!");
     }
 
+}
+
+void MultipleAngleCapture::ExportGraphNode(YAML::Emitter &out, int parentIndex, const Entity &internode) {
+    out << YAML::BeginMap;
+    out << YAML::Key << "Parent Entity Index" << parentIndex;
+    out << YAML::Key << "Entity Index" << internode.GetIndex();
+    out << YAML::Key << "Children Entity Indices" << YAML::Key << YAML::BeginSeq;
+    internode.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
+        out << YAML::BeginMap;
+        out << YAML::Key << "Entity Index" << YAML::Value << child.GetIndex();
+        out << YAML::EndMap;
+    });
+    out << YAML::EndSeq;
+
+    auto globalTransform = internode.GetDataComponent<GlobalTransform>();
+    /*
+    out << YAML::Key << "Transform"
+        << internode.GetDataComponent<Transform>().m_value;
+    out << YAML::Key << "GlobalTransform"
+        << internode.GetDataComponent<GlobalTransform>().m_value;
+        */
+    auto position = globalTransform.GetPosition();
+    auto globalRotation = globalTransform.GetRotation();
+    auto front = globalRotation * glm::vec3(0, 0, -1);
+    auto up = globalRotation * glm::vec3(0, 1, 0);
+    out << YAML::Key << "Position" << position;
+    out << YAML::Key << "Front Direction" << front;
+    out << YAML::Key << "Up Direction" << up;
+    auto internodeInfo = internode.GetDataComponent<InternodeInfo>();
+    out << YAML::Key << "Thickness" << internodeInfo.m_thickness;
+    out << YAML::Key << "Length" << internodeInfo.m_length;
+    //out << YAML::Key << "Internode Index" << internodeInfo.m_index;
+    out << YAML::Key << "Internode Layer" << internodeInfo.m_layer;
+    out << YAML::EndMap;
 }
 
 void MultipleAngleCapture::ExportMatrices(const std::filesystem::path &path) {
@@ -463,4 +495,6 @@ void MultipleAngleCapture::ExportMatrices(const std::filesystem::path &path) {
     fout << out.c_str();
     fout.flush();
 }
+
+
 

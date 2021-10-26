@@ -30,7 +30,6 @@
 #include "DepthCamera.hpp"
 #include "MultipleAngleCapture.hpp"
 
-#include "Camera2DVectorField.hpp"
 
 #include "InternodeManager.hpp"
 using namespace PlantArchitect;
@@ -59,7 +58,6 @@ int main() {
       "MLVQRenderer");
 #endif
     ClassRegistry::RegisterPrivateComponent<DepthCamera>("DepthCamera");
-    ClassRegistry::RegisterPrivateComponent<Camera2DVectorField>("Camera2DVectorField");
     ClassRegistry::RegisterDataComponent<GeneralTreeTag>("GeneralTreeTag");
     ClassRegistry::RegisterDataComponent<GeneralTreeParameters>("GeneralTreeParameters");
     ClassRegistry::RegisterDataComponent<InternodeStatus>("InternodeStatus");

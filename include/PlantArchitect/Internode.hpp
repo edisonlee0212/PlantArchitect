@@ -27,12 +27,8 @@ namespace PlantArchitect {
     class PLANT_ARCHITECT_API Internode : public IPrivateComponent {
         void ExportLSystemCommandsHelper(int& index, const Entity &target, std::vector<LSystemCommand> &commands);
         void CollectInternodesHelper(const Entity &target, std::vector<Entity> &results);
-
-    public:
-        /**
-         * The current root of the internode.
-         */
-        EntityRef m_currentRoot;
+        friend class IInternodeBehaviour;
+        friend class InternodeFoliage;
         /**
          * Normal direction for mesh generation
          */
@@ -42,6 +38,20 @@ namespace PlantArchitect {
          */
         int m_step = 4;
         /**
+         * For mesh generation
+         */
+        std::vector<InternodeRingSegment> m_rings;
+    public:
+        /**
+         * The generated matrices of foliage
+         */
+        std::vector<glm::mat4> m_foliageMatrices;
+        /**
+         * The current root of the internode.
+         */
+        EntityRef m_currentRoot;
+
+        /**
          * Whether this internode is formed from an apical bud
          */
         bool m_fromApicalBud;
@@ -49,15 +59,6 @@ namespace PlantArchitect {
          * The foliage module.
          */
         AssetRef m_foliage;
-
-        /**
-         * The generated matrices of foliage
-         */
-        std::vector<glm::mat4> m_foliageMatrices;
-        /**
-         * For mesh generation
-         */
-        std::vector<InternodeRingSegment> m_rings;
         /**
          * The resource storage for the internode.
          */

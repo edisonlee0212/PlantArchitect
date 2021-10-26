@@ -363,6 +363,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                              internodeWater.m_value = internodeInfo.m_length - desiredLength;
                              internodeInfo.m_length = desiredLength;
                              internode->m_apicalBud.m_newInternodeInfo = InternodeInfo();
+                             internode->m_apicalBud.m_newInternodeInfo.m_layer = internodeInfo.m_layer + 1;
                              internode->m_apicalBud.m_newInternodeInfo.m_thickness = generalTreeParameters.m_endNodeThicknessAndControl.x;
                              glm::quat desiredGlobalRotation = globalTransform.GetRotation();
                              glm::vec3 desiredGlobalFront = desiredGlobalRotation * glm::vec3(0, 0, -1);
@@ -454,6 +455,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                                               desiredGlobalUp);
                                  desiredGlobalRotation = glm::quatLookAt(desiredGlobalFront, desiredGlobalUp);
                                  lateralBud.m_newInternodeInfo = InternodeInfo();
+                                 lateralBud.m_newInternodeInfo.m_layer = internodeInfo.m_layer + 1;
                                  lateralBud.m_newInternodeInfo.m_localRotation =
                                          glm::inverse(globalTransform.GetRotation()) * desiredGlobalRotation;
                                  lateralBud.m_newInternodeInfo.m_thickness = generalTreeParameters.m_endNodeThicknessAndControl.x;
@@ -632,6 +634,7 @@ Entity GeneralTreeBehaviour::NewPlant(const GeneralTreeParameters &params, const
     entity.SetDataComponent(tag);
     InternodeInfo newInfo;
     newInfo.m_length = 0;
+    newInfo.m_layer = 0;
     newInfo.m_isRealRoot = true;
     newInfo.m_thickness = params.m_endNodeThicknessAndControl.x;
     entity.SetDataComponent(newInfo);

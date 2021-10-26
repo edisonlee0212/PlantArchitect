@@ -152,9 +152,7 @@ void Internode::Serialize(YAML::Emitter &out) {
     m_foliage.Save("m_foliage", out);
     m_apicalBud.Save("m_apicalBud", out);
     SaveList("m_lateralBuds", m_lateralBuds, out);
-    
-    out << YAML::Key << "m_normalDir" << YAML::Value << m_normalDir;
-    out << YAML::Key << "m_step" << YAML::Value << m_step;
+
     out << YAML::Key << "m_fromApicalBud" << YAML::Value << m_fromApicalBud;
 }
 
@@ -163,9 +161,6 @@ void Internode::Deserialize(const YAML::Node &in) {
     m_foliage.Load("m_foliage", in);
     m_apicalBud.Load("m_apicalBud", in);
     LoadList("m_lateralBuds", m_lateralBuds, in);
-
-    m_normalDir = in["m_normalDir"].as<glm::vec3>();
-    m_step = in["m_step"].as<int>();
     m_fromApicalBud = in["m_fromApicalBud"].as<bool>();
 }
 

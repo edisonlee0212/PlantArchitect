@@ -43,21 +43,24 @@ void GeneralTreeParameters::OnInspect() {
 
 GeneralTreeParameters::GeneralTreeParameters() {
     m_lateralBudCount = 2;
-    m_branchingAngleMeanVariance = glm::vec2(30, 1);
-    m_rollAngleMeanVariance = glm::vec2(30, 1);
-    m_apicalAngleMeanVariance = glm::vec2(0, 1);
-    m_gravitropism = 0.1f;
-    m_phototropism = 0.0f;
+    m_branchingAngleMeanVariance = glm::vec2(30, 3);
+    m_rollAngleMeanVariance = glm::vec2(120, 2);
+    m_apicalAngleMeanVariance = glm::vec2(20, 2);
+    m_gravitropism = -0.1f;
+    m_phototropism = 0.05f;
     m_internodeLengthMeanVariance = glm::vec2(1, 0.1);
     m_endNodeThicknessAndControl = glm::vec2(0.01, 0.5);
-    m_lateralBudFlushingProbability = 1.0f;
-    m_apicalControlBaseAge = glm::vec2(1.05, 0.95);
-    m_apicalDominanceBaseAgeDist = glm::vec3(0.1, 0.95, 0.5);
+    m_lateralBudFlushingProbability = 0.3f;
+    m_neighborAvoidance = glm::vec3(0.05f, 1, 100);
+    m_apicalControlBaseAge = glm::vec2(2, 0.95);
+    m_apicalDominanceBaseAgeDist = glm::vec3(0.12, 1, 0.3);
     m_lateralBudFlushingLightingFactor = 0.0f;
-    m_budKillProbabilityApicalLateral = glm::vec2(0.0, 0.5);
+    m_budKillProbabilityApicalLateral = glm::vec2(0.0, 0.03);
     m_randomPruningOrderProtection = 1;
-    m_randomPruningBaseAgeMax = glm::vec3(0.1, 0.05, 0.5);
+    m_randomPruningBaseAgeMax = glm::vec3(-0.1, 0.007, 0.5);
     m_lowBranchPruning = 0.15f;
+    m_saggingFactorThicknessReductionMax = glm::vec3(6, 3, 0.5);
+    m_matureAge = 30;
 }
 
 void GeneralTreeParameters::Save(const std::filesystem::path &path) const {
