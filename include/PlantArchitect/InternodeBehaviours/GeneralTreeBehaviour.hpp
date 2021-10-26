@@ -20,6 +20,10 @@ namespace PlantArchitect {
 
     class PLANT_ARCHITECT_API GeneralTreeBehaviour : public IInternodeBehaviour {
         std::vector<Entity> m_currentPlants;
+
+
+
+
     protected:
         bool InternalInternodeCheck(const Entity &target) override;
 

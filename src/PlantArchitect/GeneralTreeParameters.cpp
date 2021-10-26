@@ -7,38 +7,43 @@
 using namespace PlantArchitect;
 
 void GeneralTreeParameters::OnInspect() {
-    ImGui::Text("Structure");
-    ImGui::DragInt("Lateral bud per node", &m_lateralBudCount);
-    ImGui::DragFloat2("Branching Angle mean/var", &m_branchingAngleMeanVariance.x, 0.01f);
-    ImGui::DragFloat2("Roll Angle mean/var", &m_rollAngleMeanVariance.x, 0.01f);
-    ImGui::DragFloat2("Apical Angle mean/var", &m_apicalAngleMeanVariance.x, 0.01f);
-    ImGui::DragFloat("Gravitropism", &m_gravitropism, 0.01f);
-    ImGui::DragFloat("Phototropism", &m_phototropism, 0.01f);
-    ImGui::DragFloat2("Internode length mean/var", &m_internodeLengthMeanVariance.x, 0.01f);
-    ImGui::DragFloat2("Thickness min/factor", &m_endNodeThicknessAndControl.x, 0.01f);
+    if(ImGui::TreeNodeEx("Structure", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::DragInt("Lateral bud per node", &m_lateralBudCount);
+        ImGui::DragFloat2("Branching Angle mean/var", &m_branchingAngleMeanVariance.x, 0.01f);
+        ImGui::DragFloat2("Roll Angle mean/var", &m_rollAngleMeanVariance.x, 0.01f);
+        ImGui::DragFloat2("Apical Angle mean/var", &m_apicalAngleMeanVariance.x, 0.01f);
+        ImGui::DragFloat("Gravitropism", &m_gravitropism, 0.01f);
+        ImGui::DragFloat("Phototropism", &m_phototropism, 0.01f);
+        ImGui::DragFloat2("Internode length mean/var", &m_internodeLengthMeanVariance.x, 0.01f);
+        ImGui::DragFloat2("Thickness min/factor", &m_endNodeThicknessAndControl.x, 0.01f);
+        ImGui::TreePop();
+    }
+    if(ImGui::TreeNodeEx("Bud", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::DragFloat("Lateral bud flushing probability", &m_lateralBudFlushingProbability, 0.01f);
+        ImGui::DragFloat3("Neighbor avoidance mul/factor/max", &m_neighborAvoidance.x, 0.001f);
+        ImGui::DragFloat2("Apical control base/age", &m_apicalControlBaseAge.x, 0.01f);
+        ImGui::DragFloat3("Apical dominance base/age/dist", &m_apicalDominanceBaseAgeDist.x, 0.01f);
+        int maxAgeBeforeInhibitorEnds = m_apicalControlBaseAge.x / m_apicalDominanceBaseAgeDist.y;
+        float maxDistance = m_apicalControlBaseAge.x / m_apicalDominanceBaseAgeDist.z;
+        ImGui::Text("Max age / distance: [%i, %.3f]", maxAgeBeforeInhibitorEnds, maxDistance);
 
-    ImGui::Text("Bud");
-    ImGui::DragFloat("Lateral bud flushing probability", &m_lateralBudFlushingProbability, 0.01f);
-    ImGui::DragFloat3("Neighbor avoidance mul/factor/max", &m_neighborAvoidance.x, 0.001f);
-    ImGui::DragFloat2("Apical control base/age", &m_apicalControlBaseAge.x, 0.01f);
-    ImGui::DragFloat3("Apical dominance base/age/dist", &m_apicalDominanceBaseAgeDist.x, 0.01f);
-    int maxAgeBeforeInhibitorEnds = m_apicalControlBaseAge.x / m_apicalDominanceBaseAgeDist.y;
-    float maxDistance = m_apicalControlBaseAge.x / m_apicalDominanceBaseAgeDist.z;
-    ImGui::Text("Max age / distance: [%i, %.3f]", maxAgeBeforeInhibitorEnds, maxDistance);
-
-    ImGui::DragFloat("Lateral bud lighting factor", &m_lateralBudFlushingLightingFactor, 0.01f);
-    ImGui::DragFloat2("Kill probability apical/lateral", &m_budKillProbabilityApicalLateral.x, 0.01f);
-
-    ImGui::Text("Internode");
-    ImGui::DragInt("Random pruning Order Protection", &m_randomPruningOrderProtection);
-    ImGui::DragFloat3("Random pruning base/age/max", &m_randomPruningBaseAgeMax.x, 0.0001f, -1.0f, 1.0f, "%.5f");
-    const float maxAgeBeforeMaxCutOff =
-            (m_randomPruningBaseAgeMax.z - m_randomPruningBaseAgeMax.x) / m_randomPruningBaseAgeMax.y;
-    ImGui::Text("Max age before reaching max: %.3f", maxAgeBeforeMaxCutOff);
-    ImGui::DragFloat("Low Branch Pruning", &m_lowBranchPruning, 0.01f);
-    ImGui::DragFloat3("Sagging thickness/reduction/max", &m_saggingFactorThicknessReductionMax.x, 0.01f);
-
+        ImGui::DragFloat("Lateral bud lighting factor", &m_lateralBudFlushingLightingFactor, 0.01f);
+        ImGui::DragFloat2("Kill probability apical/lateral", &m_budKillProbabilityApicalLateral.x, 0.01f);
+        ImGui::TreePop();
+    }
+    if(ImGui::TreeNodeEx("Internode")) {
+        ImGui::DragInt("Random pruning Order Protection", &m_randomPruningOrderProtection);
+        ImGui::DragFloat3("Random pruning base/age/max", &m_randomPruningBaseAgeMax.x, 0.0001f, -1.0f, 1.0f, "%.5f");
+        const float maxAgeBeforeMaxCutOff =
+                (m_randomPruningBaseAgeMax.z - m_randomPruningBaseAgeMax.x) / m_randomPruningBaseAgeMax.y;
+        ImGui::Text("Max age before reaching max: %.3f", maxAgeBeforeMaxCutOff);
+        ImGui::DragFloat("Low Branch Pruning", &m_lowBranchPruning, 0.01f);
+        ImGui::DragFloat3("Sagging thickness/reduction/max", &m_saggingFactorThicknessReductionMax.x, 0.01f);
+        ImGui::TreePop();
+    }
     ImGui::DragInt("Mature age", &m_matureAge, 1, 0, 1000);
+
+
 }
 
 GeneralTreeParameters::GeneralTreeParameters() {
@@ -88,6 +93,8 @@ void GeneralTreeParameters::Save(const std::filesystem::path &path) const {
     out << YAML::Key << "m_lowBranchPruning" << YAML::Value << m_lowBranchPruning;
     out << YAML::Key << "m_saggingFactorThicknessReductionMax" << YAML::Value << m_saggingFactorThicknessReductionMax;
     out << YAML::Key << "m_matureAge" << YAML::Value << m_matureAge;
+
+
     out << YAML::EndMap;
     std::ofstream fout(path.string());
     fout << out.c_str();
@@ -118,6 +125,8 @@ void GeneralTreeParameters::Load(const std::filesystem::path &path) {
     if(in["m_lowBranchPruning"]) m_lowBranchPruning = in["m_lowBranchPruning"].as<float>();
     if(in["m_saggingFactorThicknessReductionMax"]) m_saggingFactorThicknessReductionMax = in["m_saggingFactorThicknessReductionMax"].as<glm::vec3>();
     if(in["m_matureAge"]) m_matureAge = in["m_matureAge"].as<int>();
+
+
 }
 
 void InternodeStatus::OnInspect() {

@@ -8,6 +8,7 @@
 #include "EmptyInternodeResource.hpp"
 #include "TransformManager.hpp"
 #include "DefaultInternodePhyllotaxis.hpp"
+
 using namespace PlantArchitect;
 
 void GeneralTreeBehaviour::Grow(int iteration) {
@@ -30,6 +31,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
         auto internodeStatus = root.GetDataComponent<InternodeStatus>();
         auto internodeGlobalTransform = root.GetDataComponent<GlobalTransform>();
         auto internode = root.GetOrSetPrivateComponent<Internode>().lock();
+        auto parameters = root.GetDataComponent<GeneralTreeParameters>();
         internode->m_currentRoot = root;
         internodeStatus.m_distanceToRoot = 0;
         internodeInfo.m_endNode = false;
@@ -70,6 +72,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                             }
                             child.SetDataComponent(childInternodeInfo);
                             child.SetDataComponent(childInternodeStatus);
+
                         },
                         [&](Entity parent) {
                             auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
@@ -474,6 +477,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
         auto root = internode->m_currentRoot.Get();
         if (root.IsNull() || !root.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
         auto parameters = entity.GetDataComponent<GeneralTreeParameters>();
+        auto internodeInfo = entity.GetDataComponent<InternodeInfo>();
         if (internode->m_apicalBud.m_status == BudStatus::Flushing) {
             auto newInternodeEntity = Retrieve(entity);
             InternodeStatus newInternodeStatus;
@@ -553,8 +557,8 @@ void GeneralTreeBehaviour::Grow(int iteration) {
     });
 #pragma endregion
 
-#pragma endregion
 
+#pragma endregion
 }
 
 void GeneralTreeBehaviour::OnCreate() {
@@ -564,7 +568,7 @@ void GeneralTreeBehaviour::OnCreate() {
                                                  GeneralTreeParameters(), InternodeStatus(),
                                                  InternodeWaterPressure(), InternodeWater(), InternodeIllumination(),
                                                  BranchColor(), BranchCylinder(), BranchCylinderWidth(),
-                                                 BranchPointer());
+                                                 BranchPointer(), BranchPhysicsParameters());
     m_internodesQuery = EntityManager::CreateEntityQuery();
     m_internodesQuery.SetAllFilters(GeneralTreeTag());
 }
@@ -610,6 +614,7 @@ Entity GeneralTreeBehaviour::Retrieve() {
     retVal.SetDataComponent(InternodeWater());
     retVal.SetDataComponent(InternodeIllumination());
     retVal.SetDataComponent(InternodeStatus());
+    retVal.SetDataComponent(BranchPhysicsParameters());
     return retVal;
 }
 
@@ -644,8 +649,12 @@ Entity GeneralTreeBehaviour::NewPlant(const GeneralTreeParameters &params, const
     internode->m_fromApicalBud = true;
     internode->m_foliage.Get<InternodeFoliage>()->m_foliagePhyllotaxis = AssetManager::CreateAsset<DefaultInternodePhyllotaxis>();
     auto waterFeeder = entity.GetOrSetPrivateComponent<InternodeWaterFeeder>().lock();
+
     return entity;
 }
+
+
+
 
 void InternodeWaterFeeder::OnInspect() {
     ImGui::Text(("Last request:" + std::to_string(m_lastRequest)).c_str());

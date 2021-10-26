@@ -11,9 +11,38 @@
 #include "LSystemBehaviour.hpp"
 #include "CubeVolume.hpp"
 #include "RadialBoundingVolume.hpp"
-
+#include "Joint.hpp"
+#include "PhysicsManager.hpp"
 using namespace PlantArchitect;
+void InternodeManager::PreparePhysics(const Entity& entity, const Entity& child, const BranchPhysicsParameters& branchPhysicsParameters) {
+    auto internodeInfo = entity.GetDataComponent<InternodeInfo>();
+    auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
+    auto rigidBody = child.GetOrSetPrivateComponent<RigidBody>().lock();
+    rigidBody->SetEnableGravity(false);
+    rigidBody->SetDensityAndMassCenter(branchPhysicsParameters.m_density *
+                                       childInternodeInfo.m_thickness *
+                                       childInternodeInfo.m_thickness * childInternodeInfo.m_length);
+    rigidBody->SetLinearDamping(branchPhysicsParameters.m_linearDamping);
+    rigidBody->SetAngularDamping(branchPhysicsParameters.m_angularDamping);
+    rigidBody->SetSolverIterations(branchPhysicsParameters.m_positionSolverIteration,
+                                   branchPhysicsParameters.m_velocitySolverIteration);
+    rigidBody->SetAngularVelocity(glm::vec3(0.0f));
+    rigidBody->SetLinearVelocity(glm::vec3(0.0f));
 
+    auto joint = child.GetOrSetPrivateComponent<Joint>().lock();
+    joint->Link(entity);
+    joint->SetType(JointType::D6);
+    joint->SetMotion(MotionAxis::SwingY, MotionType::Free);
+    joint->SetMotion(MotionAxis::SwingZ, MotionType::Free);
+    joint->SetDrive(DriveType::Swing,
+                    glm::pow(childInternodeInfo.m_thickness,
+                             branchPhysicsParameters.m_jointDriveStiffnessThicknessFactor) *
+                    branchPhysicsParameters.m_jointDriveStiffnessFactor,
+                    glm::pow(childInternodeInfo.m_thickness,
+                             branchPhysicsParameters.m_jointDriveDampingThicknessFactor) *
+                    branchPhysicsParameters.m_jointDriveDampingFactor,
+                    branchPhysicsParameters.m_enableAccelerationForDrive);
+}
 void InternodeManager::Simulate(int iterations) {
     auto& internodeManager = GetInstance();
     for (int iteration = 0; iteration < iterations; iteration++) {
@@ -42,6 +71,23 @@ void InternodeManager::Simulate(int iterations) {
             if (behaviour) behaviour->Grow(iteration);
         }
     }
+    for (auto &i: internodeManager.m_internodeBehaviours) {
+        auto behaviour = i.Get<IInternodeBehaviour>();
+        if (behaviour){
+            std::vector<Entity> roots;
+            behaviour->CollectRoots(roots);
+            for(const auto& root : roots){
+                auto branchPhysicsParameter = root.GetDataComponent<BranchPhysicsParameters>();
+                behaviour->TreeGraphWalkerRootToEnd(root, root, [&](Entity parent, Entity child){
+                    PreparePhysics(parent, child, branchPhysicsParameter);
+                });
+            }
+        }
+    }
+    auto activeScene = EntityManager::GetCurrentScene();
+    PhysicsManager::UploadRigidBodyShapes(activeScene);
+    PhysicsManager::UploadTransforms(activeScene, true);
+    PhysicsManager::UploadJointLinks(activeScene);
 }
 
 #pragma region Methods
@@ -704,4 +750,3 @@ void InternodeManager::UpdateInternodeCamera() {
 }
 
 #pragma endregion
-

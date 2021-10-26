@@ -48,7 +48,7 @@ namespace Scripts {
 
         //Options.
         bool m_exportOBJ = false;
-        bool m_exportGraph = false;
+        bool m_exportGraph = true;
         bool m_exportImage = true;
         bool m_exportDepth = false;
         bool m_exportMatrices = true;

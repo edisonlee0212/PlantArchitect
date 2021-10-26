@@ -35,19 +35,26 @@ namespace PlantArchitect {
          * The layer of internode.
          */
         unsigned m_layer = 0;
-        void OnInspect(){
-            ImGui::Text(("Proximity: " + std::to_string(m_neighborsProximity)).c_str());
-
-            ImGui::Text(("Thickness: " + std::to_string(m_thickness)).c_str());
-            ImGui::Text(("Length: " + std::to_string(m_length)).c_str());
-            ImGui::Text(("Index: " + std::to_string(m_index)).c_str());
-            ImGui::Text(("Is end node: " + std::to_string(m_endNode)).c_str());
-
-            glm::vec3 localRotation = glm::eulerAngles(m_localRotation);
-            ImGui::Text(("Local Rotation: [" + std::to_string(glm::degrees(localRotation.x)) + ", " + std::to_string(glm::degrees(localRotation.y)) + ", " +std::to_string(glm::degrees(localRotation.z)) + "]").c_str());
-        }
+        void OnInspect();
     };
 
+    struct PLANT_ARCHITECT_API BranchPhysicsParameters : public IDataComponent{
+#pragma region Physics
+        float m_density = 1.0f;
+        float m_linearDamping = 2.0f;
+        float m_angularDamping = 2.0f;
+        int m_positionSolverIteration = 8;
+        int m_velocitySolverIteration = 8;
+        float m_jointDriveStiffnessFactor = 3000.0f;
+        float m_jointDriveStiffnessThicknessFactor = 4.0f;
+        float m_jointDriveDampingFactor = 10.0f;
+        float m_jointDriveDampingThicknessFactor = 4.0f;
+        bool m_enableAccelerationForDrive = true;
+#pragma endregion
+        void Serialize(YAML::Emitter &out);
+        void Deserialize(const YAML::Node &in);
+        void OnInspect();
+    };
 
 #pragma region Debug rendering
 

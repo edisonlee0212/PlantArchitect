@@ -2,7 +2,7 @@
 #include "Application.hpp"
 #include "plant_architect_export.h"
 #include <VoxelSpace.hpp>
-
+#include "InternodeDataComponents.hpp"
 using namespace UniEngine;
 namespace PlantArchitect {
     enum class BranchColorMode{
@@ -17,8 +17,13 @@ namespace PlantArchitect {
         IndexDivider,
         IndexRange
     };
+
+
+
     class IInternodeBehaviour;
     class PLANT_ARCHITECT_API InternodeManager : public ISingleton<InternodeManager> {
+        static void PreparePhysics(const Entity& entity, const Entity& child, const BranchPhysicsParameters& branchPhysicsParameters);
+
     public:
         /**
          * The EntityQuery for filtering all internodes.

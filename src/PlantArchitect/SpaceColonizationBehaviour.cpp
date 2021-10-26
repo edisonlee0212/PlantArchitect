@@ -16,7 +16,7 @@ void SpaceColonizationBehaviour::OnCreate() {
                                                  SpaceColonizationTag(), SpaceColonizationIncentive(),
                                                  SpaceColonizationParameters(),
                                                  BranchColor(), BranchCylinder(), BranchCylinderWidth(),
-                                                 BranchPointer());
+                                                 BranchPointer(), BranchPhysicsParameters());
     m_internodesQuery = EntityManager::CreateEntityQuery();
     m_internodesQuery.SetAllFilters(SpaceColonizationTag());
 }
@@ -336,12 +336,15 @@ bool SpaceColonizationBehaviour::InternalInternodeCheck(const Entity &target) {
 }
 
 Entity SpaceColonizationBehaviour::Retrieve() {
-    return RetrieveHelper<EmptyInternodeResource>();
+    auto retVal = RetrieveHelper<EmptyInternodeResource>();
+    retVal.SetDataComponent(BranchPhysicsParameters());
+    return retVal;
 }
 
 Entity SpaceColonizationBehaviour::Retrieve(const Entity &parent) {
-    return RetrieveHelper<EmptyInternodeResource>(parent);
-}
+    auto retVal = RetrieveHelper<EmptyInternodeResource>(parent);
+    retVal.SetDataComponent(parent.GetDataComponent<BranchPhysicsParameters>());
+    return retVal;}
 
 Entity SpaceColonizationBehaviour::NewPlant(const SpaceColonizationParameters &params, const Transform &transform) {
     auto entity = Retrieve();
