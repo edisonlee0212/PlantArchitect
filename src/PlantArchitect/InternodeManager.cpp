@@ -4,6 +4,7 @@
 //
 #include "InternodeManager.hpp"
 #include <Internode.hpp>
+#include "EditorLayer.hpp"
 #include <InternodeDataComponents.hpp>
 #include "GeneralTreeBehaviour.hpp"
 #include "SpaceColonizationBehaviour.hpp"
@@ -12,7 +13,7 @@
 #include "CubeVolume.hpp"
 #include "RadialBoundingVolume.hpp"
 #include "Joint.hpp"
-#include "PhysicsManager.hpp"
+#include "PhysicsLayer.hpp"
 using namespace PlantArchitect;
 void InternodeManager::PreparePhysics(const Entity& entity, const Entity& child, const BranchPhysicsParameters& branchPhysicsParameters) {
     auto internodeInfo = entity.GetDataComponent<InternodeInfo>();
@@ -44,21 +45,20 @@ void InternodeManager::PreparePhysics(const Entity& entity, const Entity& child,
                     branchPhysicsParameters.m_enableAccelerationForDrive);
 }
 void InternodeManager::Simulate(int iterations) {
-    auto& internodeManager = GetInstance();
     for (int iteration = 0; iteration < iterations; iteration++) {
-        internodeManager.m_voxelSpace.Clear();
+        m_voxelSpace.Clear();
         EntityManager::ForEach<InternodeInfo, GlobalTransform>
-                (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), internodeManager.m_internodesQuery,
+                (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
                  [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &internodeGlobalTransform) {
                      const auto position = internodeGlobalTransform.GetPosition();
-                     internodeManager.m_voxelSpace.Push(position, entity);
+                     m_voxelSpace.Push(position, entity);
                  }, true);
         EntityManager::ForEach<InternodeInfo, GlobalTransform>
-                (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), internodeManager.m_internodesQuery,
+                (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
                  [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &internodeGlobalTransform) {
                      const auto position = internodeGlobalTransform.GetPosition();
                      internodeInfo.m_neighborsProximity = 0;
-                     internodeManager.m_voxelSpace.ForEachInRange(position, 16, [&](const glm::vec3& neighborPosition, const Entity& neighbor){
+                     m_voxelSpace.ForEachInRange(position, 16, [&](const glm::vec3& neighborPosition, const Entity& neighbor){
                          if(neighbor == entity) return;
                          auto distance = glm::max(1.0f, glm::distance(position, neighborPosition));
                          if(distance < 16){
@@ -66,7 +66,7 @@ void InternodeManager::Simulate(int iterations) {
                          }
                      });
                  }, true);
-        for (auto &i: internodeManager.m_internodeBehaviours) {
+        for (auto &i: m_internodeBehaviours) {
             auto behaviour = i.Get<IInternodeBehaviour>();
             if (behaviour) behaviour->Grow(iteration);
         }
@@ -74,8 +74,9 @@ void InternodeManager::Simulate(int iterations) {
     PreparePhysics();
 }
 void InternodeManager::PreparePhysics() {
-    auto& internodeManager = GetInstance();
-    for (auto &i: internodeManager.m_internodeBehaviours) {
+    auto physicsLayer = Application::GetLayer<PhysicsLayer>();
+    if(!physicsLayer) return;
+    for (auto &i: m_internodeBehaviours) {
         auto behaviour = i.Get<IInternodeBehaviour>();
         if (behaviour){
             std::vector<Entity> roots;
@@ -89,15 +90,14 @@ void InternodeManager::PreparePhysics() {
         }
     }
     auto activeScene = EntityManager::GetCurrentScene();
-    PhysicsManager::UploadRigidBodyShapes(activeScene);
-    PhysicsManager::UploadTransforms(activeScene, true);
-    PhysicsManager::UploadJointLinks(activeScene);
+    physicsLayer->UploadRigidBodyShapes(activeScene);
+    physicsLayer->UploadTransforms(activeScene, true);
+    physicsLayer->UploadJointLinks(activeScene);
 }
 #pragma region Methods
 
 void InternodeManager::OnInspect() {
     if(ImGui::Begin("Internode Manager")) {
-
         static int iterations = 1;
         ImGui::DragInt("Iterations", &iterations);
         if (ImGui::Button("Simulate")) {
@@ -109,12 +109,15 @@ void InternodeManager::OnInspect() {
             ImGui::TreePop();
         }
         if (m_voxelSpace.m_display) {
-            RenderManager::DrawGizmoMeshInstanced(
-                    DefaultResources::Primitives::Cube, m_internodeDebuggingCamera,
-                    EditorManager::GetInstance().m_sceneCameraPosition,
-                    EditorManager::GetInstance().m_sceneCameraRotation,
-                    glm::vec4(1, 1, 1, 0.2),
-                    m_voxelSpace.m_frozenVoxels);
+            auto editorLayer = Application::GetLayer<EditorLayer>();
+            if(editorLayer) {
+                RenderManager::DrawGizmoMeshInstanced(
+                        DefaultResources::Primitives::Cube, m_internodeDebuggingCamera,
+                        editorLayer->m_sceneCameraPosition,
+                        editorLayer->m_sceneCameraRotation,
+                        glm::vec4(1, 1, 1, 0.2),
+                        m_voxelSpace.m_frozenVoxels);
+            }
             RenderManager::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube,
                                                   glm::vec4(1, 1, 1, 0.2),
                                                   m_voxelSpace.m_frozenVoxels, glm::mat4(1.0f), 1.0f);
@@ -174,8 +177,255 @@ void InternodeManager::OnInspect() {
             ImGui::TreePop();
         }
     }
-
     ImGui::End();
+#pragma region Internode debugging camera
+    auto editorLayer = Application::GetLayer<EditorLayer>();
+    if(!editorLayer) return;
+    ImVec2 viewPortSize;
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
+    ImGui::Begin("Internodes");
+    {
+        if (ImGui::BeginChild("CameraRenderer", ImVec2(0, 0), false,
+                              ImGuiWindowFlags_None | ImGuiWindowFlags_MenuBar)) {
+            if (ImGui::BeginMenuBar()) {
+                if (ImGui::BeginMenu("Settings")) {
+#pragma region Menu
+                    ImGui::Checkbox("Connections", &m_drawBranches);
+                    if (m_drawBranches) {
+
+                        if (ImGui::TreeNodeEx("Connection settings",
+                                              ImGuiTreeNodeFlags_DefaultOpen)) {
+                            ImGui::Checkbox("Auto update", &m_autoUpdate);
+                            ImGui::SliderFloat("Alpha", &m_transparency, 0, 1);
+                            ImGui::DragFloat("Connection width", &m_connectionWidth, 0.01f, 0.01f, 1.0f);
+
+                            static const char *ColorModes[]{"None", "Order", "Level", "Water", "ApicalControl",
+                                                            "WaterPressure",
+                                                            "Proximity", "Inhibitor", "IndexDivider", "IndexRange"};
+                            static int colorModeIndex = 0;
+                            if (ImGui::Combo("Color mode", &colorModeIndex, ColorModes,
+                                             IM_ARRAYSIZE(ColorModes))) {
+                                m_branchColorMode = (BranchColorMode) colorModeIndex;
+                            }
+                            ImGui::DragFloat("Multiplier", &m_branchColorValueMultiplier, 0.01f);
+                            ImGui::DragFloat("Compress", &m_branchColorValueCompressFactor, 0.01f);
+                            switch (m_branchColorMode) {
+                                case BranchColorMode::IndexDivider:
+                                    ImGui::DragInt("Divider", &m_indexDivider, 1, 1, 1024);
+                                    break;
+                                case BranchColorMode::IndexRange:
+                                    ImGui::DragInt("Range Min", &m_indexRangeMin, 1, 0, m_indexRangeMax);
+                                    ImGui::DragInt("Range Max", &m_indexRangeMax, 1, m_indexRangeMin, 999999);
+                                    break;
+                            }
+                            ImGui::TreePop();
+                        }
+                    }
+                    ImGui::Checkbox("Pointers", &m_drawPointers);
+                    if (m_drawPointers) {
+                        if (ImGui::TreeNodeEx("Pointer settings",
+                                              ImGuiTreeNodeFlags_DefaultOpen)) {
+                            ImGui::ColorEdit4("Pointer color", &m_pointerColor.x);
+                            ImGui::DragFloat("Pointer length", &m_pointerLength, 0.01f, 0.01f, 3.0f);
+                            ImGui::DragFloat("Pointer width", &m_pointerWidth, 0.01f, 0.01f, 1.0f);
+                            ImGui::TreePop();
+                        }
+                    }
+#pragma endregion
+                    ImGui::EndMenu();
+                }
+                ImGui::EndMenuBar();
+            }
+            viewPortSize = ImGui::GetWindowSize();
+            viewPortSize.y -= 20;
+            if (viewPortSize.y < 0)
+                viewPortSize.y = 0;
+            m_internodeDebuggingCameraResolutionX = viewPortSize.x;
+            m_internodeDebuggingCameraResolutionY = viewPortSize.y;
+            ImGui::Image(
+                    reinterpret_cast<ImTextureID>(
+                            m_internodeDebuggingCamera->GetTexture()->UnsafeGetGLTexture()->Id()),
+                    viewPortSize, ImVec2(0, 1), ImVec2(1, 0));
+            glm::vec2 mousePosition = glm::vec2(FLT_MAX, FLT_MIN);
+            if (ImGui::IsWindowFocused()) {
+                bool valid = true;
+                mousePosition = InputManager::GetMouseAbsolutePositionInternal(
+                        WindowManager::GetWindow());
+                float xOffset = 0;
+                float yOffset = 0;
+                if (valid) {
+                    if (!m_startMouse) {
+                        m_lastX = mousePosition.x;
+                        m_lastY = mousePosition.y;
+                        m_startMouse = true;
+                    }
+                    xOffset = mousePosition.x - m_lastX;
+                    yOffset = -mousePosition.y + m_lastY;
+                    m_lastX = mousePosition.x;
+                    m_lastY = mousePosition.y;
+#pragma region Scene Camera Controller
+                    if (!m_rightMouseButtonHold &&
+                        InputManager::GetMouseInternal(GLFW_MOUSE_BUTTON_RIGHT,
+                                                       WindowManager::GetWindow())) {
+                        m_rightMouseButtonHold = true;
+                    }
+                    if (m_rightMouseButtonHold &&
+                        !editorLayer->m_lockCamera) {
+                        glm::vec3 front =
+                                editorLayer->m_sceneCameraRotation *
+                                glm::vec3(0, 0, -1);
+                        glm::vec3 right =
+                                editorLayer->m_sceneCameraRotation *
+                                glm::vec3(1, 0, 0);
+                        if (InputManager::GetKeyInternal(GLFW_KEY_W,
+                                                         WindowManager::GetWindow())) {
+                            editorLayer->m_sceneCameraPosition +=
+                                    front * static_cast<float>(Application::Time().DeltaTime()) *
+                                    editorLayer->m_velocity;
+                        }
+                        if (InputManager::GetKeyInternal(GLFW_KEY_S,
+                                                         WindowManager::GetWindow())) {
+                            editorLayer->m_sceneCameraPosition -=
+                                    front * static_cast<float>(Application::Time().DeltaTime()) *
+                                    editorLayer->m_velocity;
+                        }
+                        if (InputManager::GetKeyInternal(GLFW_KEY_A,
+                                                         WindowManager::GetWindow())) {
+                            editorLayer->m_sceneCameraPosition -=
+                                    right * static_cast<float>(Application::Time().DeltaTime()) *
+                                    editorLayer->m_velocity;
+                        }
+                        if (InputManager::GetKeyInternal(GLFW_KEY_D,
+                                                         WindowManager::GetWindow())) {
+                            editorLayer->m_sceneCameraPosition +=
+                                    right * static_cast<float>(Application::Time().DeltaTime()) *
+                                    editorLayer->m_velocity;
+                        }
+                        if (InputManager::GetKeyInternal(GLFW_KEY_LEFT_SHIFT,
+                                                         WindowManager::GetWindow())) {
+                            editorLayer->m_sceneCameraPosition.y +=
+                                    editorLayer->m_velocity *
+                                    static_cast<float>(Application::Time().DeltaTime());
+                        }
+                        if (InputManager::GetKeyInternal(GLFW_KEY_LEFT_CONTROL,
+                                                         WindowManager::GetWindow())) {
+                            editorLayer->m_sceneCameraPosition.y -=
+                                    editorLayer->m_velocity *
+                                    static_cast<float>(Application::Time().DeltaTime());
+                        }
+                        if (xOffset != 0.0f || yOffset != 0.0f) {
+                            editorLayer->m_sceneCameraYawAngle +=
+                                    xOffset * editorLayer->m_sensitivity;
+                            editorLayer->m_sceneCameraPitchAngle +=
+                                    yOffset * editorLayer->m_sensitivity;
+                            if (editorLayer->m_sceneCameraPitchAngle > 89.0f)
+                                editorLayer->m_sceneCameraPitchAngle = 89.0f;
+                            if (editorLayer->m_sceneCameraPitchAngle < -89.0f)
+                                editorLayer->m_sceneCameraPitchAngle = -89.0f;
+
+                            editorLayer->m_sceneCameraRotation =
+                                    Camera::ProcessMouseMovement(
+                                            editorLayer->m_sceneCameraYawAngle,
+                                            editorLayer->m_sceneCameraPitchAngle,
+                                            false);
+                        }
+                    }
+#pragma endregion
+                    if (m_drawBranches) {
+#pragma region Ray selection
+                        m_currentFocusingInternode = Entity();
+                        std::mutex writeMutex;
+                        auto windowPos = ImGui::GetWindowPos();
+                        auto windowSize = ImGui::GetWindowSize();
+                        mousePosition.x -= windowPos.x;
+                        mousePosition.x -= windowSize.x;
+                        mousePosition.y -= windowPos.y;
+                        float minDistance = FLT_MAX;
+                        GlobalTransform cameraLtw;
+                        cameraLtw.m_value =
+                                glm::translate(
+                                        editorLayer->m_sceneCameraPosition) *
+                                glm::mat4_cast(
+                                        editorLayer->m_sceneCameraRotation);
+                        const Ray cameraRay = m_internodeDebuggingCamera->ScreenPointToRay(
+                                cameraLtw, mousePosition);
+                        EntityManager::ForEach<GlobalTransform, InternodeInfo>(
+                                EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(),
+                                m_internodesQuery,
+                                [&, cameraLtw, cameraRay](int i, Entity entity,
+                                                          GlobalTransform &ltw,
+                                                          InternodeInfo &internodeInfo) {
+                                    const glm::vec3 position = ltw.m_value[3];
+                                    const glm::vec3 position2 = position + internodeInfo.m_length * glm::normalize(
+                                            ltw.GetRotation() * glm::vec3(0, 0, -1));
+                                    const auto center = (position + position2) / 2.0f;
+                                    auto dir = cameraRay.m_direction;
+                                    auto pos = cameraRay.m_start;
+                                    const auto radius = internodeInfo.m_thickness;
+                                    const auto height = glm::distance(position2, position);
+                                    if (!cameraRay.Intersect(center, height / 2.0f))
+                                        return;
+
+#pragma region Line Line intersection
+                                    /*
+                 * http://geomalgorithms.com/a07-_distance.html
+                 */
+                                    glm::vec3 u = pos - (pos + dir);
+                                    glm::vec3 v = position - position2;
+                                    glm::vec3 w = (pos + dir) - position2;
+                                    const auto a = dot(u,
+                                                       u); // always >= 0
+                                    const auto b = dot(u, v);
+                                    const auto c = dot(v,
+                                                       v); // always >= 0
+                                    const auto d = dot(u, w);
+                                    const auto e = dot(v, w);
+                                    const auto dotP = a * c - b * b; // always >= 0
+                                    float sc, tc;
+                                    // compute the line parameters of the two closest points
+                                    if (dotP < 0.001f) { // the lines are almost parallel
+                                        sc = 0.0f;
+                                        tc = (b > c ? d / b
+                                                    : e / c); // use the largest denominator
+                                    } else {
+                                        sc = (b * e - c * d) / dotP;
+                                        tc = (a * e - b * d) / dotP;
+                                    }
+                                    // get the difference of the two closest points
+                                    glm::vec3 dP = w + sc * u - tc * v; // =  L1(sc) - L2(tc)
+                                    if (glm::length(dP) > radius)
+                                        return;
+#pragma endregion
+
+                                    const auto distance = glm::distance(
+                                            glm::vec3(cameraLtw.m_value[3]), glm::vec3(center));
+                                    std::lock_guard<std::mutex> lock(writeMutex);
+                                    if (distance < minDistance) {
+                                        minDistance = distance;
+                                        m_currentFocusingInternode = entity;
+                                    }
+                                });
+                        if (InputManager::GetMouseInternal(GLFW_MOUSE_BUTTON_LEFT,
+                                                           WindowManager::GetWindow())) {
+                            if (!m_currentFocusingInternode.Get().IsNull()) {
+                                editorLayer->SetSelectedEntity(
+                                        m_currentFocusingInternode.Get());
+                            }
+                        }
+#pragma endregion
+                    }
+                }
+            }
+        }
+        ImGui::EndChild();
+        auto *window = ImGui::FindWindowByName("Internodes");
+        m_internodeDebuggingCamera->SetEnabled(
+                !(window->Hidden && !window->Collapsed));
+    }
+    ImGui::End();
+    ImGui::PopStyleVar();
+
+#pragma endregion
 }
 
 void InternodeManager::OnCreate() {
@@ -213,13 +463,15 @@ void InternodeManager::LateUpdate() {
 }
 
 void InternodeManager::UpdateBranchColors() {
+    auto editorLayer = Application::GetLayer<EditorLayer>();
+    if(!editorLayer) return;
     auto focusingInternode = Entity();
     auto selectedEntity = Entity();
     if (m_currentFocusingInternode.Get().IsValid()) {
         focusingInternode = m_currentFocusingInternode.Get();
     }
-    if (EditorManager::GetSelectedEntity().IsValid()) {
-        selectedEntity = EditorManager::GetSelectedEntity();
+    if (editorLayer->m_selectedEntity.IsValid()) {
+        selectedEntity = editorLayer->m_selectedEntity;
     }
 
     EntityManager::ForEach<BranchColor, InternodeInfo>(
@@ -428,6 +680,8 @@ void InternodeManager::UpdateBranchPointer(const float &length, const float &wid
 }
 
 void InternodeManager::RenderBranchCylinders() {
+    auto editorLayer = Application::GetLayer<EditorLayer>();
+    if(!editorLayer) return;
     std::vector<BranchCylinder> branchCylinders;
     m_internodesQuery.ToComponentDataArray<BranchCylinder>(EntityManager::GetCurrentScene(),
                                                            branchCylinders);
@@ -437,22 +691,24 @@ void InternodeManager::RenderBranchCylinders() {
     if (!branchCylinders.empty())
         RenderManager::DrawGizmoMeshInstancedColored(
                 DefaultResources::Primitives::Cylinder, m_internodeDebuggingCamera,
-                EditorManager::GetInstance().m_sceneCameraPosition,
-                EditorManager::GetInstance().m_sceneCameraRotation,
+                editorLayer->m_sceneCameraPosition,
+                editorLayer->m_sceneCameraRotation,
                 *reinterpret_cast<std::vector<glm::vec4> *>(&branchColors),
                 *reinterpret_cast<std::vector<glm::mat4> *>(&branchCylinders),
                 glm::mat4(1.0f), 1.0f);
 }
 
 void InternodeManager::RenderBranchPointers() {
+    auto editorLayer = Application::GetLayer<EditorLayer>();
+    if(!editorLayer) return;
     std::vector<BranchPointer> branchPointers;
     m_internodesQuery.ToComponentDataArray<BranchPointer>(EntityManager::GetCurrentScene(),
                                                           branchPointers);
     if (!branchPointers.empty())
         RenderManager::DrawGizmoMeshInstanced(
                 DefaultResources::Primitives::Cylinder, m_internodeDebuggingCamera,
-                EditorManager::GetInstance().m_sceneCameraPosition,
-                EditorManager::GetInstance().m_sceneCameraRotation, m_pointerColor,
+                editorLayer->m_sceneCameraPosition,
+                editorLayer->m_sceneCameraRotation, m_pointerColor,
                 *reinterpret_cast<std::vector<glm::mat4> *>(&branchPointers),
                 glm::mat4(1.0f), 1.0f);
 }
@@ -471,6 +727,9 @@ void InternodeManager::UpdateInternodeCamera() {
         m_rightMouseButtonHold = false;
         m_startMouse = false;
     }
+    auto editorLayer = Application::GetLayer<EditorLayer>();
+    if(!editorLayer) return;
+
     m_internodeDebuggingCamera->ResizeResolution(
             m_internodeDebuggingCameraResolutionX,
             m_internodeDebuggingCameraResolutionY);
@@ -478,11 +737,11 @@ void InternodeManager::UpdateInternodeCamera() {
 
 #pragma region Internode debug camera
     Camera::m_cameraInfoBlock.UpdateMatrices(
-            EditorManager::GetInstance().m_sceneCamera,
-            EditorManager::GetInstance().m_sceneCameraPosition,
-            EditorManager::GetInstance().m_sceneCameraRotation);
+            editorLayer->m_sceneCamera,
+            editorLayer->m_sceneCameraPosition,
+            editorLayer->m_sceneCameraRotation);
     Camera::m_cameraInfoBlock.UploadMatrices(
-            EditorManager::GetInstance().m_sceneCamera);
+            editorLayer->m_sceneCamera);
 #pragma endregion
 
 #pragma region Rendering
@@ -501,254 +760,6 @@ void InternodeManager::UpdateInternodeCamera() {
         if (m_internodeDebuggingCamera->IsEnabled())
             RenderBranchPointers();
     }
-
-#pragma endregion
-
-#pragma region Internode debugging camera
-    ImVec2 viewPortSize;
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
-    ImGui::Begin("Internodes");
-    {
-        if (ImGui::BeginChild("CameraRenderer", ImVec2(0, 0), false,
-                              ImGuiWindowFlags_None | ImGuiWindowFlags_MenuBar)) {
-            if (ImGui::BeginMenuBar()) {
-                if (ImGui::BeginMenu("Settings")) {
-#pragma region Menu
-                    ImGui::Checkbox("Connections", &m_drawBranches);
-                    if (m_drawBranches) {
-
-                        if (ImGui::TreeNodeEx("Connection settings",
-                                              ImGuiTreeNodeFlags_DefaultOpen)) {
-                            ImGui::Checkbox("Auto update", &m_autoUpdate);
-                            ImGui::SliderFloat("Alpha", &m_transparency, 0, 1);
-                            ImGui::DragFloat("Connection width", &m_connectionWidth, 0.01f, 0.01f, 1.0f);
-
-                            static const char *ColorModes[]{"None", "Order", "Level", "Water", "ApicalControl",
-                                                            "WaterPressure",
-                                                            "Proximity", "Inhibitor", "IndexDivider", "IndexRange"};
-                            static int colorModeIndex = 0;
-                            if (ImGui::Combo("Color mode", &colorModeIndex, ColorModes,
-                                             IM_ARRAYSIZE(ColorModes))) {
-                                m_branchColorMode = (BranchColorMode) colorModeIndex;
-                            }
-                            ImGui::DragFloat("Multiplier", &m_branchColorValueMultiplier, 0.01f);
-                            ImGui::DragFloat("Compress", &m_branchColorValueCompressFactor, 0.01f);
-                            switch (m_branchColorMode) {
-                                case BranchColorMode::IndexDivider:
-                                    ImGui::DragInt("Divider", &m_indexDivider, 1, 1, 1024);
-                                    break;
-                                case BranchColorMode::IndexRange:
-                                    ImGui::DragInt("Range Min", &m_indexRangeMin, 1, 0, m_indexRangeMax);
-                                    ImGui::DragInt("Range Max", &m_indexRangeMax, 1, m_indexRangeMin, 999999);
-                                    break;
-                            }
-                            ImGui::TreePop();
-                        }
-                    }
-                    ImGui::Checkbox("Pointers", &m_drawPointers);
-                    if (m_drawPointers) {
-                        if (ImGui::TreeNodeEx("Pointer settings",
-                                              ImGuiTreeNodeFlags_DefaultOpen)) {
-                            ImGui::ColorEdit4("Pointer color", &m_pointerColor.x);
-                            ImGui::DragFloat("Pointer length", &m_pointerLength, 0.01f, 0.01f, 3.0f);
-                            ImGui::DragFloat("Pointer width", &m_pointerWidth, 0.01f, 0.01f, 1.0f);
-                            ImGui::TreePop();
-                        }
-                    }
-#pragma endregion
-                    ImGui::EndMenu();
-                }
-                ImGui::EndMenuBar();
-            }
-            viewPortSize = ImGui::GetWindowSize();
-            viewPortSize.y -= 20;
-            if (viewPortSize.y < 0)
-                viewPortSize.y = 0;
-            m_internodeDebuggingCameraResolutionX = viewPortSize.x;
-            m_internodeDebuggingCameraResolutionY = viewPortSize.y;
-            ImGui::Image(
-                    reinterpret_cast<ImTextureID>(
-                            m_internodeDebuggingCamera->GetTexture()->UnsafeGetGLTexture()->Id()),
-                    viewPortSize, ImVec2(0, 1), ImVec2(1, 0));
-            glm::vec2 mousePosition = glm::vec2(FLT_MAX, FLT_MIN);
-            if (ImGui::IsWindowFocused()) {
-                bool valid = true;
-                mousePosition = InputManager::GetMouseAbsolutePositionInternal(
-                        WindowManager::GetWindow());
-                float xOffset = 0;
-                float yOffset = 0;
-                if (valid) {
-                    if (!m_startMouse) {
-                        m_lastX = mousePosition.x;
-                        m_lastY = mousePosition.y;
-                        m_startMouse = true;
-                    }
-                    xOffset = mousePosition.x - m_lastX;
-                    yOffset = -mousePosition.y + m_lastY;
-                    m_lastX = mousePosition.x;
-                    m_lastY = mousePosition.y;
-#pragma region Scene Camera Controller
-                    if (!m_rightMouseButtonHold &&
-                        InputManager::GetMouseInternal(GLFW_MOUSE_BUTTON_RIGHT,
-                                                       WindowManager::GetWindow())) {
-                        m_rightMouseButtonHold = true;
-                    }
-                    if (m_rightMouseButtonHold &&
-                        !EditorManager::GetInstance().m_lockCamera) {
-                        glm::vec3 front =
-                                EditorManager::GetInstance().m_sceneCameraRotation *
-                                glm::vec3(0, 0, -1);
-                        glm::vec3 right =
-                                EditorManager::GetInstance().m_sceneCameraRotation *
-                                glm::vec3(1, 0, 0);
-                        if (InputManager::GetKeyInternal(GLFW_KEY_W,
-                                                         WindowManager::GetWindow())) {
-                            EditorManager::GetInstance().m_sceneCameraPosition +=
-                                    front * static_cast<float>(Application::Time().DeltaTime()) *
-                                    EditorManager::GetInstance().m_velocity;
-                        }
-                        if (InputManager::GetKeyInternal(GLFW_KEY_S,
-                                                         WindowManager::GetWindow())) {
-                            EditorManager::GetInstance().m_sceneCameraPosition -=
-                                    front * static_cast<float>(Application::Time().DeltaTime()) *
-                                    EditorManager::GetInstance().m_velocity;
-                        }
-                        if (InputManager::GetKeyInternal(GLFW_KEY_A,
-                                                         WindowManager::GetWindow())) {
-                            EditorManager::GetInstance().m_sceneCameraPosition -=
-                                    right * static_cast<float>(Application::Time().DeltaTime()) *
-                                    EditorManager::GetInstance().m_velocity;
-                        }
-                        if (InputManager::GetKeyInternal(GLFW_KEY_D,
-                                                         WindowManager::GetWindow())) {
-                            EditorManager::GetInstance().m_sceneCameraPosition +=
-                                    right * static_cast<float>(Application::Time().DeltaTime()) *
-                                    EditorManager::GetInstance().m_velocity;
-                        }
-                        if (InputManager::GetKeyInternal(GLFW_KEY_LEFT_SHIFT,
-                                                         WindowManager::GetWindow())) {
-                            EditorManager::GetInstance().m_sceneCameraPosition.y +=
-                                    EditorManager::GetInstance().m_velocity *
-                                    static_cast<float>(Application::Time().DeltaTime());
-                        }
-                        if (InputManager::GetKeyInternal(GLFW_KEY_LEFT_CONTROL,
-                                                         WindowManager::GetWindow())) {
-                            EditorManager::GetInstance().m_sceneCameraPosition.y -=
-                                    EditorManager::GetInstance().m_velocity *
-                                    static_cast<float>(Application::Time().DeltaTime());
-                        }
-                        if (xOffset != 0.0f || yOffset != 0.0f) {
-                            EditorManager::GetInstance().m_sceneCameraYawAngle +=
-                                    xOffset * EditorManager::GetInstance().m_sensitivity;
-                            EditorManager::GetInstance().m_sceneCameraPitchAngle +=
-                                    yOffset * EditorManager::GetInstance().m_sensitivity;
-                            if (EditorManager::GetInstance().m_sceneCameraPitchAngle > 89.0f)
-                                EditorManager::GetInstance().m_sceneCameraPitchAngle = 89.0f;
-                            if (EditorManager::GetInstance().m_sceneCameraPitchAngle < -89.0f)
-                                EditorManager::GetInstance().m_sceneCameraPitchAngle = -89.0f;
-
-                            EditorManager::GetInstance().m_sceneCameraRotation =
-                                    Camera::ProcessMouseMovement(
-                                            EditorManager::GetInstance().m_sceneCameraYawAngle,
-                                            EditorManager::GetInstance().m_sceneCameraPitchAngle,
-                                            false);
-                        }
-                    }
-#pragma endregion
-                    if (m_drawBranches) {
-#pragma region Ray selection
-                        m_currentFocusingInternode = Entity();
-                        std::mutex writeMutex;
-                        auto windowPos = ImGui::GetWindowPos();
-                        auto windowSize = ImGui::GetWindowSize();
-                        mousePosition.x -= windowPos.x;
-                        mousePosition.x -= windowSize.x;
-                        mousePosition.y -= windowPos.y;
-                        float minDistance = FLT_MAX;
-                        GlobalTransform cameraLtw;
-                        cameraLtw.m_value =
-                                glm::translate(
-                                        EditorManager::GetInstance().m_sceneCameraPosition) *
-                                glm::mat4_cast(
-                                        EditorManager::GetInstance().m_sceneCameraRotation);
-                        const Ray cameraRay = m_internodeDebuggingCamera->ScreenPointToRay(
-                                cameraLtw, mousePosition);
-                        EntityManager::ForEach<GlobalTransform, InternodeInfo>(
-                                EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(),
-                                m_internodesQuery,
-                                [&, cameraLtw, cameraRay](int i, Entity entity,
-                                                          GlobalTransform &ltw,
-                                                          InternodeInfo &internodeInfo) {
-                                    const glm::vec3 position = ltw.m_value[3];
-                                    const glm::vec3 position2 = position + internodeInfo.m_length * glm::normalize(
-                                            ltw.GetRotation() * glm::vec3(0, 0, -1));
-                                    const auto center = (position + position2) / 2.0f;
-                                    auto dir = cameraRay.m_direction;
-                                    auto pos = cameraRay.m_start;
-                                    const auto radius = internodeInfo.m_thickness;
-                                    const auto height = glm::distance(position2, position);
-                                    if (!cameraRay.Intersect(center, height / 2.0f))
-                                        return;
-
-#pragma region Line Line intersection
-                                    /*
-                 * http://geomalgorithms.com/a07-_distance.html
-                 */
-                                    glm::vec3 u = pos - (pos + dir);
-                                    glm::vec3 v = position - position2;
-                                    glm::vec3 w = (pos + dir) - position2;
-                                    const auto a = dot(u,
-                                                       u); // always >= 0
-                                    const auto b = dot(u, v);
-                                    const auto c = dot(v,
-                                                       v); // always >= 0
-                                    const auto d = dot(u, w);
-                                    const auto e = dot(v, w);
-                                    const auto dotP = a * c - b * b; // always >= 0
-                                    float sc, tc;
-                                    // compute the line parameters of the two closest points
-                                    if (dotP < 0.001f) { // the lines are almost parallel
-                                        sc = 0.0f;
-                                        tc = (b > c ? d / b
-                                                    : e / c); // use the largest denominator
-                                    } else {
-                                        sc = (b * e - c * d) / dotP;
-                                        tc = (a * e - b * d) / dotP;
-                                    }
-                                    // get the difference of the two closest points
-                                    glm::vec3 dP = w + sc * u - tc * v; // =  L1(sc) - L2(tc)
-                                    if (glm::length(dP) > radius)
-                                        return;
-#pragma endregion
-
-                                    const auto distance = glm::distance(
-                                            glm::vec3(cameraLtw.m_value[3]), glm::vec3(center));
-                                    std::lock_guard<std::mutex> lock(writeMutex);
-                                    if (distance < minDistance) {
-                                        minDistance = distance;
-                                        m_currentFocusingInternode = entity;
-                                    }
-                                });
-                        if (InputManager::GetMouseInternal(GLFW_MOUSE_BUTTON_LEFT,
-                                                           WindowManager::GetWindow())) {
-                            if (!m_currentFocusingInternode.Get().IsNull()) {
-                                EditorManager::SetSelectedEntity(
-                                        m_currentFocusingInternode.Get());
-                            }
-                        }
-#pragma endregion
-                    }
-                }
-            }
-        }
-        ImGui::EndChild();
-        auto *window = ImGui::FindWindowByName("Internodes");
-        m_internodeDebuggingCamera->SetEnabled(
-                !(window->Hidden && !window->Collapsed));
-    }
-    ImGui::End();
-    ImGui::PopStyleVar();
-
 #pragma endregion
 }
 

@@ -171,20 +171,18 @@ namespace PlantArchitect {
     template <typename T>
     void InternodeManager::PushInternodeBehaviour(const std::shared_ptr<T>& behaviour) {
         if(!behaviour.get()) return;
-        auto& internodeManager = GetInstance();
         bool search = false;
-        for (auto &i: internodeManager.m_internodeBehaviours) {
+        for (auto &i: m_internodeBehaviours) {
             if (i.Get<IInternodeBehaviour>()->GetTypeName() == std::dynamic_pointer_cast<IInternodeBehaviour>(behaviour)->GetTypeName()) search = true;
         }
         if (!search) {
-            internodeManager.m_internodeBehaviours.emplace_back(std::dynamic_pointer_cast<IInternodeBehaviour>(behaviour));
+            m_internodeBehaviours.emplace_back(std::dynamic_pointer_cast<IInternodeBehaviour>(behaviour));
         }
     }
 
     template<typename T>
     std::shared_ptr<T> InternodeManager::GetInternodeBehaviour() {
-        auto& internodeManager = GetInstance();
-        for (auto &i: internodeManager.m_internodeBehaviours) {
+        for (auto &i: m_internodeBehaviours) {
             if (i.Get<IInternodeBehaviour>()->GetTypeName() == SerializationManager::GetSerializableTypeName<T>()) {
                 return i.Get<T>();
             }

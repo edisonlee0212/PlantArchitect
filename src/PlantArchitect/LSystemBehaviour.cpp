@@ -5,7 +5,7 @@
 #include "LSystemBehaviour.hpp"
 #include "InternodeManager.hpp"
 #include "EmptyInternodeResource.hpp"
-#include "TransformManager.hpp"
+#include "TransformLayer.hpp"
 #include "InternodeFoliage.hpp"
 using namespace PlantArchitect;
 
@@ -121,7 +121,7 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
             currentNode.SetDataComponent(globalTransform);
         }
     }
-    TransformManager::CalculateTransformGraphForDescendents(EntityManager::GetCurrentScene(), root);
+    Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(EntityManager::GetCurrentScene(), root);
     TreeGraphWalkerRootToEnd(root, root, [](Entity parent, Entity child) {
         auto parentGlobalTransform = parent.GetDataComponent<GlobalTransform>();
         auto parentPosition = parentGlobalTransform.GetPosition();

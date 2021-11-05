@@ -2,15 +2,17 @@
 // begins and ends there.
 //
 #include <Application.hpp>
+
 #ifdef RAYTRACERFACILITY
 #include <CUDAModule.hpp>
 #include <RayTracerManager.hpp>
 #include "MLVQRenderer.hpp"
 #endif
+
 #include <EditorManager.hpp>
 #include <Utilities.hpp>
 #include <ProjectManager.hpp>
-#include <PhysicsManager.hpp>
+#include <PhysicsLayer.hpp>
 #include <PostProcessing.hpp>
 
 #include <CubeVolume.hpp>
@@ -32,17 +34,19 @@
 
 
 #include "InternodeManager.hpp"
+
 using namespace PlantArchitect;
 #ifdef RAYTRACERFACILITY
 using namespace RayTracerFacility;
 #endif
 using namespace Scripts;
+
 void EngineSetup();
 
 void RegisterDataComponentMenus();
 
 int main() {
-
+    ClassRegistry::RegisterDataComponent<BranchPhysicsParameters>("BranchPhysicsParameters");
     ClassRegistry::RegisterDataComponent<BranchCylinder>("BranchCylinder");
     ClassRegistry::RegisterDataComponent<BranchCylinderWidth>("BranchCylinderWidth");
     ClassRegistry::RegisterDataComponent<BranchPointer>("BranchPointer");
@@ -95,56 +99,20 @@ int main() {
 
     ApplicationConfigs applicationConfigs;
     applicationConfigs.m_projectPath = "InternodeBehavioursExample/InternodeBehavioursExample.ueproj";
-    Application::Init(applicationConfigs);
+    Application::Create(applicationConfigs);
 #ifdef RAYTRACERFACILITY
-    if (enableRayTracing)
-      RayTracerManager::Init();
+    Application::PushLayer<RayTracerManager>();
 #endif
-    InternodeManager::GetInstance().OnCreate();
-
-    /*
-         * Add all internode behaviours for example.
-         */
-
-    auto spaceColonizationBehaviour = InternodeManager::GetInternodeBehaviour<SpaceColonizationBehaviour>();
-    Entity cubeVolumeEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "CubeVolume");
-    Transform cubeVolumeTransform = cubeVolumeEntity.GetDataComponent<Transform>();
-    cubeVolumeTransform.SetPosition(glm::vec3(0, 12.5, 0));
-    cubeVolumeEntity.SetDataComponent(cubeVolumeTransform);
-
-    auto cubeVolume = cubeVolumeEntity.GetOrSetPrivateComponent<CubeVolume>().lock();
-    cubeVolume->m_minMaxBound.m_min = glm::vec3(-10.0f);
-    cubeVolume->m_minMaxBound.m_max = glm::vec3(10.0f);
-    spaceColonizationBehaviour->PushVolume(std::dynamic_pointer_cast<IVolume>(cubeVolume));
-    /*
-     * Add all pipelines
-     */
-    auto multipleAngleCapturePipelineEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "MultipleAngleCapturePipeline");
-    auto multipleAngleCapturePipeline = multipleAngleCapturePipelineEntity.GetOrSetPrivateComponent<AutoTreeGenerationPipeline>().lock();
-    auto multipleAngleCapture = AssetManager::CreateAsset<MultipleAngleCapture>();
-    auto mainCamera = EntityManager::GetCurrentScene()->m_mainCamera.Get<UniEngine::Camera>();
-    multipleAngleCapture->m_cameraEntity = mainCamera->GetOwner();
-    multipleAngleCapturePipeline->m_pipelineBehaviour = multipleAngleCapture;
-    multipleAngleCapture->m_volume = cubeVolume;
-
+    auto internodesLayer = Application::PushLayer<InternodeManager>();
 #pragma region Engine Loop
-    Application::Run();
+    Application::Start();
 #pragma endregion
-#ifdef RAYTRACERFACILITY
-    if (enableRayTracing)
-    RayTracerManager::End();
-#endif
     Application::End();
 }
 
 void EngineSetup() {
     ProjectManager::SetScenePostLoadActions([=]() {
 #pragma region Engine Setup
-#pragma region Global light settings
-        RenderManager::GetInstance().m_stableFit = false;
-        RenderManager::GetInstance().m_maxShadowDistance = 100;
-        RenderManager::SetSplitRatio(0.15f, 0.3f, 0.5f, 1.0f);
-#pragma endregion
         Transform transform;
         transform.SetEulerRotation(glm::radians(glm::vec3(150, 30, 0)));
 #pragma region Preparations
@@ -165,16 +133,32 @@ void EngineSetup() {
 #pragma endregion
 #pragma endregion
 
+        /*
+         * Add all internode behaviours for example.
+         */
+        auto internodesLayer = Application::GetLayer<InternodeManager>();
+        auto spaceColonizationBehaviour = internodesLayer->GetInternodeBehaviour<SpaceColonizationBehaviour>();
+        Entity cubeVolumeEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "CubeVolume");
+        Transform cubeVolumeTransform = cubeVolumeEntity.GetDataComponent<Transform>();
+        cubeVolumeTransform.SetPosition(glm::vec3(0, 12.5, 0));
+        cubeVolumeEntity.SetDataComponent(cubeVolumeTransform);
 
-
+        auto cubeVolume = cubeVolumeEntity.GetOrSetPrivateComponent<CubeVolume>().lock();
+        cubeVolume->m_minMaxBound.m_min = glm::vec3(-10.0f);
+        cubeVolume->m_minMaxBound.m_max = glm::vec3(10.0f);
+        spaceColonizationBehaviour->PushVolume(std::dynamic_pointer_cast<IVolume>(cubeVolume));
+        /*
+         * Add all pipelines
+         */
+        auto multipleAngleCapturePipelineEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(),
+                                                                              "MultipleAngleCapturePipeline");
+        auto multipleAngleCapturePipeline = multipleAngleCapturePipelineEntity.GetOrSetPrivateComponent<AutoTreeGenerationPipeline>().lock();
+        auto multipleAngleCapture = AssetManager::CreateAsset<MultipleAngleCapture>();
+        multipleAngleCapture->m_cameraEntity = mainCamera->GetOwner();
+        multipleAngleCapturePipeline->m_pipelineBehaviour = multipleAngleCapture;
+        multipleAngleCapture->m_volume = cubeVolume;
 
     });
-
-    Application::RegisterLateUpdateFunction([](){
-        InternodeManager::GetInstance().OnInspect();
-        InternodeManager::GetInstance().LateUpdate();
-    });
-
 }
 
 void RegisterDataComponentMenus() {
@@ -183,30 +167,34 @@ void RegisterDataComponentMenus() {
         ltw->OnInspect();
     });
 
-    EditorManager::RegisterComponentDataInspector<GeneralTreeParameters>([](Entity entity, IDataComponent *data, bool isRoot) {
-        auto *ltw = reinterpret_cast<GeneralTreeParameters *>(data);
-        ltw->OnInspect();
-    });
+    EditorManager::RegisterComponentDataInspector<GeneralTreeParameters>(
+            [](Entity entity, IDataComponent *data, bool isRoot) {
+                auto *ltw = reinterpret_cast<GeneralTreeParameters *>(data);
+                ltw->OnInspect();
+            });
 
-    EditorManager::RegisterComponentDataInspector<InternodeStatus>([](Entity entity, IDataComponent *data, bool isRoot) {
-        auto *ltw = reinterpret_cast<InternodeStatus *>(data);
-        ltw->OnInspect();
-    });
+    EditorManager::RegisterComponentDataInspector<InternodeStatus>(
+            [](Entity entity, IDataComponent *data, bool isRoot) {
+                auto *ltw = reinterpret_cast<InternodeStatus *>(data);
+                ltw->OnInspect();
+            });
 
-    EditorManager::RegisterComponentDataInspector<InternodeWaterPressure>([](Entity entity, IDataComponent *data, bool isRoot) {
-        auto *ltw = reinterpret_cast<InternodeWaterPressure *>(data);
-        ltw->OnInspect();
-    });
+    EditorManager::RegisterComponentDataInspector<InternodeWaterPressure>(
+            [](Entity entity, IDataComponent *data, bool isRoot) {
+                auto *ltw = reinterpret_cast<InternodeWaterPressure *>(data);
+                ltw->OnInspect();
+            });
 
     EditorManager::RegisterComponentDataInspector<InternodeWater>([](Entity entity, IDataComponent *data, bool isRoot) {
         auto *ltw = reinterpret_cast<InternodeWater *>(data);
         ltw->OnInspect();
     });
 
-    EditorManager::RegisterComponentDataInspector<InternodeIllumination>([](Entity entity, IDataComponent *data, bool isRoot) {
-        auto *ltw = reinterpret_cast<InternodeIllumination *>(data);
-        ltw->OnInspect();
-    });
+    EditorManager::RegisterComponentDataInspector<InternodeIllumination>(
+            [](Entity entity, IDataComponent *data, bool isRoot) {
+                auto *ltw = reinterpret_cast<InternodeIllumination *>(data);
+                ltw->OnInspect();
+            });
 
     EditorManager::RegisterComponentDataInspector<SpaceColonizationParameters>(
             [](Entity entity, IDataComponent *data, bool isRoot) {

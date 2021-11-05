@@ -6,7 +6,7 @@
 #include "InternodeManager.hpp"
 #include <DefaultInternodeResource.hpp>
 #include "EmptyInternodeResource.hpp"
-#include "TransformManager.hpp"
+#include "TransformLayer.hpp"
 #include "DefaultInternodePhyllotaxis.hpp"
 
 using namespace PlantArchitect;
@@ -532,7 +532,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
             rootGlobalTransform.m_value = rootTransform.m_value;
         }
         root.SetDataComponent(rootGlobalTransform);
-        TransformManager::CalculateTransformGraphForDescendents(EntityManager::GetCurrentScene(), root);
+        Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(EntityManager::GetCurrentScene(), root);
     });
 #pragma endregion
 #pragma region PostProcess

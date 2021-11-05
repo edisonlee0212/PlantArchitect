@@ -6,8 +6,8 @@
 #include "EmptyInternodeResource.hpp"
 #include "CubeVolume.hpp"
 #include "InternodeManager.hpp"
-#include "TransformManager.hpp"
-
+#include "TransformLayer.hpp"
+#include "EditorLayer.hpp"
 using namespace PlantArchitect;
 
 void SpaceColonizationBehaviour::OnCreate() {
@@ -182,7 +182,7 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
                 rootLocalTransform.m_value = glm::inverse(parentGlobalTransform.m_value) * globalTransform.m_value;
                 root.SetDataComponent(rootLocalTransform);
             }
-            TransformManager::CalculateTransformGraphForDescendents(EntityManager::GetCurrentScene(), root);
+            Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(EntityManager::GetCurrentScene(), root);
         }).share());
     }
     for (const auto &i: results)
@@ -297,13 +297,18 @@ void SpaceColonizationBehaviour::OnInspect() {
                     displayMatrices[i] = glm::translate(m_attractionPoints[i]) * glm::scale(glm::vec3(1.0f));
                 }
             }
+
             RenderManager::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube, renderColor,
                                                   displayMatrices, glm::mat4(1.0f), renderSize);
-            RenderManager::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube,
-                                                  InternodeManager::GetInstance().m_internodeDebuggingCamera,
-                                                  EditorManager::GetInstance().m_sceneCameraPosition,
-                                                  EditorManager::GetInstance().m_sceneCameraRotation, renderColor,
-                                                  displayMatrices, glm::mat4(1.0f), renderSize);
+            auto editorLayer = Application::GetLayer<EditorLayer>();
+            auto internodeLayer = Application::GetLayer<InternodeManager>();
+            if(editorLayer && internodeLayer) {
+                RenderManager::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube,
+                                                      internodeLayer->m_internodeDebuggingCamera,
+                                                      editorLayer->m_sceneCameraPosition,
+                                                      editorLayer->m_sceneCameraRotation, renderColor,
+                                                      displayMatrices, glm::mat4(1.0f), renderSize);
+            }
         }
         ImGui::TreePop();
     }

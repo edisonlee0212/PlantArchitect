@@ -38,6 +38,7 @@ using namespace Scripts;
 void EngineSetup();
 void RegisterDataComponentMenus();
 int main() {
+    ClassRegistry::RegisterDataComponent<BranchPhysicsParameters>("BranchPhysicsParameters");
     ClassRegistry::RegisterDataComponent<BranchCylinder>("BranchCylinder");
     ClassRegistry::RegisterDataComponent<BranchCylinderWidth>("BranchCylinderWidth");
     ClassRegistry::RegisterDataComponent<BranchPointer>("BranchPointer");
@@ -89,30 +90,21 @@ int main() {
     RegisterDataComponentMenus();
 
     ApplicationConfigs applicationConfigs;
-    Application::Init(applicationConfigs);
-    InternodeManager::GetInstance().OnCreate();
+    Application::Create(applicationConfigs);
 #ifdef RAYTRACERFACILITY
     if (enableRayTracing)
-      RayTracerManager::Init();
+        Application::PushLayer<RayTracerManager>();
 #endif
+    auto internodesLayer = Application::PushLayer<InternodeManager>();
 #pragma region Engine Loop
-    Application::Run();
+    Application::Start();
 #pragma endregion
-#ifdef RAYTRACERFACILITY
-    if (enableRayTracing)
-    RayTracerManager::End();
-#endif
     Application::End();
 }
 
 void EngineSetup() {
     ProjectManager::SetScenePostLoadActions([=]() {
 #pragma region Engine Setup
-#pragma region Global light settings
-        RenderManager::GetInstance().m_stableFit = false;
-        RenderManager::GetInstance().m_maxShadowDistance = 100;
-        RenderManager::SetSplitRatio(0.15f, 0.3f, 0.5f, 1.0f);
-#pragma endregion
         Transform transform;
         transform.SetEulerRotation(glm::radians(glm::vec3(150, 30, 0)));
 #pragma region Preparations
@@ -133,10 +125,6 @@ void EngineSetup() {
 #pragma endregion
 #pragma endregion
 
-    });
-    Application::RegisterLateUpdateFunction([](){
-        InternodeManager::GetInstance().OnInspect();
-        InternodeManager::GetInstance().LateUpdate();
     });
 }
 

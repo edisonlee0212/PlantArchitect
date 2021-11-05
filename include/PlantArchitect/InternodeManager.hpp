@@ -3,6 +3,7 @@
 #include "plant_architect_export.h"
 #include <VoxelSpace.hpp>
 #include "InternodeDataComponents.hpp"
+#include "ILayer.hpp"
 using namespace UniEngine;
 namespace PlantArchitect {
     enum class BranchColorMode{
@@ -21,31 +22,31 @@ namespace PlantArchitect {
 
 
     class IInternodeBehaviour;
-    class PLANT_ARCHITECT_API InternodeManager : public ISingleton<InternodeManager> {
-        static void PreparePhysics(const Entity& entity, const Entity& child, const BranchPhysicsParameters& branchPhysicsParameters);
+    class PLANT_ARCHITECT_API InternodeManager : public ILayer {
+        void PreparePhysics(const Entity& entity, const Entity& child, const BranchPhysicsParameters& branchPhysicsParameters);
 
     public:
-        static void PreparePhysics();
+        void PreparePhysics();
 
         /**
          * The EntityQuery for filtering all internodes.
          */
         EntityQuery m_internodesQuery;
 
-        void LateUpdate();
+        void LateUpdate() override;
 
-        static void Simulate(int iterations);
+        void Simulate(int iterations);
 
-        void OnCreate();
+        void OnCreate() override;
 
-        void OnInspect();
+        void OnInspect() override;
 
         std::shared_ptr<Camera> m_internodeDebuggingCamera;
 
         template<typename T>
-        static void PushInternodeBehaviour(const std::shared_ptr<T>& behaviour);
+        void PushInternodeBehaviour(const std::shared_ptr<T>& behaviour);
         template<typename T>
-        static std::shared_ptr<T> GetInternodeBehaviour();
+        std::shared_ptr<T> GetInternodeBehaviour();
         /**
          * Check if the entity is valid internode.
          * @param target Target for check.

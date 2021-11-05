@@ -84,9 +84,10 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
                 //path here
                 lString->SetPathAndSave(
                         lStringFolder / (std::to_string(m_generationAmount - m_remainingInstanceAmount) + ".lstring"));
-                InternodeManager::GetInstance().m_branchColorMode = BranchColorMode::IndexDivider;
-                InternodeManager::GetInstance().m_indexDivider = m_targetDivider;
-                InternodeManager::GetInstance().UpdateBranchColors();
+                auto internodeLayer = Application::GetLayer<InternodeManager>();
+                internodeLayer->m_branchColorMode = BranchColorMode::IndexDivider;
+                internodeLayer->m_indexDivider = m_targetDivider;
+                internodeLayer->UpdateBranchColors();
             }
             behaviour->GenerateSkinnedMeshes();
             if (m_exportOBJ) {
@@ -321,7 +322,7 @@ bool MultipleAngleCapture::SetUpCamera() {
 }
 
 void MultipleAngleCapture::RenderBranchCapture() {
-    auto internodeQuery = InternodeManager::GetInstance().m_internodesQuery;
+    auto internodeQuery = Application::GetLayer<InternodeManager>()->m_internodesQuery;
     /*
     EntityManager::ForEach<BranchColor, InternodeInfo>(
             EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(),
