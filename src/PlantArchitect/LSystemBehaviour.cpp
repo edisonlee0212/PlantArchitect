@@ -7,6 +7,7 @@
 #include "EmptyInternodeResource.hpp"
 #include "TransformLayer.hpp"
 #include "InternodeFoliage.hpp"
+
 using namespace PlantArchitect;
 
 void LSystemBehaviour::OnInspect() {
@@ -17,7 +18,7 @@ void LSystemBehaviour::OnInspect() {
     static AssetRef tempStoredLString;
     EditorManager::DragAndDropButton<LString>(tempStoredLString, "Create tree from LString here: ");
     auto lString = tempStoredLString.Get<LString>();
-    if(lString) FormPlant(lString, parameters);
+    if (lString) FormPlant(lString, parameters);
     tempStoredLString.Clear();
 
     static float resolution = 0.02;
@@ -43,101 +44,103 @@ void LSystemBehaviour::OnCreate() {
 
 Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, const LSystemParameters &parameters) {
     auto &commands = lString->commands;
-    if (commands.empty()) return Entity();
-    Entity currentNode = Retrieve();
-    Entity root = currentNode;
-    currentNode.SetDataComponent(parameters);
-    InternodeInfo newInfo;
-    newInfo.m_length = 0;
-    newInfo.m_thickness = 0.1f;
-    newInfo.m_index = 0;
-    currentNode.SetDataComponent(newInfo);
-    int index = 0;
+    if (commands.empty()) return {};
+    LSystemState currentState;
+    std::vector<LSystemState> stateStack;
+    std::vector<Entity> entityStack;
+    int index = 1;
+    Entity root;
+    Entity internode;
     for (const auto &command: commands) {
-        Transform transform = currentNode.GetDataComponent<Transform>();
-        InternodeInfo internodeInfo = currentNode.GetDataComponent<InternodeInfo>();
         switch (command.m_type) {
             case LSystemCommandType::Forward: {
-                internodeInfo.m_length += command.m_value;
-                currentNode.SetDataComponent(internodeInfo);
+                InternodeInfo newInfo;
+                newInfo.m_index = index;
+                if (internode.IsNull()) {
+                    newInfo.m_localRotation = glm::quat(currentState.m_eulerRotation);
+                    root = internode = Retrieve();
+                    internode.SetDataComponent(parameters);
+                } else {
+                    auto previousGlobalTransform = internode.GetDataComponent<GlobalTransform>();
+                    newInfo.m_localRotation = glm::inverse(previousGlobalTransform.GetRotation()) *
+                                              glm::quat(currentState.m_eulerRotation);
+                    internode = Retrieve(internode);
+                    internode.SetDataComponent(parameters);
+                }
+                newInfo.m_length = command.m_value;
+                newInfo.m_thickness = 0.2f;
+                internode.SetDataComponent(newInfo);
+                GlobalTransform globalTransform;
+                globalTransform.SetEulerRotation(currentState.m_eulerRotation);
+                globalTransform.SetPosition(currentState.m_position);
+                internode.SetDataComponent(globalTransform);
+                currentState.m_position +=
+                        glm::quat(currentState.m_eulerRotation) * glm::vec3(0, 0, -1) * command.m_value;
             }
-                continue;
+                break;
             case LSystemCommandType::PitchUp: {
-                auto currentEulerRotation = transform.GetEulerRotation();
-                currentEulerRotation.x += command.m_value;
-                transform.SetEulerRotation(currentEulerRotation);
+                currentState.m_eulerRotation.x += command.m_value;
             }
                 break;
             case LSystemCommandType::PitchDown: {
-                auto currentEulerRotation = transform.GetEulerRotation();
-                currentEulerRotation.x -= command.m_value;
-                transform.SetEulerRotation(currentEulerRotation);
+                currentState.m_eulerRotation.x -= command.m_value;
             }
                 break;
             case LSystemCommandType::TurnLeft: {
-                auto currentEulerRotation = transform.GetEulerRotation();
-                currentEulerRotation.y += command.m_value;
-                transform.SetEulerRotation(currentEulerRotation);
+                currentState.m_eulerRotation.y += command.m_value;
             }
                 break;
             case LSystemCommandType::TurnRight: {
-                auto currentEulerRotation = transform.GetEulerRotation();
-                currentEulerRotation.y -= command.m_value;
-                transform.SetEulerRotation(currentEulerRotation);
+                currentState.m_eulerRotation.y -= command.m_value;
             }
                 break;
             case LSystemCommandType::RollLeft: {
-                auto currentEulerRotation = transform.GetEulerRotation();
-                currentEulerRotation.z += command.m_value;
-                transform.SetEulerRotation(currentEulerRotation);
+                currentState.m_eulerRotation.z += command.m_value;
             }
                 break;
             case LSystemCommandType::RollRight: {
-                auto currentEulerRotation = transform.GetEulerRotation();
-                currentEulerRotation.z -= command.m_value;
-                transform.SetEulerRotation(currentEulerRotation);
+                currentState.m_eulerRotation.z -= command.m_value;
             }
                 break;
             case LSystemCommandType::Push: {
-                currentNode = Retrieve(currentNode);
-                currentNode.SetDataComponent(parameters);
-                InternodeInfo newInfo;
-                newInfo.m_length = 0;
-                newInfo.m_thickness = 0.1f;
-                newInfo.m_index = index;
-                currentNode.SetDataComponent(newInfo);
-                continue;
+                stateStack.push_back(currentState);
+                entityStack.push_back(internode);
+                break;
             }
             case LSystemCommandType::Pop: {
-                currentNode = currentNode.GetParent();
-                continue;
+                currentState = stateStack.back();
+                stateStack.pop_back();
+                internode = entityStack.back();
+                entityStack.pop_back();
+                break;
             }
         }
         index++;
-        currentNode.SetDataComponent(transform);
-        if (currentNode == root) {
-            GlobalTransform globalTransform;
-            globalTransform.m_value = transform.m_value;
-            currentNode.SetDataComponent(globalTransform);
-        }
     }
-    Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(EntityManager::GetCurrentScene(), root);
-    TreeGraphWalkerRootToEnd(root, root, [](Entity parent, Entity child) {
-        auto parentGlobalTransform = parent.GetDataComponent<GlobalTransform>();
-        auto parentPosition = parentGlobalTransform.GetPosition();
-        auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
-        auto childPosition = parentPosition +
-                             parentInternodeInfo.m_length * (parentGlobalTransform.GetRotation() * glm::vec3(0, 0, -1));
-        auto childGlobalTransform = child.GetDataComponent<GlobalTransform>();
-        childGlobalTransform.SetPosition(childPosition);
-        child.SetDataComponent(childGlobalTransform);
-    });
-
+    /*Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(EntityManager::GetCurrentScene(),
+                                                                                   root);
+                                                                                   */
+    /*
+     TreeGraphWalkerRootToEnd(root, root, [](Entity parent, Entity child) {
+         auto parentGlobalTransform = parent.GetDataComponent<GlobalTransform>();
+         auto parentPosition = parentGlobalTransform.GetPosition();
+         auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
+         auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
+         auto parentRotation = parentGlobalTransform.GetRotation();
+         auto childPosition = parentPosition +
+                              parentInternodeInfo.m_length * (parentRotation * glm::vec3(0, 0, -1));
+         auto childRotation = parentRotation * childInternodeInfo.m_localRotation;
+         auto childGlobalTransform = child.GetDataComponent<GlobalTransform>();
+         childGlobalTransform.SetRotation(childRotation);
+         childGlobalTransform.SetPosition(childPosition);
+         child.SetDataComponent(childGlobalTransform);
+     });
+ */
     TreeGraphWalkerEndToRoot(root, root, [&](Entity parent) {
         float thicknessCollection = 0.0f;
         auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
         auto parameters = parent.GetDataComponent<LSystemParameters>();
-        parent.ForEachChild([&](const std::shared_ptr<Scene>& scene, Entity child) {
+        parent.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
             if (!InternodeCheck(child)) return;
             auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
             thicknessCollection += glm::pow(childInternodeInfo.m_thickness,

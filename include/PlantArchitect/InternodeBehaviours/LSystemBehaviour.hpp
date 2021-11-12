@@ -69,6 +69,12 @@ namespace PlantArchitect {
 
     };
 
+    struct PLANT_ARCHITECT_API LSystemState{
+        glm::vec3 m_eulerRotation = glm::vec3(0.0f);
+        glm::vec3 m_position = glm::vec3(0.0f);
+        int m_index = 0;
+    };
+
     class PLANT_ARCHITECT_API LSystemBehaviour : public IInternodeBehaviour {
     protected:
         bool InternalInternodeCheck(const Entity &target) override;

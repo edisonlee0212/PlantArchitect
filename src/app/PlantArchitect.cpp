@@ -2,15 +2,19 @@
 // begins and ends there.
 //
 #include <Application.hpp>
+
 #ifdef RAYTRACERFACILITY
+
 #include <CUDAModule.hpp>
 #include <RayTracerManager.hpp>
 #include "MLVQRenderer.hpp"
+
 #endif
+
 #include <EditorManager.hpp>
 #include <Utilities.hpp>
 #include <ProjectManager.hpp>
-#include <PhysicsManager.hpp>
+#include <PhysicsLayer.hpp>
 #include <PostProcessing.hpp>
 #include <CubeVolume.hpp>
 #include <ClassRegistry.hpp>
@@ -36,7 +40,9 @@ using namespace RayTracerFacility;
 using namespace Scripts;
 
 void EngineSetup();
+
 void RegisterDataComponentMenus();
+
 int main() {
     ClassRegistry::RegisterDataComponent<BranchPhysicsParameters>("BranchPhysicsParameters");
     ClassRegistry::RegisterDataComponent<BranchCylinder>("BranchCylinder");
@@ -50,7 +56,7 @@ int main() {
     ClassRegistry::RegisterPrivateComponent<RadialBoundingVolume>("RadialBoundingVolume");
 #ifdef RAYTRACERFACILITY
     ClassRegistry::RegisterPrivateComponent<MLVQRenderer>(
-      "MLVQRenderer");
+            "MLVQRenderer");
 #endif
     ClassRegistry::RegisterPrivateComponent<DepthCamera>("DepthCamera");
 
@@ -92,8 +98,7 @@ int main() {
     ApplicationConfigs applicationConfigs;
     Application::Create(applicationConfigs);
 #ifdef RAYTRACERFACILITY
-    if (enableRayTracing)
-        Application::PushLayer<RayTracerManager>();
+    Application::PushLayer<RayTracerManager>();
 #endif
     auto internodesLayer = Application::PushLayer<InternodeManager>();
 #pragma region Engine Loop
@@ -131,9 +136,37 @@ void EngineSetup() {
 void RegisterDataComponentMenus() {
     EditorManager::RegisterComponentDataInspector<InternodeInfo>([](Entity entity, IDataComponent *data, bool isRoot) {
         auto *ltw = reinterpret_cast<InternodeInfo *>(data);
-        ImGui::DragFloat("Thickness", &ltw->m_thickness, 0.01f);
-        ImGui::DragFloat("Length", &ltw->m_length, 0.01f);
+        ltw->OnInspect();
     });
+
+    EditorManager::RegisterComponentDataInspector<GeneralTreeParameters>(
+            [](Entity entity, IDataComponent *data, bool isRoot) {
+                auto *ltw = reinterpret_cast<GeneralTreeParameters *>(data);
+                ltw->OnInspect();
+            });
+
+    EditorManager::RegisterComponentDataInspector<InternodeStatus>(
+            [](Entity entity, IDataComponent *data, bool isRoot) {
+                auto *ltw = reinterpret_cast<InternodeStatus *>(data);
+                ltw->OnInspect();
+            });
+
+    EditorManager::RegisterComponentDataInspector<InternodeWaterPressure>(
+            [](Entity entity, IDataComponent *data, bool isRoot) {
+                auto *ltw = reinterpret_cast<InternodeWaterPressure *>(data);
+                ltw->OnInspect();
+            });
+
+    EditorManager::RegisterComponentDataInspector<InternodeWater>([](Entity entity, IDataComponent *data, bool isRoot) {
+        auto *ltw = reinterpret_cast<InternodeWater *>(data);
+        ltw->OnInspect();
+    });
+
+    EditorManager::RegisterComponentDataInspector<InternodeIllumination>(
+            [](Entity entity, IDataComponent *data, bool isRoot) {
+                auto *ltw = reinterpret_cast<InternodeIllumination *>(data);
+                ltw->OnInspect();
+            });
 
     EditorManager::RegisterComponentDataInspector<SpaceColonizationParameters>(
             [](Entity entity, IDataComponent *data, bool isRoot) {
