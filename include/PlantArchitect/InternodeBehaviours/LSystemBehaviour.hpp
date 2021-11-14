@@ -12,10 +12,11 @@ namespace PlantArchitect {
         float m_internodeLength = 1.0f;
         float m_thicknessFactor = 0.5f;
         float m_endNodeThickness = 0.02f;
+
         void OnInspect();
     };
 
-    enum class PLANT_ARCHITECT_API LSystemCommandType{
+    enum class PLANT_ARCHITECT_API LSystemCommandType {
         /**
          * Command F
          */
@@ -54,35 +55,42 @@ namespace PlantArchitect {
         Pop
     };
 
-    struct PLANT_ARCHITECT_API LSystemCommand{
+    struct PLANT_ARCHITECT_API LSystemCommand {
         LSystemCommandType m_type;
         float m_value;
     };
 
-    class PLANT_ARCHITECT_API LString : public IAsset{
+    class PLANT_ARCHITECT_API LString : public IAsset {
     protected:
         bool SaveInternal(const std::filesystem::path &path) override;
+
         bool LoadInternal(const std::filesystem::path &path) override;
+
     public:
-        void ParseLString(const std::string& string);
+        void ParseLString(const std::string &string);
+
         std::vector<LSystemCommand> commands;
 
     };
 
-    struct PLANT_ARCHITECT_API LSystemState{
+    struct PLANT_ARCHITECT_API LSystemState {
         glm::vec3 m_eulerRotation = glm::vec3(0.0f);
-        glm::vec3 m_position = glm::vec3(0.0f);
         int m_index = 0;
     };
 
     class PLANT_ARCHITECT_API LSystemBehaviour : public IInternodeBehaviour {
     protected:
         bool InternalInternodeCheck(const Entity &target) override;
+
     public:
-        Entity FormPlant(const std::shared_ptr<LString>& lString, const LSystemParameters& parameters);
+        Entity FormPlant(const std::shared_ptr<LString> &lString, const LSystemParameters &parameters);
+
         void OnInspect() override;
+
         void OnCreate() override;
+
         Entity Retrieve() override;
+
         Entity Retrieve(const Entity &parent) override;
     };
 }

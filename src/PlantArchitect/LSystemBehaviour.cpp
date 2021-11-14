@@ -70,12 +70,6 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
                 newInfo.m_length = command.m_value;
                 newInfo.m_thickness = 0.2f;
                 internode.SetDataComponent(newInfo);
-                GlobalTransform globalTransform;
-                globalTransform.SetEulerRotation(currentState.m_eulerRotation);
-                globalTransform.SetPosition(currentState.m_position);
-                internode.SetDataComponent(globalTransform);
-                currentState.m_position +=
-                        glm::quat(currentState.m_eulerRotation) * glm::vec3(0, 0, -1) * command.m_value;
             }
                 break;
             case LSystemCommandType::PitchUp: {
@@ -104,6 +98,7 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
                 break;
             case LSystemCommandType::Push: {
                 stateStack.push_back(currentState);
+                currentState.m_eulerRotation = glm::vec3(0.0f);
                 entityStack.push_back(internode);
                 break;
             }
@@ -117,25 +112,29 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
         }
         index++;
     }
-    /*Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(EntityManager::GetCurrentScene(),
+
+    Transform rootTransform;
+    rootTransform.SetRotation(root.GetDataComponent<InternodeInfo>().m_localRotation);
+    root.SetDataComponent(rootTransform);
+
+
+    TreeGraphWalkerRootToEnd(root, root, [](Entity parent, Entity child) {
+        auto parentGlobalTransform = parent.GetDataComponent<GlobalTransform>();
+        auto parentPosition = parentGlobalTransform.GetPosition();
+        auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
+        auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
+        auto parentRotation = parentGlobalTransform.GetRotation();
+        auto childPosition = parentInternodeInfo.m_length * (parentRotation * glm::vec3(0, 0, -1));
+        auto childRotation = childInternodeInfo.m_localRotation;
+        auto childTransform = child.GetDataComponent<Transform>();
+        childTransform.SetRotation(childRotation);
+        childTransform.SetPosition(childPosition);
+        child.SetDataComponent(childTransform);
+    });
+
+    Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(EntityManager::GetCurrentScene(),
                                                                                    root);
-                                                                                   */
-    /*
-     TreeGraphWalkerRootToEnd(root, root, [](Entity parent, Entity child) {
-         auto parentGlobalTransform = parent.GetDataComponent<GlobalTransform>();
-         auto parentPosition = parentGlobalTransform.GetPosition();
-         auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
-         auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
-         auto parentRotation = parentGlobalTransform.GetRotation();
-         auto childPosition = parentPosition +
-                              parentInternodeInfo.m_length * (parentRotation * glm::vec3(0, 0, -1));
-         auto childRotation = parentRotation * childInternodeInfo.m_localRotation;
-         auto childGlobalTransform = child.GetDataComponent<GlobalTransform>();
-         childGlobalTransform.SetRotation(childRotation);
-         childGlobalTransform.SetPosition(childPosition);
-         child.SetDataComponent(childGlobalTransform);
-     });
- */
+
     TreeGraphWalkerEndToRoot(root, root, [&](Entity parent) {
         float thicknessCollection = 0.0f;
         auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
