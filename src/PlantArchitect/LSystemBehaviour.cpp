@@ -263,6 +263,7 @@ void LString::ParseLString(const std::string &string) {
     std::string line;
     int stackCheck = 0;
     while (std::getline(iss, line)) {
+        if(line.empty()) continue;
         LSystemCommand command;
         switch (line[0]) {
             case 'F': {
@@ -304,6 +305,7 @@ void LString::ParseLString(const std::string &string) {
             }
                 break;
         }
+        if (command.m_type == LSystemCommandType::Unknown) continue;
         if (command.m_type != LSystemCommandType::Push && command.m_type != LSystemCommandType::Pop) {
             command.m_value = std::stof(line.substr(2));
             if (command.m_type == LSystemCommandType::Forward && command.m_value > 2.0f) {

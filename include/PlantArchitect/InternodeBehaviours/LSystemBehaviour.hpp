@@ -17,6 +17,7 @@ namespace PlantArchitect {
     };
 
     enum class PLANT_ARCHITECT_API LSystemCommandType {
+        Unknown,
         /**
          * Command F
          */
@@ -56,8 +57,8 @@ namespace PlantArchitect {
     };
 
     struct PLANT_ARCHITECT_API LSystemCommand {
-        LSystemCommandType m_type;
-        float m_value;
+        LSystemCommandType m_type = LSystemCommandType::Unknown;
+        float m_value = 0.0f;
     };
 
     class PLANT_ARCHITECT_API LString : public IAsset {
