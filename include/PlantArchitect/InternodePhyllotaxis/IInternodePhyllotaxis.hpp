@@ -3,7 +3,7 @@
 #include <plant_architect_export.h>
 #include "Application.hpp"
 #include "Internode.hpp"
-#include "InternodeManager.hpp"
+#include "InternodeLayer.hpp"
 using namespace UniEngine;
 namespace PlantArchitect {
     class PLANT_ARCHITECT_API IInternodePhyllotaxis : public IAsset {

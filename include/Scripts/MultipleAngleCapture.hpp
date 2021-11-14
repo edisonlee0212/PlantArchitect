@@ -1,5 +1,5 @@
 #pragma once
-#include <InternodeManager.hpp>
+#include <InternodeLayer.hpp>
 #include <AutoTreeGenerationPipeline.hpp>
 
 using namespace PlantArchitect;

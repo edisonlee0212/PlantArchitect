@@ -22,7 +22,7 @@ namespace PlantArchitect {
 
 
     class IInternodeBehaviour;
-    class PLANT_ARCHITECT_API InternodeManager : public ILayer {
+    class PLANT_ARCHITECT_API InternodeLayer : public ILayer {
         void PreparePhysics(const Entity& entity, const Entity& child, const BranchPhysicsParameters& branchPhysicsParameters);
 
     public:

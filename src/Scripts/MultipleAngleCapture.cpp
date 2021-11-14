@@ -5,7 +5,7 @@
 #include "MultipleAngleCapture.hpp"
 #include "DepthCamera.hpp"
 #include "EntityManager.hpp"
-#include "InternodeManager.hpp"
+#include "InternodeLayer.hpp"
 #include "AssetManager.hpp"
 #include "LSystemBehaviour.hpp"
 #include "IVolume.hpp"
@@ -84,7 +84,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
                 //path here
                 lString->SetPathAndSave(
                         lStringFolder / (std::to_string(m_generationAmount - m_remainingInstanceAmount) + ".lstring"));
-                auto internodeLayer = Application::GetLayer<InternodeManager>();
+                auto internodeLayer = Application::GetLayer<InternodeLayer>();
                 internodeLayer->m_branchColorMode = BranchColorMode::IndexDivider;
                 internodeLayer->m_indexDivider = m_targetDivider;
                 internodeLayer->UpdateBranchColors();
@@ -322,7 +322,7 @@ bool MultipleAngleCapture::SetUpCamera() {
 }
 
 void MultipleAngleCapture::RenderBranchCapture() {
-    auto internodeQuery = Application::GetLayer<InternodeManager>()->m_internodesQuery;
+    auto internodeQuery = Application::GetLayer<InternodeLayer>()->m_internodesQuery;
     /*
     EntityManager::ForEach<BranchColor, InternodeInfo>(
             EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(),

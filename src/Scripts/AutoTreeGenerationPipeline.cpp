@@ -42,7 +42,7 @@ void AutoTreeGenerationPipeline::Update() {
                 }
                 break;
             case AutoTreeGenerationPipelineStatus::Growth: {
-                Application::GetLayer<InternodeManager>()->Simulate(pipelineBehaviour->m_perTreeGrowthIteration);
+                Application::GetLayer<InternodeLayer>()->Simulate(pipelineBehaviour->m_perTreeGrowthIteration);
                 m_status = AutoTreeGenerationPipelineStatus::AfterGrowth;
                 pipelineBehaviour->m_skipCurrentFrame = true;
             }
@@ -160,15 +160,15 @@ void AutoTreeGenerationPipeline::UpdateInternodeBehaviour() {
     switch (m_behaviourType) {
         case BehaviourType::GeneralTree:
             m_currentInternodeBehaviour = std::dynamic_pointer_cast<IInternodeBehaviour>(
-                    Application::GetLayer<InternodeManager>()->GetInternodeBehaviour<GeneralTreeBehaviour>());
+                    Application::GetLayer<InternodeLayer>()->GetInternodeBehaviour<GeneralTreeBehaviour>());
             break;
         case BehaviourType::LSystem:
             m_currentInternodeBehaviour = std::dynamic_pointer_cast<IInternodeBehaviour>(
-                    Application::GetLayer<InternodeManager>()->GetInternodeBehaviour<LSystemBehaviour>());
+                    Application::GetLayer<InternodeLayer>()->GetInternodeBehaviour<LSystemBehaviour>());
             break;
         case BehaviourType::SpaceColonization:
             m_currentInternodeBehaviour = std::dynamic_pointer_cast<IInternodeBehaviour>(
-                    Application::GetLayer<InternodeManager>()->GetInternodeBehaviour<SpaceColonizationBehaviour>());
+                    Application::GetLayer<InternodeLayer>()->GetInternodeBehaviour<SpaceColonizationBehaviour>());
             break;
     }
 }

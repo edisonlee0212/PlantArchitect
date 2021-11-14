@@ -5,7 +5,7 @@
 #include "SpaceColonizationBehaviour.hpp"
 #include "EmptyInternodeResource.hpp"
 #include "CubeVolume.hpp"
-#include "InternodeManager.hpp"
+#include "InternodeLayer.hpp"
 #include "TransformLayer.hpp"
 #include "EditorLayer.hpp"
 using namespace PlantArchitect;
@@ -301,7 +301,7 @@ void SpaceColonizationBehaviour::OnInspect() {
             RenderManager::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube, renderColor,
                                                   displayMatrices, glm::mat4(1.0f), renderSize);
             auto editorLayer = Application::GetLayer<EditorLayer>();
-            auto internodeLayer = Application::GetLayer<InternodeManager>();
+            auto internodeLayer = Application::GetLayer<InternodeLayer>();
             if(editorLayer && internodeLayer) {
                 RenderManager::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube,
                                                       internodeLayer->m_internodeDebuggingCamera,

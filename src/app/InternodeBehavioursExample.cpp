@@ -33,7 +33,7 @@
 #include "MultipleAngleCapture.hpp"
 
 
-#include "InternodeManager.hpp"
+#include "InternodeLayer.hpp"
 
 using namespace PlantArchitect;
 #ifdef RAYTRACERFACILITY
@@ -103,7 +103,7 @@ int main() {
 #ifdef RAYTRACERFACILITY
     Application::PushLayer<RayTracerManager>();
 #endif
-    auto internodesLayer = Application::PushLayer<InternodeManager>();
+    auto internodesLayer = Application::PushLayer<InternodeLayer>();
 #pragma region Engine Loop
     Application::Start();
 #pragma endregion
@@ -136,7 +136,7 @@ void EngineSetup() {
         /*
          * Add all internode behaviours for example.
          */
-        auto internodesLayer = Application::GetLayer<InternodeManager>();
+        auto internodesLayer = Application::GetLayer<InternodeLayer>();
         auto spaceColonizationBehaviour = internodesLayer->GetInternodeBehaviour<SpaceColonizationBehaviour>();
         Entity cubeVolumeEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "CubeVolume");
         Transform cubeVolumeTransform = cubeVolumeEntity.GetDataComponent<Transform>();

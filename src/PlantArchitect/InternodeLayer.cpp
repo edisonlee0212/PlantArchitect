@@ -2,7 +2,7 @@
 //
 // Created by lllll on 8/27/2021.
 //
-#include "InternodeManager.hpp"
+#include "InternodeLayer.hpp"
 #include <Internode.hpp>
 #include "EditorLayer.hpp"
 #include <InternodeDataComponents.hpp>
@@ -15,7 +15,7 @@
 #include "Joint.hpp"
 #include "PhysicsLayer.hpp"
 using namespace PlantArchitect;
-void InternodeManager::PreparePhysics(const Entity& entity, const Entity& child, const BranchPhysicsParameters& branchPhysicsParameters) {
+void InternodeLayer::PreparePhysics(const Entity& entity, const Entity& child, const BranchPhysicsParameters& branchPhysicsParameters) {
     auto internodeInfo = entity.GetDataComponent<InternodeInfo>();
     auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
     auto rigidBody = child.GetOrSetPrivateComponent<RigidBody>().lock();
@@ -44,7 +44,7 @@ void InternodeManager::PreparePhysics(const Entity& entity, const Entity& child,
                     branchPhysicsParameters.m_jointDriveDampingFactor,
                     branchPhysicsParameters.m_enableAccelerationForDrive);
 }
-void InternodeManager::Simulate(int iterations) {
+void InternodeLayer::Simulate(int iterations) {
     for (int iteration = 0; iteration < iterations; iteration++) {
         m_voxelSpace.Clear();
         EntityManager::ForEach<InternodeInfo, GlobalTransform>
@@ -73,7 +73,7 @@ void InternodeManager::Simulate(int iterations) {
     }
     PreparePhysics();
 }
-void InternodeManager::PreparePhysics() {
+void InternodeLayer::PreparePhysics() {
     auto physicsLayer = Application::GetLayer<PhysicsLayer>();
     if(!physicsLayer) return;
     for (auto &i: m_internodeBehaviours) {
@@ -96,7 +96,7 @@ void InternodeManager::PreparePhysics() {
 }
 #pragma region Methods
 
-void InternodeManager::OnInspect() {
+void InternodeLayer::OnInspect() {
     if(ImGui::Begin("Internode Manager")) {
         static int iterations = 1;
         ImGui::DragInt("Iterations", &iterations);
@@ -428,7 +428,7 @@ void InternodeManager::OnInspect() {
 #pragma endregion
 }
 
-void InternodeManager::OnCreate() {
+void InternodeLayer::OnCreate() {
     auto spaceColonizationBehaviour = AssetManager::CreateAsset<SpaceColonizationBehaviour>();
     auto lSystemBehaviour = AssetManager::CreateAsset<LSystemBehaviour>();
     auto generalTreeBehaviour = AssetManager::CreateAsset<GeneralTreeBehaviour>();
@@ -458,11 +458,11 @@ void InternodeManager::OnCreate() {
 }
 
 
-void InternodeManager::LateUpdate() {
+void InternodeLayer::LateUpdate() {
     UpdateInternodeCamera();
 }
 
-void InternodeManager::UpdateBranchColors() {
+void InternodeLayer::UpdateBranchColors() {
     auto editorLayer = Application::GetLayer<EditorLayer>();
     if(!editorLayer) return;
     auto focusingInternode = Entity();
@@ -640,7 +640,7 @@ void InternodeManager::UpdateBranchColors() {
         selectedEntity.SetDataComponent(color);
 }
 
-void InternodeManager::UpdateBranchCylinder(const float &width) {
+void InternodeLayer::UpdateBranchCylinder(const float &width) {
     EntityManager::ForEach<GlobalTransform, BranchCylinder, BranchCylinderWidth, InternodeInfo>(
             EntityManager::GetCurrentScene(),
             JobManager::PrimaryWorkers(),
@@ -674,12 +674,12 @@ void InternodeManager::UpdateBranchCylinder(const float &width) {
             true);
 }
 
-void InternodeManager::UpdateBranchPointer(const float &length, const float &width) {
+void InternodeLayer::UpdateBranchPointer(const float &length, const float &width) {
 
 
 }
 
-void InternodeManager::RenderBranchCylinders() {
+void InternodeLayer::RenderBranchCylinders() {
     auto editorLayer = Application::GetLayer<EditorLayer>();
     if(!editorLayer) return;
     std::vector<BranchCylinder> branchCylinders;
@@ -698,7 +698,7 @@ void InternodeManager::RenderBranchCylinders() {
                 glm::mat4(1.0f), 1.0f);
 }
 
-void InternodeManager::RenderBranchPointers() {
+void InternodeLayer::RenderBranchPointers() {
     auto editorLayer = Application::GetLayer<EditorLayer>();
     if(!editorLayer) return;
     std::vector<BranchPointer> branchPointers;
@@ -714,13 +714,13 @@ void InternodeManager::RenderBranchPointers() {
 }
 
 
-bool InternodeManager::InternodeCheck(const Entity &target) {
+bool InternodeLayer::InternodeCheck(const Entity &target) {
     return target.IsValid() && target.HasDataComponent<InternodeInfo>() && target.HasPrivateComponent<Internode>();
 }
 
 
 
-void InternodeManager::UpdateInternodeCamera() {
+void InternodeLayer::UpdateInternodeCamera() {
     if (m_rightMouseButtonHold &&
         !InputManager::GetMouseInternal(GLFW_MOUSE_BUTTON_RIGHT,
                                         WindowManager::GetWindow())) {

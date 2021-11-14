@@ -5,7 +5,7 @@
 #include "IInternodeBehaviour.hpp"
 #include "Internode.hpp"
 #include "Curve.hpp"
-#include "InternodeManager.hpp"
+#include "InternodeLayer.hpp"
 #include "IInternodePhyllotaxis.hpp"
 #include "InternodeFoliage.hpp"
 #include "InternodeDataComponents.hpp"

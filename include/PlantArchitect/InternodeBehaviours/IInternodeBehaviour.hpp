@@ -4,7 +4,7 @@
 #include <Internode.hpp>
 #include <SerializationManager.hpp>
 #include "InternodeFoliage.hpp"
-#include "InternodeManager.hpp"
+#include "InternodeLayer.hpp"
 using namespace UniEngine;
 namespace PlantArchitect {
     struct SpaceColonizationParameters;
@@ -169,7 +169,7 @@ namespace PlantArchitect {
 
     };
     template <typename T>
-    void InternodeManager::PushInternodeBehaviour(const std::shared_ptr<T>& behaviour) {
+    void InternodeLayer::PushInternodeBehaviour(const std::shared_ptr<T>& behaviour) {
         if(!behaviour.get()) return;
         bool search = false;
         for (auto &i: m_internodeBehaviours) {
@@ -181,7 +181,7 @@ namespace PlantArchitect {
     }
 
     template<typename T>
-    std::shared_ptr<T> InternodeManager::GetInternodeBehaviour() {
+    std::shared_ptr<T> InternodeLayer::GetInternodeBehaviour() {
         for (auto &i: m_internodeBehaviours) {
             if (i.Get<IInternodeBehaviour>()->GetTypeName() == SerializationManager::GetSerializableTypeName<T>()) {
                 return i.Get<T>();

@@ -1,4 +1,4 @@
-#include <InternodeManager.hpp>
+#include <InternodeLayer.hpp>
 #include <InternodeDataComponents.hpp>
 #include <RadialBoundingVolume.hpp>
 #include <Internode.hpp>
