@@ -71,7 +71,7 @@ void InternodeLayer::Simulate(int iterations) {
             if (behaviour) behaviour->Grow(iteration);
         }
     }
-    PreparePhysics();
+    if(m_enablePhysics) PreparePhysics();
 }
 void InternodeLayer::PreparePhysics() {
     auto physicsLayer = Application::GetLayer<PhysicsLayer>();
@@ -100,6 +100,8 @@ void InternodeLayer::OnInspect() {
     if(ImGui::Begin("Internode Manager")) {
         static int iterations = 1;
         ImGui::DragInt("Iterations", &iterations);
+        ImGui::Checkbox("Enable physics", &m_enablePhysics);
+
         if (ImGui::Button("Simulate")) {
             Simulate(iterations);
         }

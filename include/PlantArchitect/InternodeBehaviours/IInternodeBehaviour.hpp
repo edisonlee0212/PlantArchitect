@@ -380,11 +380,6 @@ namespace PlantArchitect {
         internode->m_currentRoot = parentInternode->m_currentRoot;
         internode->OnRetrieve();
 
-        auto rigidBody = retVal.GetOrSetPrivateComponent<RigidBody>().lock();
-        // The rigidbody can only apply mesh bound after it's attached to an entity
-        // with mesh renderer.
-        rigidBody->SetEnableGravity(false);
-
         return retVal;
     }
 
@@ -411,12 +406,6 @@ namespace PlantArchitect {
         internode->m_resource = SerializationManager::ProduceSerializable<T>();
         internode->m_foliage = AssetManager::CreateAsset<InternodeFoliage>("Foliage");
         internode->OnRetrieve();
-
-        auto rigidBody = retVal.GetOrSetPrivateComponent<RigidBody>().lock();
-        rigidBody->SetKinematic(true);
-        // The rigidbody can only apply mesh bound after it's attached to an entity
-        // with mesh renderer.
-        rigidBody->SetEnableGravity(false);
 
         return retVal;
     }

@@ -26,6 +26,8 @@ namespace PlantArchitect {
         void PreparePhysics(const Entity& entity, const Entity& child, const BranchPhysicsParameters& branchPhysicsParameters);
 
     public:
+        bool m_enablePhysics = true;
+
         void PreparePhysics();
 
         /**
