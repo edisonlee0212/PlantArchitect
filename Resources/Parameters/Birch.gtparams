@@ -8,7 +8,7 @@ m_internodeLengthMeanVariance: [1, 0.100000001]
 m_endNodeThicknessAndControl: [0.00999999978, 0.5]
 m_lateralBudFlushingProbability: 0.75
 m_neighborAvoidance: [0.100000001, 1, 100]
-m_apicalControlBaseAge: [2, 1]
+m_apicalControl: 2
 m_apicalDominanceBaseAgeDist: [0.289999992, 1, 0.5]
 m_lateralBudFlushingLightingFactor: 0
 m_budKillProbabilityApicalLateral: [0, 0.200000003]

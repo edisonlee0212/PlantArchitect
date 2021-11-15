@@ -29,7 +29,7 @@ namespace PlantArchitect {
 
         glm::vec2 m_endNodeThicknessAndControl;
         float m_lateralBudFlushingProbability;
-        glm::vec2 m_apicalControlBaseAge;
+        float m_apicalControl;
         /**
          * Avoidance multiplier, strength, max avoidance (which will completely stop bud from flushing).
          */
@@ -102,7 +102,7 @@ namespace PlantArchitect {
         bool m_heaviestChild = false;
 
         void OnInspect();
-        void CalculateApicalControl(const glm::vec2 parameters, int rootAge);
+        void CalculateApicalControl(float apicalControl);
     };
 
     /**

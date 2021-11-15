@@ -6,9 +6,9 @@ m_gravitropism: -0.189999998
 m_phototropism: 0
 m_internodeLengthMeanVariance: [1, 0.100000001]
 m_endNodeThicknessAndControl: [0.00999999978, 0.540000021]
-m_lateralBudFlushingProbability: 0.389999986
+m_lateralBudFlushingProbability: 0.400000006
 m_neighborAvoidance: [0.00999999978, 1, 100]
-m_apicalControlBaseAge: [1, 1]
+m_apicalControl: 1
 m_apicalDominanceBaseAgeDist: [0.310000002, 0.949999988, 0.699999988]
 m_lateralBudFlushingLightingFactor: 0
 m_budKillProbabilityApicalLateral: [0, 0.300000012]

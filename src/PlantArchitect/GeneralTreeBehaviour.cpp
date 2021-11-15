@@ -195,7 +195,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                      if (root == plant) {
                          auto difference = internodeGlobalTransform.GetPosition() - plantCenters[plantIndex];
                          internodeIllumination.m_direction = glm::normalize(difference);
-                         internodeIllumination.m_intensity = glm::length(difference);
+                         internodeIllumination.m_intensity = 1.0f;
                          if(internodeIllumination.m_intensity < 0.1){
                              internodeIllumination.m_direction = glm::vec3(0.0f, 1.0f, 0.0f);
                              internodeIllumination.m_intensity = 0.1f;
@@ -238,8 +238,8 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
                  auto root = internode->m_currentRoot.Get();
                  if (root.IsNull() || !root.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
-                 int age = internode->m_currentRoot.Get().GetDataComponent<InternodeStatus>().m_age;
-                 internodeStatus.CalculateApicalControl(generalTreeParameters.m_apicalControlBaseAge, age);
+                 //int age = internode->m_currentRoot.Get().GetDataComponent<InternodeStatus>().m_age;
+                 internodeStatus.CalculateApicalControl(generalTreeParameters.m_apicalControl);
                  int plantIndex = 0;
                  for (const auto &plant: m_currentPlants) {
                      if (root == plant) {

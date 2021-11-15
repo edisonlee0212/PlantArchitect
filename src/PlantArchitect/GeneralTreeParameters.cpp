@@ -21,10 +21,10 @@ void GeneralTreeParameters::OnInspect() {
     if(ImGui::TreeNodeEx("Bud", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::DragFloat("Lateral bud flushing probability", &m_lateralBudFlushingProbability, 0.01f);
         ImGui::DragFloat3("Neighbor avoidance mul/factor/max", &m_neighborAvoidance.x, 0.001f);
-        ImGui::DragFloat2("Apical control base/age", &m_apicalControlBaseAge.x, 0.01f);
+        ImGui::DragFloat("Apical control", &m_apicalControl, 0.01f);
         ImGui::DragFloat3("Apical dominance base/age/dist", &m_apicalDominanceBaseAgeDist.x, 0.01f);
-        int maxAgeBeforeInhibitorEnds = m_apicalControlBaseAge.x / m_apicalDominanceBaseAgeDist.y;
-        float maxDistance = m_apicalControlBaseAge.x / m_apicalDominanceBaseAgeDist.z;
+        int maxAgeBeforeInhibitorEnds = m_apicalDominanceBaseAgeDist.x / m_apicalDominanceBaseAgeDist.y;
+        float maxDistance = m_apicalDominanceBaseAgeDist.x / m_apicalDominanceBaseAgeDist.z;
         ImGui::Text("Max age / distance: [%i, %.3f]", maxAgeBeforeInhibitorEnds, maxDistance);
 
         ImGui::DragFloat("Lateral bud lighting factor", &m_lateralBudFlushingLightingFactor, 0.01f);
@@ -57,7 +57,7 @@ GeneralTreeParameters::GeneralTreeParameters() {
     m_endNodeThicknessAndControl = glm::vec2(0.01, 0.5);
     m_lateralBudFlushingProbability = 0.3f;
     m_neighborAvoidance = glm::vec3(0.05f, 1, 100);
-    m_apicalControlBaseAge = glm::vec2(2, 0.95);
+    m_apicalControl = 2.0f;
     m_apicalDominanceBaseAgeDist = glm::vec3(0.12, 1, 0.3);
     m_lateralBudFlushingLightingFactor = 0.0f;
     m_budKillProbabilityApicalLateral = glm::vec2(0.0, 0.03);
@@ -84,7 +84,7 @@ void GeneralTreeParameters::Save(const std::filesystem::path &path) const {
     out << YAML::Key << "m_endNodeThicknessAndControl" << YAML::Value << m_endNodeThicknessAndControl;
     out << YAML::Key << "m_lateralBudFlushingProbability" << YAML::Value << m_lateralBudFlushingProbability;
     out << YAML::Key << "m_neighborAvoidance" << YAML::Value << m_neighborAvoidance;
-    out << YAML::Key << "m_apicalControlBaseAge" << YAML::Value << m_apicalControlBaseAge;
+    out << YAML::Key << "m_apicalControl" << YAML::Value << m_apicalControl;
     out << YAML::Key << "m_apicalDominanceBaseAgeDist" << YAML::Value << m_apicalDominanceBaseAgeDist;
     out << YAML::Key << "m_lateralBudFlushingLightingFactor" << YAML::Value << m_lateralBudFlushingLightingFactor;
     out << YAML::Key << "m_budKillProbabilityApicalLateral" << YAML::Value << m_budKillProbabilityApicalLateral;
@@ -116,7 +116,7 @@ void GeneralTreeParameters::Load(const std::filesystem::path &path) {
     if(in["m_endNodeThicknessAndControl"]) m_endNodeThicknessAndControl = in["m_endNodeThicknessAndControl"].as<glm::vec2>();
     if(in["m_lateralBudFlushingProbability"]) m_lateralBudFlushingProbability = in["m_lateralBudFlushingProbability"].as<float>();
     if(in["m_neighborAvoidance"]) m_neighborAvoidance = in["m_neighborAvoidance"].as<glm::vec3>();
-    if(in["m_apicalControlBaseAge"]) m_apicalControlBaseAge = in["m_apicalControlBaseAge"].as<glm::vec2>();
+    if(in["m_apicalControl"]) m_apicalControl = in["m_apicalControl"].as<float>();
     if(in["m_apicalDominanceBaseAgeDist"]) m_apicalDominanceBaseAgeDist = in["m_apicalDominanceBaseAgeDist"].as<glm::vec3>();
     if(in["m_lateralBudFlushingLightingFactor"]) m_lateralBudFlushingLightingFactor = in["m_lateralBudFlushingLightingFactor"].as<float>();
     if(in["m_budKillProbabilityApicalLateral"]) m_budKillProbabilityApicalLateral = in["m_budKillProbabilityApicalLateral"].as<glm::vec2>();
@@ -145,9 +145,8 @@ void InternodeStatus::OnInspect() {
 
 }
 
-void InternodeStatus::CalculateApicalControl(const glm::vec2 parameters, int rootAge) {
-    float apicalControl = parameters.x * glm::pow(parameters.y, (float)rootAge);
-    m_apicalControl = glm::pow(1.0f / glm::max(1.0f, apicalControl), m_level);
+void InternodeStatus::CalculateApicalControl(float apicalControl) {
+    m_apicalControl = glm::pow(1.0f / apicalControl, m_level);
 }
 
 void InternodeWaterPressure::OnInspect() {
