@@ -14,6 +14,9 @@
 #include "RadialBoundingVolume.hpp"
 #include "Joint.hpp"
 #include "PhysicsLayer.hpp"
+#include "DefaultInternodeResource.hpp"
+#include "EmptyInternodeResource.hpp"
+#include "DefaultInternodePhyllotaxis.hpp"
 using namespace PlantArchitect;
 void InternodeLayer::PreparePhysics(const Entity& entity, const Entity& child, const BranchPhysicsParameters& branchPhysicsParameters) {
     auto internodeInfo = entity.GetDataComponent<InternodeInfo>();
@@ -431,6 +434,47 @@ void InternodeLayer::OnInspect() {
 }
 
 void InternodeLayer::OnCreate() {
+    ClassRegistry::RegisterDataComponent<BranchPhysicsParameters>("BranchPhysicsParameters");
+    ClassRegistry::RegisterDataComponent<BranchCylinder>("BranchCylinder");
+    ClassRegistry::RegisterDataComponent<BranchCylinderWidth>("BranchCylinderWidth");
+    ClassRegistry::RegisterDataComponent<BranchPointer>("BranchPointer");
+    ClassRegistry::RegisterDataComponent<BranchColor>("BranchColor");
+
+
+    ClassRegistry::RegisterPrivateComponent<IVolume>("IVolume");
+    ClassRegistry::RegisterPrivateComponent<CubeVolume>("CubeVolume");
+    ClassRegistry::RegisterPrivateComponent<RadialBoundingVolume>("RadialBoundingVolume");
+
+
+    ClassRegistry::RegisterDataComponent<GeneralTreeTag>("GeneralTreeTag");
+    ClassRegistry::RegisterDataComponent<GeneralTreeParameters>("GeneralTreeParameters");
+    ClassRegistry::RegisterDataComponent<InternodeStatus>("InternodeStatus");
+    ClassRegistry::RegisterDataComponent<InternodeWaterPressure>("InternodeWaterPressure");
+    ClassRegistry::RegisterDataComponent<InternodeWater>("InternodeWater");
+    ClassRegistry::RegisterDataComponent<InternodeIllumination>("InternodeIllumination");
+    ClassRegistry::RegisterPrivateComponent<InternodeWaterFeeder>("InternodeWaterFeeder");
+    ClassRegistry::RegisterAsset<GeneralTreeBehaviour>("GeneralTreeBehaviour", ".gtbehaviour");
+
+    ClassRegistry::RegisterDataComponent<SpaceColonizationTag>("SpaceColonizationTag");
+    ClassRegistry::RegisterDataComponent<SpaceColonizationParameters>("SpaceColonizationParameters");
+    ClassRegistry::RegisterDataComponent<SpaceColonizationIncentive>("SpaceColonizationIncentive");
+    ClassRegistry::RegisterAsset<SpaceColonizationBehaviour>("SpaceColonizationBehaviour", ".scbehaviour");
+
+    ClassRegistry::RegisterAsset<LString>("LString", ".lstring");
+    ClassRegistry::RegisterDataComponent<LSystemTag>("LSystemTag");
+    ClassRegistry::RegisterDataComponent<LSystemParameters>("LSystemParameters");
+    ClassRegistry::RegisterAsset<LSystemBehaviour>("LSystemBehaviour", ".lsbehaviour");
+
+    ClassRegistry::RegisterSerializable<EmptyInternodeResource>("EmptyInternodeResource");
+    ClassRegistry::RegisterSerializable<DefaultInternodeResource>("DefaultInternodeResource");
+    ClassRegistry::RegisterSerializable<Bud>("LateralBud");
+    ClassRegistry::RegisterPrivateComponent<Internode>("Internode");
+
+    ClassRegistry::RegisterDataComponent<InternodeInfo>("InternodeInfo");
+
+    ClassRegistry::RegisterAsset<InternodeFoliage>("InternodeFoliage", ".internodefoliage");
+    ClassRegistry::RegisterAsset<DefaultInternodePhyllotaxis>("DefaultInternodePhyllotaxis", ".defaultip");
+
     auto spaceColonizationBehaviour = AssetManager::CreateAsset<SpaceColonizationBehaviour>();
     auto lSystemBehaviour = AssetManager::CreateAsset<LSystemBehaviour>();
     auto generalTreeBehaviour = AssetManager::CreateAsset<GeneralTreeBehaviour>();
