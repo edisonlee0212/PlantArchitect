@@ -46,7 +46,9 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
     auto &commands = lString->commands;
     if (commands.empty()) return {};
     LSystemState currentState;
+    //The stack that records current state when a push happens and restore previous state when pop.
     std::vector<LSystemState> stateStack;
+    //The stack that keeps track of current internode (entity) during push/pop
     std::vector<Entity> entityStack;
     int index = 1;
     Entity root;
@@ -57,14 +59,19 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
                 InternodeInfo newInfo;
                 newInfo.m_index = index;
                 if (internode.IsNull()) {
+                    //Calculate the local rotation as quaternion from euler angles.
                     newInfo.m_localRotation = glm::quat(currentState.m_eulerRotation);
+                    //If this is the first push in the string, we create the root internode.
+                    //The node creation is handled by the Retrieve() function. The internode creation is performed in a factory pattern.
                     root = internode = Retrieve();
+                    //Apply the parameter to this internode, this is necessary everytime you create a new internode.
                     internode.SetDataComponent(parameters);
                 } else {
-                    auto previousGlobalTransform = internode.GetDataComponent<GlobalTransform>();
-                    newInfo.m_localRotation = glm::inverse(previousGlobalTransform.GetRotation()) *
-                                              glm::quat(currentState.m_eulerRotation);
+                    //Calculate the local rotation as quaternion from euler angles.
+                    newInfo.m_localRotation = glm::quat(currentState.m_eulerRotation);
+                    //We need to create a child node with this function. Here Retrieve(Entity) will instantiate a new internode for you and set it as a child of current internode.
                     internode = Retrieve(internode);
+                    //Apply the parameter to this internode, this is necessary everytime you create a new internode.
                     internode.SetDataComponent(parameters);
                 }
                 newInfo.m_length = command.m_value;
@@ -73,36 +80,44 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
             }
                 break;
             case LSystemCommandType::PitchUp: {
+                //Update current state
                 currentState.m_eulerRotation.x += command.m_value;
             }
                 break;
             case LSystemCommandType::PitchDown: {
+                //Update current state
                 currentState.m_eulerRotation.x -= command.m_value;
             }
                 break;
             case LSystemCommandType::TurnLeft: {
+                //Update current state
                 currentState.m_eulerRotation.y += command.m_value;
             }
                 break;
             case LSystemCommandType::TurnRight: {
+                //Update current state
                 currentState.m_eulerRotation.y -= command.m_value;
             }
                 break;
             case LSystemCommandType::RollLeft: {
+                //Update current state
                 currentState.m_eulerRotation.z += command.m_value;
             }
                 break;
             case LSystemCommandType::RollRight: {
+                //Update current state
                 currentState.m_eulerRotation.z -= command.m_value;
             }
                 break;
             case LSystemCommandType::Push: {
+                //Update stack
                 stateStack.push_back(currentState);
                 currentState.m_eulerRotation = glm::vec3(0.0f);
                 entityStack.push_back(internode);
                 break;
             }
             case LSystemCommandType::Pop: {
+                //Update stack
                 currentState = stateStack.back();
                 stateStack.pop_back();
                 internode = entityStack.back();
@@ -117,7 +132,7 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
     rootTransform.SetRotation(root.GetDataComponent<InternodeInfo>().m_localRotation);
     root.SetDataComponent(rootTransform);
 
-
+    //Since we only stored the rotation data into internode info without applying it to the local transformation matrix of the internode, we do it here.
     TreeGraphWalkerRootToEnd(root, root, [](Entity parent, Entity child) {
         auto parentGlobalTransform = parent.GetDataComponent<GlobalTransform>();
         auto parentPosition = parentGlobalTransform.GetPosition();
@@ -132,9 +147,36 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
         child.SetDataComponent(childTransform);
     });
 
+    //This is another way to do above procedures but in multi-threaded way.
+    /*
+    EntityManager::ForEach<GlobalTransform, Transform, InternodeInfo>
+            (EntityManager::GetCurrentScene(),
+             JobManager::PrimaryWorkers(), m_internodesQuery,
+             [](int i, Entity entity,
+                GlobalTransform &globalTransform,
+                Transform &transform,
+                InternodeInfo &internodeInfo) {
+                 auto parent = entity.GetParent();
+                 auto parentGlobalTransform = parent.GetDataComponent<GlobalTransform>();
+                 auto parentPosition = parentGlobalTransform.GetPosition();
+                 auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
+                 auto parentRotation = parentGlobalTransform.GetRotation();
+                 auto childPosition =
+                         parentInternodeInfo.m_length *
+                         (parentRotation *
+                          glm::vec3(0, 0, -1));
+                 auto childRotation = internodeInfo.m_localRotation;
+                 transform.SetRotation(childRotation);
+                 transform.SetPosition(childPosition);
+             }
+            );
+    */
+
+    //After you setup the local transformation matrix, you call this function to calculate the world(global) transformation matrix from the root of the plant.
     Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(EntityManager::GetCurrentScene(),
                                                                                    root);
 
+    //Calculate other properties like thickness after the structure of the tree is ready.
     TreeGraphWalkerEndToRoot(root, root, [&](Entity parent) {
         float thicknessCollection = 0.0f;
         auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
@@ -263,7 +305,7 @@ void LString::ParseLString(const std::string &string) {
     std::string line;
     int stackCheck = 0;
     while (std::getline(iss, line)) {
-        if(line.empty()) continue;
+        if (line.empty()) continue;
         LSystemCommand command;
         switch (line[0]) {
             case 'F': {
