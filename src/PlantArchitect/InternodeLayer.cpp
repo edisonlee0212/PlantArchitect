@@ -17,6 +17,7 @@
 #include "DefaultInternodeResource.hpp"
 #include "EmptyInternodeResource.hpp"
 #include "DefaultInternodePhyllotaxis.hpp"
+#include "JSONTreeBehaviour.hpp"
 using namespace PlantArchitect;
 void InternodeLayer::PreparePhysics(const Entity& entity, const Entity& child, const BranchPhysicsParameters& branchPhysicsParameters) {
     auto internodeInfo = entity.GetDataComponent<InternodeInfo>();
@@ -132,7 +133,7 @@ void InternodeLayer::OnInspect() {
             ImGui::SameLine();
             static AssetRef temp;
             EditorManager::DragAndDropButton(temp, "Here",
-                                             {"GeneralTreeBehaviour", "SpaceColonizationBehaviour", "LSystemBehaviour"},
+                                             {"GeneralTreeBehaviour", "SpaceColonizationBehaviour", "LSystemBehaviour", "JSONTreeBehaviour"},
                                              false);
             if (temp.Get<IInternodeBehaviour>()) {
                 PushInternodeBehaviour(temp.Get<IInternodeBehaviour>());
@@ -465,6 +466,12 @@ void InternodeLayer::OnCreate() {
     ClassRegistry::RegisterDataComponent<LSystemParameters>("LSystemParameters");
     ClassRegistry::RegisterAsset<LSystemBehaviour>("LSystemBehaviour", ".lsbehaviour");
 
+    ClassRegistry::RegisterAsset<JSONData>("JSONData", ".jsondata");
+    AssetManager::RegisterExternalAssetTypeExtensions<JSONData>({".json", ".txt"});
+    ClassRegistry::RegisterDataComponent<JSONTreeTag>("JSONTreeTag");
+    ClassRegistry::RegisterDataComponent<JSONTreeParameters>("JSONTreeParameters");
+    ClassRegistry::RegisterAsset<JSONTreeBehaviour>("JSONTreeBehaviour", ".jtbehaviour");
+
     ClassRegistry::RegisterSerializable<EmptyInternodeResource>("EmptyInternodeResource");
     ClassRegistry::RegisterSerializable<DefaultInternodeResource>("DefaultInternodeResource");
     ClassRegistry::RegisterSerializable<Bud>("LateralBud");
@@ -478,11 +485,12 @@ void InternodeLayer::OnCreate() {
     auto spaceColonizationBehaviour = AssetManager::CreateAsset<SpaceColonizationBehaviour>();
     auto lSystemBehaviour = AssetManager::CreateAsset<LSystemBehaviour>();
     auto generalTreeBehaviour = AssetManager::CreateAsset<GeneralTreeBehaviour>();
+    auto jsonTreeBehaviour = AssetManager::CreateAsset<JSONTreeBehaviour>();
     PushInternodeBehaviour(
             std::dynamic_pointer_cast<IInternodeBehaviour>(spaceColonizationBehaviour));
     PushInternodeBehaviour(std::dynamic_pointer_cast<IInternodeBehaviour>(lSystemBehaviour));
     PushInternodeBehaviour(std::dynamic_pointer_cast<IInternodeBehaviour>(generalTreeBehaviour));
-
+    PushInternodeBehaviour(std::dynamic_pointer_cast<JSONTreeBehaviour>(jsonTreeBehaviour));
 
     m_randomColors.resize(64);
     for (int i = 0; i < 60; i++) {
