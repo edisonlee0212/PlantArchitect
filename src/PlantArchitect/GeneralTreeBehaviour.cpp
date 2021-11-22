@@ -477,11 +477,11 @@ void GeneralTreeBehaviour::Grow(int iteration) {
         auto root = internode->m_currentRoot.Get();
         if (root.IsNull() || !root.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
         auto parameters = entity.GetDataComponent<GeneralTreeParameters>();
-        auto internodeInfo = entity.GetDataComponent<InternodeInfo>();
         if (internode->m_apicalBud.m_status == BudStatus::Flushing) {
             auto newInternodeEntity = Retrieve(entity);
             InternodeStatus newInternodeStatus;
             newInternodeStatus.m_desiredLocalRotation = internode->m_apicalBud.m_newInternodeInfo.m_localRotation;
+            newInternodeStatus.m_branchingOrder = 0;
             newInternodeEntity.SetDataComponent(newInternodeStatus);
             newInternodeEntity.SetDataComponent(parameters);
             newInternodeEntity.SetDataComponent(internode->m_apicalBud.m_newInternodeInfo);
@@ -489,11 +489,12 @@ void GeneralTreeBehaviour::Grow(int iteration) {
             auto newInternode = newInternodeEntity.GetOrSetPrivateComponent<Internode>().lock();
             newInternode->m_fromApicalBud = true;
         }
-
+        int branchingOrder = 1;
         for (auto &bud: internode->m_lateralBuds) {
             if (bud.m_status == BudStatus::Flushing) {
                 auto newInternodeEntity = Retrieve(entity);
                 InternodeStatus newInternodeStatus;
+                newInternodeStatus.m_branchingOrder = branchingOrder;
                 newInternodeStatus.m_desiredLocalRotation = bud.m_newInternodeInfo.m_localRotation;
                 newInternodeEntity.SetDataComponent(newInternodeStatus);
                 newInternodeEntity.SetDataComponent(parameters);
@@ -502,6 +503,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                 auto newInternode = newInternodeEntity.GetOrSetPrivateComponent<Internode>().lock();
                 newInternode->m_fromApicalBud = false;
             }
+            branchingOrder++;
         }
     }
 
@@ -674,61 +676,80 @@ Entity GeneralTreeBehaviour::ImportGANTree(const std::filesystem::path &path, co
         auto layers = in["layers"];
         auto rootLayer = layers["0"];
         root = Retrieve();
-        std::vector<std::pair<Entity, glm::vec3>> previousNodes;
-        glm::vec3 rootFront;
+        std::vector<GanNode> previousNodes;
+
+        GanNode rootNode;
+        rootNode.m_start = glm::vec3(0, -1, 0);
+        rootNode.m_up = glm::vec3(0, 0, 1);
+        rootNode.m_internode = root;
+        int rootIndex = 0;
+        for(const auto& component : rootLayer["0"]["position"]){
+            rootNode.m_end[rootIndex] = component.as<float>();
+            rootIndex++;
+        }
         InternodeInfo rootInternodeInfo;
         rootInternodeInfo.m_thickness = rootLayer["0"]["thickness"].as<float>();
-        rootInternodeInfo.m_length = 1.0f;
-        int rootIndex = 0;
-        for(const auto& component : rootLayer["0"]["direction"]){
-            rootFront[rootIndex] = component.as<float>();
-            rootIndex++;
-        }
-        rootIndex = 0;
-        glm::vec3 rootPosition;
-        for(const auto& component : rootLayer["0"]["position"]){
-            rootPosition[rootIndex] = component.as<float>();
-            rootIndex++;
-        }
+        rootInternodeInfo.m_length = glm::distance(rootNode.m_start, rootNode.m_end);
         GlobalTransform rootGlobalTransform;
-        rootGlobalTransform.SetRotation(glm::quatLookAt(rootFront, glm::vec3(0, 0, 1)));
-        rootGlobalTransform.SetPosition(rootPosition);
+        rootGlobalTransform.SetRotation(glm::quatLookAt(glm::normalize(rootNode.m_end - rootNode.m_start), rootNode.m_up));
+        rootGlobalTransform.SetPosition(rootNode.m_start);
         root.SetDataComponent(rootGlobalTransform);
-        previousNodes.emplace_back(root, glm::vec3(0, 0, 1));
+        root.SetDataComponent(rootInternodeInfo);
+        root.SetDataComponent(parameters);
+        previousNodes.push_back(rootNode);
         for(int layerIndex = 1; layerIndex <= layerSize; layerIndex++){
             auto layer = layers[std::to_string(layerIndex)];
             auto internodeSize = layer["internodesize"].as<int>();
-            std::vector<std::pair<Entity, glm::vec3>> currentNodes;
+            std::vector<GanNode> currentNodes;
             for(int nodeIndex = 0; nodeIndex < internodeSize; nodeIndex++){
                 auto node = layer[std::to_string(nodeIndex)];
-                auto internode = Retrieve(previousNodes[node["parent"].as<int>()].first);
-                InternodeInfo internodeInfo;
-                internodeInfo.m_thickness = node["thickness"].as<float>();
-                internodeInfo.m_length = 1.0f;
-                internode.SetDataComponent(internodeInfo);
+                auto& parentGanNode = previousNodes[node["parent"].as<int>()];
+                GanNode ganNode;
+                ganNode.m_internode = Retrieve(parentGanNode.m_internode);
+                ganNode.m_start = parentGanNode.m_end;
 #pragma region GlobalTransform
-                glm::vec3 front;
                 int index = 0;
-                for(const auto& component : node["direction"]){
-                    front[index] = component.as<float>();
-                    index++;
-                }
-                index = 0;
-                glm::vec3 position;
                 for(const auto& component : node["position"]){
-                    position[index] = component.as<float>();
+                    ganNode.m_end[index] = component.as<float>();
                     index++;
                 }
                 GlobalTransform globalTransform;
-                glm::vec3 up = glm::normalize(glm::cross(front, glm::cross(front, previousNodes[node["parent"].as<int>()].second)));
-                globalTransform.SetRotation(glm::quatLookAt(front, up));
-                globalTransform.SetPosition(position);
-                internode.SetDataComponent(globalTransform);
+                glm::vec3 front = glm::normalize(ganNode.m_end - ganNode.m_start);
+                ganNode.m_up = glm::normalize(glm::cross(glm::cross(front, parentGanNode.m_up), front));
+                globalTransform.SetRotation(glm::quatLookAt(front, ganNode.m_up));
+                globalTransform.SetPosition(ganNode.m_start);
+                ganNode.m_internode.SetDataComponent(globalTransform);
 #pragma endregion
-                currentNodes.emplace_back(internode, up);
+                InternodeInfo internodeInfo;
+                internodeInfo.m_thickness = node["thickness"].as<float>();
+                internodeInfo.m_length = glm::distance(ganNode.m_start, ganNode.m_end);
+                ganNode.m_internode.SetDataComponent(internodeInfo);
+                ganNode.m_internode.SetDataComponent(parameters);
+                currentNodes.push_back(ganNode);
             }
             previousNodes = currentNodes;
         }
+
+        EntityManager::ForEach<GlobalTransform, Transform, InternodeInfo, InternodeStatus, GeneralTreeParameters>
+                (EntityManager::GetCurrentScene(),
+                 JobManager::PrimaryWorkers(), m_internodesQuery,
+                 [](int i, Entity entity,
+                    GlobalTransform &globalTransform,
+                    Transform &transform,
+                    InternodeInfo &internodeInfo, InternodeStatus& internodeStatus, GeneralTreeParameters& generalTreeParameters) {
+                     auto parent = entity.GetParent();
+                     if(parent.IsNull()){
+                         internodeInfo.m_localRotation = globalTransform.GetRotation();
+                     }else{
+                         auto parentGlobalTransform = parent.GetDataComponent<GlobalTransform>();
+                         auto parentGlobalRotation = parentGlobalTransform.GetRotation();
+                         internodeInfo.m_localRotation = glm::inverse(parentGlobalRotation) * globalTransform.GetRotation();
+                     }
+                     auto childAmount = entity.GetChildrenAmount();
+                     internodeInfo.m_endNode = childAmount == 0;
+                     auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
+                 }
+                );
     }
     catch (std::exception e) {
         UNIENGINE_ERROR("Failed to load!");

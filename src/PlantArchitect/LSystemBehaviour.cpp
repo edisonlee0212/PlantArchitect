@@ -157,6 +157,7 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
                 Transform &transform,
                 InternodeInfo &internodeInfo) {
                  auto parent = entity.GetParent();
+                 if(parent.IsNull()) return;
                  auto parentGlobalTransform = parent.GetDataComponent<GlobalTransform>();
                  auto parentPosition = parentGlobalTransform.GetPosition();
                  auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();

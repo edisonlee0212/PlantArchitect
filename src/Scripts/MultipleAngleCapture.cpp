@@ -447,16 +447,23 @@ void MultipleAngleCapture::ExportGraphNode(const std::shared_ptr<IInternodeBehav
     out << YAML::BeginMap;
     out << YAML::Key << "Parent Entity Index" << parentIndex;
     out << YAML::Key << "Entity Index" << internode.GetIndex();
-    out << YAML::Key << "Children Entity Indices" << YAML::Key << YAML::BeginSeq;
+
+    std::vector<int> indices = {-1, -1, -1};
     internode.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
         if (!behaviour->InternodeCheck(child)) return;
-        out << YAML::BeginMap;
-        out << YAML::Key << "Entity Index" << YAML::Value << child.GetIndex();
-        out << YAML::EndMap;
+        indices[child.GetDataComponent<InternodeStatus>().m_branchingOrder] = child.GetIndex();
     });
+
+    out << YAML::Key << "Children Entity Indices" << YAML::Key << YAML::BeginSeq;
+    for(int i = 0; i < 3; i++){
+        out << YAML::BeginMap;
+        out << YAML::Key << "Entity Index" << YAML::Value << indices[i];
+        out << YAML::EndMap;
+    }
     out << YAML::EndSeq;
 
     auto globalTransform = internode.GetDataComponent<GlobalTransform>();
+    auto transform = internode.GetDataComponent<Transform>();
     /*
     out << YAML::Key << "Transform"
         << internode.GetDataComponent<Transform>().m_value;
@@ -468,7 +475,9 @@ void MultipleAngleCapture::ExportGraphNode(const std::shared_ptr<IInternodeBehav
     auto front = globalRotation * glm::vec3(0, 0, -1);
     auto up = globalRotation * glm::vec3(0, 1, 0);
     auto internodeInfo = internode.GetDataComponent<InternodeInfo>();
-
+    auto internodeStatus = internode.GetDataComponent<InternodeStatus>();
+    out << YAML::Key << "Branching Order" << internodeStatus.m_branchingOrder;
+    out << YAML::Key << "Local Rotation" << transform.GetRotation();
     out << YAML::Key << "Position" << position + front * internodeInfo.m_length;
     out << YAML::Key << "Front Direction" << front;
     out << YAML::Key << "Up Direction" << up;

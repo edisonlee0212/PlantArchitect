@@ -130,6 +130,7 @@ void GeneralTreeParameters::Load(const std::filesystem::path &path) {
 }
 
 void InternodeStatus::OnInspect() {
+    ImGui::Text(("Branching Order: " + std::to_string(m_branchingOrder)).c_str());
     ImGui::Text(("Age: " + std::to_string(m_age)).c_str());
     ImGui::Text(("Sagging: " + std::to_string(m_sagging)).c_str());
     ImGui::Text(("Inhibitor: " + std::to_string(m_inhibitor)).c_str());

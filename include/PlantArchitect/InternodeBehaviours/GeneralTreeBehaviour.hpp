@@ -9,7 +9,12 @@ namespace PlantArchitect {
 
     };
 
-
+    struct GanNode{
+        Entity m_internode;
+        glm::vec3 m_start;
+        glm::vec3 m_end;
+        glm::vec3 m_up;
+    };
 
     class PLANT_ARCHITECT_API InternodeWaterFeeder : public IPrivateComponent{
     public:
