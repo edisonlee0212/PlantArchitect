@@ -20,9 +20,7 @@ namespace PlantArchitect {
 
     class PLANT_ARCHITECT_API GeneralTreeBehaviour : public IInternodeBehaviour {
         std::vector<Entity> m_currentPlants;
-
-
-
+        Entity ImportGANTree(const std::filesystem::path& path, const GeneralTreeParameters& parameters);
 
     protected:
         bool InternalInternodeCheck(const Entity &target) override;

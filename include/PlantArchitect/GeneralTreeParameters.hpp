@@ -89,7 +89,7 @@ namespace PlantArchitect {
         float m_sagging;
 
         /**
-         * Is child with largest total distance to all branchEnds
+         * Is child with largest total distance to all branch ends
          */
         bool m_largestChild = false;
         /**

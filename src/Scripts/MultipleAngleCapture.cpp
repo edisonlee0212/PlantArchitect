@@ -423,7 +423,7 @@ void MultipleAngleCapture::ExportGraph(const std::shared_ptr<IInternodeBehaviour
             out << YAML::Key << "Layer Index" << YAML::Value << layerIndex;
             out << YAML::Key << "Nodes" << YAML::Value << YAML::BeginSeq;
             for (const auto &instance: layer) {
-                ExportGraphNode(out, instance.first, instance.second);
+                ExportGraphNode(behaviour, out, instance.first, instance.second);
             }
             out << YAML::EndSeq;
             out << YAML::EndMap;
@@ -443,12 +443,13 @@ void MultipleAngleCapture::ExportGraph(const std::shared_ptr<IInternodeBehaviour
 
 }
 
-void MultipleAngleCapture::ExportGraphNode(YAML::Emitter &out, int parentIndex, const Entity &internode) {
+void MultipleAngleCapture::ExportGraphNode(const std::shared_ptr<IInternodeBehaviour>& behaviour, YAML::Emitter &out, int parentIndex, const Entity &internode) {
     out << YAML::BeginMap;
     out << YAML::Key << "Parent Entity Index" << parentIndex;
     out << YAML::Key << "Entity Index" << internode.GetIndex();
     out << YAML::Key << "Children Entity Indices" << YAML::Key << YAML::BeginSeq;
     internode.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
+        if (!behaviour->InternodeCheck(child)) return;
         out << YAML::BeginMap;
         out << YAML::Key << "Entity Index" << YAML::Value << child.GetIndex();
         out << YAML::EndMap;
@@ -466,10 +467,12 @@ void MultipleAngleCapture::ExportGraphNode(YAML::Emitter &out, int parentIndex, 
     auto globalRotation = globalTransform.GetRotation();
     auto front = globalRotation * glm::vec3(0, 0, -1);
     auto up = globalRotation * glm::vec3(0, 1, 0);
-    out << YAML::Key << "Position" << position;
+    auto internodeInfo = internode.GetDataComponent<InternodeInfo>();
+
+    out << YAML::Key << "Position" << position + front * internodeInfo.m_length;
     out << YAML::Key << "Front Direction" << front;
     out << YAML::Key << "Up Direction" << up;
-    auto internodeInfo = internode.GetDataComponent<InternodeInfo>();
+
     out << YAML::Key << "Thickness" << internodeInfo.m_thickness;
     out << YAML::Key << "Length" << internodeInfo.m_length;
     //out << YAML::Key << "Internode Index" << internodeInfo.m_index;

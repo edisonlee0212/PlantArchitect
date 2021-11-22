@@ -88,7 +88,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                             Entity longestChild;
                             Entity heaviestChild;
                             parent.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
-                                if(!InternodeCheck(child)) return;
+                                if (!InternodeCheck(child)) return;
                                 auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
                                 auto childInternodeStatus = child.GetDataComponent<InternodeStatus>();
                                 if (childInternodeInfo.m_endNode) {
@@ -139,7 +139,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                                 }
                             });
                             parent.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
-                                if(!InternodeCheck(child)) return;
+                                if (!InternodeCheck(child)) return;
                                 auto childInternodeStatus = child.GetDataComponent<InternodeStatus>();
                                 childInternodeStatus.m_largestChild = largestChild == child;
                                 childInternodeStatus.m_longestChild = longestChild == child;
@@ -196,7 +196,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                          auto difference = internodeGlobalTransform.GetPosition() - plantCenters[plantIndex];
                          internodeIllumination.m_direction = glm::normalize(difference);
                          internodeIllumination.m_intensity = 1.0f;
-                         if(internodeIllumination.m_intensity < 0.1){
+                         if (internodeIllumination.m_intensity < 0.1) {
                              internodeIllumination.m_direction = glm::vec3(0.0f, 1.0f, 0.0f);
                              internodeIllumination.m_intensity = 0.1f;
                          }
@@ -532,7 +532,8 @@ void GeneralTreeBehaviour::Grow(int iteration) {
             rootGlobalTransform.m_value = rootTransform.m_value;
         }
         root.SetDataComponent(rootGlobalTransform);
-        Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(EntityManager::GetCurrentScene(), root);
+        Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(EntityManager::GetCurrentScene(),
+                                                                                       root);
     });
 #pragma endregion
 #pragma region PostProcess
@@ -603,6 +604,10 @@ void GeneralTreeBehaviour::OnInspect() {
         GenerateSkinnedMeshes(subdivision, resolution);
     }
 
+    FileUtils::OpenFile("Import GAN Tree", "YAML", {".yml"}, [&](const std::filesystem::path &path) {
+        GeneralTreeParameters parameters = GeneralTreeParameters();
+        ImportGANTree(path, parameters);
+    }, false);
 }
 
 bool GeneralTreeBehaviour::InternalInternodeCheck(const Entity &target) {
@@ -653,7 +658,83 @@ Entity GeneralTreeBehaviour::NewPlant(const GeneralTreeParameters &params, const
     return entity;
 }
 
-
+Entity GeneralTreeBehaviour::ImportGANTree(const std::filesystem::path &path, const GeneralTreeParameters &parameters) {
+    Entity root = Entity();
+    if (!std::filesystem::exists(path)) {
+        UNIENGINE_ERROR("Not exist!");
+        return root;
+    }
+    try {
+        std::ifstream stream(path.string());
+        std::stringstream stringStream;
+        stringStream << stream.rdbuf();
+        YAML::Node in = YAML::Load(stringStream.str());
+        auto name = in["name"].as<std::string>();
+        int layerSize = in["layersize"].as<int>();
+        auto layers = in["layers"];
+        auto rootLayer = layers["0"];
+        root = Retrieve();
+        std::vector<std::pair<Entity, glm::vec3>> previousNodes;
+        glm::vec3 rootFront;
+        InternodeInfo rootInternodeInfo;
+        rootInternodeInfo.m_thickness = rootLayer["0"]["thickness"].as<float>();
+        rootInternodeInfo.m_length = 1.0f;
+        int rootIndex = 0;
+        for(const auto& component : rootLayer["0"]["direction"]){
+            rootFront[rootIndex] = component.as<float>();
+            rootIndex++;
+        }
+        rootIndex = 0;
+        glm::vec3 rootPosition;
+        for(const auto& component : rootLayer["0"]["position"]){
+            rootPosition[rootIndex] = component.as<float>();
+            rootIndex++;
+        }
+        GlobalTransform rootGlobalTransform;
+        rootGlobalTransform.SetRotation(glm::quatLookAt(rootFront, glm::vec3(0, 0, 1)));
+        rootGlobalTransform.SetPosition(rootPosition);
+        root.SetDataComponent(rootGlobalTransform);
+        previousNodes.emplace_back(root, glm::vec3(0, 0, 1));
+        for(int layerIndex = 1; layerIndex <= layerSize; layerIndex++){
+            auto layer = layers[std::to_string(layerIndex)];
+            auto internodeSize = layer["internodesize"].as<int>();
+            std::vector<std::pair<Entity, glm::vec3>> currentNodes;
+            for(int nodeIndex = 0; nodeIndex < internodeSize; nodeIndex++){
+                auto node = layer[std::to_string(nodeIndex)];
+                auto internode = Retrieve(previousNodes[node["parent"].as<int>()].first);
+                InternodeInfo internodeInfo;
+                internodeInfo.m_thickness = node["thickness"].as<float>();
+                internodeInfo.m_length = 1.0f;
+                internode.SetDataComponent(internodeInfo);
+#pragma region GlobalTransform
+                glm::vec3 front;
+                int index = 0;
+                for(const auto& component : node["direction"]){
+                    front[index] = component.as<float>();
+                    index++;
+                }
+                index = 0;
+                glm::vec3 position;
+                for(const auto& component : node["position"]){
+                    position[index] = component.as<float>();
+                    index++;
+                }
+                GlobalTransform globalTransform;
+                glm::vec3 up = glm::normalize(glm::cross(front, glm::cross(front, previousNodes[node["parent"].as<int>()].second)));
+                globalTransform.SetRotation(glm::quatLookAt(front, up));
+                globalTransform.SetPosition(position);
+                internode.SetDataComponent(globalTransform);
+#pragma endregion
+                currentNodes.emplace_back(internode, up);
+            }
+            previousNodes = currentNodes;
+        }
+    }
+    catch (std::exception e) {
+        UNIENGINE_ERROR("Failed to load!");
+    }
+    return root;
+}
 
 
 void InternodeWaterFeeder::OnInspect() {
