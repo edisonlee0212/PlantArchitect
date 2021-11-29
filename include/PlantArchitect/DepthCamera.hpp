@@ -8,6 +8,7 @@ namespace PlantArchitect {
         static std::shared_ptr<OpenGLUtils::GLProgram> m_depthTransferProgram;
         static std::shared_ptr<OpenGLUtils::GLVAO> m_depthTransferVAO;
     public:
+        void Render();
         DepthCamera& operator=(const DepthCamera& source);
         bool m_useCameraResolution = true;
         int m_resX = 1;

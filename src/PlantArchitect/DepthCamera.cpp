@@ -33,41 +33,7 @@ void DepthCamera::OnInspect() {
     });
 }
 void DepthCamera::Update() {
-    if (!GetOwner().HasPrivateComponent<Camera>())
-        return;
-    auto cameraComponent = GetOwner().GetOrSetPrivateComponent<Camera>().lock();
-    // 1. Resize to resolution
-    auto resolution = cameraComponent->GetResolution();
-    if(m_useCameraResolution) {
-        m_resX = resolution.x;
-        m_resY = resolution.y;
-    }else{
-        int x = resolution.x;
-        int y = resolution.y;
-        m_resX = glm::clamp(m_resX, 1, x);
-        m_resY = glm::clamp(m_resY, 1, y);
-    }
-    if (m_resolutionX != m_resX || m_resY) {
-        m_resolutionX = m_resX;
-        m_resolutionY = m_resY;
-        m_colorTexture->UnsafeGetGLTexture()->ReSize(
-                0, GL_RGB32F, GL_RGB, GL_FLOAT, 0, m_resolutionX, m_resolutionY);
-    }
-    // 2. Render to depth texture
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    OpenGLUtils::SetEnable(OpenGLCapability::CullFace, false);
-    m_depthTransferVAO->Bind();
-
-    m_depthTransferProgram->Bind();
-
-    AttachTexture(m_colorTexture->UnsafeGetGLTexture().get(), GL_COLOR_ATTACHMENT0);
-    Bind();
-    glDrawBuffer(GL_COLOR_ATTACHMENT0);
-    cameraComponent->GetDepthStencil()->UnsafeGetGLTexture()->Bind(0);
-    m_depthTransferProgram->SetInt("depthStencil", 0);
-    m_depthTransferProgram->SetFloat("near", cameraComponent->m_nearDistance);
-    m_depthTransferProgram->SetFloat("far", cameraComponent->m_farDistance);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    Render();
 }
 void DepthCamera::OnCreate() {
     if (!m_depthTransferProgram) {
@@ -120,4 +86,44 @@ DepthCamera &DepthCamera::operator=(const DepthCamera & source) {
     m_resY = source.m_resY;
     m_colorTexture = source.m_colorTexture;
     return *this;
+}
+
+void DepthCamera::Render() {
+    if (!GetOwner().HasPrivateComponent<Camera>())
+        return;
+    auto cameraComponent = GetOwner().GetOrSetPrivateComponent<Camera>().lock();
+    if(!cameraComponent->Rendered()) return;
+
+    // 1. Resize to resolution
+    auto resolution = cameraComponent->GetResolution();
+    if(m_useCameraResolution) {
+        m_resX = resolution.x;
+        m_resY = resolution.y;
+    }else{
+        int x = resolution.x;
+        int y = resolution.y;
+        m_resX = glm::clamp(m_resX, 1, x);
+        m_resY = glm::clamp(m_resY, 1, y);
+    }
+    if (m_resolutionX != m_resX || m_resY) {
+        m_resolutionX = m_resX;
+        m_resolutionY = m_resY;
+        m_colorTexture->UnsafeGetGLTexture()->ReSize(
+                0, GL_RGB32F, GL_RGB, GL_FLOAT, 0, m_resolutionX, m_resolutionY);
+    }
+    // 2. Render to depth texture
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    OpenGLUtils::SetEnable(OpenGLCapability::CullFace, false);
+    m_depthTransferVAO->Bind();
+
+    m_depthTransferProgram->Bind();
+
+    AttachTexture(m_colorTexture->UnsafeGetGLTexture().get(), GL_COLOR_ATTACHMENT0);
+    Bind();
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
+    cameraComponent->GetDepthStencil()->UnsafeGetGLTexture()->Bind(0);
+    m_depthTransferProgram->SetInt("depthStencil", 0);
+    m_depthTransferProgram->SetFloat("near", cameraComponent->m_nearDistance);
+    m_depthTransferProgram->SetFloat("far", cameraComponent->m_farDistance);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 }

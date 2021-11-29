@@ -10,9 +10,10 @@
 
 using namespace Scripts;
 
-std::shared_ptr<IInternodeBehaviour> AutoTreeGenerationPipeline::GetBehaviour(){
+std::shared_ptr<IInternodeBehaviour> AutoTreeGenerationPipeline::GetBehaviour() {
     return m_currentInternodeBehaviour;
 }
+
 void AutoTreeGenerationPipeline::Update() {
     auto pipelineBehaviour = m_pipelineBehaviour.Get<IAutoTreeGenerationPipelineBehaviour>();
     if (pipelineBehaviour && m_currentInternodeBehaviour) {
@@ -22,15 +23,18 @@ void AutoTreeGenerationPipeline::Update() {
                 break;
             case AutoTreeGenerationPipelineStatus::BeforeGrowth:
                 Application::GetLayer<InternodeLayer>()->m_enablePhysics = false;
-                switch(m_behaviourType){
+                switch (m_behaviourType) {
                     case BehaviourType::GeneralTree:
-                        pipelineBehaviour->m_currentGrowingTree = std::dynamic_pointer_cast<GeneralTreeBehaviour>(m_currentInternodeBehaviour)->NewPlant(m_generalTreeParameters, Transform());
+                        pipelineBehaviour->m_currentGrowingTree = std::dynamic_pointer_cast<GeneralTreeBehaviour>(
+                                m_currentInternodeBehaviour)->NewPlant(m_generalTreeParameters, Transform());
                         break;
                     case BehaviourType::LSystem:
-                        pipelineBehaviour->m_currentGrowingTree = std::dynamic_pointer_cast<LSystemBehaviour>(m_currentInternodeBehaviour)->FormPlant(m_lString.Get<LString>(), m_lSystemParameters);
+                        pipelineBehaviour->m_currentGrowingTree = std::dynamic_pointer_cast<LSystemBehaviour>(
+                                m_currentInternodeBehaviour)->FormPlant(m_lString.Get<LString>(), m_lSystemParameters);
                         break;
                     case BehaviourType::SpaceColonization:
-                        pipelineBehaviour->m_currentGrowingTree = std::dynamic_pointer_cast<SpaceColonizationBehaviour>(m_currentInternodeBehaviour)->NewPlant(m_spaceColonizationParameters, Transform());
+                        pipelineBehaviour->m_currentGrowingTree = std::dynamic_pointer_cast<SpaceColonizationBehaviour>(
+                                m_currentInternodeBehaviour)->NewPlant(m_spaceColonizationParameters, Transform());
                         break;
                 }
                 pipelineBehaviour->OnBeforeGrowth(*this);
@@ -45,18 +49,13 @@ void AutoTreeGenerationPipeline::Update() {
             case AutoTreeGenerationPipelineStatus::Growth: {
                 Application::GetLayer<InternodeLayer>()->Simulate(pipelineBehaviour->m_perTreeGrowthIteration);
                 m_status = AutoTreeGenerationPipelineStatus::AfterGrowth;
-                pipelineBehaviour->m_skipCurrentFrame = true;
             }
                 break;
             case AutoTreeGenerationPipelineStatus::AfterGrowth:
-                if (pipelineBehaviour->m_skipCurrentFrame) {
-                    pipelineBehaviour->m_skipCurrentFrame = false;
-                } else {
-                    pipelineBehaviour->OnAfterGrowth(*this);
-                    if (m_status != AutoTreeGenerationPipelineStatus::AfterGrowth) {
-                        if (pipelineBehaviour->m_currentGrowingTree.IsValid())
-                            m_currentInternodeBehaviour->Recycle(pipelineBehaviour->m_currentGrowingTree);
-                    }
+                pipelineBehaviour->OnAfterGrowth(*this);
+                if (m_status != AutoTreeGenerationPipelineStatus::AfterGrowth) {
+                    if (pipelineBehaviour->m_currentGrowingTree.IsValid())
+                        m_currentInternodeBehaviour->Recycle(pipelineBehaviour->m_currentGrowingTree);
                 }
                 break;
         }
@@ -80,19 +79,20 @@ void AutoTreeGenerationPipeline::OnInspect() {
     auto behaviour = m_pipelineBehaviour.Get<IAutoTreeGenerationPipelineBehaviour>();
     if (behaviour) {
         ImGui::DragInt("Growth iteration", &behaviour->m_perTreeGrowthIteration);
-        switch(m_behaviourType){
-            case BehaviourType::GeneralTree:
-            {
+        switch (m_behaviourType) {
+            case BehaviourType::GeneralTree: {
                 ImGui::Text("General tree settings");
-                FileUtils::OpenFile("Load parameters", "GeneralTreeParam", {".gtparams"}, [&](const std::filesystem::path &path) {
-                    m_generalTreeParameters.Load(path);
-                    m_parameterFileName = path.stem().string();
-                    behaviour->m_perTreeGrowthIteration = m_generalTreeParameters.m_matureAge;
+                FileUtils::OpenFile("Load parameters", "GeneralTreeParam", {".gtparams"},
+                                    [&](const std::filesystem::path &path) {
+                                        m_generalTreeParameters.Load(path);
+                                        m_parameterFileName = path.stem().string();
+                                        behaviour->m_perTreeGrowthIteration = m_generalTreeParameters.m_matureAge;
 
-                }, false);
-                FileUtils::SaveFile("Save parameters", "GeneralTreeParam", {".gtparams"}, [&](const std::filesystem::path &path) {
-                    m_generalTreeParameters.Save(path);
-                }, false);
+                                    }, false);
+                FileUtils::SaveFile("Save parameters", "GeneralTreeParam", {".gtparams"},
+                                    [&](const std::filesystem::path &path) {
+                                        m_generalTreeParameters.Save(path);
+                                    }, false);
                 if (ImGui::TreeNodeEx("Parameters")) {
                     m_generalTreeParameters.OnInspect();
                     ImGui::TreePop();
@@ -104,13 +104,15 @@ void AutoTreeGenerationPipeline::OnInspect() {
                 break;
             case BehaviourType::SpaceColonization:
                 ImGui::Text("Space colonization tree settings");
-                FileUtils::OpenFile("Load parameters", "SpaceColonizationTreeParam", {".scparams"}, [&](const std::filesystem::path &path) {
-                    m_spaceColonizationParameters.Load(path);
-                    m_parameterFileName = path.stem().string();
-                }, false);
-                FileUtils::SaveFile("Save parameters", "SpaceColonizationTreeParam", {".scparams"}, [&](const std::filesystem::path &path) {
-                    m_spaceColonizationParameters.Save(path);
-                }, false);
+                FileUtils::OpenFile("Load parameters", "SpaceColonizationTreeParam", {".scparams"},
+                                    [&](const std::filesystem::path &path) {
+                                        m_spaceColonizationParameters.Load(path);
+                                        m_parameterFileName = path.stem().string();
+                                    }, false);
+                FileUtils::SaveFile("Save parameters", "SpaceColonizationTreeParam", {".scparams"},
+                                    [&](const std::filesystem::path &path) {
+                                        m_spaceColonizationParameters.Save(path);
+                                    }, false);
                 if (ImGui::TreeNodeEx("Parameters")) {
                     m_spaceColonizationParameters.OnInspect();
                     ImGui::TreePop();

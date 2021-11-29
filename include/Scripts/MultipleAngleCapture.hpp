@@ -28,6 +28,7 @@ namespace Scripts {
         std::shared_ptr<Camera> m_branchCaptureCamera;
         glm::vec3 m_cameraPosition;
         glm::quat m_cameraRotation;
+        bool m_rendering = false;
     public:
         AssetRef m_foliagePhyllotaxis;
         bool m_autoAdjustCamera = true;

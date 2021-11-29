@@ -18,6 +18,8 @@ void MultipleAngleCapture::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) 
         pipeline.m_status = AutoTreeGenerationPipelineStatus::Idle;
         return;
     }
+    auto camera = m_cameraEntity.Get().GetOrSetPrivateComponent<Camera>().lock();
+    camera->SetRequireRendering(true);
     m_currentGrowingTree.GetOrSetPrivateComponent<Internode>().lock()->m_foliage.Get<InternodeFoliage>()->m_foliagePhyllotaxis = m_foliagePhyllotaxis;
     auto behaviour = pipeline.GetBehaviour();
     auto behaviourType = pipeline.GetBehaviourType();
@@ -37,10 +39,20 @@ void MultipleAngleCapture::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) 
 
     m_captureStatus = MultipleAngleCaptureStatus::Info;
     pipeline.m_status = AutoTreeGenerationPipelineStatus::Growth;
+    m_rendering = true;
 }
 
 void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
+    auto camera = m_cameraEntity.Get().GetOrSetPrivateComponent<Camera>().lock();
+    camera->SetRequireRendering(true);
     auto behaviour = pipeline.GetBehaviour();
+    if(m_rendering){
+        behaviour->GenerateSkinnedMeshes();
+        m_rendering = false;
+        return;
+    }
+
+
     auto behaviourType = pipeline.GetBehaviourType();
     std::string prefix;
     switch (behaviourType) {
@@ -125,8 +137,6 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
                 ExportGraph(behaviour, exportPath);
             }
             if (m_exportBranchCapture) RenderBranchCapture();
-
-            m_skipCurrentFrame = true;
             m_captureStatus = MultipleAngleCaptureStatus::Image;
         }
             break;
@@ -137,11 +147,11 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
             auto depthFolder = m_currentExportFolder / "Depth";
             auto branchFolder = m_currentExportFolder / "Branch";
             if (m_exportImage) {
-                auto camera = m_cameraEntity.Get().GetOrSetPrivateComponent<Camera>().lock();
                 camera->GetTexture()->SetPathAndSave(imagesFolder / (prefix + "_" + anglePrefix + "_rgb.png"));
             }
             if (m_exportDepth) {
                 auto depthCamera = m_cameraEntity.Get().GetOrSetPrivateComponent<DepthCamera>().lock();
+                depthCamera->Render();
                 depthCamera->m_colorTexture->SetPathAndSave(depthFolder / (prefix + "_" + anglePrefix + "_depth.png"));
             }
             if (m_exportBranchCapture) {
@@ -156,12 +166,10 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
             if (m_pitchAngle + m_pitchAngleStep < m_pitchAngleEnd) {
                 m_pitchAngle += m_pitchAngleStep;
                 SetUpCamera();
-                m_skipCurrentFrame = true;
             } else if (m_turnAngle + m_turnAngleStep < 360.0f) {
                 m_turnAngle += m_turnAngleStep;
                 m_pitchAngle = m_pitchAngleStart;
                 SetUpCamera();
-                m_skipCurrentFrame = true;
             } else {
                 m_remainingInstanceAmount--;
                 m_pitchAngle = m_pitchAngleStart;

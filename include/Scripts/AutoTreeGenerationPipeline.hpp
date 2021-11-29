@@ -45,7 +45,6 @@ namespace Scripts {
     class IAutoTreeGenerationPipelineBehaviour : public IAsset{
         friend class AutoTreeGenerationPipeline;
     public:
-        bool m_skipCurrentFrame = false;
         Entity m_currentGrowingTree;
         int m_perTreeGrowthIteration = 1;
         virtual void OnIdle(AutoTreeGenerationPipeline& pipeline);
