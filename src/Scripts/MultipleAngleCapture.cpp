@@ -485,11 +485,14 @@ void MultipleAngleCapture::ExportGraphNode(const std::shared_ptr<IInternodeBehav
     auto internodeInfo = internode.GetDataComponent<InternodeInfo>();
     auto internodeStatus = internode.GetDataComponent<InternodeStatus>();
     out << YAML::Key << "Branching Order" << internodeStatus.m_branchingOrder;
+    out << YAML::Key << "Level" << internodeStatus.m_level;
+    out << YAML::Key << "Distance to Root" << internodeStatus.m_distanceToRoot;
     out << YAML::Key << "Local Rotation" << transform.GetRotation();
+    out << YAML::Key << "Global Rotation" << globalRotation;
     out << YAML::Key << "Position" << position + front * internodeInfo.m_length;
     out << YAML::Key << "Front Direction" << front;
     out << YAML::Key << "Up Direction" << up;
-
+    out << YAML::Key << "IsEndNode" << internodeInfo.m_endNode;
     out << YAML::Key << "Thickness" << internodeInfo.m_thickness;
     out << YAML::Key << "Length" << internodeInfo.m_length;
     //out << YAML::Key << "Internode Index" << internodeInfo.m_index;

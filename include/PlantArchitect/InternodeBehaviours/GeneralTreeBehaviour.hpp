@@ -31,6 +31,8 @@ namespace PlantArchitect {
         bool InternalInternodeCheck(const Entity &target) override;
 
     public:
+        void Preprocess();
+
         void OnInspect() override;
 
         void OnCreate() override;
