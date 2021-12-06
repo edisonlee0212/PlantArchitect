@@ -12,7 +12,7 @@ using namespace PlantArchitect;
 
 void SpaceColonizationBehaviour::OnCreate() {
     m_internodeArchetype =
-            EntityManager::CreateEntityArchetype("Space Colonization Internode", InternodeInfo(),
+            EntityManager::CreateEntityArchetype("Space Colonization Internode", InternodeInfo(), InternodeStatistics(),
                                                  SpaceColonizationTag(), SpaceColonizationIncentive(),
                                                  SpaceColonizationParameters(),
                                                  BranchColor(), BranchCylinder(), BranchCylinderWidth(),

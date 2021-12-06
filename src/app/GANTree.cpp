@@ -43,8 +43,6 @@ using namespace Scripts;
 
 void EngineSetup();
 
-void RegisterDataComponentMenus();
-
 int main() {
     ClassRegistry::RegisterPrivateComponent<ObjectRotator>("ObjectRotator");
     ClassRegistry::RegisterPrivateComponent<DepthCamera>("DepthCamera");
@@ -52,11 +50,7 @@ int main() {
     ClassRegistry::RegisterPrivateComponent<GANTreePipelineDriver>("GANTreePipelineDriver");
     ClassRegistry::RegisterAsset<MultipleAngleCapture>("MultipleAngleCapture", ".mulanglecap");
 
-
-
     EngineSetup();
-    RegisterDataComponentMenus();
-
     ApplicationConfigs applicationConfigs;
     applicationConfigs.m_projectPath = "GANTree/GANTree.ueproj";
     Application::Create(applicationConfigs);
@@ -121,46 +115,4 @@ void EngineSetup() {
         auto driver = multipleAngleCapturePipelineEntity.GetOrSetPrivateComponent<GANTreePipelineDriver>().lock();
         driver->m_pipeline = multipleAngleCapturePipeline;
     });
-}
-
-void RegisterDataComponentMenus() {
-    EditorManager::RegisterComponentDataInspector<InternodeInfo>([](Entity entity, IDataComponent *data, bool isRoot) {
-        auto *ltw = reinterpret_cast<InternodeInfo *>(data);
-        ltw->OnInspect();
-    });
-
-    EditorManager::RegisterComponentDataInspector<GeneralTreeParameters>(
-            [](Entity entity, IDataComponent *data, bool isRoot) {
-                auto *ltw = reinterpret_cast<GeneralTreeParameters *>(data);
-                ltw->OnInspect();
-            });
-
-    EditorManager::RegisterComponentDataInspector<InternodeStatus>(
-            [](Entity entity, IDataComponent *data, bool isRoot) {
-                auto *ltw = reinterpret_cast<InternodeStatus *>(data);
-                ltw->OnInspect();
-            });
-
-    EditorManager::RegisterComponentDataInspector<InternodeWaterPressure>(
-            [](Entity entity, IDataComponent *data, bool isRoot) {
-                auto *ltw = reinterpret_cast<InternodeWaterPressure *>(data);
-                ltw->OnInspect();
-            });
-
-    EditorManager::RegisterComponentDataInspector<InternodeWater>([](Entity entity, IDataComponent *data, bool isRoot) {
-        auto *ltw = reinterpret_cast<InternodeWater *>(data);
-        ltw->OnInspect();
-    });
-
-    EditorManager::RegisterComponentDataInspector<InternodeIllumination>(
-            [](Entity entity, IDataComponent *data, bool isRoot) {
-                auto *ltw = reinterpret_cast<InternodeIllumination *>(data);
-                ltw->OnInspect();
-            });
-
-    EditorManager::RegisterComponentDataInspector<SpaceColonizationParameters>(
-            [](Entity entity, IDataComponent *data, bool isRoot) {
-                auto *ltw = reinterpret_cast<SpaceColonizationParameters *>(data);
-                ltw->OnInspect();
-            });
 }

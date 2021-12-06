@@ -69,6 +69,7 @@ void Internode::ExportLString(const std::shared_ptr<LString>& lString) {
 void Internode::ExportLSystemCommandsHelper(int& index, const Entity &target, std::vector<LSystemCommand> &commands) {
     if (!target.IsValid() || !target.HasDataComponent<InternodeInfo>()) return;
     auto internodeInfo = target.GetDataComponent<InternodeInfo>();
+    auto internodeStatstics = target.GetDataComponent<InternodeStatistics>();
     auto transform = target.GetDataComponent<Transform>();
     auto eulerRotation = transform.GetEulerRotation();
     if (eulerRotation.x > 0) {
@@ -93,7 +94,7 @@ void Internode::ExportLSystemCommandsHelper(int& index, const Entity &target, st
         index++;
     }
     commands.push_back({LSystemCommandType::Forward, internodeInfo.m_length});
-    internodeInfo.m_index = index;
+    internodeStatstics.m_lSystemStringIndex = index;
     target.SetDataComponent(internodeInfo);
     index++;
 

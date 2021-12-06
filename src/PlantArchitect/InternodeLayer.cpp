@@ -18,8 +18,11 @@
 #include "EmptyInternodeResource.hpp"
 #include "DefaultInternodePhyllotaxis.hpp"
 #include "JSONTreeBehaviour.hpp"
+
 using namespace PlantArchitect;
-void InternodeLayer::PreparePhysics(const Entity& entity, const Entity& child, const BranchPhysicsParameters& branchPhysicsParameters) {
+
+void InternodeLayer::PreparePhysics(const Entity &entity, const Entity &child,
+                                    const BranchPhysicsParameters &branchPhysicsParameters) {
     auto internodeInfo = entity.GetDataComponent<InternodeInfo>();
     auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
     auto rigidBody = child.GetOrSetPrivateComponent<RigidBody>().lock();
@@ -48,6 +51,7 @@ void InternodeLayer::PreparePhysics(const Entity& entity, const Entity& child, c
                     branchPhysicsParameters.m_jointDriveDampingFactor,
                     branchPhysicsParameters.m_enableAccelerationForDrive);
 }
+
 void InternodeLayer::Simulate(int iterations) {
     for (int iteration = 0; iteration < iterations; iteration++) {
         m_voxelSpace.Clear();
@@ -62,32 +66,39 @@ void InternodeLayer::Simulate(int iterations) {
                  [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &internodeGlobalTransform) {
                      const auto position = internodeGlobalTransform.GetPosition();
                      internodeInfo.m_neighborsProximity = 0;
-                     m_voxelSpace.ForEachInRange(position, 16, [&](const glm::vec3& neighborPosition, const Entity& neighbor){
-                         if(neighbor == entity) return;
-                         auto distance = glm::max(1.0f, glm::distance(position, neighborPosition));
-                         if(distance < 16){
-                             internodeInfo.m_neighborsProximity += 1.0f / (distance * distance);
-                         }
-                     });
+                     m_voxelSpace.ForEachInRange(position, 16,
+                                                 [&](const glm::vec3 &neighborPosition, const Entity &neighbor) {
+                                                     if (neighbor == entity) return;
+                                                     auto distance = glm::max(1.0f, glm::distance(position,
+                                                                                                  neighborPosition));
+                                                     if (distance < 16) {
+                                                         internodeInfo.m_neighborsProximity +=
+                                                                 1.0f / (distance * distance);
+                                                     }
+                                                 });
                  }, true);
         for (auto &i: m_internodeBehaviours) {
             auto behaviour = i.Get<IInternodeBehaviour>();
             if (behaviour) behaviour->Grow(iteration);
         }
     }
-    if(m_enablePhysics) PreparePhysics();
+    if (m_enablePhysics) PreparePhysics();
+    UpdateBranchColors();
+    UpdateBranchCylinder(m_connectionWidth);
+    UpdateBranchPointer(m_pointerLength, m_pointerWidth);
 }
+
 void InternodeLayer::PreparePhysics() {
     auto physicsLayer = Application::GetLayer<PhysicsLayer>();
-    if(!physicsLayer) return;
+    if (!physicsLayer) return;
     for (auto &i: m_internodeBehaviours) {
         auto behaviour = i.Get<IInternodeBehaviour>();
-        if (behaviour){
+        if (behaviour) {
             std::vector<Entity> roots;
             behaviour->CollectRoots(roots);
-            for(const auto& root : roots){
+            for (const auto &root: roots) {
                 auto branchPhysicsParameter = root.GetDataComponent<BranchPhysicsParameters>();
-                behaviour->TreeGraphWalkerRootToEnd(root, root, [&](Entity parent, Entity child){
+                behaviour->TreeGraphWalkerRootToEnd(root, root, [&](Entity parent, Entity child) {
                     PreparePhysics(parent, child, branchPhysicsParameter);
                 });
             }
@@ -98,10 +109,11 @@ void InternodeLayer::PreparePhysics() {
     physicsLayer->UploadTransforms(activeScene, true);
     physicsLayer->UploadJointLinks(activeScene);
 }
+
 #pragma region Methods
 
 void InternodeLayer::OnInspect() {
-    if(ImGui::Begin("Internode Manager")) {
+    if (ImGui::Begin("Internode Manager")) {
         static int iterations = 1;
         ImGui::DragInt("Iterations", &iterations);
         ImGui::Checkbox("Enable physics", &m_enablePhysics);
@@ -116,7 +128,7 @@ void InternodeLayer::OnInspect() {
         }
         if (m_voxelSpace.m_display) {
             auto editorLayer = Application::GetLayer<EditorLayer>();
-            if(editorLayer) {
+            if (editorLayer) {
                 RenderManager::DrawGizmoMeshInstanced(
                         DefaultResources::Primitives::Cube, m_internodeDebuggingCamera,
                         editorLayer->m_sceneCameraPosition,
@@ -133,7 +145,8 @@ void InternodeLayer::OnInspect() {
             ImGui::SameLine();
             static AssetRef temp;
             EditorManager::DragAndDropButton(temp, "Here",
-                                             {"GeneralTreeBehaviour", "SpaceColonizationBehaviour", "LSystemBehaviour", "JSONTreeBehaviour"},
+                                             {"GeneralTreeBehaviour", "SpaceColonizationBehaviour", "LSystemBehaviour",
+                                              "JSONTreeBehaviour"},
                                              false);
             if (temp.Get<IInternodeBehaviour>()) {
                 PushInternodeBehaviour(temp.Get<IInternodeBehaviour>());
@@ -186,7 +199,7 @@ void InternodeLayer::OnInspect() {
     ImGui::End();
 #pragma region Internode debugging camera
     auto editorLayer = Application::GetLayer<EditorLayer>();
-    if(!editorLayer) return;
+    if (!editorLayer) return;
     ImVec2 viewPortSize;
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
     ImGui::Begin("Internodes");
@@ -196,34 +209,15 @@ void InternodeLayer::OnInspect() {
             if (ImGui::BeginMenuBar()) {
                 if (ImGui::BeginMenu("Settings")) {
 #pragma region Menu
-                    ImGui::Checkbox("Connections", &m_drawBranches);
+                    ImGui::Checkbox("Branches", &m_drawBranches);
                     if (m_drawBranches) {
 
-                        if (ImGui::TreeNodeEx("Connection settings",
+                        if (ImGui::TreeNodeEx("Branch settings",
                                               ImGuiTreeNodeFlags_DefaultOpen)) {
                             ImGui::Checkbox("Auto update", &m_autoUpdate);
                             ImGui::SliderFloat("Alpha", &m_transparency, 0, 1);
                             ImGui::DragFloat("Connection width", &m_connectionWidth, 0.01f, 0.01f, 1.0f);
-
-                            static const char *ColorModes[]{"None", "Order", "Level", "Water", "ApicalControl",
-                                                            "WaterPressure",
-                                                            "Proximity", "Inhibitor", "IndexDivider", "IndexRange"};
-                            static int colorModeIndex = 0;
-                            if (ImGui::Combo("Color mode", &colorModeIndex, ColorModes,
-                                             IM_ARRAYSIZE(ColorModes))) {
-                                m_branchColorMode = (BranchColorMode) colorModeIndex;
-                            }
-                            ImGui::DragFloat("Multiplier", &m_branchColorValueMultiplier, 0.01f);
-                            ImGui::DragFloat("Compress", &m_branchColorValueCompressFactor, 0.01f);
-                            switch (m_branchColorMode) {
-                                case BranchColorMode::IndexDivider:
-                                    ImGui::DragInt("Divider", &m_indexDivider, 1, 1, 1024);
-                                    break;
-                                case BranchColorMode::IndexRange:
-                                    ImGui::DragInt("Range Min", &m_indexRangeMin, 1, 0, m_indexRangeMax);
-                                    ImGui::DragInt("Range Max", &m_indexRangeMax, 1, m_indexRangeMin, 999999);
-                                    break;
-                            }
+                            DrawColorModeSelectionMenu();
                             ImGui::TreePop();
                         }
                     }
@@ -478,9 +472,74 @@ void InternodeLayer::OnCreate() {
     ClassRegistry::RegisterPrivateComponent<Internode>("Internode");
 
     ClassRegistry::RegisterDataComponent<InternodeInfo>("InternodeInfo");
+    ClassRegistry::RegisterDataComponent<InternodeStatistics>("InternodeStatistics");
 
     ClassRegistry::RegisterAsset<InternodeFoliage>("InternodeFoliage", ".internodefoliage");
     ClassRegistry::RegisterAsset<DefaultInternodePhyllotaxis>("DefaultInternodePhyllotaxis", ".defaultip");
+
+    EditorManager::RegisterComponentDataInspector<InternodeInfo>([](Entity entity, IDataComponent *data, bool isRoot) {
+        auto *ltw = reinterpret_cast<InternodeInfo *>(data);
+        ltw->OnInspect();
+    });
+
+    EditorManager::RegisterComponentDataInspector<GeneralTreeParameters>(
+            [](Entity entity, IDataComponent *data, bool isRoot) {
+                auto *ltw = reinterpret_cast<GeneralTreeParameters *>(data);
+                ltw->OnInspect();
+            });
+
+    EditorManager::RegisterComponentDataInspector<InternodeStatus>(
+            [](Entity entity, IDataComponent *data, bool isRoot) {
+                auto *ltw = reinterpret_cast<InternodeStatus *>(data);
+                ltw->OnInspect();
+            });
+
+    EditorManager::RegisterComponentDataInspector<InternodeWaterPressure>(
+            [](Entity entity, IDataComponent *data, bool isRoot) {
+                auto *ltw = reinterpret_cast<InternodeWaterPressure *>(data);
+                ltw->OnInspect();
+            });
+
+    EditorManager::RegisterComponentDataInspector<InternodeStatistics>(
+            [](Entity entity, IDataComponent *data, bool isRoot) {
+                auto *ltw = reinterpret_cast<InternodeStatistics *>(data);
+                ltw->OnInspect();
+            });
+
+    EditorManager::RegisterComponentDataInspector<BranchPhysicsParameters>(
+            [](Entity entity, IDataComponent *data, bool isRoot) {
+                auto *ltw = reinterpret_cast<BranchPhysicsParameters *>(data);
+                ltw->OnInspect();
+            });
+
+    EditorManager::RegisterComponentDataInspector<BranchColor>(
+            [](Entity entity, IDataComponent *data, bool isRoot) {
+                auto *ltw = reinterpret_cast<BranchColor *>(data);
+                ltw->OnInspect();
+            });
+
+    EditorManager::RegisterComponentDataInspector<BranchCylinderWidth>(
+            [](Entity entity, IDataComponent *data, bool isRoot) {
+                auto *ltw = reinterpret_cast<BranchCylinderWidth *>(data);
+                ltw->OnInspect();
+            });
+
+    EditorManager::RegisterComponentDataInspector<InternodeWater>([](Entity entity, IDataComponent *data, bool isRoot) {
+        auto *ltw = reinterpret_cast<InternodeWater *>(data);
+        ltw->OnInspect();
+    });
+
+    EditorManager::RegisterComponentDataInspector<InternodeIllumination>(
+            [](Entity entity, IDataComponent *data, bool isRoot) {
+                auto *ltw = reinterpret_cast<InternodeIllumination *>(data);
+                ltw->OnInspect();
+            });
+
+    EditorManager::RegisterComponentDataInspector<SpaceColonizationParameters>(
+            [](Entity entity, IDataComponent *data, bool isRoot) {
+                auto *ltw = reinterpret_cast<SpaceColonizationParameters *>(data);
+                ltw->OnInspect();
+            });
 
     auto spaceColonizationBehaviour = AssetManager::CreateAsset<SpaceColonizationBehaviour>();
     auto lSystemBehaviour = AssetManager::CreateAsset<LSystemBehaviour>();
@@ -492,8 +551,8 @@ void InternodeLayer::OnCreate() {
     PushInternodeBehaviour(std::dynamic_pointer_cast<IInternodeBehaviour>(generalTreeBehaviour));
     PushInternodeBehaviour(std::dynamic_pointer_cast<JSONTreeBehaviour>(jsonTreeBehaviour));
 
-    m_randomColors.resize(64);
-    for (int i = 0; i < 60; i++) {
+    m_randomColors.resize(8192);
+    for (int i = 0; i < 8192; i++) {
         m_randomColors[i] = glm::sphericalRand(1.0f);
     }
 
@@ -518,7 +577,7 @@ void InternodeLayer::LateUpdate() {
 
 void InternodeLayer::UpdateBranchColors() {
     auto editorLayer = Application::GetLayer<EditorLayer>();
-    if(!editorLayer) return;
+    if (!editorLayer) return;
     auto focusingInternode = Entity();
     auto selectedEntity = Entity();
     if (m_currentFocusingInternode.Get().IsValid()) {
@@ -650,29 +709,29 @@ void InternodeLayer::UpdateBranchColors() {
                                                                  true);
             break;
         case BranchColorMode::IndexDivider:
-            EntityManager::ForEach<BranchColor, InternodeInfo>(EntityManager::GetCurrentScene(),
+            EntityManager::ForEach<BranchColor, InternodeStatistics>(EntityManager::GetCurrentScene(),
                                                                JobManager::PrimaryWorkers(),
                                                                m_internodesQuery,
                                                                [=](int i, Entity entity,
                                                                    BranchColor &internodeRenderColor,
-                                                                   InternodeInfo &internodeInfo) {
+                                                                   InternodeStatistics &internodeStatistics) {
                                                                    internodeRenderColor.m_value = glm::vec4(glm::vec3(
-                                                                                                                    m_randomColors[internodeInfo.m_index /
+                                                                                                                    m_randomColors[internodeStatistics.m_lSystemStringIndex /
                                                                                                                                    m_indexDivider]),
                                                                                                             1.0f);
                                                                },
                                                                true);
             break;
         case BranchColorMode::IndexRange:
-            EntityManager::ForEach<BranchColor, InternodeInfo>(EntityManager::GetCurrentScene(),
+            EntityManager::ForEach<BranchColor, InternodeStatistics>(EntityManager::GetCurrentScene(),
                                                                JobManager::PrimaryWorkers(),
                                                                m_internodesQuery,
                                                                [=](int i, Entity entity,
                                                                    BranchColor &internodeRenderColor,
-                                                                   InternodeInfo &internodeInfo) {
+                                                                   InternodeStatistics &internodeStatistics) {
                                                                    glm::vec3 color = glm::vec3(1.0f);
-                                                                   if (internodeInfo.m_index > m_indexRangeMin &&
-                                                                       internodeInfo.m_index < m_indexRangeMax) {
+                                                                   if (internodeStatistics.m_lSystemStringIndex > m_indexRangeMin &&
+                                                                           internodeStatistics.m_lSystemStringIndex < m_indexRangeMax) {
                                                                        color = glm::vec3(0.0f, 0.0f, 1.0f);
                                                                    }
                                                                    internodeRenderColor.m_value = glm::vec4(color,
@@ -735,7 +794,7 @@ void InternodeLayer::UpdateBranchPointer(const float &length, const float &width
 
 void InternodeLayer::RenderBranchCylinders() {
     auto editorLayer = Application::GetLayer<EditorLayer>();
-    if(!editorLayer) return;
+    if (!editorLayer) return;
     std::vector<BranchCylinder> branchCylinders;
     m_internodesQuery.ToComponentDataArray<BranchCylinder>(EntityManager::GetCurrentScene(),
                                                            branchCylinders);
@@ -754,7 +813,7 @@ void InternodeLayer::RenderBranchCylinders() {
 
 void InternodeLayer::RenderBranchPointers() {
     auto editorLayer = Application::GetLayer<EditorLayer>();
-    if(!editorLayer) return;
+    if (!editorLayer) return;
     std::vector<BranchPointer> branchPointers;
     m_internodesQuery.ToComponentDataArray<BranchPointer>(EntityManager::GetCurrentScene(),
                                                           branchPointers);
@@ -773,7 +832,6 @@ bool InternodeLayer::InternodeCheck(const Entity &target) {
 }
 
 
-
 void InternodeLayer::UpdateInternodeCamera() {
     if (m_rightMouseButtonHold &&
         !InputManager::GetMouseInternal(GLFW_MOUSE_BUTTON_RIGHT,
@@ -782,7 +840,7 @@ void InternodeLayer::UpdateInternodeCamera() {
         m_startMouse = false;
     }
     auto editorLayer = Application::GetLayer<EditorLayer>();
-    if(!editorLayer) return;
+    if (!editorLayer) return;
 
     m_internodeDebuggingCamera->ResizeResolution(
             m_internodeDebuggingCameraResolutionX,
@@ -817,6 +875,32 @@ void InternodeLayer::UpdateInternodeCamera() {
 #pragma endregion
 }
 
+static const char *BranchColorModes[]{"None", "Order", "Level", "Water", "ApicalControl",
+                                      "WaterPressure",
+                                      "Proximity", "Inhibitor", "IndexDivider", "IndexRange"};
+
+void InternodeLayer::DrawColorModeSelectionMenu() {
+    if (ImGui::TreeNodeEx("Branch Coloring")) {
+        static int colorModeIndex = 0;
+        if (ImGui::Combo("Color mode", &colorModeIndex, BranchColorModes,
+                         IM_ARRAYSIZE(BranchColorModes))) {
+            m_branchColorMode = (BranchColorMode) colorModeIndex;
+        }
+
+        ImGui::DragFloat("Multiplier", &m_branchColorValueMultiplier, 0.01f);
+        ImGui::DragFloat("Compress", &m_branchColorValueCompressFactor, 0.01f);
+        switch (m_branchColorMode) {
+            case BranchColorMode::IndexDivider:
+                ImGui::DragInt("Divider", &m_indexDivider, 1, 2, 1024);
+                break;
+            case BranchColorMode::IndexRange:
+                ImGui::DragInt("Range Min", &m_indexRangeMin, 1, 0, m_indexRangeMax);
+                ImGui::DragInt("Range Max", &m_indexRangeMax, 1, m_indexRangeMin, 999999);
+                break;
+        }
+        ImGui::TreePop();
+    }
+}
 
 
 #pragma endregion

@@ -33,7 +33,7 @@ void LSystemBehaviour::OnInspect() {
 
 void LSystemBehaviour::OnCreate() {
     m_internodeArchetype =
-            EntityManager::CreateEntityArchetype("L-System Internode", InternodeInfo(),
+            EntityManager::CreateEntityArchetype("L-System Internode", InternodeInfo(), InternodeStatistics(),
                                                  LSystemTag(), LSystemParameters(),
                                                  BranchColor(), BranchCylinder(), BranchCylinderWidth(),
                                                  BranchPointer(), BranchPhysicsParameters());
@@ -57,7 +57,8 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
         switch (command.m_type) {
             case LSystemCommandType::Forward: {
                 InternodeInfo newInfo;
-                newInfo.m_index = index;
+                InternodeStatistics newStat;
+                newStat.m_lSystemStringIndex = index;
                 if (internode.IsNull()) {
                     //Calculate the local rotation as quaternion from euler angles.
                     newInfo.m_localRotation = glm::quat(currentState.m_eulerRotation);
@@ -77,6 +78,7 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
                 newInfo.m_length = command.m_value;
                 newInfo.m_thickness = 0.2f;
                 internode.SetDataComponent(newInfo);
+                internode.SetDataComponent(newStat);
             }
                 break;
             case LSystemCommandType::PitchUp: {

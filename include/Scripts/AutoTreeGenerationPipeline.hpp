@@ -33,6 +33,7 @@ namespace Scripts {
         AssetRef m_lString;
         AutoTreeGenerationPipelineStatus m_status = AutoTreeGenerationPipelineStatus::Idle;
         AssetRef m_pipelineBehaviour;
+
         void Update() override;
         void OnInspect() override;
         void Start() override;

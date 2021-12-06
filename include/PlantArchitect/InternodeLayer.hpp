@@ -16,10 +16,8 @@ namespace PlantArchitect {
         Proximity,
         Inhibitor,
         IndexDivider,
-        IndexRange
+        IndexRange,
     };
-
-
 
     class IInternodeBehaviour;
     class PLANT_ARCHITECT_API InternodeLayer : public ILayer {
@@ -27,7 +25,7 @@ namespace PlantArchitect {
 
     public:
         bool m_enablePhysics = true;
-
+        void DrawColorModeSelectionMenu();
         void PreparePhysics();
 
         /**
@@ -97,7 +95,7 @@ namespace PlantArchitect {
 
         float m_transparency = 0.7f;
 
-        bool m_autoUpdate = true;
+        bool m_autoUpdate = false;
 
         float m_branchColorValueMultiplier = 1.0f;
         float m_branchColorValueCompressFactor = 0.0f;

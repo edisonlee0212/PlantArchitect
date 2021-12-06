@@ -32,7 +32,7 @@ void JSONTreeBehaviour::OnInspect() {
 
 void JSONTreeBehaviour::OnCreate() {
     m_internodeArchetype =
-            EntityManager::CreateEntityArchetype("JSON Tree Internode", InternodeInfo(),
+            EntityManager::CreateEntityArchetype("JSON Tree Internode", InternodeInfo(), InternodeStatistics(),
                                                  JSONTreeTag(), JSONTreeParameters(),
                                                  BranchColor(), BranchCylinder(), BranchCylinderWidth(),
                                                  BranchPointer(), BranchPhysicsParameters());

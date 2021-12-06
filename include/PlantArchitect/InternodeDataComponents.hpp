@@ -15,10 +15,6 @@ namespace PlantArchitect {
          * The length of the internode
          */
         float m_length = 0;
-        /**
-         * The index of current internode within a plant, start from the root.
-         */
-        int m_index = -1;
         /*
          * Whether this node is end node.
          */
@@ -37,7 +33,12 @@ namespace PlantArchitect {
         unsigned m_layer = 0;
         void OnInspect();
     };
-
+    struct PLANT_ARCHITECT_API InternodeStatistics : public IDataComponent {
+        int m_lSystemStringIndex = 0;
+        int m_strahlerOrder = 0;
+        int m_hortonOrdering = 0;
+        void OnInspect();
+    };
     struct PLANT_ARCHITECT_API BranchPhysicsParameters : public IDataComponent{
 #pragma region Physics
         float m_density = 1.0f;
@@ -60,6 +61,7 @@ namespace PlantArchitect {
 
     struct PLANT_ARCHITECT_API BranchColor : IDataComponent {
         glm::vec4 m_value;
+        void OnInspect();
     };
 
     struct PLANT_ARCHITECT_API BranchCylinder : IDataComponent {
@@ -76,6 +78,7 @@ namespace PlantArchitect {
         bool operator==(const BranchCylinderWidth &other) const {
             return other.m_value == m_value;
         }
+        void OnInspect();
     };
 
     struct PLANT_ARCHITECT_API BranchPointer : IDataComponent {

@@ -51,8 +51,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
         m_rendering = false;
         return;
     }
-
-
+    auto internodeLayer = Application::GetLayer<InternodeLayer>();
     auto behaviourType = pipeline.GetBehaviourType();
     std::string prefix;
     switch (behaviourType) {
@@ -99,11 +98,8 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
                 //path here
                 lString->SetPathAndSave(
                         lStringFolder / (std::to_string(m_generationAmount - m_remainingInstanceAmount) + ".lstring"));
-                auto internodeLayer = Application::GetLayer<InternodeLayer>();
-                internodeLayer->m_branchColorMode = BranchColorMode::IndexDivider;
-                internodeLayer->m_indexDivider = m_targetDivider;
-                internodeLayer->UpdateBranchColors();
             }
+            internodeLayer->UpdateBranchColors();
             behaviour->GenerateSkinnedMeshes();
             if (m_exportOBJ) {
                 Entity foliage, branch;
@@ -214,9 +210,8 @@ void MultipleAngleCapture::OnInspect() {
         ImGui::Checkbox("Export Graph", &m_exportGraph);
         ImGui::Checkbox("Export CSV", &m_exportCSV);
         ImGui::Checkbox("Export LString", &m_exportLString);
-        if (m_exportLString) {
-            ImGui::DragInt("Character div", &m_targetDivider, 1, 1, 1024);
-        }
+        Application::GetLayer<InternodeLayer>()->DrawColorModeSelectionMenu();
+
         ImGui::Text("Rendering export:");
         ImGui::Checkbox("Export Depth", &m_exportDepth);
         ImGui::Checkbox("Export Image", &m_exportImage);

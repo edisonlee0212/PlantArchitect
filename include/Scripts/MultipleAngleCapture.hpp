@@ -37,7 +37,6 @@ namespace Scripts {
         int m_generationAmount = 2;
         PrivateComponentRef m_volume;
         std::filesystem::path m_currentExportFolder = "MultipleAngleCapture_Export/";
-        int m_targetDivider = 512;
         float m_branchWidth = 0.04f;
         float m_nodeSize = 0.05f;
         glm::vec3 m_focusPoint = glm::vec3(0, 3, 0);
@@ -50,6 +49,7 @@ namespace Scripts {
         glm::ivec2 m_resolution = glm::ivec2(1024, 1024);
 
         //Options.
+        BranchColorMode m_branchColorMode = BranchColorMode::None;
         bool m_exportOBJ = false;
         bool m_exportCSV = true;
         bool m_exportGraph = true;

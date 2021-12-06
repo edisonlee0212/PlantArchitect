@@ -266,7 +266,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
 void GeneralTreeBehaviour::OnCreate() {
 
     m_internodeArchetype =
-            EntityManager::CreateEntityArchetype("General Tree Internode", InternodeInfo(), GeneralTreeTag(),
+            EntityManager::CreateEntityArchetype("General Tree Internode", InternodeInfo(), InternodeStatistics(), GeneralTreeTag(),
                                                  GeneralTreeParameters(), InternodeStatus(),
                                                  InternodeWaterPressure(), InternodeWater(), InternodeIllumination(),
                                                  BranchColor(), BranchCylinder(), BranchCylinderWidth(),
