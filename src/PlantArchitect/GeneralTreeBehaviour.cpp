@@ -596,6 +596,10 @@ void GeneralTreeBehaviour::Preprocess() {
                                     return;
                                 }
                             }
+                            if(childGlobalTransform.GetPosition().y < 0){
+                                Recycle(child);
+                                return;
+                            }
                             auto childInternode = child.GetOrSetPrivateComponent<Internode>().lock();
                             childInternode->m_currentRoot = root;
                             childInternodeStatus.m_distanceToRoot =
@@ -609,7 +613,6 @@ void GeneralTreeBehaviour::Preprocess() {
                             }
                             child.SetDataComponent(childInternodeInfo);
                             child.SetDataComponent(childInternodeStatus);
-
                         },
                         [&](Entity parent) {
                             auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
