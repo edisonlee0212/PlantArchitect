@@ -8,6 +8,7 @@
 #include "InternodeLayer.hpp"
 #include "TransformLayer.hpp"
 #include "EditorLayer.hpp"
+
 using namespace PlantArchitect;
 
 void SpaceColonizationBehaviour::OnCreate() {
@@ -25,7 +26,8 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
 
     if (m_attractionPoints.empty()) return;
     if (m_recycleStorageEntity.IsNull()) {
-        m_recycleStorageEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "Recycled General Tree Internodes");
+        m_recycleStorageEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(),
+                                                             "Recycled General Tree Internodes");
     }
     std::vector<int> removeMarks;
     removeMarks.resize(m_attractionPoints.size());
@@ -133,7 +135,7 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
             }
             newFront = glm::normalize(spaceColonizationIncentive.m_direction);
             bool duplicate = false;
-            entity.ForEachChild([&](const std::shared_ptr<Scene>& scene, Entity child) {
+            entity.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
                 if (glm::dot(child.GetDataComponent<GlobalTransform>().GetRotation() * glm::vec3(0, 0, -1),
                              newFront) > 0.95f)
                     duplicate = true;
@@ -164,16 +166,13 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
         auto newInternode = newNode.GetOrSetPrivateComponent<Internode>().lock();
     }
 
-
-    std::vector<Entity> plants;
-    CollectRoots(plants);
-    int plantSize = plants.size();
+    int plantSize = m_currentRoots.size();
 
     //Use internal JobSystem to dispatch job for entity collection.
     std::vector<std::shared_future<void>> results;
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
         results.push_back(JobManager::PrimaryWorkers().Push([&, plantIndex](int id) {
-            auto root = plants[plantIndex];
+            auto root = m_currentRoots[plantIndex];
             auto parent = root.GetParent();
             if (!parent.IsNull()) {
                 auto globalTransform = root.GetDataComponent<GlobalTransform>();
@@ -182,7 +181,8 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
                 rootLocalTransform.m_value = glm::inverse(parentGlobalTransform.m_value) * globalTransform.m_value;
                 root.SetDataComponent(rootLocalTransform);
             }
-            Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(EntityManager::GetCurrentScene(), root);
+            Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(
+                    EntityManager::GetCurrentScene(), root);
         }).share());
     }
     for (const auto &i: results)
@@ -192,11 +192,11 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
     results.clear();
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
         results.push_back(JobManager::PrimaryWorkers().Push([&, plantIndex](int id) {
-            TreeGraphWalkerEndToRoot(plants[plantIndex], plants[plantIndex], [&](Entity parent) {
+            TreeGraphWalkerEndToRoot(m_currentRoots[plantIndex], m_currentRoots[plantIndex], [&](Entity parent) {
                 float thicknessCollection = 0.0f;
                 auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
                 auto parameters = parent.GetDataComponent<SpaceColonizationParameters>();
-                parent.ForEachChild([&](const std::shared_ptr<Scene>& scene, Entity child) {
+                parent.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
                     if (!InternodeCheck(child)) return;
                     auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
                     thicknessCollection += glm::pow(childInternodeInfo.m_thickness,
@@ -302,7 +302,7 @@ void SpaceColonizationBehaviour::OnInspect() {
                                                   displayMatrices, glm::mat4(1.0f), renderSize);
             auto editorLayer = Application::GetLayer<EditorLayer>();
             auto internodeLayer = Application::GetLayer<InternodeLayer>();
-            if(editorLayer && internodeLayer) {
+            if (editorLayer && internodeLayer) {
                 RenderManager::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube,
                                                       internodeLayer->m_internodeDebuggingCamera,
                                                       editorLayer->m_sceneCameraPosition,
@@ -319,7 +319,7 @@ void SpaceColonizationBehaviour::VolumeSlotButton() {
     ImGui::SameLine();
     static PrivateComponentRef temp;
     EditorManager::DragAndDropButton(temp, "Here", {"CubeVolume", "RadialBoundingVolume"}, false);
-    if(temp.Get<IVolume>()){
+    if (temp.Get<IVolume>()) {
         PushVolume(temp.Get<IVolume>());
         temp.Clear();
     }
@@ -349,7 +349,8 @@ Entity SpaceColonizationBehaviour::Retrieve() {
 Entity SpaceColonizationBehaviour::Retrieve(const Entity &parent) {
     auto retVal = RetrieveHelper<EmptyInternodeResource>(parent);
     retVal.SetDataComponent(parent.GetDataComponent<BranchPhysicsParameters>());
-    return retVal;}
+    return retVal;
+}
 
 Entity SpaceColonizationBehaviour::NewPlant(const SpaceColonizationParameters &params, const Transform &transform) {
     auto entity = Retrieve();
@@ -389,6 +390,7 @@ void SpaceColonizationParameters::OnInspect() {
 void SpaceColonizationParameters::Save(const std::filesystem::path &path) const {
 
 }
+
 void SpaceColonizationParameters::Load(const std::filesystem::path &path) {
 
 }

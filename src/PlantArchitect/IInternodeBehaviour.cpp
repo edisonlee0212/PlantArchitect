@@ -48,10 +48,7 @@ void IInternodeBehaviour::RecycleSingle(const Entity &internode) {
 void
 IInternodeBehaviour::GenerateSkinnedMeshes(float subdivision,
                                            float resolution) {
-    std::vector<Entity> plants;
-    CollectRoots(plants);
-
-    int plantSize = plants.size();
+    int plantSize = m_currentRoots.size();
     std::vector<std::vector<Entity>> boundEntitiesLists;
     std::vector<std::vector<unsigned>> boneIndicesLists;
     std::vector<std::vector<int>> parentIndicesLists;
@@ -64,7 +61,7 @@ IInternodeBehaviour::GenerateSkinnedMeshes(float subdivision,
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
         results.push_back(JobManager::PrimaryWorkers().Push([&, plantIndex](int id) {
             TreeNodeCollector(boundEntitiesLists[plantIndex],
-                              parentIndicesLists[plantIndex], -1, plants[plantIndex], plants[plantIndex]);
+                              parentIndicesLists[plantIndex], -1, m_currentRoots[plantIndex], m_currentRoots[plantIndex]);
         }).share());
     }
     for (const auto &i: results)
@@ -180,7 +177,7 @@ IInternodeBehaviour::GenerateSkinnedMeshes(float subdivision,
              });
 #pragma endregion
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
-        const auto &plant = plants[plantIndex];
+        const auto &plant = m_currentRoots[plantIndex];
         Entity branch, foliage;
         PrepareInternodeForSkeletalAnimation(plant, branch, foliage);
         {
@@ -562,8 +559,9 @@ IInternodeBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, 
     foliage.SetParent(entity);
 }
 
-void IInternodeBehaviour::CollectRoots(std::vector<Entity> &roots) {
+void IInternodeBehaviour::CollectRoots() {
     std::mutex plantCollectionMutex;
+    m_currentRoots.clear();
     EntityManager::ForEach<InternodeInfo>(EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(),
                                           m_internodesQuery,
                                           [&](int index, Entity entity, InternodeInfo &internodeInfo) {
@@ -572,7 +570,7 @@ void IInternodeBehaviour::CollectRoots(std::vector<Entity> &roots) {
                                               auto parent = entity.GetParent();
                                               if (parent.IsNull() || !parent.HasPrivateComponent<Internode>()) {
                                                   std::lock_guard<std::mutex> lock(plantCollectionMutex);
-                                                  roots.push_back(entity);
+                                                  m_currentRoots.push_back(entity);
                                               }
                                           });
 }

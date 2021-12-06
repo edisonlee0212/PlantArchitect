@@ -14,6 +14,5 @@ namespace Scripts {
         void LateUpdate() override;
         void OnInspect() override;
         void Relink(const std::unordered_map<Handle, Handle> &map, const std::shared_ptr<Scene> &scene) override;
-
     };
 }

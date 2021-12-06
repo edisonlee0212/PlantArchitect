@@ -12,10 +12,6 @@
 using namespace PlantArchitect;
 
 void GeneralTreeBehaviour::Grow(int iteration) {
-    if (iteration == 0) {
-        m_currentPlants.clear();
-        CollectRoots(m_currentPlants);
-    }
     if (m_recycleStorageEntity.IsNull()) {
         m_recycleStorageEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(),
                                                              "Recycled General Tree Internodes");
@@ -221,7 +217,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                                     internodeInfo.m_localRotation, glm::vec3(1.0f));
              }, true);
 
-    ParallelForEachRoot(m_currentPlants, [&](int plantIndex, Entity root) {
+    ParallelForEachRoot(m_currentRoots, [&](int plantIndex, Entity root) {
         if (!root.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
         auto parent = root.GetParent();
         auto rootTransform = root.GetDataComponent<Transform>();
@@ -239,7 +235,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
 #pragma endregion
 #pragma region PostProcess
 #pragma region Transform
-    ParallelForEachRoot(m_currentPlants, [&](int plantIndex, Entity root) {
+    ParallelForEachRoot(m_currentRoots, [&](int plantIndex, Entity root) {
         if (!root.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
         TreeGraphWalkerEndToRoot(root, root, [&](Entity parent) {
             float thicknessCollection = 0.0f;
@@ -557,12 +553,12 @@ GeneralTreeBehaviour::ImportGraphTree(const std::filesystem::path &path, const G
 }
 
 void GeneralTreeBehaviour::Preprocess() {
-    int plantSize = m_currentPlants.size();
+    int plantSize = m_currentRoots.size();
 #pragma region PreProcess
 #pragma region InternodeStatus
     std::vector<glm::vec3> plantCenters;
     plantCenters.resize(plantSize);
-    ParallelForEachRoot(m_currentPlants, [&](int plantIndex, Entity root) {
+    ParallelForEachRoot(m_currentRoots, [&](int plantIndex, Entity root) {
         if (!root.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
         auto internodeInfo = root.GetDataComponent<InternodeInfo>();
         auto internodeStatus = root.GetDataComponent<InternodeStatus>();
@@ -709,7 +705,7 @@ void GeneralTreeBehaviour::Preprocess() {
                         });
         plantCenters[plantIndex] = center / static_cast<float>(amount);
     });
-    ParallelForEachRoot(m_currentPlants, [&](int plantIndex, Entity root) {
+    ParallelForEachRoot(m_currentRoots, [&](int plantIndex, Entity root) {
         TreeGraphWalkerRootToEnd(root, root, [](Entity parent, Entity child) {
             auto parentInternodeStatus = parent.GetDataComponent<InternodeStatus>();
             auto childInternodeStatus = child.GetDataComponent<InternodeStatus>();
@@ -731,7 +727,7 @@ void GeneralTreeBehaviour::Preprocess() {
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
                  auto root = internode->m_currentRoot.Get();
                  int plantIndex = 0;
-                 for (const auto &plant: m_currentPlants) {
+                 for (const auto &plant: m_currentRoots) {
                      if (root == plant) {
                          auto difference = internodeGlobalTransform.GetPosition() - plantCenters[plantIndex];
                          internodeIllumination.m_direction = glm::normalize(difference);
@@ -781,7 +777,7 @@ void GeneralTreeBehaviour::Preprocess() {
                  //int age = internode->m_currentRoot.Get().GetDataComponent<InternodeStatus>().m_age;
                  internodeStatus.CalculateApicalControl(generalTreeParameters.m_apicalControl);
                  int plantIndex = 0;
-                 for (const auto &plant: m_currentPlants) {
+                 for (const auto &plant: m_currentRoots) {
                      if (root == plant) {
                          totalRequestCollector[i % workerSize][plantIndex] +=
                                  internodeStatus.m_apicalControl *
@@ -817,7 +813,7 @@ void GeneralTreeBehaviour::Preprocess() {
                  auto root = internode->m_currentRoot.Get();
                  if (root.IsNull() || !root.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
                  int plantIndex = 0;
-                 for (const auto &plant: m_currentPlants) {
+                 for (const auto &plant: m_currentRoots) {
                      if (root == plant) {
                          totalWaterCollector[i % workerSize][plantIndex] += internodeWater.m_value;
                          break;
@@ -848,7 +844,7 @@ void GeneralTreeBehaviour::Preprocess() {
                  auto root = internode->m_currentRoot.Get();
                  if (root.IsNull() || !root.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
                  int plantIndex = 0;
-                 for (const auto &plant: m_currentPlants) {
+                 for (const auto &plant: m_currentRoots) {
                      if (root == plant) {
                          internodeWater.m_value =
                                  internodeStatus.m_apicalControl *

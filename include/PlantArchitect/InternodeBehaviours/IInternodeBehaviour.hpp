@@ -10,7 +10,9 @@ namespace PlantArchitect {
     struct SpaceColonizationParameters;
 
     class PLANT_ARCHITECT_API IInternodeBehaviour : public IAsset {
+        friend class InternodeLayer;
     protected:
+        std::vector<Entity> m_currentRoots;
 #pragma region InternodeFactory
         /**
          * The EntityQuery for filtering all target internodes, must be set when created.
@@ -72,6 +74,7 @@ namespace PlantArchitect {
         virtual bool InternalInternodeCheck(const Entity &target) = 0;
 
     public:
+
         void ApplyTropism(const glm::vec3 &targetDir, float tropism, glm::vec3 &front, glm::vec3 &up);
 
         virtual Entity Retrieve() = 0;
@@ -97,10 +100,8 @@ namespace PlantArchitect {
 
         /**
          * Collect roots with target kind of internodes.
-         * @param internodeQuery The query for collecting specific kind of internodes.
-         * @param roots Where to store the results.
          */
-        void CollectRoots(std::vector<Entity> &roots);
+        void CollectRoots();
 
         /**
          * A helper method that traverse target plant from root internode to end internodes, and come back from end to root.
@@ -406,7 +407,7 @@ namespace PlantArchitect {
         internode->m_resource = SerializationManager::ProduceSerializable<T>();
         internode->m_foliage = AssetManager::CreateAsset<InternodeFoliage>("Foliage");
         internode->OnRetrieve();
-
+        CollectRoots();
         return retVal;
     }
 

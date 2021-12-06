@@ -25,6 +25,18 @@ void InternodeLayer::PreparePhysics(const Entity &entity, const Entity &child,
                                     const BranchPhysicsParameters &branchPhysicsParameters) {
     auto internodeInfo = entity.GetDataComponent<InternodeInfo>();
     auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
+    auto parentRigidBody = entity.GetOrSetPrivateComponent<RigidBody>().lock();
+    parentRigidBody->SetEnableGravity(false);
+    parentRigidBody->SetDensityAndMassCenter(branchPhysicsParameters.m_density *
+                                                     internodeInfo.m_thickness *
+                                                     internodeInfo.m_thickness * internodeInfo.m_length);
+    parentRigidBody->SetLinearDamping(branchPhysicsParameters.m_linearDamping);
+    parentRigidBody->SetAngularDamping(branchPhysicsParameters.m_angularDamping);
+    parentRigidBody->SetSolverIterations(branchPhysicsParameters.m_positionSolverIteration,
+                                   branchPhysicsParameters.m_velocitySolverIteration);
+    parentRigidBody->SetAngularVelocity(glm::vec3(0.0f));
+    parentRigidBody->SetLinearVelocity(glm::vec3(0.0f));
+
     auto rigidBody = child.GetOrSetPrivateComponent<RigidBody>().lock();
     rigidBody->SetEnableGravity(false);
     rigidBody->SetDensityAndMassCenter(branchPhysicsParameters.m_density *
@@ -54,6 +66,12 @@ void InternodeLayer::PreparePhysics(const Entity &entity, const Entity &child,
 
 void InternodeLayer::Simulate(int iterations) {
     for (int iteration = 0; iteration < iterations; iteration++) {
+        if(iteration == 0){
+            for (auto &i: m_internodeBehaviours) {
+                auto behaviour = i.Get<IInternodeBehaviour>();
+                if (behaviour) behaviour->CollectRoots();
+            }
+        }
         m_voxelSpace.Clear();
         EntityManager::ForEach<InternodeInfo, GlobalTransform>
                 (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
@@ -83,6 +101,14 @@ void InternodeLayer::Simulate(int iterations) {
         }
     }
     if (m_enablePhysics) PreparePhysics();
+    /*
+     for (auto &i: m_internodeBehaviours) {
+        auto behaviour = i.Get<IInternodeBehaviour>();
+        if (behaviour) {
+            behaviour->TreeGraphWalker()
+        }
+    }
+    */
     UpdateBranchColors();
     UpdateBranchCylinder(m_connectionWidth);
     UpdateBranchPointer(m_pointerLength, m_pointerWidth);
@@ -94,9 +120,7 @@ void InternodeLayer::PreparePhysics() {
     for (auto &i: m_internodeBehaviours) {
         auto behaviour = i.Get<IInternodeBehaviour>();
         if (behaviour) {
-            std::vector<Entity> roots;
-            behaviour->CollectRoots(roots);
-            for (const auto &root: roots) {
+            for (const auto &root: behaviour->m_currentRoots) {
                 auto branchPhysicsParameter = root.GetDataComponent<BranchPhysicsParameters>();
                 behaviour->TreeGraphWalkerRootToEnd(root, root, [&](Entity parent, Entity child) {
                     PreparePhysics(parent, child, branchPhysicsParameter);
