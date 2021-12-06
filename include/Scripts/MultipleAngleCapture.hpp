@@ -25,6 +25,8 @@ namespace Scripts {
         void ExportGraphNode(const std::shared_ptr<IInternodeBehaviour>& behaviour, YAML::Emitter &out, int parentIndex, const Entity& internode);
         void ExportGraph(const std::shared_ptr<IInternodeBehaviour>& behaviour, const std::filesystem::path& path);
 
+        void ExportCSV(const std::shared_ptr<IInternodeBehaviour>& behaviour, const std::filesystem::path& path);
+
         std::shared_ptr<Camera> m_branchCaptureCamera;
         glm::vec3 m_cameraPosition;
         glm::quat m_cameraRotation;
@@ -49,6 +51,7 @@ namespace Scripts {
 
         //Options.
         bool m_exportOBJ = false;
+        bool m_exportCSV = true;
         bool m_exportGraph = true;
         bool m_exportImage = false;
         bool m_exportDepth = false;
@@ -60,11 +63,14 @@ namespace Scripts {
         glm::vec3 m_backgroundColor = glm::vec3(1.0f);
         float m_cameraMin = 1;
         float m_cameraMax = 300;
-
+        void Start();
         void OnCreate() override;
         void OnIdle(AutoTreeGenerationPipeline& pipeline) override;
         void OnBeforeGrowth(AutoTreeGenerationPipeline& pipeline) override;
+        [[nodiscard]] bool Busy() const;
         void OnAfterGrowth(AutoTreeGenerationPipeline& pipeline) override;
         void OnInspect() override;
+
+        void DisableAllExport();
     };
 }

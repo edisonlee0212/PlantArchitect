@@ -80,7 +80,7 @@ if (BUILD_RAY_TRACER_FACILITY)
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/MeshFormation
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/Volumes
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/Utilities
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/quickhull
+            include/PlantArchitect/Utilities/quickhull
             )
     target_link_libraries(PlantArchitect
             RayTracerFacility
@@ -101,7 +101,7 @@ else ()
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/MeshFormation
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/Volumes
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/Utilities
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/quickhull
+            include/PlantArchitect/Utilities/quickhull
             )
     target_link_libraries(PlantArchitect
             uniengine
@@ -146,7 +146,7 @@ endif ()
 # ------------------------------------------------------------------
 add_executable(Application
         "src/app/PlantArchitect.cpp"
-        )
+        src/app/GANTree.cpp src/Scripts/GANTreePipelineDriver.cpp include/Scripts/GANTreePipelineDriver.hpp)
 target_precompile_headers(Application
         PRIVATE
         ${PLANT_ARCHITECT_PCH_LOCAL}
@@ -171,30 +171,56 @@ else ()
             Scripts
             )
 endif ()
-add_executable(InternodeBehavioursExample
-        "src/app/InternodeBehavioursExample.cpp"
+add_executable(TreeDataCapturePipeline
+        "src/app/TreeDataCapturePipeline.cpp"
         )
-target_precompile_headers(InternodeBehavioursExample
+target_precompile_headers(TreeDataCapturePipeline
         PRIVATE
         ${PLANT_ARCHITECT_PCH_LOCAL}
         )
 if (BUILD_RAY_TRACER_FACILITY)
-    target_link_libraries(InternodeBehavioursExample
+    target_link_libraries(TreeDataCapturePipeline
             RayTracerFacility
             PlantArchitect
             Scripts
             )
-    target_compile_definitions(InternodeBehavioursExample
+    target_compile_definitions(TreeDataCapturePipeline
             PRIVATE
             RAYTRACERFACILITY
             )
 else ()
-    target_link_libraries(InternodeBehavioursExample
+    target_link_libraries(TreeDataCapturePipeline
             uniengine
             PlantArchitect
             Scripts
             )
 endif ()
+
+add_executable(GANTree
+        "src/app/GANTree.cpp"
+        )
+target_precompile_headers(GANTree
+        PRIVATE
+        ${PLANT_ARCHITECT_PCH_LOCAL}
+        )
+if (BUILD_RAY_TRACER_FACILITY)
+    target_link_libraries(GANTree
+            RayTracerFacility
+            PlantArchitect
+            Scripts
+            )
+    target_compile_definitions(GANTree
+            PRIVATE
+            RAYTRACERFACILITY
+            )
+else ()
+    target_link_libraries(GANTree
+            uniengine
+            PlantArchitect
+            Scripts
+            )
+endif ()
+
 # ------------------------------------------------------------------
 # Copy Internal resources
 # ------------------------------------------------------------------

@@ -21,10 +21,11 @@ namespace Scripts {
 
     class AutoTreeGenerationPipeline : public IPrivateComponent {
         void DropBehaviourButton();
-        void UpdateInternodeBehaviour();
+
         std::shared_ptr<IInternodeBehaviour> m_currentInternodeBehaviour;
         BehaviourType m_behaviourType = BehaviourType::GeneralTree;
     public:
+        void UpdateInternodeBehaviour();
         std::string m_parameterFileName;
         GeneralTreeParameters m_generalTreeParameters;
         SpaceColonizationParameters m_spaceColonizationParameters;

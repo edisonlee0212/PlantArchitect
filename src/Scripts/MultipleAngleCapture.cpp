@@ -46,7 +46,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
     auto camera = m_cameraEntity.Get().GetOrSetPrivateComponent<Camera>().lock();
     camera->SetRequireRendering(true);
     auto behaviour = pipeline.GetBehaviour();
-    if(m_rendering){
+    if (m_rendering) {
         behaviour->GenerateSkinnedMeshes();
         m_rendering = false;
         return;
@@ -76,6 +76,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
             auto depthFolder = m_currentExportFolder / "Depth";
             auto branchFolder = m_currentExportFolder / "Branch";
             auto graphFolder = m_currentExportFolder / "Graph";
+            auto csvFolder = m_currentExportFolder / "CSV";
             auto lStringFolder = m_currentExportFolder / "LString";
             if (m_exportImage)
                 std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path() / imagesFolder);
@@ -87,6 +88,8 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
                 std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path() / branchFolder);
             if (m_exportGraph)
                 std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path() / graphFolder);
+            if (m_exportCSV)
+                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path() / csvFolder);
             if (m_exportLString)
                 std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path() / lStringFolder);
 
@@ -135,6 +138,12 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
                         ProjectManager::GetProjectPath().parent_path() / graphFolder /
                         (prefix + ".yml"));
                 ExportGraph(behaviour, exportPath);
+            }
+            if (m_exportCSV) {
+                auto exportPath = std::filesystem::absolute(
+                        ProjectManager::GetProjectPath().parent_path() / csvFolder /
+                        (prefix + ".csv"));
+                ExportCSV(behaviour, exportPath);
             }
             if (m_exportBranchCapture) RenderBranchCapture();
             m_captureStatus = MultipleAngleCaptureStatus::Image;
@@ -203,6 +212,7 @@ void MultipleAngleCapture::OnInspect() {
         ImGui::Text("Data export:");
         ImGui::Checkbox("Export OBJ", &m_exportOBJ);
         ImGui::Checkbox("Export Graph", &m_exportGraph);
+        ImGui::Checkbox("Export CSV", &m_exportCSV);
         ImGui::Checkbox("Export LString", &m_exportLString);
         if (m_exportLString) {
             ImGui::DragInt("Character div", &m_targetDivider, 1, 1, 1024);
@@ -237,17 +247,7 @@ void MultipleAngleCapture::OnInspect() {
     if (m_remainingInstanceAmount == 0) {
         if (Application::IsPlaying()) {
             if (ImGui::Button("Start")) {
-                if (!m_cameraEntity.Get().IsNull()) {
-                    m_cameraEntity.Get().GetOrSetPrivateComponent<DepthCamera>();
-                    m_projections.clear();
-                    m_views.clear();
-                    m_names.clear();
-                    m_cameraModels.clear();
-                    m_treeModels.clear();
-                    m_pitchAngle = m_pitchAngleStart;
-                    m_turnAngle = 0;
-                    m_remainingInstanceAmount = m_generationAmount;
-                }
+                Start();
             }
         } else {
             ImGui::Text("Start Engine first!");
@@ -451,7 +451,8 @@ void MultipleAngleCapture::ExportGraph(const std::shared_ptr<IInternodeBehaviour
 
 }
 
-void MultipleAngleCapture::ExportGraphNode(const std::shared_ptr<IInternodeBehaviour>& behaviour, YAML::Emitter &out, int parentIndex, const Entity &internode) {
+void MultipleAngleCapture::ExportGraphNode(const std::shared_ptr<IInternodeBehaviour> &behaviour, YAML::Emitter &out,
+                                           int parentIndex, const Entity &internode) {
     out << YAML::BeginMap;
     out << YAML::Key << "Parent Entity Index" << parentIndex;
     out << YAML::Key << "Entity Index" << internode.GetIndex();
@@ -463,7 +464,7 @@ void MultipleAngleCapture::ExportGraphNode(const std::shared_ptr<IInternodeBehav
     });
 
     out << YAML::Key << "Children Entity Indices" << YAML::Key << YAML::BeginSeq;
-    for(int i = 0; i < 3; i++){
+    for (int i = 0; i < 3; i++) {
         out << YAML::BeginMap;
         out << YAML::Key << "Entity Index" << YAML::Value << indices[i];
         out << YAML::EndMap;
@@ -498,6 +499,7 @@ void MultipleAngleCapture::ExportGraphNode(const std::shared_ptr<IInternodeBehav
     //out << YAML::Key << "Internode Index" << internodeInfo.m_index;
     out << YAML::Key << "Internode Layer" << internodeInfo.m_layer;
     out << YAML::EndMap;
+    out << YAML::EndMap;
 }
 
 void MultipleAngleCapture::ExportMatrices(const std::filesystem::path &path) {
@@ -518,6 +520,151 @@ void MultipleAngleCapture::ExportMatrices(const std::filesystem::path &path) {
     std::ofstream fout(path.string());
     fout << out.c_str();
     fout.flush();
+}
+
+void MultipleAngleCapture::ExportCSV(const std::shared_ptr<IInternodeBehaviour> &behaviour,
+                                     const std::filesystem::path &path) {
+    std::ofstream ofs;
+    ofs.open(path.c_str(), std::ofstream::out | std::ofstream::trunc);
+    if (ofs.is_open()) {
+        std::string output;
+
+        std::vector<std::vector<std::pair<int, Entity>>> internodes;
+        internodes.resize(128);
+        internodes[0].emplace_back(-1, m_currentGrowingTree);
+        behaviour->TreeGraphWalkerRootToEnd(m_currentGrowingTree, m_currentGrowingTree,
+                                            [&](Entity parent, Entity child) {
+                                                if (!behaviour->InternodeCheck(child)) return;
+                                                auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
+                                                internodes[childInternodeInfo.m_layer].emplace_back(parent.GetIndex(),
+                                                                                                    child);
+                                            });
+        float normalizeFactor = m_perTreeGrowthIteration * 1.25f;
+        output += "in_id, in_pos_x, in_pos_y, in_pos_z, in_front_x, in_front_y, in_front_z, in_up_x, in_up_y, in_up_z, in_thickness, in_length, in_root_distance, in_level, ";
+        output += "out0_id, out0_pos_x, out0_pos_y, out0_pos_z, out0_front_x, out0_front_y, out0_front_z, out0_up_x, out0_up_y, out0_up_z, out0_thickness, out0_length, out0_root_distance, out0_level, ";
+        output += "out1_id, out1_pos_x, out1_pos_y, out1_pos_z, out1_front_x, out1_front_y, out1_front_z, out1_up_x, out1_up_y, out1_up_z, out1_thickness, out1_length, out1_root_distance, out1_level, ";
+        output += "out2_id, out2_pos_x, out2_pos_y, out2_pos_z, out2_front_x, out2_front_y, out2_front_z, out2_up_x, out2_up_y, out2_up_z, out2_thickness, out2_length, out2_root_distance, out2_level\n";
+        int layerIndex = 0;
+        for (const auto &layer: internodes) {
+            if (layer.empty()) break;
+            for (const auto &instance: layer) {
+                auto internode = instance.second;
+                std::vector<Entity> children;
+                children.resize(3);
+                bool hasChild = false;
+                internode.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
+                    if (!behaviour->InternodeCheck(child)) return;
+                    children[child.GetDataComponent<InternodeStatus>().m_branchingOrder] = child;
+                    hasChild = true;
+                });
+                if(!hasChild) continue;
+                std::string row;
+
+                auto globalTransform = internode.GetDataComponent<GlobalTransform>();
+                auto transform = internode.GetDataComponent<Transform>();
+
+                auto position = globalTransform.GetPosition() / normalizeFactor;
+                auto globalRotation = globalTransform.GetRotation();
+                auto front = globalRotation * glm::vec3(0, 0, -1);
+                auto up = globalRotation * glm::vec3(0, 1, 0);
+                auto rotation = transform.GetRotation();
+                auto internodeInfo = internode.GetDataComponent<InternodeInfo>();
+                auto internodeStatus = internode.GetDataComponent<InternodeStatus>();
+                row += std::to_string(internode.GetIndex()) + ", ";
+
+                row += std::to_string(position.x) + ", ";
+                row += std::to_string(position.y) + ", ";
+                row += std::to_string(position.z) + ", ";
+
+                row += std::to_string(front.x) + ", ";
+                row += std::to_string(front.y) + ", ";
+                row += std::to_string(front.z) + ", ";
+
+                row += std::to_string(up.x) + ", ";
+                row += std::to_string(up.y) + ", ";
+                row += std::to_string(up.z) + ", ";
+
+                row += std::to_string(internodeInfo.m_thickness / normalizeFactor) + ", ";
+                row += std::to_string(internodeInfo.m_length / normalizeFactor) + ", ";
+                row += std::to_string(internodeStatus.m_distanceToRoot / normalizeFactor) + ", ";
+                row += std::to_string(internodeStatus.m_level) + ", ";
+
+                for (int i = 0; i < 3; i++) {
+                    auto child = children[i];
+                    if(child.IsNull()){
+                        row += "N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A";
+                    }else {
+                        auto globalTransformChild = child.GetDataComponent<GlobalTransform>();
+                        auto transformChild = child.GetDataComponent<Transform>();
+
+                        auto positionChild = globalTransformChild.GetPosition() / normalizeFactor;
+                        auto globalRotationChild = globalTransformChild.GetRotation();
+                        auto frontChild = globalRotationChild * glm::vec3(0, 0, -1);
+                        auto upChild = globalRotationChild * glm::vec3(0, 1, 0);
+                        auto rotationChildChild = transformChild.GetRotation();
+                        auto internodeInfoChild = child.GetDataComponent<InternodeInfo>();
+                        auto internodeStatusChild = child.GetDataComponent<InternodeStatus>();
+                        row += std::to_string(child.GetIndex()) + ", ";
+                        row += std::to_string(positionChild.x) + ", ";
+                        row += std::to_string(positionChild.y) + ", ";
+                        row += std::to_string(positionChild.z) + ", ";
+
+                        row += std::to_string(frontChild.x) + ", ";
+                        row += std::to_string(frontChild.y) + ", ";
+                        row += std::to_string(frontChild.z) + ", ";
+
+                        row += std::to_string(upChild.x) + ", ";
+                        row += std::to_string(upChild.y) + ", ";
+                        row += std::to_string(upChild.z) + ", ";
+
+                        row += std::to_string(internodeInfoChild.m_thickness / normalizeFactor) + ", ";
+                        row += std::to_string(internodeInfoChild.m_length / normalizeFactor) + ", ";
+                        row += std::to_string(internodeStatusChild.m_distanceToRoot / normalizeFactor) + ", ";
+                        row += std::to_string(internodeStatusChild.m_level);
+                    }
+                    if (i == 2)row += "\n";
+                    else row += ", ";
+                }
+                output += row;
+            }
+            layerIndex++;
+        }
+        ofs.write(output.c_str(), output.size());
+        ofs.flush();
+        ofs.close();
+        UNIENGINE_LOG("Tree group saved: " + path.string() + ".csv");
+    } else {
+        UNIENGINE_ERROR("Can't open file!");
+    }
+}
+
+void MultipleAngleCapture::Start() {
+    if (!m_cameraEntity.Get().IsNull()) {
+        m_cameraEntity.Get().GetOrSetPrivateComponent<DepthCamera>();
+        m_projections.clear();
+        m_views.clear();
+        m_names.clear();
+        m_cameraModels.clear();
+        m_treeModels.clear();
+        m_pitchAngle = m_pitchAngleStart;
+        m_turnAngle = 0;
+        m_remainingInstanceAmount = m_generationAmount;
+    }
+}
+
+bool MultipleAngleCapture::Busy() const {
+    return m_remainingInstanceAmount != 0;
+}
+
+void MultipleAngleCapture::DisableAllExport() {
+    m_exportOBJ = false;
+    m_exportCSV = false;
+    m_exportGraph = false;
+    m_exportImage = false;
+    m_exportDepth = false;
+    m_exportMatrices = false;
+    m_exportBranchCapture = false;
+    m_exportLString = false;
 }
 
 

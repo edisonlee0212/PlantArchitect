@@ -31,7 +31,7 @@
 #include "RadialBoundingVolume.hpp"
 #include "DepthCamera.hpp"
 #include "MultipleAngleCapture.hpp"
-
+#include "GANTreePipelineDriver.hpp"
 
 #include "InternodeLayer.hpp"
 
@@ -49,6 +49,7 @@ int main() {
     ClassRegistry::RegisterPrivateComponent<ObjectRotator>("ObjectRotator");
     ClassRegistry::RegisterPrivateComponent<DepthCamera>("DepthCamera");
     ClassRegistry::RegisterPrivateComponent<AutoTreeGenerationPipeline>("AutoTreeGenerationPipeline");
+    ClassRegistry::RegisterPrivateComponent<GANTreePipelineDriver>("GANTreePipelineDriver");
     ClassRegistry::RegisterAsset<MultipleAngleCapture>("MultipleAngleCapture", ".mulanglecap");
 
 
@@ -57,7 +58,7 @@ int main() {
     RegisterDataComponentMenus();
 
     ApplicationConfigs applicationConfigs;
-    applicationConfigs.m_projectPath = "InternodeBehavioursExample/InternodeBehavioursExample.ueproj";
+    applicationConfigs.m_projectPath = "GANTree/GANTree.ueproj";
     Application::Create(applicationConfigs);
 #ifdef RAYTRACERFACILITY
     Application::PushLayer<RayTracerManager>();
@@ -110,13 +111,15 @@ void EngineSetup() {
          * Add all pipelines
          */
         auto multipleAngleCapturePipelineEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(),
-                                                                              "MultipleAngleCapturePipeline");
+                                                                              "GANTree Dataset Pipeline");
         auto multipleAngleCapturePipeline = multipleAngleCapturePipelineEntity.GetOrSetPrivateComponent<AutoTreeGenerationPipeline>().lock();
         auto multipleAngleCapture = AssetManager::CreateAsset<MultipleAngleCapture>();
         multipleAngleCapture->m_cameraEntity = mainCamera->GetOwner();
         multipleAngleCapturePipeline->m_pipelineBehaviour = multipleAngleCapture;
         multipleAngleCapture->m_volume = cubeVolume;
 
+        auto driver = multipleAngleCapturePipelineEntity.GetOrSetPrivateComponent<GANTreePipelineDriver>().lock();
+        driver->m_pipeline = multipleAngleCapturePipeline;
     });
 }
 
