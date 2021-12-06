@@ -87,7 +87,7 @@ namespace PlantArchitect {
         float m_biomass = 0;
         float m_childTotalBiomass = 0;
         glm::quat m_desiredLocalRotation;
-        float m_sagging;
+        float m_sagging = 0;
 
         /**
          * Is child with largest total distance to all branch ends
