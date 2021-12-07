@@ -17,6 +17,7 @@ namespace PlantArchitect {
         Inhibitor,
         IndexDivider,
         IndexRange,
+        StrahlerNumber,
     };
 
     class IInternodeBehaviour;
@@ -27,7 +28,7 @@ namespace PlantArchitect {
         bool m_enablePhysics = true;
         void DrawColorModeSelectionMenu();
         void PreparePhysics();
-
+        void CalculateStatistics();
         /**
          * The EntityQuery for filtering all internodes.
          */

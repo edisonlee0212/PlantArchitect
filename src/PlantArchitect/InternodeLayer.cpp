@@ -28,12 +28,12 @@ void InternodeLayer::PreparePhysics(const Entity &entity, const Entity &child,
     auto parentRigidBody = entity.GetOrSetPrivateComponent<RigidBody>().lock();
     parentRigidBody->SetEnableGravity(false);
     parentRigidBody->SetDensityAndMassCenter(branchPhysicsParameters.m_density *
-                                                     internodeInfo.m_thickness *
-                                                     internodeInfo.m_thickness * internodeInfo.m_length);
+                                             internodeInfo.m_thickness *
+                                             internodeInfo.m_thickness * internodeInfo.m_length);
     parentRigidBody->SetLinearDamping(branchPhysicsParameters.m_linearDamping);
     parentRigidBody->SetAngularDamping(branchPhysicsParameters.m_angularDamping);
     parentRigidBody->SetSolverIterations(branchPhysicsParameters.m_positionSolverIteration,
-                                   branchPhysicsParameters.m_velocitySolverIteration);
+                                         branchPhysicsParameters.m_velocitySolverIteration);
     parentRigidBody->SetAngularVelocity(glm::vec3(0.0f));
     parentRigidBody->SetLinearVelocity(glm::vec3(0.0f));
 
@@ -66,7 +66,7 @@ void InternodeLayer::PreparePhysics(const Entity &entity, const Entity &child,
 
 void InternodeLayer::Simulate(int iterations) {
     for (int iteration = 0; iteration < iterations; iteration++) {
-        if(iteration == 0){
+        if (iteration == 0) {
             for (auto &i: m_internodeBehaviours) {
                 auto behaviour = i.Get<IInternodeBehaviour>();
                 if (behaviour) behaviour->CollectRoots();
@@ -101,14 +101,7 @@ void InternodeLayer::Simulate(int iterations) {
         }
     }
     if (m_enablePhysics) PreparePhysics();
-    /*
-     for (auto &i: m_internodeBehaviours) {
-        auto behaviour = i.Get<IInternodeBehaviour>();
-        if (behaviour) {
-            behaviour->TreeGraphWalker()
-        }
-    }
-    */
+    CalculateStatistics();
     UpdateBranchColors();
     UpdateBranchCylinder(m_connectionWidth);
     UpdateBranchPointer(m_pointerLength, m_pointerWidth);
@@ -577,7 +570,7 @@ void InternodeLayer::OnCreate() {
 
     m_randomColors.resize(8192);
     for (int i = 0; i < 8192; i++) {
-        m_randomColors[i] = glm::sphericalRand(1.0f);
+        m_randomColors[i] = glm::abs(glm::sphericalRand(1.0f));
     }
 
     m_internodesQuery = EntityManager::CreateEntityQuery();
@@ -734,34 +727,53 @@ void InternodeLayer::UpdateBranchColors() {
             break;
         case BranchColorMode::IndexDivider:
             EntityManager::ForEach<BranchColor, InternodeStatistics>(EntityManager::GetCurrentScene(),
-                                                               JobManager::PrimaryWorkers(),
-                                                               m_internodesQuery,
-                                                               [=](int i, Entity entity,
-                                                                   BranchColor &internodeRenderColor,
-                                                                   InternodeStatistics &internodeStatistics) {
-                                                                   internodeRenderColor.m_value = glm::vec4(glm::vec3(
-                                                                                                                    m_randomColors[internodeStatistics.m_lSystemStringIndex /
-                                                                                                                                   m_indexDivider]),
-                                                                                                            1.0f);
-                                                               },
-                                                               true);
+                                                                     JobManager::PrimaryWorkers(),
+                                                                     m_internodesQuery,
+                                                                     [=](int i, Entity entity,
+                                                                         BranchColor &internodeRenderColor,
+                                                                         InternodeStatistics &internodeStatistics) {
+                                                                         internodeRenderColor.m_value = glm::vec4(
+                                                                                 glm::vec3(
+                                                                                         m_randomColors[
+                                                                                                 internodeStatistics.m_lSystemStringIndex /
+                                                                                                 m_indexDivider]),
+                                                                                 1.0f);
+                                                                     },
+                                                                     true);
             break;
         case BranchColorMode::IndexRange:
             EntityManager::ForEach<BranchColor, InternodeStatistics>(EntityManager::GetCurrentScene(),
-                                                               JobManager::PrimaryWorkers(),
-                                                               m_internodesQuery,
-                                                               [=](int i, Entity entity,
-                                                                   BranchColor &internodeRenderColor,
-                                                                   InternodeStatistics &internodeStatistics) {
-                                                                   glm::vec3 color = glm::vec3(1.0f);
-                                                                   if (internodeStatistics.m_lSystemStringIndex > m_indexRangeMin &&
-                                                                           internodeStatistics.m_lSystemStringIndex < m_indexRangeMax) {
-                                                                       color = glm::vec3(0.0f, 0.0f, 1.0f);
-                                                                   }
-                                                                   internodeRenderColor.m_value = glm::vec4(color,
-                                                                                                            1.0f);
-                                                               },
-                                                               true);
+                                                                     JobManager::PrimaryWorkers(),
+                                                                     m_internodesQuery,
+                                                                     [=](int i, Entity entity,
+                                                                         BranchColor &internodeRenderColor,
+                                                                         InternodeStatistics &internodeStatistics) {
+                                                                         glm::vec3 color = glm::vec3(1.0f);
+                                                                         if (internodeStatistics.m_lSystemStringIndex >
+                                                                             m_indexRangeMin &&
+                                                                             internodeStatistics.m_lSystemStringIndex <
+                                                                             m_indexRangeMax) {
+                                                                             color = glm::vec3(0.0f, 0.0f, 1.0f);
+                                                                         }
+                                                                         internodeRenderColor.m_value = glm::vec4(color,
+                                                                                                                  1.0f);
+                                                                     },
+                                                                     true);
+            break;
+        case BranchColorMode::StrahlerNumber:
+            EntityManager::ForEach<BranchColor, InternodeStatistics>(EntityManager::GetCurrentScene(),
+                                                                     JobManager::PrimaryWorkers(),
+                                                                     m_internodesQuery,
+                                                                     [=](int i, Entity entity,
+                                                                         BranchColor &internodeRenderColor,
+                                                                         InternodeStatistics &internodeStatistics) {
+                                                                         internodeRenderColor.m_value = glm::vec4(
+                                                                                 glm::vec3(
+                                                                                         m_randomColors[
+                                                                                                 internodeStatistics.m_strahlerOrder]),
+                                                                                 1.0f);
+                                                                     },
+                                                                     true);
             break;
         default:
             break;
@@ -901,7 +913,7 @@ void InternodeLayer::UpdateInternodeCamera() {
 
 static const char *BranchColorModes[]{"None", "Order", "Level", "Water", "ApicalControl",
                                       "WaterPressure",
-                                      "Proximity", "Inhibitor", "IndexDivider", "IndexRange"};
+                                      "Proximity", "Inhibitor", "IndexDivider", "IndexRange", "StrahlerNumber"};
 
 void InternodeLayer::DrawColorModeSelectionMenu() {
     if (ImGui::TreeNodeEx("Branch Coloring")) {
@@ -924,6 +936,57 @@ void InternodeLayer::DrawColorModeSelectionMenu() {
         }
         ImGui::TreePop();
     }
+}
+
+void InternodeLayer::CalculateStatistics() {
+    auto scene = EntityManager::GetCurrentScene();
+    for (auto &i: m_internodeBehaviours) {
+        auto behaviour = i.Get<IInternodeBehaviour>();
+        if (behaviour) {
+            for (auto root: behaviour->m_currentRoots) {
+                behaviour->TreeGraphWalker(root, root,
+                                           [](Entity parent, Entity child) {
+
+                                           },
+                                           [](Entity parent) {
+                                               auto parentStat = parent.GetDataComponent<InternodeStatistics>();
+                                               std::vector<int> indices;
+                                               parent.ForEachChild(
+                                                       [&](const std::shared_ptr<Scene> &scene, Entity child) {
+                                                           indices.push_back(
+                                                                   child.GetDataComponent<InternodeStatistics>().m_strahlerOrder);
+                                                       });
+                                               if (indices.empty()) { parentStat.m_strahlerOrder = 1; }
+                                               else if (indices.size() == 1) {
+                                                   parentStat.m_strahlerOrder = indices[0];
+                                               } else {
+                                                   bool different = false;
+                                                   int maxIndex = indices[0];
+                                                   for (int i = 1; i < indices.size(); i++) {
+                                                       if (indices[i] != maxIndex) {
+                                                           different = true;
+                                                           maxIndex = glm::max(maxIndex, indices[i]);
+                                                       }
+                                                   }
+                                                   if (different) {
+                                                       parentStat.m_strahlerOrder = maxIndex;
+                                                   } else {
+                                                       parentStat.m_strahlerOrder = maxIndex + 1;
+                                                   }
+                                               }
+
+                                               parent.SetDataComponent(parentStat);
+                                           },
+                                           [](Entity endNode) {
+                                               auto endNodeStat = endNode.GetDataComponent<InternodeStatistics>();
+                                               endNodeStat.m_strahlerOrder = 1;
+                                               endNode.SetDataComponent(endNodeStat);
+                                           }
+                );
+            }
+        }
+    }
+
 }
 
 
