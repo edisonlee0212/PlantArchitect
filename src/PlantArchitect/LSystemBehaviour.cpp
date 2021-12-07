@@ -12,15 +12,6 @@ using namespace PlantArchitect;
 
 void LSystemBehaviour::OnInspect() {
     RecycleButton();
-    static LSystemParameters parameters;
-    parameters.OnInspect();
-    //button here
-    static AssetRef tempStoredLString;
-    EditorManager::DragAndDropButton<LString>(tempStoredLString, "Create tree from LString here: ");
-    auto lString = tempStoredLString.Get<LString>();
-    if (lString) FormPlant(lString, parameters);
-    tempStoredLString.Clear();
-
     static float resolution = 0.02;
     static float subdivision = 4.0;
     ImGui::DragFloat("Resolution", &resolution, 0.001f);
@@ -198,6 +189,8 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
         internodeInfo.m_thickness = parameters.m_endNodeThickness;
         endNode.SetDataComponent(internodeInfo);
     });
+
+    Application::GetLayer<InternodeLayer>()->CalculateStatistics();
     return root;
 }
 
@@ -362,5 +355,12 @@ void LString::ParseLString(const std::string &string) {
     if (stackCheck != 0) {
         UNIENGINE_ERROR("Stack check failed! Something wrong with the string!");
         commands.clear();
+    }
+}
+
+void LString::OnInspect() {
+    if(ImGui::Button("Instantiate")){
+        auto parameters = LSystemParameters();
+        Application::GetLayer<InternodeLayer>()->GetInternodeBehaviour<LSystemBehaviour>()->FormPlant(AssetManager::Get<LString>(GetHandle()), parameters);
     }
 }

@@ -70,6 +70,8 @@ namespace PlantArchitect {
     public:
         void ParseLString(const std::string &string);
 
+        void OnInspect() override;
+
         std::vector<LSystemCommand> commands;
 
     };
