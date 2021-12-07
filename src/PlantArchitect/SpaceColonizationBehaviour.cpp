@@ -20,6 +20,7 @@ void SpaceColonizationBehaviour::OnCreate() {
                                                  BranchPointer(), BranchPhysicsParameters());
     m_internodesQuery = EntityManager::CreateEntityQuery();
     m_internodesQuery.SetAllFilters(SpaceColonizationTag());
+    m_volumes.clear();
 }
 
 void SpaceColonizationBehaviour::Grow(int iteration) {

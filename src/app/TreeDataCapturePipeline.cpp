@@ -94,6 +94,7 @@ void EngineSetup() {
          */
         auto internodesLayer = Application::GetLayer<InternodeLayer>();
         auto spaceColonizationBehaviour = internodesLayer->GetInternodeBehaviour<SpaceColonizationBehaviour>();
+        spaceColonizationBehaviour->m_volumes.clear();
         Entity cubeVolumeEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "CubeVolume");
         Transform cubeVolumeTransform = cubeVolumeEntity.GetDataComponent<Transform>();
         cubeVolumeTransform.SetPosition(glm::vec3(0, 12.5, 0));

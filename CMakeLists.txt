@@ -145,8 +145,7 @@ endif ()
 # Example program
 # ------------------------------------------------------------------
 add_executable(Application
-        "src/app/PlantArchitect.cpp"
-        src/app/GANTree.cpp src/Scripts/GANTreePipelineDriver.cpp include/Scripts/GANTreePipelineDriver.hpp)
+        "src/app/PlantArchitect.cpp")
 target_precompile_headers(Application
         PRIVATE
         ${PLANT_ARCHITECT_PCH_LOCAL}
