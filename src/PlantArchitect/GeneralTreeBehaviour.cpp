@@ -151,7 +151,6 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                                  ApplyTropism(internodeIllumination.m_direction,
                                               generalTreeParameters.m_phototropism, desiredGlobalFront,
                                               desiredGlobalUp);
-                                 desiredGlobalRotation = glm::quatLookAt(desiredGlobalFront, desiredGlobalUp);
                                  lateralBud.m_newInternodeInfo = InternodeInfo();
                                  lateralBud.m_newInternodeInfo.m_layer = internodeInfo.m_layer + 1;
                                  lateralBud.m_newInternodeInfo.m_localRotation =

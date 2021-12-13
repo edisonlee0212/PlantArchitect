@@ -5,7 +5,7 @@
 
 #ifdef RAYTRACERFACILITY
 #include <CUDAModule.hpp>
-#include <RayTracerManager.hpp>
+#include <RayTracerLayer.hpp>
 #include "MLVQRenderer.hpp"
 #endif
 
@@ -55,7 +55,7 @@ int main() {
     applicationConfigs.m_projectPath = "GANTree/GANTree.ueproj";
     Application::Create(applicationConfigs);
 #ifdef RAYTRACERFACILITY
-    Application::PushLayer<RayTracerManager>();
+    Application::PushLayer<RayTracerLayer>();
 #endif
     auto internodesLayer = Application::PushLayer<InternodeLayer>();
 #pragma region Engine Loop
