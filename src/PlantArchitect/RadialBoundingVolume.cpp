@@ -442,7 +442,7 @@ void RadialBoundingVolume::CalculateVolume(float maxHeight) {
         if (radius > m_maxRadius)
             m_maxRadius = radius;
     }
-    const auto threadsAmount = JobManager::PrimaryWorkers().Size();
+    const auto threadsAmount = JobManager::Workers().Size();
     std::vector<std::vector<std::vector<RadialBoundingVolumeSlice>>>
             tempCakeTowers;
     tempCakeTowers.resize(threadsAmount);

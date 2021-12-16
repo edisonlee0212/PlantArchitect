@@ -19,7 +19,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
     Preprocess();
 #pragma region Main Growth
     EntityManager::ForEach<Transform, GlobalTransform, InternodeInfo, InternodeStatus, InternodeWater, InternodeIllumination, GeneralTreeParameters>
-            (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
+            (EntityManager::GetCurrentScene(), JobManager::Workers(), m_internodesQuery,
              [&](int i, Entity entity,
                  Transform &transform, GlobalTransform &globalTransform,
                  InternodeInfo &internodeInfo, InternodeStatus &internodeStatus,
@@ -202,7 +202,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
     }
 
     EntityManager::ForEach<Transform, InternodeInfo>
-            (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
+            (EntityManager::GetCurrentScene(), JobManager::Workers(), m_internodesQuery,
              [&](int i, Entity entity,
                  Transform &transform, InternodeInfo &internodeInfo) {
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
@@ -431,7 +431,7 @@ Entity GeneralTreeBehaviour::ImportGANTree(const std::filesystem::path &path, co
 
         EntityManager::ForEach<GlobalTransform, Transform, InternodeInfo, InternodeStatus, GeneralTreeParameters>
                 (EntityManager::GetCurrentScene(),
-                 JobManager::PrimaryWorkers(), m_internodesQuery,
+                 JobManager::Workers(), m_internodesQuery,
                  [](int i, Entity entity,
                     GlobalTransform &globalTransform,
                     Transform &transform,
@@ -526,7 +526,7 @@ GeneralTreeBehaviour::ImportGraphTree(const std::filesystem::path &path, const G
 
         EntityManager::ForEach<GlobalTransform, Transform, InternodeInfo, InternodeStatus, GeneralTreeParameters>
                 (EntityManager::GetCurrentScene(),
-                 JobManager::PrimaryWorkers(), m_internodesQuery,
+                 JobManager::Workers(), m_internodesQuery,
                  [](int i, Entity entity,
                     GlobalTransform &globalTransform,
                     Transform &transform,
@@ -717,10 +717,10 @@ void GeneralTreeBehaviour::Preprocess() {
         });
     });
 #pragma endregion
-    auto workerSize = JobManager::PrimaryWorkers().Size();
+    auto workerSize = JobManager::Workers().Size();
 #pragma region Illumination
     EntityManager::ForEach<InternodeInfo, InternodeIllumination, GlobalTransform>
-            (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
+            (EntityManager::GetCurrentScene(), JobManager::Workers(), m_internodesQuery,
              [&](int i, Entity entity, InternodeInfo &internodeTag, InternodeIllumination &internodeIllumination,
                  GlobalTransform &internodeGlobalTransform) {
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
@@ -745,7 +745,7 @@ void GeneralTreeBehaviour::Preprocess() {
 #pragma region Water
 #pragma region Collect water requests
     EntityManager::ForEach<InternodeInfo, InternodeWaterPressure, InternodeStatus, InternodeIllumination>
-            (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
+            (EntityManager::GetCurrentScene(), JobManager::Workers(), m_internodesQuery,
              [&](int i, Entity entity, InternodeInfo &internodeInfo, InternodeWaterPressure &internodeWaterPressure,
                  InternodeStatus &internodeStatus, InternodeIllumination &internodeIllumination) {
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
@@ -765,7 +765,7 @@ void GeneralTreeBehaviour::Preprocess() {
         for (auto &j: i) j = 0;
     }
     EntityManager::ForEach<InternodeInfo, InternodeWaterPressure, InternodeStatus, InternodeIllumination, InternodeWater, GeneralTreeParameters>
-            (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
+            (EntityManager::GetCurrentScene(), JobManager::Workers(), m_internodesQuery,
              [&](int i, Entity entity, InternodeInfo &internodeInfo, InternodeWaterPressure &internodeWaterPressure,
                  InternodeStatus &internodeStatus, InternodeIllumination &internodeIllumination,
                  InternodeWater &internodeWater,
@@ -804,7 +804,7 @@ void GeneralTreeBehaviour::Preprocess() {
         for (auto &j: i) j = 0;
     }
     EntityManager::ForEach<InternodeInfo, InternodeWaterPressure, InternodeStatus, InternodeIllumination, InternodeWater>
-            (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
+            (EntityManager::GetCurrentScene(), JobManager::Workers(), m_internodesQuery,
              [&](int i, Entity entity, InternodeInfo &internodeInfo, InternodeWaterPressure &internodeWaterPressure,
                  InternodeStatus &internodeStatus, InternodeIllumination &internodeIllumination,
                  InternodeWater &internodeWater) {
@@ -834,7 +834,7 @@ void GeneralTreeBehaviour::Preprocess() {
         if (totalRequests[plantIndex] == 0) waterDividends[plantIndex] = 0;
     }
     EntityManager::ForEach<InternodeInfo, InternodeWaterPressure, InternodeStatus, InternodeIllumination, InternodeWater, GeneralTreeParameters>
-            (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
+            (EntityManager::GetCurrentScene(), JobManager::Workers(), m_internodesQuery,
              [&](int i, Entity entity, InternodeInfo &internodeInfo, InternodeWaterPressure &internodeWaterPressure,
                  InternodeStatus &internodeStatus, InternodeIllumination &internodeIllumination,
                  InternodeWater &internodeWater,

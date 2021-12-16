@@ -59,7 +59,7 @@ IInternodeBehaviour::GenerateSkinnedMeshes(float subdivision,
     //Use internal JobSystem to dispatch job for entity collection.
     std::vector<std::shared_future<void>> results;
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
-        results.push_back(JobManager::PrimaryWorkers().Push([&, plantIndex](int id) {
+        results.push_back(JobManager::Workers().Push([&, plantIndex](int id) {
             TreeNodeCollector(boundEntitiesLists[plantIndex],
                               parentIndicesLists[plantIndex], -1, m_currentRoots[plantIndex], m_currentRoots[plantIndex]);
         }).share());
@@ -70,7 +70,7 @@ IInternodeBehaviour::GenerateSkinnedMeshes(float subdivision,
 #pragma region Prepare rings for branch mesh.
     EntityManager::ForEach<GlobalTransform, Transform,
             InternodeInfo>(EntityManager::GetCurrentScene(),
-                           JobManager::PrimaryWorkers(),
+                           JobManager::Workers(),
                            m_internodesQuery,
                            [resolution, subdivision](int i, Entity entity, GlobalTransform &globalTransform,
                                                      Transform &transform, InternodeInfo &internodeInfo) {
@@ -152,7 +152,7 @@ IInternodeBehaviour::GenerateSkinnedMeshes(float subdivision,
     std::mutex mutex;
     EntityManager::ForEach<Transform, GlobalTransform, InternodeInfo>
             (EntityManager::GetCurrentScene(),
-             JobManager::PrimaryWorkers(),
+             JobManager::Workers(),
              m_internodesQuery,
              [&](int index, Entity entity, Transform &transform, GlobalTransform &globalTransform,
                  InternodeInfo &internodeInfo) {
@@ -562,7 +562,7 @@ IInternodeBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, 
 void IInternodeBehaviour::CollectRoots() {
     std::mutex plantCollectionMutex;
     m_currentRoots.clear();
-    EntityManager::ForEach<InternodeInfo>(EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(),
+    EntityManager::ForEach<InternodeInfo>(EntityManager::GetCurrentScene(), JobManager::Workers(),
                                           m_internodesQuery,
                                           [&](int index, Entity entity, InternodeInfo &internodeInfo) {
                                               if (!entity.HasPrivateComponent<Internode>()) return;
@@ -700,7 +700,7 @@ void IInternodeBehaviour::ParallelForEachRoot(std::vector<Entity> &roots,
     auto plantSize = roots.size();
     std::vector<std::shared_future<void>> results;
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
-        results.push_back(JobManager::PrimaryWorkers().Push([&, plantIndex](int id) {
+        results.push_back(JobManager::Workers().Push([&, plantIndex](int id) {
             action(plantIndex, roots[plantIndex]);
         }).share());
     }

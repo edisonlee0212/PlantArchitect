@@ -339,7 +339,7 @@ void MultipleAngleCapture::RenderBranchCapture() {
             true);
     */
     EntityManager::ForEach<GlobalTransform, BranchCylinder, InternodeInfo>(
-            EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(),
+            EntityManager::GetCurrentScene(), JobManager::Workers(),
             internodeQuery,
             [=](int i, Entity entity, GlobalTransform &ltw, BranchCylinder &c,
                 InternodeInfo &internodeInfo) {

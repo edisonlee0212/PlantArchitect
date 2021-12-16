@@ -74,13 +74,13 @@ void InternodeLayer::Simulate(int iterations) {
         }
         m_voxelSpace.Clear();
         EntityManager::ForEach<InternodeInfo, GlobalTransform>
-                (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
+                (EntityManager::GetCurrentScene(), JobManager::Workers(), m_internodesQuery,
                  [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &internodeGlobalTransform) {
                      const auto position = internodeGlobalTransform.GetPosition();
                      m_voxelSpace.Push(position, entity);
                  }, true);
         EntityManager::ForEach<InternodeInfo, GlobalTransform>
-                (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
+                (EntityManager::GetCurrentScene(), JobManager::Workers(), m_internodesQuery,
                  [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &internodeGlobalTransform) {
                      const auto position = internodeGlobalTransform.GetPosition();
                      internodeInfo.m_neighborsProximity = 0;
@@ -367,7 +367,7 @@ void InternodeLayer::OnInspect() {
                         const Ray cameraRay = m_internodeDebuggingCamera->ScreenPointToRay(
                                 cameraLtw, mousePosition);
                         EntityManager::ForEach<GlobalTransform, InternodeInfo>(
-                                EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(),
+                                EntityManager::GetCurrentScene(), JobManager::Workers(),
                                 m_internodesQuery,
                                 [&, cameraLtw, cameraRay](int i, Entity entity,
                                                           GlobalTransform &ltw,
@@ -605,7 +605,7 @@ void InternodeLayer::UpdateBranchColors() {
     }
 
     EntityManager::ForEach<BranchColor, InternodeInfo>(
-            EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(),
+            EntityManager::GetCurrentScene(), JobManager::Workers(),
             m_internodesQuery,
             [=](int i, Entity entity, BranchColor &internodeRenderColor,
                 InternodeInfo &internodeInfo) {
@@ -616,7 +616,7 @@ void InternodeLayer::UpdateBranchColors() {
     switch (m_branchColorMode) {
         case BranchColorMode::Order:
             EntityManager::ForEach<BranchColor, InternodeStatus>(EntityManager::GetCurrentScene(),
-                                                                 JobManager::PrimaryWorkers(),
+                                                                 JobManager::Workers(),
                                                                  m_internodesQuery,
                                                                  [=](int i, Entity entity,
                                                                      BranchColor &internodeRenderColor,
@@ -632,7 +632,7 @@ void InternodeLayer::UpdateBranchColors() {
             break;
         case BranchColorMode::Level:
             EntityManager::ForEach<BranchColor, InternodeStatus>(EntityManager::GetCurrentScene(),
-                                                                 JobManager::PrimaryWorkers(),
+                                                                 JobManager::Workers(),
                                                                  m_internodesQuery,
                                                                  [=](int i, Entity entity,
                                                                      BranchColor &internodeRenderColor,
@@ -649,7 +649,7 @@ void InternodeLayer::UpdateBranchColors() {
         case BranchColorMode::ApicalControl:
             EntityManager::ForEach<BranchColor, InternodeStatus, InternodeInfo, GeneralTreeParameters>(
                     EntityManager::GetCurrentScene(),
-                    JobManager::PrimaryWorkers(),
+                    JobManager::Workers(),
                     m_internodesQuery,
                     [=](int i, Entity entity, BranchColor &internodeRenderColor,
                         InternodeStatus &internodeStatus, InternodeInfo &internodeInfo,
@@ -663,7 +663,7 @@ void InternodeLayer::UpdateBranchColors() {
             break;
         case BranchColorMode::Water:
             EntityManager::ForEach<BranchColor, InternodeWater>(EntityManager::GetCurrentScene(),
-                                                                JobManager::PrimaryWorkers(),
+                                                                JobManager::Workers(),
                                                                 m_internodesQuery,
                                                                 [=](int i, Entity entity,
                                                                     BranchColor &internodeRenderColor,
@@ -678,7 +678,7 @@ void InternodeLayer::UpdateBranchColors() {
             break;
         case BranchColorMode::WaterPressure:
             EntityManager::ForEach<BranchColor, InternodeWaterPressure>(EntityManager::GetCurrentScene(),
-                                                                        JobManager::PrimaryWorkers(),
+                                                                        JobManager::Workers(),
                                                                         m_internodesQuery,
                                                                         [=](int i, Entity entity,
                                                                             BranchColor &internodeRenderColor,
@@ -695,7 +695,7 @@ void InternodeLayer::UpdateBranchColors() {
             break;
         case BranchColorMode::Proximity:
             EntityManager::ForEach<BranchColor, InternodeInfo>(EntityManager::GetCurrentScene(),
-                                                               JobManager::PrimaryWorkers(),
+                                                               JobManager::Workers(),
                                                                m_internodesQuery,
                                                                [=](int i, Entity entity,
                                                                    BranchColor &internodeRenderColor,
@@ -711,7 +711,7 @@ void InternodeLayer::UpdateBranchColors() {
             break;
         case BranchColorMode::Inhibitor:
             EntityManager::ForEach<BranchColor, InternodeStatus>(EntityManager::GetCurrentScene(),
-                                                                 JobManager::PrimaryWorkers(),
+                                                                 JobManager::Workers(),
                                                                  m_internodesQuery,
                                                                  [=](int i, Entity entity,
                                                                      BranchColor &internodeRenderColor,
@@ -727,7 +727,7 @@ void InternodeLayer::UpdateBranchColors() {
             break;
         case BranchColorMode::IndexDivider:
             EntityManager::ForEach<BranchColor, InternodeStatistics>(EntityManager::GetCurrentScene(),
-                                                                     JobManager::PrimaryWorkers(),
+                                                                     JobManager::Workers(),
                                                                      m_internodesQuery,
                                                                      [=](int i, Entity entity,
                                                                          BranchColor &internodeRenderColor,
@@ -743,7 +743,7 @@ void InternodeLayer::UpdateBranchColors() {
             break;
         case BranchColorMode::IndexRange:
             EntityManager::ForEach<BranchColor, InternodeStatistics>(EntityManager::GetCurrentScene(),
-                                                                     JobManager::PrimaryWorkers(),
+                                                                     JobManager::Workers(),
                                                                      m_internodesQuery,
                                                                      [=](int i, Entity entity,
                                                                          BranchColor &internodeRenderColor,
@@ -762,7 +762,7 @@ void InternodeLayer::UpdateBranchColors() {
             break;
         case BranchColorMode::StrahlerNumber:
             EntityManager::ForEach<BranchColor, InternodeStatistics>(EntityManager::GetCurrentScene(),
-                                                                     JobManager::PrimaryWorkers(),
+                                                                     JobManager::Workers(),
                                                                      m_internodesQuery,
                                                                      [=](int i, Entity entity,
                                                                          BranchColor &internodeRenderColor,
@@ -792,7 +792,7 @@ void InternodeLayer::UpdateBranchColors() {
 void InternodeLayer::UpdateBranchCylinder(const float &width) {
     EntityManager::ForEach<GlobalTransform, BranchCylinder, BranchCylinderWidth, InternodeInfo>(
             EntityManager::GetCurrentScene(),
-            JobManager::PrimaryWorkers(),
+            JobManager::Workers(),
             m_internodesQuery,
             [width](int i, Entity entity, GlobalTransform &ltw, BranchCylinder &c,
                     BranchCylinderWidth &branchCylinderWidth, InternodeInfo &internodeInfo) {

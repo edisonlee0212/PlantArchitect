@@ -35,7 +35,7 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
     memset(removeMarks.data(), 0, removeMarks.size() * sizeof(bool));
     //1. Check and remove points.
     EntityManager::ForEach<InternodeInfo, GlobalTransform, SpaceColonizationParameters>
-            (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
+            (EntityManager::GetCurrentScene(), JobManager::Workers(), m_internodesQuery,
              [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &globalTransform,
                  SpaceColonizationParameters &spaceColonizationParameters) {
                  glm::vec3 position = globalTransform.GetPosition() +
@@ -76,7 +76,7 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
         i.second = 999999;
     }
     EntityManager::ForEach<InternodeInfo, GlobalTransform, SpaceColonizationIncentive, SpaceColonizationParameters>
-            (EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(), m_internodesQuery,
+            (EntityManager::GetCurrentScene(), JobManager::Workers(), m_internodesQuery,
              [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &globalTransform,
                  SpaceColonizationIncentive &spaceColonizationIncentive,
                  SpaceColonizationParameters &spaceColonizationParameters) {
@@ -172,7 +172,7 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
     //Use internal JobSystem to dispatch job for entity collection.
     std::vector<std::shared_future<void>> results;
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
-        results.push_back(JobManager::PrimaryWorkers().Push([&, plantIndex](int id) {
+        results.push_back(JobManager::Workers().Push([&, plantIndex](int id) {
             auto root = m_currentRoots[plantIndex];
             auto parent = root.GetParent();
             if (!parent.IsNull()) {
@@ -192,7 +192,7 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
     //Use internal JobSystem to dispatch job for entity collection.
     results.clear();
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
-        results.push_back(JobManager::PrimaryWorkers().Push([&, plantIndex](int id) {
+        results.push_back(JobManager::Workers().Push([&, plantIndex](int id) {
             TreeGraphWalkerEndToRoot(m_currentRoots[plantIndex], m_currentRoots[plantIndex], [&](Entity parent) {
                 float thicknessCollection = 0.0f;
                 auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
