@@ -44,6 +44,7 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
     int index = 1;
     Entity root;
     Entity internode;
+    bool rootExists = false;
     for (const auto &command: commands) {
         switch (command.m_type) {
             case LSystemCommandType::Forward: {
@@ -51,13 +52,24 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
                 InternodeStatistics newStat;
                 newStat.m_lSystemStringIndex = index;
                 if (internode.IsNull()) {
-                    //Calculate the local rotation as quaternion from euler angles.
-                    newInfo.m_localRotation = glm::quat(currentState.m_eulerRotation);
-                    //If this is the first push in the string, we create the root internode.
-                    //The node creation is handled by the Retrieve() function. The internode creation is performed in a factory pattern.
-                    root = internode = Retrieve();
-                    //Apply the parameter to this internode, this is necessary everytime you create a new internode.
-                    internode.SetDataComponent(parameters);
+                    if (rootExists) {
+                        UNIENGINE_WARNING("Root exists!");
+                        //Calculate the local rotation as quaternion from euler angles.
+                        newInfo.m_localRotation = glm::quat(currentState.m_eulerRotation);
+                        //We need to create a child node with this function. Here Retrieve(Entity) will instantiate a new internode for you and set it as a child of current internode.
+                        internode = Retrieve(root);
+                        //Apply the parameter to this internode, this is necessary everytime you create a new internode.
+                        internode.SetDataComponent(parameters);
+                    }else {
+                        //Calculate the local rotation as quaternion from euler angles.
+                        newInfo.m_localRotation = glm::quat(currentState.m_eulerRotation);
+                        //If this is the first push in the string, we create the root internode.
+                        //The node creation is handled by the Retrieve() function. The internode creation is performed in a factory pattern.
+                        root = internode = Retrieve();
+                        //Apply the parameter to this internode, this is necessary everytime you create a new internode.
+                        internode.SetDataComponent(parameters);
+                        rootExists = true;
+                    }
                 } else {
                     //Calculate the local rotation as quaternion from euler angles.
                     newInfo.m_localRotation = glm::quat(currentState.m_eulerRotation);
@@ -359,8 +371,9 @@ void LString::ParseLString(const std::string &string) {
 }
 
 void LString::OnInspect() {
-    if(ImGui::Button("Instantiate")){
+    if (ImGui::Button("Instantiate")) {
         auto parameters = LSystemParameters();
-        Application::GetLayer<InternodeLayer>()->GetInternodeBehaviour<LSystemBehaviour>()->FormPlant(AssetManager::Get<LString>(GetHandle()), parameters);
+        Application::GetLayer<InternodeLayer>()->GetInternodeBehaviour<LSystemBehaviour>()->FormPlant(
+                AssetManager::Get<LString>(GetHandle()), parameters);
     }
 }
