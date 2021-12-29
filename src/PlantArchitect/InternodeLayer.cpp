@@ -18,6 +18,7 @@
 #include "EmptyInternodeResource.hpp"
 #include "DefaultInternodePhyllotaxis.hpp"
 #include "JSONTreeBehaviour.hpp"
+#include "FBMField.hpp"
 
 using namespace PlantArchitect;
 
@@ -466,6 +467,7 @@ void InternodeLayer::OnCreate() {
     ClassRegistry::RegisterDataComponent<InternodeIllumination>("InternodeIllumination");
     ClassRegistry::RegisterPrivateComponent<InternodeWaterFeeder>("InternodeWaterFeeder");
     ClassRegistry::RegisterAsset<GeneralTreeBehaviour>("GeneralTreeBehaviour", ".gtbehaviour");
+    ClassRegistry::RegisterAsset<FBMField>("FBMField", ".FBMField");
 
     ClassRegistry::RegisterDataComponent<SpaceColonizationTag>("SpaceColonizationTag");
     ClassRegistry::RegisterDataComponent<SpaceColonizationParameters>("SpaceColonizationParameters");
