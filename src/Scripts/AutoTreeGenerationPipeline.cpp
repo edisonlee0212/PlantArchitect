@@ -3,7 +3,7 @@
 //
 
 #include "AutoTreeGenerationPipeline.hpp"
-#include "EditorManager.hpp"
+#include "Editor.hpp"
 #include "GeneralTreeBehaviour.hpp"
 #include "LSystemBehaviour.hpp"
 #include "SpaceColonizationBehaviour.hpp"
@@ -130,7 +130,7 @@ void AutoTreeGenerationPipeline::DropBehaviourButton() {
         ImGui::Text("Current attached behaviour: ");
         ImGui::Button((behaviour->m_name).c_str());
         if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
-            EditorManager::GetInstance().m_inspectingAsset = behaviour;
+            Editor::GetInstance().m_inspectingAsset = behaviour;
         }
         const std::string tag =
                 "##" + behaviour->GetTypeName() + (behaviour ? std::to_string(behaviour->GetHandle()) : "");
@@ -141,7 +141,7 @@ void AutoTreeGenerationPipeline::DropBehaviourButton() {
             ImGui::EndPopup();
         }
     } else {
-        EditorManager::DragAndDropButton(m_pipelineBehaviour, "Pipeline behaviour",
+        Editor::DragAndDropButton(m_pipelineBehaviour, "Pipeline behaviour",
                                          {"SpaceColonizationTreeToLString", "MultipleAngleCapture",
                                           "GeneralTreeToString"}, false);
     }

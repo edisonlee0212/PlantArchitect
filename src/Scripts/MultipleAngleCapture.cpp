@@ -4,7 +4,7 @@
 
 #include "MultipleAngleCapture.hpp"
 #include "DepthCamera.hpp"
-#include "EntityManager.hpp"
+#include "Entities.hpp"
 #include "InternodeLayer.hpp"
 #include "AssetManager.hpp"
 #include "LSystemBehaviour.hpp"
@@ -196,8 +196,8 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
 }
 
 void MultipleAngleCapture::OnInspect() {
-    EditorManager::DragAndDropButton(m_volume, "Volume", {"CubeVolume", "RadialBoundingVolume"}, false);
-    EditorManager::DragAndDropButton(m_foliagePhyllotaxis, "Phyllotaxis",
+    Editor::DragAndDropButton(m_volume, "Volume", {"CubeVolume", "RadialBoundingVolume"}, false);
+    Editor::DragAndDropButton(m_foliagePhyllotaxis, "Phyllotaxis",
                                      {"EmptyInternodePhyllotaxis", "DefaultInternodePhyllotaxis"}, true);
     ImGui::Checkbox("Auto adjust camera", &m_autoAdjustCamera);
     if (ImGui::TreeNodeEx("Pipeline Settings")) {
@@ -220,7 +220,7 @@ void MultipleAngleCapture::OnInspect() {
         ImGui::TreePop();
     }
     if (ImGui::TreeNodeEx("Camera")) {
-        EditorManager::DragAndDropButton(m_cameraEntity, "Attached Camera Entity");
+        Editor::DragAndDropButton(m_cameraEntity, "Attached Camera Entity");
         if (!m_autoAdjustCamera) {
             ImGui::Text("Position:");
             ImGui::DragFloat3("Focus point", &m_focusPoint.x, 0.1f);
@@ -327,8 +327,8 @@ bool MultipleAngleCapture::SetUpCamera() {
 void MultipleAngleCapture::RenderBranchCapture() {
     auto internodeQuery = Application::GetLayer<InternodeLayer>()->m_internodesQuery;
     /*
-    EntityManager::ForEach<BranchColor, InternodeInfo>(
-            EntityManager::GetCurrentScene(), JobManager::PrimaryWorkers(),
+    Entities::ForEach<BranchColor, InternodeInfo>(
+            Entities::GetCurrentScene(), JobManager::PrimaryWorkers(),
             internodeQuery,
             [=](int i, Entity entity, BranchColor &internodeRenderColor,
                 InternodeInfo &internodeInfo) {
@@ -338,8 +338,8 @@ void MultipleAngleCapture::RenderBranchCapture() {
             },
             true);
     */
-    EntityManager::ForEach<GlobalTransform, BranchCylinder, InternodeInfo>(
-            EntityManager::GetCurrentScene(), JobManager::Workers(),
+    Entities::ForEach<GlobalTransform, BranchCylinder, InternodeInfo>(
+            Entities::GetCurrentScene(), Jobs::Workers(),
             internodeQuery,
             [=](int i, Entity entity, GlobalTransform &ltw, BranchCylinder &c,
                 InternodeInfo &internodeInfo) {
@@ -370,15 +370,15 @@ void MultipleAngleCapture::RenderBranchCapture() {
 
     m_branchCaptureCamera->Clear();
     std::vector<BranchCylinder> branchCylinders;
-    internodeQuery.ToComponentDataArray<BranchCylinder>(EntityManager::GetCurrentScene(),
+    internodeQuery.ToComponentDataArray<BranchCylinder>(Entities::GetCurrentScene(),
                                                         branchCylinders);
     std::vector<BranchColor> branchColors;
-    internodeQuery.ToComponentDataArray<BranchColor>(EntityManager::GetCurrentScene(),
+    internodeQuery.ToComponentDataArray<BranchColor>(Entities::GetCurrentScene(),
                                                      branchColors);
     std::vector<GlobalTransform> branchGlobalTransforms;
-    internodeQuery.ToComponentDataArray<GlobalTransform>(EntityManager::GetCurrentScene(),
+    internodeQuery.ToComponentDataArray<GlobalTransform>(Entities::GetCurrentScene(),
                                                          branchGlobalTransforms);
-    RenderManager::DrawGizmoMeshInstancedColored(
+    Graphics::DrawGizmoMeshInstancedColored(
             DefaultResources::Primitives::Cylinder, m_branchCaptureCamera,
             m_cameraPosition,
             m_cameraRotation,
@@ -386,7 +386,7 @@ void MultipleAngleCapture::RenderBranchCapture() {
             *reinterpret_cast<std::vector<glm::mat4> *>(&branchCylinders),
             glm::mat4(1.0f), 1.0f);
 
-    RenderManager::DrawGizmoMeshInstanced(
+    Graphics::DrawGizmoMeshInstanced(
             DefaultResources::Primitives::Sphere, m_branchCaptureCamera,
             m_cameraPosition,
             m_cameraRotation,
@@ -396,7 +396,7 @@ void MultipleAngleCapture::RenderBranchCapture() {
 }
 
 void MultipleAngleCapture::OnCreate() {
-    m_branchCaptureCamera = SerializationManager::ProduceSerializable<Camera>();
+    m_branchCaptureCamera = Serialization::ProduceSerializable<Camera>();
     m_branchCaptureCamera->OnCreate();
 }
 

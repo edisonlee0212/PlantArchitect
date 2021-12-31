@@ -15,8 +15,8 @@ void InternodeFoliage::Generate(const std::shared_ptr<Internode> &internode,
 }
 
 void InternodeFoliage::OnInspect() {
-    EditorManager::DragAndDropButton(m_foliagePhyllotaxis, "Phyllotaxis", {"EmptyInternodePhyllotaxis", "DefaultInternodePhyllotaxis"}, true);
-    EditorManager::DragAndDropButton<Texture2D>(m_foliageTexture, "Texture2D", true);
+    Editor::DragAndDropButton(m_foliagePhyllotaxis, "Phyllotaxis", {"EmptyInternodePhyllotaxis", "DefaultInternodePhyllotaxis"}, true);
+    Editor::DragAndDropButton<Texture2D>(m_foliageTexture, "Texture2D", true);
     if(!m_foliageTexture.Get<Texture2D>()){
         ImGui::DragFloat3("Foliage color", &m_foliageColor.x);
     }

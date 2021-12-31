@@ -13,12 +13,12 @@ using namespace PlantArchitect;
 
 void SpaceColonizationBehaviour::OnCreate() {
     m_internodeArchetype =
-            EntityManager::CreateEntityArchetype("Space Colonization Internode", InternodeInfo(), InternodeStatistics(),
+            Entities::CreateEntityArchetype("Space Colonization Internode", InternodeInfo(), InternodeStatistics(),
                                                  SpaceColonizationTag(), SpaceColonizationIncentive(),
                                                  SpaceColonizationParameters(),
                                                  BranchColor(), BranchCylinder(), BranchCylinderWidth(),
                                                  BranchPointer(), BranchPhysicsParameters());
-    m_internodesQuery = EntityManager::CreateEntityQuery();
+    m_internodesQuery = Entities::CreateEntityQuery();
     m_internodesQuery.SetAllFilters(SpaceColonizationTag());
     m_volumes.clear();
 }
@@ -27,15 +27,15 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
 
     if (m_attractionPoints.empty()) return;
     if (m_recycleStorageEntity.IsNull()) {
-        m_recycleStorageEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(),
+        m_recycleStorageEntity = Entities::CreateEntity(Entities::GetCurrentScene(),
                                                              "Recycled General Tree Internodes");
     }
     std::vector<int> removeMarks;
     removeMarks.resize(m_attractionPoints.size());
     memset(removeMarks.data(), 0, removeMarks.size() * sizeof(bool));
     //1. Check and remove points.
-    EntityManager::ForEach<InternodeInfo, GlobalTransform, SpaceColonizationParameters>
-            (EntityManager::GetCurrentScene(), JobManager::Workers(), m_internodesQuery,
+    Entities::ForEach<InternodeInfo, GlobalTransform, SpaceColonizationParameters>
+            (Entities::GetCurrentScene(), Jobs::Workers(), m_internodesQuery,
              [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &globalTransform,
                  SpaceColonizationParameters &spaceColonizationParameters) {
                  glm::vec3 position = globalTransform.GetPosition() +
@@ -75,8 +75,8 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
         i.first = Entity();
         i.second = 999999;
     }
-    EntityManager::ForEach<InternodeInfo, GlobalTransform, SpaceColonizationIncentive, SpaceColonizationParameters>
-            (EntityManager::GetCurrentScene(), JobManager::Workers(), m_internodesQuery,
+    Entities::ForEach<InternodeInfo, GlobalTransform, SpaceColonizationIncentive, SpaceColonizationParameters>
+            (Entities::GetCurrentScene(), Jobs::Workers(), m_internodesQuery,
              [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &globalTransform,
                  SpaceColonizationIncentive &spaceColonizationIncentive,
                  SpaceColonizationParameters &spaceColonizationParameters) {
@@ -116,7 +116,7 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
     }
     //2. Form new internodes.
     std::vector<Entity> entities;
-    m_internodesQuery.ToEntityArray(EntityManager::GetCurrentScene(), entities);
+    m_internodesQuery.ToEntityArray(Entities::GetCurrentScene(), entities);
     for (const auto &entity: entities) {
         if (!entity.IsEnabled()) continue;
         auto parameter = entity.GetDataComponent<SpaceColonizationParameters>();
@@ -172,7 +172,7 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
     //Use internal JobSystem to dispatch job for entity collection.
     std::vector<std::shared_future<void>> results;
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
-        results.push_back(JobManager::Workers().Push([&, plantIndex](int id) {
+        results.push_back(Jobs::Workers().Push([&, plantIndex](int id) {
             auto root = m_currentRoots[plantIndex];
             auto parent = root.GetParent();
             if (!parent.IsNull()) {
@@ -183,7 +183,7 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
                 root.SetDataComponent(rootLocalTransform);
             }
             Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(
-                    EntityManager::GetCurrentScene(), root);
+                    Entities::GetCurrentScene(), root);
         }).share());
     }
     for (const auto &i: results)
@@ -192,7 +192,7 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
     //Use internal JobSystem to dispatch job for entity collection.
     results.clear();
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
-        results.push_back(JobManager::Workers().Push([&, plantIndex](int id) {
+        results.push_back(Jobs::Workers().Push([&, plantIndex](int id) {
             TreeGraphWalkerEndToRoot(m_currentRoots[plantIndex], m_currentRoots[plantIndex], [&](Entity parent) {
                 float thicknessCollection = 0.0f;
                 auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
@@ -258,7 +258,7 @@ void SpaceColonizationBehaviour::OnInspect() {
         static int amount = 1000;
         ImGui::DragInt("Amount", &amount);
         for (auto &volume: m_volumes) {
-            if (EditorManager::DragAndDropButton<IVolume>(volume, "Slot " + std::to_string(index++))) {
+            if (Editor::DragAndDropButton<IVolume>(volume, "Slot " + std::to_string(index++))) {
                 skip = true;
                 break;
             }
@@ -299,12 +299,12 @@ void SpaceColonizationBehaviour::OnInspect() {
                 }
             }
 
-            RenderManager::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube, renderColor,
+            Graphics::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube, renderColor,
                                                   displayMatrices, glm::mat4(1.0f), renderSize);
             auto editorLayer = Application::GetLayer<EditorLayer>();
             auto internodeLayer = Application::GetLayer<InternodeLayer>();
             if (editorLayer && internodeLayer) {
-                RenderManager::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube,
+                Graphics::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube,
                                                       internodeLayer->m_internodeDebuggingCamera,
                                                       editorLayer->m_sceneCameraPosition,
                                                       editorLayer->m_sceneCameraRotation, renderColor,
@@ -319,7 +319,7 @@ void SpaceColonizationBehaviour::VolumeSlotButton() {
     ImGui::Text("Add new volume");
     ImGui::SameLine();
     static PrivateComponentRef temp;
-    EditorManager::DragAndDropButton(temp, "Here", {"CubeVolume", "RadialBoundingVolume"}, false);
+    Editor::DragAndDropButton(temp, "Here", {"CubeVolume", "RadialBoundingVolume"}, false);
     if (temp.Get<IVolume>()) {
         PushVolume(temp.Get<IVolume>());
         temp.Clear();

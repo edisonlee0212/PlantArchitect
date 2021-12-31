@@ -65,7 +65,7 @@ void PlantArchitect::FBMField::OnInspect() {
             }
         }
 
-        RenderManager::DrawGizmoMeshInstancedColored(DefaultResources::Primitives::Cube, colors, matrices);
+        Graphics::DrawGizmoMeshInstancedColored(DefaultResources::Primitives::Cube, colors, matrices);
     }
 }
 

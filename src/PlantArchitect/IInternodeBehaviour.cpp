@@ -26,18 +26,18 @@ void IInternodeBehaviour::RecycleSingle(const Entity &internode) {
     std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
     if (!m_recycleStorageEntity.IsValid()) {
         m_recycleStorageEntity = Entity();
-        EntityManager::DeleteEntity(EntityManager::GetCurrentScene(), internode);
+        Entities::DeleteEntity(Entities::GetCurrentScene(), internode);
         return;
     }
     if (!InternodeCheck(internode)) {
-        EntityManager::DeleteEntity(EntityManager::GetCurrentScene(), internode);
+        Entities::DeleteEntity(Entities::GetCurrentScene(), internode);
         return;
     }
-    EntityManager::ForEachPrivateComponent(EntityManager::GetCurrentScene(), internode,
+    Entities::ForEachPrivateComponent(Entities::GetCurrentScene(), internode,
                                            [&](PrivateComponentElement &element) {
                                                if (element.m_typeId != typeid(Internode).hash_code())
-                                                   EntityManager::RemovePrivateComponent(
-                                                           EntityManager::GetCurrentScene(), internode,
+                                                   Entities::RemovePrivateComponent(
+                                                           Entities::GetCurrentScene(), internode,
                                                            element.m_typeId);
                                            });
     internode.GetOrSetPrivateComponent<Internode>().lock()->OnRecycle();
@@ -59,7 +59,7 @@ IInternodeBehaviour::GenerateSkinnedMeshes(float subdivision,
     //Use internal JobSystem to dispatch job for entity collection.
     std::vector<std::shared_future<void>> results;
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
-        results.push_back(JobManager::Workers().Push([&, plantIndex](int id) {
+        results.push_back(Jobs::Workers().Push([&, plantIndex](int id) {
             TreeNodeCollector(boundEntitiesLists[plantIndex],
                               parentIndicesLists[plantIndex], -1, m_currentRoots[plantIndex], m_currentRoots[plantIndex]);
         }).share());
@@ -68,9 +68,9 @@ IInternodeBehaviour::GenerateSkinnedMeshes(float subdivision,
         i.wait();
 
 #pragma region Prepare rings for branch mesh.
-    EntityManager::ForEach<GlobalTransform, Transform,
-            InternodeInfo>(EntityManager::GetCurrentScene(),
-                           JobManager::Workers(),
+    Entities::ForEach<GlobalTransform, Transform,
+            InternodeInfo>(Entities::GetCurrentScene(),
+                           Jobs::Workers(),
                            m_internodesQuery,
                            [resolution, subdivision](int i, Entity entity, GlobalTransform &globalTransform,
                                                      Transform &transform, InternodeInfo &internodeInfo) {
@@ -150,9 +150,9 @@ IInternodeBehaviour::GenerateSkinnedMeshes(float subdivision,
 #pragma endregion
 #pragma region Prepare foliage transforms.
     std::mutex mutex;
-    EntityManager::ForEach<Transform, GlobalTransform, InternodeInfo>
-            (EntityManager::GetCurrentScene(),
-             JobManager::Workers(),
+    Entities::ForEach<Transform, GlobalTransform, InternodeInfo>
+            (Entities::GetCurrentScene(),
+             Jobs::Workers(),
              m_internodesQuery,
              [&](int index, Entity entity, Transform &transform, GlobalTransform &globalTransform,
                  InternodeInfo &internodeInfo) {
@@ -527,7 +527,7 @@ IInternodeBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, 
     });
 
     {
-        if (branchMesh.IsNull()) branchMesh = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "Branch");
+        if (branchMesh.IsNull()) branchMesh = Entities::CreateEntity(Entities::GetCurrentScene(), "Branch");
         auto animator = branchMesh.GetOrSetPrivateComponent<Animator>().lock();
         auto skinnedMeshRenderer =
                 branchMesh.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
@@ -541,7 +541,7 @@ IInternodeBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, 
         skinnedMeshRenderer->m_animator = branchMesh.GetOrSetPrivateComponent<Animator>().lock();
     }
     {
-        if (foliage.IsNull()) foliage = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "Foliage");
+        if (foliage.IsNull()) foliage = Entities::CreateEntity(Entities::GetCurrentScene(), "Foliage");
         auto animator = foliage.GetOrSetPrivateComponent<Animator>().lock();
         auto skinnedMeshRenderer =
                 foliage.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
@@ -562,7 +562,7 @@ IInternodeBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, 
 void IInternodeBehaviour::CollectRoots() {
     std::mutex plantCollectionMutex;
     m_currentRoots.clear();
-    EntityManager::ForEach<InternodeInfo>(EntityManager::GetCurrentScene(), JobManager::Workers(),
+    Entities::ForEach<InternodeInfo>(Entities::GetCurrentScene(), Jobs::Workers(),
                                           m_internodesQuery,
                                           [&](int index, Entity entity, InternodeInfo &internodeInfo) {
                                               if (!entity.HasPrivateComponent<Internode>()) return;
@@ -690,7 +690,7 @@ void IInternodeBehaviour::RecycleButton() {
     static Entity target;
     ImGui::Text("Recycle here: ");
     ImGui::SameLine();
-    EditorManager::DragAndDropButton(target);
+    Editor::DragAndDropButton(target);
     if (!target.IsNull()) Recycle(target);
     target = Entity();
 }
@@ -700,7 +700,7 @@ void IInternodeBehaviour::ParallelForEachRoot(std::vector<Entity> &roots,
     auto plantSize = roots.size();
     std::vector<std::shared_future<void>> results;
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
-        results.push_back(JobManager::Workers().Push([&, plantIndex](int id) {
+        results.push_back(Jobs::Workers().Push([&, plantIndex](int id) {
             action(plantIndex, roots[plantIndex]);
         }).share());
     }

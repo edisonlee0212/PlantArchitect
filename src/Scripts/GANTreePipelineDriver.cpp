@@ -8,7 +8,7 @@
 using namespace Scripts;
 
 void GANTreePipelineDriver::OnInspect() {
-    EditorManager::DragAndDropButton<AutoTreeGenerationPipeline>(m_pipeline, "DatasetPipeline");
+    Editor::DragAndDropButton<AutoTreeGenerationPipeline>(m_pipeline, "DatasetPipeline");
 
     ImGui::DragInt("Amount per specie", &m_instancePerSpecie, 1, 0, 99999);
     if(m_parameterFilePaths.empty()) {

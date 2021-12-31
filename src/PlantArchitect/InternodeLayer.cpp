@@ -74,14 +74,14 @@ void InternodeLayer::Simulate(int iterations) {
             }
         }
         m_voxelSpace.Clear();
-        EntityManager::ForEach<InternodeInfo, GlobalTransform>
-                (EntityManager::GetCurrentScene(), JobManager::Workers(), m_internodesQuery,
+        Entities::ForEach<InternodeInfo, GlobalTransform>
+                (Entities::GetCurrentScene(), Jobs::Workers(), m_internodesQuery,
                  [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &internodeGlobalTransform) {
                      const auto position = internodeGlobalTransform.GetPosition();
                      m_voxelSpace.Push(position, entity);
                  }, true);
-        EntityManager::ForEach<InternodeInfo, GlobalTransform>
-                (EntityManager::GetCurrentScene(), JobManager::Workers(), m_internodesQuery,
+        Entities::ForEach<InternodeInfo, GlobalTransform>
+                (Entities::GetCurrentScene(), Jobs::Workers(), m_internodesQuery,
                  [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &internodeGlobalTransform) {
                      const auto position = internodeGlobalTransform.GetPosition();
                      internodeInfo.m_neighborsProximity = 0;
@@ -122,7 +122,7 @@ void InternodeLayer::PreparePhysics() {
             }
         }
     }
-    auto activeScene = EntityManager::GetCurrentScene();
+    auto activeScene = Entities::GetCurrentScene();
     physicsLayer->UploadRigidBodyShapes(activeScene);
     physicsLayer->UploadTransforms(activeScene, true);
     physicsLayer->UploadJointLinks(activeScene);
@@ -147,14 +147,14 @@ void InternodeLayer::OnInspect() {
         if (m_voxelSpace.m_display) {
             auto editorLayer = Application::GetLayer<EditorLayer>();
             if (editorLayer) {
-                RenderManager::DrawGizmoMeshInstanced(
+                Graphics::DrawGizmoMeshInstanced(
                         DefaultResources::Primitives::Cube, m_internodeDebuggingCamera,
                         editorLayer->m_sceneCameraPosition,
                         editorLayer->m_sceneCameraRotation,
                         glm::vec4(1, 1, 1, 0.2),
                         m_voxelSpace.m_frozenVoxels);
             }
-            RenderManager::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube,
+            Graphics::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube,
                                                   glm::vec4(1, 1, 1, 0.2),
                                                   m_voxelSpace.m_frozenVoxels, glm::mat4(1.0f), 1.0f);
         }
@@ -162,7 +162,7 @@ void InternodeLayer::OnInspect() {
             ImGui::Text("Add Internode Behaviour");
             ImGui::SameLine();
             static AssetRef temp;
-            EditorManager::DragAndDropButton(temp, "Here",
+            Editor::DragAndDropButton(temp, "Here",
                                              {"GeneralTreeBehaviour", "SpaceColonizationBehaviour", "LSystemBehaviour",
                                               "JSONTreeBehaviour"},
                                              false);
@@ -177,7 +177,7 @@ void InternodeLayer::OnInspect() {
                     auto ptr = i.Get<IInternodeBehaviour>();
                     ImGui::Button(("Slot " + std::to_string(index) + ": " + ptr->m_name).c_str());
                     if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
-                        EditorManager::GetInstance().m_inspectingAsset = ptr;
+                        Editor::GetInstance().m_inspectingAsset = ptr;
                     }
                     const std::string tag = "##" + ptr->GetTypeName() + std::to_string(ptr->GetHandle());
                     if (ImGui::BeginPopupContextItem(tag.c_str())) {
@@ -267,8 +267,8 @@ void InternodeLayer::OnInspect() {
             glm::vec2 mousePosition = glm::vec2(FLT_MAX, FLT_MIN);
             if (ImGui::IsWindowFocused()) {
                 bool valid = true;
-                mousePosition = InputManager::GetMouseAbsolutePositionInternal(
-                        WindowManager::GetWindow());
+                mousePosition = Inputs::GetMouseAbsolutePositionInternal(
+                        Windows::GetWindow());
                 float xOffset = 0;
                 float yOffset = 0;
                 if (valid) {
@@ -283,8 +283,8 @@ void InternodeLayer::OnInspect() {
                     m_lastY = mousePosition.y;
 #pragma region Scene Camera Controller
                     if (!m_rightMouseButtonHold &&
-                        InputManager::GetMouseInternal(GLFW_MOUSE_BUTTON_RIGHT,
-                                                       WindowManager::GetWindow())) {
+                        Inputs::GetMouseInternal(GLFW_MOUSE_BUTTON_RIGHT,
+                                                       Windows::GetWindow())) {
                         m_rightMouseButtonHold = true;
                     }
                     if (m_rightMouseButtonHold &&
@@ -295,38 +295,38 @@ void InternodeLayer::OnInspect() {
                         glm::vec3 right =
                                 editorLayer->m_sceneCameraRotation *
                                 glm::vec3(1, 0, 0);
-                        if (InputManager::GetKeyInternal(GLFW_KEY_W,
-                                                         WindowManager::GetWindow())) {
+                        if (Inputs::GetKeyInternal(GLFW_KEY_W,
+                                                         Windows::GetWindow())) {
                             editorLayer->m_sceneCameraPosition +=
                                     front * static_cast<float>(Application::Time().DeltaTime()) *
                                     editorLayer->m_velocity;
                         }
-                        if (InputManager::GetKeyInternal(GLFW_KEY_S,
-                                                         WindowManager::GetWindow())) {
+                        if (Inputs::GetKeyInternal(GLFW_KEY_S,
+                                                         Windows::GetWindow())) {
                             editorLayer->m_sceneCameraPosition -=
                                     front * static_cast<float>(Application::Time().DeltaTime()) *
                                     editorLayer->m_velocity;
                         }
-                        if (InputManager::GetKeyInternal(GLFW_KEY_A,
-                                                         WindowManager::GetWindow())) {
+                        if (Inputs::GetKeyInternal(GLFW_KEY_A,
+                                                         Windows::GetWindow())) {
                             editorLayer->m_sceneCameraPosition -=
                                     right * static_cast<float>(Application::Time().DeltaTime()) *
                                     editorLayer->m_velocity;
                         }
-                        if (InputManager::GetKeyInternal(GLFW_KEY_D,
-                                                         WindowManager::GetWindow())) {
+                        if (Inputs::GetKeyInternal(GLFW_KEY_D,
+                                                         Windows::GetWindow())) {
                             editorLayer->m_sceneCameraPosition +=
                                     right * static_cast<float>(Application::Time().DeltaTime()) *
                                     editorLayer->m_velocity;
                         }
-                        if (InputManager::GetKeyInternal(GLFW_KEY_LEFT_SHIFT,
-                                                         WindowManager::GetWindow())) {
+                        if (Inputs::GetKeyInternal(GLFW_KEY_LEFT_SHIFT,
+                                                         Windows::GetWindow())) {
                             editorLayer->m_sceneCameraPosition.y +=
                                     editorLayer->m_velocity *
                                     static_cast<float>(Application::Time().DeltaTime());
                         }
-                        if (InputManager::GetKeyInternal(GLFW_KEY_LEFT_CONTROL,
-                                                         WindowManager::GetWindow())) {
+                        if (Inputs::GetKeyInternal(GLFW_KEY_LEFT_CONTROL,
+                                                         Windows::GetWindow())) {
                             editorLayer->m_sceneCameraPosition.y -=
                                     editorLayer->m_velocity *
                                     static_cast<float>(Application::Time().DeltaTime());
@@ -367,8 +367,8 @@ void InternodeLayer::OnInspect() {
                                         editorLayer->m_sceneCameraRotation);
                         const Ray cameraRay = m_internodeDebuggingCamera->ScreenPointToRay(
                                 cameraLtw, mousePosition);
-                        EntityManager::ForEach<GlobalTransform, InternodeInfo>(
-                                EntityManager::GetCurrentScene(), JobManager::Workers(),
+                        Entities::ForEach<GlobalTransform, InternodeInfo>(
+                                Entities::GetCurrentScene(), Jobs::Workers(),
                                 m_internodesQuery,
                                 [&, cameraLtw, cameraRay](int i, Entity entity,
                                                           GlobalTransform &ltw,
@@ -423,8 +423,8 @@ void InternodeLayer::OnInspect() {
                                         m_currentFocusingInternode = entity;
                                     }
                                 });
-                        if (InputManager::GetMouseInternal(GLFW_MOUSE_BUTTON_LEFT,
-                                                           WindowManager::GetWindow())) {
+                        if (Inputs::GetMouseInternal(GLFW_MOUSE_BUTTON_LEFT,
+                                                           Windows::GetWindow())) {
                             if (!m_currentFocusingInternode.Get().IsNull()) {
                                 editorLayer->SetSelectedEntity(
                                         m_currentFocusingInternode.Get());
@@ -496,65 +496,65 @@ void InternodeLayer::OnCreate() {
     ClassRegistry::RegisterAsset<InternodeFoliage>("InternodeFoliage", ".internodefoliage");
     ClassRegistry::RegisterAsset<DefaultInternodePhyllotaxis>("DefaultInternodePhyllotaxis", ".defaultip");
 
-    EditorManager::RegisterComponentDataInspector<InternodeInfo>([](Entity entity, IDataComponent *data, bool isRoot) {
+    Editor::RegisterComponentDataInspector<InternodeInfo>([](Entity entity, IDataComponent *data, bool isRoot) {
         auto *ltw = reinterpret_cast<InternodeInfo *>(data);
         ltw->OnInspect();
     });
 
-    EditorManager::RegisterComponentDataInspector<GeneralTreeParameters>(
+    Editor::RegisterComponentDataInspector<GeneralTreeParameters>(
             [](Entity entity, IDataComponent *data, bool isRoot) {
                 auto *ltw = reinterpret_cast<GeneralTreeParameters *>(data);
                 ltw->OnInspect();
             });
 
-    EditorManager::RegisterComponentDataInspector<InternodeStatus>(
+    Editor::RegisterComponentDataInspector<InternodeStatus>(
             [](Entity entity, IDataComponent *data, bool isRoot) {
                 auto *ltw = reinterpret_cast<InternodeStatus *>(data);
                 ltw->OnInspect();
             });
 
-    EditorManager::RegisterComponentDataInspector<InternodeWaterPressure>(
+    Editor::RegisterComponentDataInspector<InternodeWaterPressure>(
             [](Entity entity, IDataComponent *data, bool isRoot) {
                 auto *ltw = reinterpret_cast<InternodeWaterPressure *>(data);
                 ltw->OnInspect();
             });
 
-    EditorManager::RegisterComponentDataInspector<InternodeStatistics>(
+    Editor::RegisterComponentDataInspector<InternodeStatistics>(
             [](Entity entity, IDataComponent *data, bool isRoot) {
                 auto *ltw = reinterpret_cast<InternodeStatistics *>(data);
                 ltw->OnInspect();
             });
 
-    EditorManager::RegisterComponentDataInspector<BranchPhysicsParameters>(
+    Editor::RegisterComponentDataInspector<BranchPhysicsParameters>(
             [](Entity entity, IDataComponent *data, bool isRoot) {
                 auto *ltw = reinterpret_cast<BranchPhysicsParameters *>(data);
                 ltw->OnInspect();
             });
 
-    EditorManager::RegisterComponentDataInspector<BranchColor>(
+    Editor::RegisterComponentDataInspector<BranchColor>(
             [](Entity entity, IDataComponent *data, bool isRoot) {
                 auto *ltw = reinterpret_cast<BranchColor *>(data);
                 ltw->OnInspect();
             });
 
-    EditorManager::RegisterComponentDataInspector<BranchCylinderWidth>(
+    Editor::RegisterComponentDataInspector<BranchCylinderWidth>(
             [](Entity entity, IDataComponent *data, bool isRoot) {
                 auto *ltw = reinterpret_cast<BranchCylinderWidth *>(data);
                 ltw->OnInspect();
             });
 
-    EditorManager::RegisterComponentDataInspector<InternodeWater>([](Entity entity, IDataComponent *data, bool isRoot) {
+    Editor::RegisterComponentDataInspector<InternodeWater>([](Entity entity, IDataComponent *data, bool isRoot) {
         auto *ltw = reinterpret_cast<InternodeWater *>(data);
         ltw->OnInspect();
     });
 
-    EditorManager::RegisterComponentDataInspector<InternodeIllumination>(
+    Editor::RegisterComponentDataInspector<InternodeIllumination>(
             [](Entity entity, IDataComponent *data, bool isRoot) {
                 auto *ltw = reinterpret_cast<InternodeIllumination *>(data);
                 ltw->OnInspect();
             });
 
-    EditorManager::RegisterComponentDataInspector<SpaceColonizationParameters>(
+    Editor::RegisterComponentDataInspector<SpaceColonizationParameters>(
             [](Entity entity, IDataComponent *data, bool isRoot) {
                 auto *ltw = reinterpret_cast<SpaceColonizationParameters *>(data);
                 ltw->OnInspect();
@@ -575,12 +575,12 @@ void InternodeLayer::OnCreate() {
         m_randomColors[i] = glm::abs(glm::sphericalRand(1.0f));
     }
 
-    m_internodesQuery = EntityManager::CreateEntityQuery();
+    m_internodesQuery = Entities::CreateEntityQuery();
     m_internodesQuery.SetAllFilters(InternodeInfo());
 
 #pragma region Internode camera
     m_internodeDebuggingCamera =
-            SerializationManager::ProduceSerializable<Camera>();
+            Serialization::ProduceSerializable<Camera>();
     m_internodeDebuggingCamera->m_useClearColor = true;
     m_internodeDebuggingCamera->m_clearColor = glm::vec3(0.1f);
     m_internodeDebuggingCamera->OnCreate();
@@ -606,8 +606,8 @@ void InternodeLayer::UpdateBranchColors() {
         selectedEntity = editorLayer->m_selectedEntity;
     }
 
-    EntityManager::ForEach<BranchColor, InternodeInfo>(
-            EntityManager::GetCurrentScene(), JobManager::Workers(),
+    Entities::ForEach<BranchColor, InternodeInfo>(
+            Entities::GetCurrentScene(), Jobs::Workers(),
             m_internodesQuery,
             [=](int i, Entity entity, BranchColor &internodeRenderColor,
                 InternodeInfo &internodeInfo) {
@@ -617,8 +617,8 @@ void InternodeLayer::UpdateBranchColors() {
 
     switch (m_branchColorMode) {
         case BranchColorMode::Order:
-            EntityManager::ForEach<BranchColor, InternodeStatus>(EntityManager::GetCurrentScene(),
-                                                                 JobManager::Workers(),
+            Entities::ForEach<BranchColor, InternodeStatus>(Entities::GetCurrentScene(),
+                                                                 Jobs::Workers(),
                                                                  m_internodesQuery,
                                                                  [=](int i, Entity entity,
                                                                      BranchColor &internodeRenderColor,
@@ -633,8 +633,8 @@ void InternodeLayer::UpdateBranchColors() {
                                                                  true);
             break;
         case BranchColorMode::Level:
-            EntityManager::ForEach<BranchColor, InternodeStatus>(EntityManager::GetCurrentScene(),
-                                                                 JobManager::Workers(),
+            Entities::ForEach<BranchColor, InternodeStatus>(Entities::GetCurrentScene(),
+                                                                 Jobs::Workers(),
                                                                  m_internodesQuery,
                                                                  [=](int i, Entity entity,
                                                                      BranchColor &internodeRenderColor,
@@ -649,9 +649,9 @@ void InternodeLayer::UpdateBranchColors() {
                                                                  true);
             break;
         case BranchColorMode::ApicalControl:
-            EntityManager::ForEach<BranchColor, InternodeStatus, InternodeInfo, GeneralTreeParameters>(
-                    EntityManager::GetCurrentScene(),
-                    JobManager::Workers(),
+            Entities::ForEach<BranchColor, InternodeStatus, InternodeInfo, GeneralTreeParameters>(
+                    Entities::GetCurrentScene(),
+                    Jobs::Workers(),
                     m_internodesQuery,
                     [=](int i, Entity entity, BranchColor &internodeRenderColor,
                         InternodeStatus &internodeStatus, InternodeInfo &internodeInfo,
@@ -664,8 +664,8 @@ void InternodeLayer::UpdateBranchColors() {
                     true);
             break;
         case BranchColorMode::Water:
-            EntityManager::ForEach<BranchColor, InternodeWater>(EntityManager::GetCurrentScene(),
-                                                                JobManager::Workers(),
+            Entities::ForEach<BranchColor, InternodeWater>(Entities::GetCurrentScene(),
+                                                                Jobs::Workers(),
                                                                 m_internodesQuery,
                                                                 [=](int i, Entity entity,
                                                                     BranchColor &internodeRenderColor,
@@ -679,8 +679,8 @@ void InternodeLayer::UpdateBranchColors() {
                                                                 true);
             break;
         case BranchColorMode::WaterPressure:
-            EntityManager::ForEach<BranchColor, InternodeWaterPressure>(EntityManager::GetCurrentScene(),
-                                                                        JobManager::Workers(),
+            Entities::ForEach<BranchColor, InternodeWaterPressure>(Entities::GetCurrentScene(),
+                                                                        Jobs::Workers(),
                                                                         m_internodesQuery,
                                                                         [=](int i, Entity entity,
                                                                             BranchColor &internodeRenderColor,
@@ -696,8 +696,8 @@ void InternodeLayer::UpdateBranchColors() {
                                                                         true);
             break;
         case BranchColorMode::Proximity:
-            EntityManager::ForEach<BranchColor, InternodeInfo>(EntityManager::GetCurrentScene(),
-                                                               JobManager::Workers(),
+            Entities::ForEach<BranchColor, InternodeInfo>(Entities::GetCurrentScene(),
+                                                               Jobs::Workers(),
                                                                m_internodesQuery,
                                                                [=](int i, Entity entity,
                                                                    BranchColor &internodeRenderColor,
@@ -712,8 +712,8 @@ void InternodeLayer::UpdateBranchColors() {
                                                                true);
             break;
         case BranchColorMode::Inhibitor:
-            EntityManager::ForEach<BranchColor, InternodeStatus>(EntityManager::GetCurrentScene(),
-                                                                 JobManager::Workers(),
+            Entities::ForEach<BranchColor, InternodeStatus>(Entities::GetCurrentScene(),
+                                                                 Jobs::Workers(),
                                                                  m_internodesQuery,
                                                                  [=](int i, Entity entity,
                                                                      BranchColor &internodeRenderColor,
@@ -728,8 +728,8 @@ void InternodeLayer::UpdateBranchColors() {
                                                                  true);
             break;
         case BranchColorMode::IndexDivider:
-            EntityManager::ForEach<BranchColor, InternodeStatistics>(EntityManager::GetCurrentScene(),
-                                                                     JobManager::Workers(),
+            Entities::ForEach<BranchColor, InternodeStatistics>(Entities::GetCurrentScene(),
+                                                                     Jobs::Workers(),
                                                                      m_internodesQuery,
                                                                      [=](int i, Entity entity,
                                                                          BranchColor &internodeRenderColor,
@@ -744,8 +744,8 @@ void InternodeLayer::UpdateBranchColors() {
                                                                      true);
             break;
         case BranchColorMode::IndexRange:
-            EntityManager::ForEach<BranchColor, InternodeStatistics>(EntityManager::GetCurrentScene(),
-                                                                     JobManager::Workers(),
+            Entities::ForEach<BranchColor, InternodeStatistics>(Entities::GetCurrentScene(),
+                                                                     Jobs::Workers(),
                                                                      m_internodesQuery,
                                                                      [=](int i, Entity entity,
                                                                          BranchColor &internodeRenderColor,
@@ -763,8 +763,8 @@ void InternodeLayer::UpdateBranchColors() {
                                                                      true);
             break;
         case BranchColorMode::StrahlerNumber:
-            EntityManager::ForEach<BranchColor, InternodeStatistics>(EntityManager::GetCurrentScene(),
-                                                                     JobManager::Workers(),
+            Entities::ForEach<BranchColor, InternodeStatistics>(Entities::GetCurrentScene(),
+                                                                     Jobs::Workers(),
                                                                      m_internodesQuery,
                                                                      [=](int i, Entity entity,
                                                                          BranchColor &internodeRenderColor,
@@ -792,9 +792,9 @@ void InternodeLayer::UpdateBranchColors() {
 }
 
 void InternodeLayer::UpdateBranchCylinder(const float &width) {
-    EntityManager::ForEach<GlobalTransform, BranchCylinder, BranchCylinderWidth, InternodeInfo>(
-            EntityManager::GetCurrentScene(),
-            JobManager::Workers(),
+    Entities::ForEach<GlobalTransform, BranchCylinder, BranchCylinderWidth, InternodeInfo>(
+            Entities::GetCurrentScene(),
+            Jobs::Workers(),
             m_internodesQuery,
             [width](int i, Entity entity, GlobalTransform &ltw, BranchCylinder &c,
                     BranchCylinderWidth &branchCylinderWidth, InternodeInfo &internodeInfo) {
@@ -834,13 +834,13 @@ void InternodeLayer::RenderBranchCylinders() {
     auto editorLayer = Application::GetLayer<EditorLayer>();
     if (!editorLayer) return;
     std::vector<BranchCylinder> branchCylinders;
-    m_internodesQuery.ToComponentDataArray<BranchCylinder>(EntityManager::GetCurrentScene(),
+    m_internodesQuery.ToComponentDataArray<BranchCylinder>(Entities::GetCurrentScene(),
                                                            branchCylinders);
     std::vector<BranchColor> branchColors;
-    m_internodesQuery.ToComponentDataArray<BranchColor>(EntityManager::GetCurrentScene(),
+    m_internodesQuery.ToComponentDataArray<BranchColor>(Entities::GetCurrentScene(),
                                                         branchColors);
     if (!branchCylinders.empty())
-        RenderManager::DrawGizmoMeshInstancedColored(
+        Graphics::DrawGizmoMeshInstancedColored(
                 DefaultResources::Primitives::Cylinder, m_internodeDebuggingCamera,
                 editorLayer->m_sceneCameraPosition,
                 editorLayer->m_sceneCameraRotation,
@@ -853,10 +853,10 @@ void InternodeLayer::RenderBranchPointers() {
     auto editorLayer = Application::GetLayer<EditorLayer>();
     if (!editorLayer) return;
     std::vector<BranchPointer> branchPointers;
-    m_internodesQuery.ToComponentDataArray<BranchPointer>(EntityManager::GetCurrentScene(),
+    m_internodesQuery.ToComponentDataArray<BranchPointer>(Entities::GetCurrentScene(),
                                                           branchPointers);
     if (!branchPointers.empty())
-        RenderManager::DrawGizmoMeshInstanced(
+        Graphics::DrawGizmoMeshInstanced(
                 DefaultResources::Primitives::Cylinder, m_internodeDebuggingCamera,
                 editorLayer->m_sceneCameraPosition,
                 editorLayer->m_sceneCameraRotation, m_pointerColor,
@@ -872,8 +872,8 @@ bool InternodeLayer::InternodeCheck(const Entity &target) {
 
 void InternodeLayer::UpdateInternodeCamera() {
     if (m_rightMouseButtonHold &&
-        !InputManager::GetMouseInternal(GLFW_MOUSE_BUTTON_RIGHT,
-                                        WindowManager::GetWindow())) {
+        !Inputs::GetMouseInternal(GLFW_MOUSE_BUTTON_RIGHT,
+                                        Windows::GetWindow())) {
         m_rightMouseButtonHold = false;
         m_startMouse = false;
     }
@@ -941,7 +941,7 @@ void InternodeLayer::DrawColorModeSelectionMenu() {
 }
 
 void InternodeLayer::CalculateStatistics() {
-    auto scene = EntityManager::GetCurrentScene();
+    auto scene = Entities::GetCurrentScene();
     for (auto &i: m_internodeBehaviours) {
         auto behaviour = i.Get<IInternodeBehaviour>();
         if (behaviour) {

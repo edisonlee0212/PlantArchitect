@@ -2,7 +2,7 @@
 
 #include <plant_architect_export.h>
 #include <Internode.hpp>
-#include <SerializationManager.hpp>
+#include <Serialization.hpp>
 #include "InternodeFoliage.hpp"
 #include "InternodeLayer.hpp"
 using namespace UniEngine;
@@ -184,7 +184,7 @@ namespace PlantArchitect {
     template<typename T>
     std::shared_ptr<T> InternodeLayer::GetInternodeBehaviour() {
         for (auto &i: m_internodeBehaviours) {
-            if (i.Get<IInternodeBehaviour>()->GetTypeName() == SerializationManager::GetSerializableTypeName<T>()) {
+            if (i.Get<IInternodeBehaviour>()->GetTypeName() == Serialization::GetSerializableTypeName<T>()) {
                 return i.Get<T>();
             }
         }
@@ -368,7 +368,7 @@ namespace PlantArchitect {
             retVal.SetEnabled(true);
             retVal.GetOrSetPrivateComponent<Internode>().lock()->OnRetrieve();
         } else {
-            retVal = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), m_internodeArchetype, "Internode");
+            retVal = Entities::CreateEntity(Entities::GetCurrentScene(), m_internodeArchetype, "Internode");
             retVal.SetParent(parent);
         }
         InternodeInfo internodeInfo;
@@ -396,7 +396,7 @@ namespace PlantArchitect {
             retVal.SetDataComponent(Transform());
             retVal.SetEnabled(true);
         } else {
-            retVal = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), m_internodeArchetype, "Internode");
+            retVal = Entities::CreateEntity(Entities::GetCurrentScene(), m_internodeArchetype, "Internode");
         }
         InternodeInfo internodeInfo;
         internodeInfo.m_isRealRoot = true;
@@ -404,7 +404,7 @@ namespace PlantArchitect {
 
         auto internode = retVal.GetOrSetPrivateComponent<Internode>().lock();
         internode->m_currentRoot = retVal;
-        internode->m_resource = SerializationManager::ProduceSerializable<T>();
+        internode->m_resource = Serialization::ProduceSerializable<T>();
         internode->m_foliage = AssetManager::CreateAsset<InternodeFoliage>("Foliage");
         internode->OnRetrieve();
         CollectRoots();

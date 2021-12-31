@@ -16,7 +16,7 @@ void JSONTreeBehaviour::OnInspect() {
     parameters.OnInspect();
     //button here
     static AssetRef tempStoredJSONData;
-    EditorManager::DragAndDropButton<JSONData>(tempStoredJSONData, "Create tree from JSON Data here: ");
+    Editor::DragAndDropButton<JSONData>(tempStoredJSONData, "Create tree from JSON Data here: ");
     auto jSONData = tempStoredJSONData.Get<JSONData>();
     if (jSONData) FormPlant(jSONData, parameters);
     tempStoredJSONData.Clear();
@@ -32,11 +32,11 @@ void JSONTreeBehaviour::OnInspect() {
 
 void JSONTreeBehaviour::OnCreate() {
     m_internodeArchetype =
-            EntityManager::CreateEntityArchetype("JSON Tree Internode", InternodeInfo(), InternodeStatistics(),
+            Entities::CreateEntityArchetype("JSON Tree Internode", InternodeInfo(), InternodeStatistics(),
                                                  JSONTreeTag(), JSONTreeParameters(),
                                                  BranchColor(), BranchCylinder(), BranchCylinderWidth(),
                                                  BranchPointer(), BranchPhysicsParameters());
-    m_internodesQuery = EntityManager::CreateEntityQuery();
+    m_internodesQuery = Entities::CreateEntityQuery();
     m_internodesQuery.SetAllFilters(JSONTreeTag());
 }
 

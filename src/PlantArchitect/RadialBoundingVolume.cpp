@@ -264,11 +264,11 @@ void RadialBoundingVolume::FormEntity() {
         return;
     auto children = GetOwner().GetChildren();
     for (auto &child: children) {
-        EntityManager::DeleteEntity(EntityManager::GetCurrentScene(), child);
+        Entities::DeleteEntity(Entities::GetCurrentScene(), child);
     }
     children.clear();
     for (auto i = 0; i < m_boundMeshes.size(); i++) {
-        auto slice = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "RBV_" + std::to_string(i));
+        auto slice = Entities::CreateEntity(Entities::GetCurrentScene(), "RBV_" + std::to_string(i));
         auto mmc = slice.GetOrSetPrivateComponent<MeshRenderer>().lock();
         mmc->m_material = AssetManager::LoadMaterial(
                 DefaultResources::GLPrograms::StandardProgram);
@@ -442,7 +442,7 @@ void RadialBoundingVolume::CalculateVolume(float maxHeight) {
         if (radius > m_maxRadius)
             m_maxRadius = radius;
     }
-    const auto threadsAmount = JobManager::Workers().Size();
+    const auto threadsAmount = Jobs::Workers().Size();
     std::vector<std::vector<std::vector<RadialBoundingVolumeSlice>>>
             tempCakeTowers;
     tempCakeTowers.resize(threadsAmount);
@@ -481,7 +481,7 @@ void RadialBoundingVolume::CalculateVolume(float maxHeight) {
 }
 
 void RadialBoundingVolume::OnInspect() {
-    EditorManager::DragAndDropButton<Internode>(m_rootInternode, "Root");
+    Editor::DragAndDropButton<Internode>(m_rootInternode, "Root");
 
     ImGui::Checkbox("Prune Buds", &m_pruneBuds);
     ImGui::Checkbox("Display bounds", &m_display);
@@ -524,7 +524,7 @@ void RadialBoundingVolume::OnInspect() {
                             GenerateMesh();
                     }
 
-                    RenderManager::DrawGizmoMesh(
+                    Graphics::DrawGizmoMesh(
                             m_boundMeshes[i], m_displayColor,
                             GetOwner().GetDataComponent<GlobalTransform>().m_value);
                     displayLayer = true;
@@ -553,7 +553,7 @@ void RadialBoundingVolume::OnInspect() {
                         });
     if (!displayLayer && m_display && m_meshGenerated) {
         for (auto &i: m_boundMeshes) {
-            RenderManager::DrawGizmoMesh(
+            Graphics::DrawGizmoMesh(
                     i, m_displayColor,
                     GetOwner().GetDataComponent<GlobalTransform>().m_value);
         }

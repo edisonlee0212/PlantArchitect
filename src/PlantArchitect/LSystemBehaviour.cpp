@@ -24,11 +24,11 @@ void LSystemBehaviour::OnInspect() {
 
 void LSystemBehaviour::OnCreate() {
     m_internodeArchetype =
-            EntityManager::CreateEntityArchetype("L-System Internode", InternodeInfo(), InternodeStatistics(),
+            Entities::CreateEntityArchetype("L-System Internode", InternodeInfo(), InternodeStatistics(),
                                                  LSystemTag(), LSystemParameters(),
                                                  BranchColor(), BranchCylinder(), BranchCylinderWidth(),
                                                  BranchPointer(), BranchPhysicsParameters());
-    m_internodesQuery = EntityManager::CreateEntityQuery();
+    m_internodesQuery = Entities::CreateEntityQuery();
     m_internodesQuery.SetAllFilters(LSystemTag());
 }
 
@@ -154,8 +154,8 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
 
     //This is another way to do above procedures but in multi-threaded way.
     /*
-    EntityManager::ForEach<GlobalTransform, Transform, InternodeInfo>
-            (EntityManager::GetCurrentScene(),
+    Entities::ForEach<GlobalTransform, Transform, InternodeInfo>
+            (Entities::GetCurrentScene(),
              JobManager::PrimaryWorkers(), m_internodesQuery,
              [](int i, Entity entity,
                 GlobalTransform &globalTransform,
@@ -179,7 +179,7 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
     */
 
     //After you setup the local transformation matrix, you call this function to calculate the world(global) transformation matrix from the root of the plant.
-    Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(EntityManager::GetCurrentScene(),
+    Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(Entities::GetCurrentScene(),
                                                                                    root);
 
     //Calculate other properties like thickness after the structure of the tree is ready.
