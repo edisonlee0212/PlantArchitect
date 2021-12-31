@@ -33,9 +33,10 @@ void PlantArchitect::FBMField::OnInspect() {
         const int sx = (int) ((maxRange.x - minRange.x + step) / step);
         const int sy = (int) ((maxRange.y - minRange.y + step) / step);
         const int sz = (int) ((maxRange.z - minRange.z + step) / step);
-        colors.resize(sx * sy * sz);
-        matrices.resize(sx * sy * sz);
-        int i = 0;
+        auto voxelSize = sx * sy * sz;
+        colors.resize(voxelSize);
+        matrices.resize(voxelSize);
+
         static float width = 0.1f;
         ImGui::DragFloat("Width", &width, 0.01f);
 
@@ -52,6 +53,22 @@ void PlantArchitect::FBMField::OnInspect() {
         ImGui::DragFloat3("Density", &density.x, 0.001f);
         ImGui::DragFloat3("Factor", &factor.x, 0.01f);
         ImGui::DragFloat("t", &t);
+
+
+        std::vector<std::shared_future<void>> results;
+        Jobs::ParallelFor(voxelSize, [&](unsigned i){
+            float z = (i % sz) * step;
+            float y = ((i / sz) % sy) * step;
+            float x = ((i / sz / sy) % sx) * step;
+            glm::vec3 coord = {x, y, z};
+            colors[i] = {factor.x * GetT(coord, t, frequency.x, density.x, 6) +
+                         factor.y * GetT(coord, t, frequency.y, density.y, 6) +
+                         factor.z * GetT(coord, t, frequency.z, density.z, 6), 1.0f};
+            matrices[i] = glm::translate(glm::vec3(x, y, z)) * glm::scale(glm::vec3(width));
+        }, results);
+        for(const auto& i : results) i.wait();
+        /*
+        int i = 0;
         for (float x = minRange.x; x <= maxRange.x; x += step) {
             for (float y = minRange.y; y <= maxRange.y; y += step) {
                 for (float z = minRange.z; z <= maxRange.z; z += step) {
@@ -64,7 +81,7 @@ void PlantArchitect::FBMField::OnInspect() {
                 }
             }
         }
-
+        */
         Graphics::DrawGizmoMeshInstancedColored(DefaultResources::Primitives::Cube, colors, matrices);
     }
 }

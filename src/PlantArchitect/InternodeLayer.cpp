@@ -220,7 +220,7 @@ void InternodeLayer::OnInspect() {
     if (!editorLayer) return;
     ImVec2 viewPortSize;
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
-    ImGui::Begin("Internodes");
+    ImGui::Begin("Internode Visualizer");
     {
         if (ImGui::BeginChild("CameraRenderer", ImVec2(0, 0), false,
                               ImGuiWindowFlags_None | ImGuiWindowFlags_MenuBar)) {
@@ -436,7 +436,7 @@ void InternodeLayer::OnInspect() {
             }
         }
         ImGui::EndChild();
-        auto *window = ImGui::FindWindowByName("Internodes");
+        auto *window = ImGui::FindWindowByName("Internode Visualizer");
         m_internodeDebuggingCamera->SetEnabled(
                 !(window->Hidden && !window->Collapsed));
     }
