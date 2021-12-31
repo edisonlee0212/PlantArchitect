@@ -9,7 +9,7 @@
 #include "MLVQRenderer.hpp"
 #endif
 
-#include <EditorManager.hpp>
+#include <Editor.hpp>
 #include <Utilities.hpp>
 #include <ProjectManager.hpp>
 #include <PhysicsLayer.hpp>
@@ -74,7 +74,7 @@ void EngineSetup() {
         transform = Transform();
         transform.SetPosition(glm::vec3(0, 2, 35));
         transform.SetEulerRotation(glm::radians(glm::vec3(15, 0, 0)));
-        auto mainCamera = EntityManager::GetCurrentScene()->m_mainCamera.Get<UniEngine::Camera>();
+        auto mainCamera = Entities::GetCurrentScene()->m_mainCamera.Get<UniEngine::Camera>();
         if (mainCamera) {
             auto postProcessing =
                     mainCamera->GetOwner().GetOrSetPrivateComponent<PostProcessing>().lock();
@@ -92,7 +92,7 @@ void EngineSetup() {
          */
         auto internodesLayer = Application::GetLayer<InternodeLayer>();
         auto spaceColonizationBehaviour = internodesLayer->GetInternodeBehaviour<SpaceColonizationBehaviour>();
-        Entity cubeVolumeEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(), "CubeVolume");
+        Entity cubeVolumeEntity = Entities::CreateEntity(Entities::GetCurrentScene(), "CubeVolume");
         Transform cubeVolumeTransform = cubeVolumeEntity.GetDataComponent<Transform>();
         cubeVolumeTransform.SetPosition(glm::vec3(0, 12.5, 0));
         cubeVolumeEntity.SetDataComponent(cubeVolumeTransform);
@@ -104,7 +104,7 @@ void EngineSetup() {
         /*
          * Add all pipelines
          */
-        auto multipleAngleCapturePipelineEntity = EntityManager::CreateEntity(EntityManager::GetCurrentScene(),
+        auto multipleAngleCapturePipelineEntity = Entities::CreateEntity(Entities::GetCurrentScene(),
                                                                               "GANTree Dataset Pipeline");
         auto multipleAngleCapturePipeline = multipleAngleCapturePipelineEntity.GetOrSetPrivateComponent<AutoTreeGenerationPipeline>().lock();
         auto multipleAngleCapture = AssetManager::CreateAsset<MultipleAngleCapture>();

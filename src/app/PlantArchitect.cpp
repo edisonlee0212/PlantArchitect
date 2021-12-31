@@ -11,7 +11,7 @@
 
 #endif
 
-#include <EditorManager.hpp>
+#include <Editor.hpp>
 #include <Utilities.hpp>
 #include <ProjectManager.hpp>
 #include <PhysicsLayer.hpp>
@@ -73,7 +73,7 @@ void EngineSetup() {
         transform = Transform();
         transform.SetPosition(glm::vec3(0, 2, 35));
         transform.SetEulerRotation(glm::radians(glm::vec3(15, 0, 0)));
-        auto mainCamera = EntityManager::GetCurrentScene()->m_mainCamera.Get<UniEngine::Camera>();
+        auto mainCamera = Entities::GetCurrentScene()->m_mainCamera.Get<UniEngine::Camera>();
         if (mainCamera) {
             auto postProcessing =
                     mainCamera->GetOwner().GetOrSetPrivateComponent<PostProcessing>().lock();
