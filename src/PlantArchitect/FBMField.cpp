@@ -17,9 +17,9 @@ void PlantArchitect::FBMField::OnInspect() {
     static bool draw = true;
     ImGui::Checkbox("Render field", &draw);
     if (draw) {
-        static auto minRange = glm::vec3(-5, 0, -5);
-        static auto maxRange = glm::vec3(5, 0, 5);
-        static float step = 0.2f;
+        static auto minRange = glm::vec3(-25, 0, -25);
+        static auto maxRange = glm::vec3(25, 30, 25);
+        static float step = 3.0f;
         if (ImGui::DragFloat3("Min", &minRange.x, 0.1f)) {
             minRange = (glm::min) (minRange, maxRange);
         }
@@ -28,21 +28,16 @@ void PlantArchitect::FBMField::OnInspect() {
         }
         ImGui::DragFloat("Step", &step, 0.01f);
         step = glm::clamp(step, 0.1f, 10.0f);
-        static std::vector<glm::vec4> colors;
-        static std::vector<glm::mat4> matrices;
+
         const int sx = (int) ((maxRange.x - minRange.x + step) / step);
         const int sy = (int) ((maxRange.y - minRange.y + step) / step);
         const int sz = (int) ((maxRange.z - minRange.z + step) / step);
         auto voxelSize = sx * sy * sz;
-        colors.resize(voxelSize);
-        matrices.resize(voxelSize);
 
-        static float width = 0.1f;
-        ImGui::DragFloat("Width", &width, 0.01f);
 
-        static glm::vec3 frequency = {2.01f, 3.03f, 1.04f};
-        static glm::vec3 density = {0.167f, 0.297f, 0.123f};
-        static glm::vec3 factor = {0.33f, 0.33f, 0.33f};
+        static glm::vec3 frequency = {10.0f, 0.0f, 0.0f};
+        static glm::vec3 density = {0.02f, 1.0f, 1.f};
+        static glm::vec3 factor = {1.0f, 0.0f, 0.0f};
         static float t = 0;
         static bool pushTime = true;
         ImGui::Checkbox("Time", &pushTime);
@@ -54,35 +49,85 @@ void PlantArchitect::FBMField::OnInspect() {
         ImGui::DragFloat3("Factor", &factor.x, 0.01f);
         ImGui::DragFloat("t", &t);
 
+        static bool useColor = false;
+        ImGui::Checkbox("Color Cube", &useColor);
 
-        std::vector<std::shared_future<void>> results;
-        Jobs::ParallelFor(voxelSize, [&](unsigned i){
-            float z = (i % sz) * step;
-            float y = ((i / sz) % sy) * step;
-            float x = ((i / sz / sy) % sx) * step;
-            glm::vec3 coord = {x, y, z};
-            colors[i] = {factor.x * GetT(coord, t, frequency.x, density.x, 6) +
-                         factor.y * GetT(coord, t, frequency.y, density.y, 6) +
-                         factor.z * GetT(coord, t, frequency.z, density.z, 6), 1.0f};
-            matrices[i] = glm::translate(glm::vec3(x, y, z)) * glm::scale(glm::vec3(width));
-        }, results);
-        for(const auto& i : results) i.wait();
-        /*
-        int i = 0;
-        for (float x = minRange.x; x <= maxRange.x; x += step) {
-            for (float y = minRange.y; y <= maxRange.y; y += step) {
-                for (float z = minRange.z; z <= maxRange.z; z += step) {
-                    glm::vec3 coord = {x, y, z};
-                    colors[i] = {factor.x * GetT(coord, t, frequency.x, density.x, 6) +
-                                 factor.y * GetT(coord, t, frequency.y, density.y, 6) +
-                                 factor.z * GetT(coord, t, frequency.z, density.z, 6), 1.0f};
-                    matrices[i] = glm::translate(glm::vec3(x, y, z)) * glm::scale(glm::vec3(width));
-                    i++;
+        if(!useColor) {
+            static float lineWidth = 0.05f;
+            static float pointSize = 0.1f;
+            static std::vector<glm::vec3> starts;
+            static std::vector<glm::vec3> ends;
+            static std::vector<glm::mat4> matrices;
+            static glm::vec4 color = {0.0f, 1.0f, 0.0f, 0.5f};
+            static glm::vec4 pointColor = {1.0f, 0.0f, 0.0f, 0.75f};
+            starts.resize(voxelSize);
+            ends.resize(voxelSize);
+            matrices.resize(voxelSize);
+            ImGui::DragFloat("Width", &lineWidth, 0.01f);
+            ImGui::DragFloat("Point Size", &pointSize, 0.01f);
+            ImGui::ColorEdit4("Vector Color", &color.x);
+            ImGui::ColorEdit4("Point Color", &pointColor.x);
+            std::vector<std::shared_future<void>> results;
+            Jobs::ParallelFor(voxelSize, [&](unsigned i) {
+                float z = (i % sz) * step + minRange.z;
+                float y = ((i / sz) % sy) * step + minRange.y;
+                float x = ((i / sz / sy) % sx) * step + minRange.x;
+                glm::vec3 start = {x, y, z};
+                starts[i] = start;
+                /*
+                colors[i] = {factor.x * GetT(coord, t, frequency.x, density.x, 6) +
+                             factor.y * GetT(coord, t, frequency.y, density.y, 6) +
+                             factor.z * GetT(coord, t, frequency.z, density.z, 6), alpha};
+                             */
+                glm::vec3 v = {GetT({x, y, z}, t, frequency.x, density.x, 6)};
+                ends[i] = start + v * 2.0f - glm::vec3(1);
+                matrices[i] = glm::translate(glm::vec3(x, y, z)) * glm::scale(glm::vec3(pointSize));
+            }, results);
+            for (const auto &i: results) i.wait();
+            Graphics::DrawGizmoRays(color, starts, ends, lineWidth);
+            Graphics::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube, pointColor, matrices);
+        } else {
+            static float width = 0.3f;
+            static float alpha = 0.2f;
+            static std::vector<glm::vec4> colors;
+            static std::vector<glm::mat4> matrices;
+            colors.resize(voxelSize);
+            matrices.resize(voxelSize);
+
+            ImGui::DragFloat("Cube size", &width, 0.01f);
+            ImGui::DragFloat("Alpha", &alpha, 0.01f, 0.0f, 1.0f);
+            std::vector<std::shared_future<void>> results;
+            Jobs::ParallelFor(voxelSize, [&](unsigned i) {
+                float z = (i % sz) * step + minRange.z;
+                float y = ((i / sz) % sy) * step + minRange.y;
+                float x = ((i / sz / sy) % sx) * step + minRange.x;
+                glm::vec3 coord = {x, y, z};
+                /*
+                colors[i] = {factor.x * GetT(coord, t, frequency.x, density.x, 6) +
+                             factor.y * GetT(coord, t, frequency.y, density.y, 6) +
+                             factor.z * GetT(coord, t, frequency.z, density.z, 6), alpha};
+                             */
+                colors[i] = {GetT(coord, t, frequency.x, density.x, 6), alpha};
+                matrices[i] = glm::translate(glm::vec3(x, y, z)) * glm::scale(glm::vec3(width));
+            }, results);
+            for (const auto &i: results) i.wait();
+            /*
+            int i = 0;
+            for (float x = minRange.x; x <= maxRange.x; x += step) {
+                for (float y = minRange.y; y <= maxRange.y; y += step) {
+                    for (float z = minRange.z; z <= maxRange.z; z += step) {
+                        glm::vec3 coord = {x, y, z};
+                        colors[i] = {factor.x * GetT(coord, t, frequency.x, density.x, 6) +
+                                     factor.y * GetT(coord, t, frequency.y, density.y, 6) +
+                                     factor.z * GetT(coord, t, frequency.z, density.z, 6), 1.0f};
+                        matrices[i] = glm::translate(glm::vec3(x, y, z)) * glm::scale(glm::vec3(width));
+                        i++;
+                    }
                 }
             }
+            */
+            Graphics::DrawGizmoMeshInstancedColored(DefaultResources::Primitives::Cube, colors, matrices);
         }
-        */
-        Graphics::DrawGizmoMeshInstancedColored(DefaultResources::Primitives::Cube, colors, matrices);
     }
 }
 
