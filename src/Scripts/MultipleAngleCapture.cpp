@@ -535,10 +535,10 @@ void MultipleAngleCapture::ExportCSV(const std::shared_ptr<IInternodeBehaviour> 
                                                                                                     child);
                                             });
         float normalizeFactor = m_perTreeGrowthIteration * 1.25f;
-        output += "in_id, in_pos_x, in_pos_y, in_pos_z, in_front_x, in_front_y, in_front_z, in_up_x, in_up_y, in_up_z, in_thickness, in_length, in_root_distance, in_level, ";
-        output += "out0_id, out0_pos_x, out0_pos_y, out0_pos_z, out0_front_x, out0_front_y, out0_front_z, out0_up_x, out0_up_y, out0_up_z, out0_thickness, out0_length, out0_root_distance, out0_level, ";
-        output += "out1_id, out1_pos_x, out1_pos_y, out1_pos_z, out1_front_x, out1_front_y, out1_front_z, out1_up_x, out1_up_y, out1_up_z, out1_thickness, out1_length, out1_root_distance, out1_level, ";
-        output += "out2_id, out2_pos_x, out2_pos_y, out2_pos_z, out2_front_x, out2_front_y, out2_front_z, out2_up_x, out2_up_y, out2_up_z, out2_thickness, out2_length, out2_root_distance, out2_level\n";
+        output += "in_id, in_pos_x, in_pos_y, in_pos_z, in_front_x, in_front_y, in_front_z, in_up_x, in_up_y, in_up_z, in_thickness, in_length, in_root_distance, in_level, in_quat_x, in_quat_y, in_quat_z, in_quat_w, ";
+        output += "out0_id, out0_pos_x, out0_pos_y, out0_pos_z, out0_front_x, out0_front_y, out0_front_z, out0_up_x, out0_up_y, out0_up_z, out0_thickness, out0_length, out0_root_distance, out0_level, out0_quat_x, out0_quat_y, out0_quat_z, out0_quat_w, ";
+        output += "out1_id, out1_pos_x, out1_pos_y, out1_pos_z, out1_front_x, out1_front_y, out1_front_z, out1_up_x, out1_up_y, out1_up_z, out1_thickness, out1_length, out1_root_distance, out1_level, out1_quat_x, out1_quat_y, out1_quat_z, out1_quat_w, ";
+        output += "out2_id, out2_pos_x, out2_pos_y, out2_pos_z, out2_front_x, out2_front_y, out2_front_z, out2_up_x, out2_up_y, out2_up_z, out2_thickness, out2_length, out2_root_distance, out2_level, out2_quat_x, out2_quat_y, out2_quat_z, out2_quat_w\n";
         int layerIndex = 0;
         for (const auto &layer: internodes) {
             if (layer.empty()) break;
@@ -584,10 +584,15 @@ void MultipleAngleCapture::ExportCSV(const std::shared_ptr<IInternodeBehaviour> 
                 row += std::to_string(internodeStatus.m_distanceToRoot / normalizeFactor) + ", ";
                 row += std::to_string(internodeStatus.m_level) + ", ";
 
+                row += std::to_string(globalRotation.x) + ", ";
+                row += std::to_string(globalRotation.y) + ", ";
+                row += std::to_string(globalRotation.z) + ", ";
+                row += std::to_string(globalRotation.w) + ", ";
+
                 for (int i = 0; i < 3; i++) {
                     auto child = children[i];
                     if(child.IsNull()){
-                        row += "N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A";
+                        row += "N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A";
                     }else {
                         auto globalTransformChild = child.GetDataComponent<GlobalTransform>();
                         auto transformChild = child.GetDataComponent<Transform>();
@@ -615,7 +620,12 @@ void MultipleAngleCapture::ExportCSV(const std::shared_ptr<IInternodeBehaviour> 
                         row += std::to_string(internodeInfoChild.m_thickness / normalizeFactor) + ", ";
                         row += std::to_string(internodeInfoChild.m_length / normalizeFactor) + ", ";
                         row += std::to_string(internodeStatusChild.m_distanceToRoot / normalizeFactor) + ", ";
-                        row += std::to_string(internodeStatusChild.m_level);
+                        row += std::to_string(internodeStatusChild.m_level) + ", ";
+
+                        row += std::to_string(globalRotationChild.x) + ", ";
+                        row += std::to_string(globalRotationChild.y) + ", ";
+                        row += std::to_string(globalRotationChild.z) + ", ";
+                        row += std::to_string(globalRotationChild.w);
                     }
                     if (i == 2)row += "\n";
                     else row += ", ";
