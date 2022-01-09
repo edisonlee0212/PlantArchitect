@@ -171,11 +171,14 @@ void GeneralTreeBehaviour::Grow(int iteration) {
         auto root = internode->m_currentRoot.Get();
         if (root.IsNull() || !root.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
         auto parameters = entity.GetDataComponent<GeneralTreeParameters>();
+        auto internodeInfo = entity.GetDataComponent<InternodeInfo>();
         if (internode->m_apicalBud.m_status == BudStatus::Flushing) {
+            auto internodeStatus = entity.GetDataComponent<InternodeStatus>();
             auto newInternodeEntity = Retrieve(entity);
             InternodeStatus newInternodeStatus;
             newInternodeStatus.m_desiredLocalRotation = internode->m_apicalBud.m_newInternodeInfo.m_localRotation;
             newInternodeStatus.m_branchingOrder = 0;
+            newInternodeStatus.m_chainDistance = internodeStatus.m_chainDistance + internodeInfo.m_length;
             newInternodeEntity.SetDataComponent(newInternodeStatus);
             newInternodeEntity.SetDataComponent(parameters);
             newInternodeEntity.SetDataComponent(internode->m_apicalBud.m_newInternodeInfo);
@@ -190,6 +193,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                 InternodeStatus newInternodeStatus;
                 newInternodeStatus.m_branchingOrder = branchingOrder;
                 newInternodeStatus.m_desiredLocalRotation = bud.m_newInternodeInfo.m_localRotation;
+                newInternodeStatus.m_chainDistance = 0;
                 newInternodeEntity.SetDataComponent(newInternodeStatus);
                 newInternodeEntity.SetDataComponent(parameters);
                 newInternodeEntity.SetDataComponent(bud.m_newInternodeInfo);

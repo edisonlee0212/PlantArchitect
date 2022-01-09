@@ -1,7 +1,7 @@
 m_lateralBudCount: 2
 m_branchingAngleMeanVariance: [45, 1]
 m_rollAngleMeanVariance: [90, 4]
-m_apicalAngleMeanVariance: [0, 0]
+m_apicalAngleMeanVariance: [0, 2]
 m_gravitropism: -0.100000001
 m_phototropism: 0
 m_internodeLengthMeanVariance: [1, 0.100000001]
@@ -16,4 +16,4 @@ m_randomPruningOrderProtection: 1
 m_randomPruningBaseAgeMax: [0, 0.00700000022, 0.200000003]
 m_lowBranchPruning: 0.150000006
 m_saggingFactorThicknessReductionMax: [2, 2, 1]
-m_matureAge: 42
+m_matureAge: 40
