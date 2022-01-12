@@ -138,7 +138,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
             if (m_exportCSV) {
                 auto exportPath = std::filesystem::absolute(
                         ProjectManager::GetProjectPath().parent_path() / csvFolder /
-                        (prefix + ".csv"));
+                        (std::to_string(m_perTreeGrowthIteration) + "_" + prefix + ".csv"));
                 ExportCSV(behaviour, exportPath);
             }
             if (m_exportBranchCapture) RenderBranchCapture();
@@ -643,7 +643,7 @@ void MultipleAngleCapture::ExportCSV(const std::shared_ptr<IInternodeBehaviour> 
         ofs.write(output.c_str(), output.size());
         ofs.flush();
         ofs.close();
-        UNIENGINE_LOG("Tree group saved: " + path.string() + ".csv");
+        //UNIENGINE_LOG("Tree group saved: " + path.string() + ".csv");
     } else {
         UNIENGINE_ERROR("Can't open file!");
     }

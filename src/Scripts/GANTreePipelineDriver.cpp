@@ -16,7 +16,10 @@ void GANTreePipelineDriver::OnInspect() {
             if (std::filesystem::exists(m_folderPath) && std::filesystem::is_directory(m_folderPath)) {
                 for (const auto &entry: std::filesystem::directory_iterator(m_folderPath)) {
                     if (!std::filesystem::is_directory(entry.path())) {
-                        if (entry.path().extension().string() == ".gtparams") {
+                        if (entry.path().filename().string() == "Oak.gtparams") {
+                            m_parameterFilePaths.push_back(entry.path());
+                        }
+                        else if (entry.path().filename().string() == "Pine.gtparams") {
                             m_parameterFilePaths.push_back(entry.path());
                         }
                     }
@@ -46,13 +49,17 @@ void GANTreePipelineDriver::LateUpdate() {
     auto path = std::filesystem::path(m_parameterFilePaths.back());
     pipeline->m_generalTreeParameters.Load(path);
     pipeline->m_parameterFileName = path.stem().string();
-    pipelineBehaviour->m_perTreeGrowthIteration = pipeline->m_generalTreeParameters.m_matureAge;
+    pipelineBehaviour->m_perTreeGrowthIteration = (float)pipeline->m_generalTreeParameters.m_matureAge * m_age / 4.0f;
     pipelineBehaviour->DisableAllExport();
     pipelineBehaviour->m_exportCSV = true;
 
     pipelineBehaviour->m_generationAmount = m_instancePerSpecie;
     pipelineBehaviour->Start();
-    m_parameterFilePaths.pop_back();
+    m_age++;
+    if(m_age == 5){
+        m_age = 1;
+        m_parameterFilePaths.pop_back();
+    }
 }
 
 void GANTreePipelineDriver::Relink(const std::unordered_map<Handle, Handle> &map, const std::shared_ptr<Scene> &scene) {

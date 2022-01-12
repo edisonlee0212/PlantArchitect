@@ -6,6 +6,7 @@
 using namespace PlantArchitect;
 namespace Scripts {
     class GANTreePipelineDriver : public IPrivateComponent {
+        int m_age = 1;
     public:
         int m_instancePerSpecie = 2;
         std::filesystem::path m_folderPath = "C:\\Users\\lllll\\Documents\\GitHub\\PlantArchitect\\Resources\\Parameters\\";
