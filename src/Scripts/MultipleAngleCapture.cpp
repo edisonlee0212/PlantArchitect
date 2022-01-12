@@ -585,7 +585,7 @@ void MultipleAngleCapture::ExportCSV(const std::shared_ptr<IInternodeBehaviour> 
                 row += std::to_string(internodeStatus.m_chainDistance) + ", ";
                 row += std::to_string(internodeStatus.m_level) + ", ";
 
-                row += std::to_string(m_perTreeGrowthIteration - internodeStatus.m_age) + ", ";
+                row += std::to_string(internodeStatus.m_age) + ", ";
 
                 row += std::to_string(globalRotation.x) + ", ";
                 row += std::to_string(globalRotation.y) + ", ";
@@ -626,7 +626,7 @@ void MultipleAngleCapture::ExportCSV(const std::shared_ptr<IInternodeBehaviour> 
                         row += std::to_string(internodeStatusChild.m_chainDistance) + ", ";
                         row += std::to_string(internodeStatusChild.m_level) + ", ";
 
-                        row += std::to_string(m_perTreeGrowthIteration - internodeStatusChild.m_age) + ", ";
+                        row += std::to_string(internodeStatusChild.m_age) + ", ";
 
                         row += std::to_string(globalRotationChild.x) + ", ";
                         row += std::to_string(globalRotationChild.y) + ", ";

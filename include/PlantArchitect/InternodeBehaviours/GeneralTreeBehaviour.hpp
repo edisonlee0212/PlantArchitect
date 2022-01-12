@@ -12,8 +12,8 @@ namespace PlantArchitect {
     struct GanNode{
         Entity m_internode;
         glm::vec3 m_start;
-        glm::vec3 m_end;
-        glm::vec3 m_up;
+        float m_length;
+        glm::quat m_globalRotation;
     };
 
     class PLANT_ARCHITECT_API InternodeWaterFeeder : public IPrivateComponent{
@@ -25,7 +25,6 @@ namespace PlantArchitect {
 
     class PLANT_ARCHITECT_API GeneralTreeBehaviour : public IInternodeBehaviour {
 
-        Entity ImportGANTree(const std::filesystem::path& path, const GeneralTreeParameters& parameters);
         Entity ImportGraphTree(const std::filesystem::path& path, const GeneralTreeParameters& parameters);
     protected:
         bool InternalInternodeCheck(const Entity &target) override;
