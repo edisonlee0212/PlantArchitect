@@ -25,6 +25,7 @@ void MultipleAngleCapture::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) 
     auto behaviourType = pipeline.GetBehaviourType();
     switch (behaviourType) {
         case BehaviourType::GeneralTree:
+            pipeline.m_generalTreeParameters.m_gravitropism = glm::linearRand(-0.2f, 0.2f);
             break;
         case BehaviourType::LSystem:
             break;
@@ -138,7 +139,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
             if (m_exportCSV) {
                 auto exportPath = std::filesystem::absolute(
                         ProjectManager::GetProjectPath().parent_path() / csvFolder /
-                        (std::to_string(m_perTreeGrowthIteration) + "_" + prefix + ".csv"));
+                        (std::to_string(pipeline.m_generalTreeParameters.m_gravitropism) + "_" + prefix + ".csv"));
                 ExportCSV(behaviour, exportPath);
             }
             if (m_exportBranchCapture) RenderBranchCapture();

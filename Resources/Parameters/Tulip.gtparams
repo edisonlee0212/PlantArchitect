@@ -2,11 +2,11 @@ m_lateralBudCount: 2
 m_branchingAngleMeanVariance: [30, 1]
 m_rollAngleMeanVariance: [120, 10]
 m_apicalAngleMeanVariance: [0, 0]
-m_gravitropism: -0.300000012
+m_gravitropism: -0.150000006
 m_phototropism: 0
 m_internodeLengthMeanVariance: [1, 0.100000001]
 m_endNodeThicknessAndControl: [0.00999999978, 0.5]
-m_lateralBudFlushingProbability: 0.300000012
+m_lateralBudFlushingProbability: 1
 m_neighborAvoidance: [0.0199999996, 1, 100]
 m_apicalControl: 2
 m_apicalDominanceBaseAgeDist: [0.5, 1, 0.300000012]
@@ -16,4 +16,4 @@ m_randomPruningOrderProtection: 1
 m_randomPruningBaseAgeMax: [-0.100000001, 0.00700000022, 0.5]
 m_lowBranchPruning: 0.150000006
 m_saggingFactorThicknessReductionMax: [2, 3, 0.5]
-m_matureAge: 50
+m_matureAge: 45
