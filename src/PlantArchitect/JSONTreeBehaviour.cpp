@@ -35,20 +35,18 @@ void JSONTreeBehaviour::OnCreate() {
             Entities::CreateEntityArchetype("JSON Tree Internode", InternodeInfo(), InternodeStatistics(),
                                                  JSONTreeTag(), JSONTreeParameters(),
                                                  BranchColor(), BranchCylinder(), BranchCylinderWidth(),
-                                                 BranchPointer(), BranchPhysicsParameters());
+                                                 BranchPointer());
     m_internodesQuery = Entities::CreateEntityQuery();
     m_internodesQuery.SetAllFilters(JSONTreeTag());
 }
 
 Entity JSONTreeBehaviour::Retrieve() {
     auto retVal = RetrieveHelper<EmptyInternodeResource>();
-    retVal.SetDataComponent(BranchPhysicsParameters());
     return retVal;
 }
 
 Entity JSONTreeBehaviour::Retrieve(const Entity &parent) {
     auto retVal = RetrieveHelper<EmptyInternodeResource>(parent);
-    retVal.SetDataComponent(parent.GetDataComponent<BranchPhysicsParameters>());
     return retVal;
 }
 

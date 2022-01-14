@@ -115,7 +115,7 @@ void InternodeLayer::PreparePhysics() {
         auto behaviour = i.Get<IInternodeBehaviour>();
         if (behaviour) {
             for (const auto &root: behaviour->m_currentRoots) {
-                auto branchPhysicsParameter = root.GetDataComponent<BranchPhysicsParameters>();
+                auto branchPhysicsParameter = root.GetOrSetPrivateComponent<Internode>().lock()->m_branchPhysicsParameters;
                 behaviour->TreeGraphWalkerRootToEnd(root, root, [&](Entity parent, Entity child) {
                     PreparePhysics(parent, child, branchPhysicsParameter);
                 });
@@ -134,12 +134,18 @@ void InternodeLayer::OnInspect() {
     if (ImGui::Begin("Internode Manager")) {
         static int iterations = 1;
         ImGui::DragInt("Iterations", &iterations);
-        ImGui::Checkbox("Enable physics", &m_enablePhysics);
-
         if (ImGui::Button("Simulate")) {
             Simulate(iterations);
         }
-
+        ImGui::Checkbox("Enable physics", &m_enablePhysics);
+        if(m_enablePhysics){
+            if(ImGui::TreeNode("Physics")){
+                Editor::DragAndDropButton<FBMField>(m_fBMField, "FBM Field");
+                ImGui::Checkbox("Apply FBM", &m_applyFBMField);
+                ImGui::DragFloat("Force factor", &m_forceFactor, 0.1f);
+                ImGui::TreePop();
+            }
+        }
         if (ImGui::TreeNodeEx("Voxels", ImGuiTreeNodeFlags_DefaultOpen)) {
             m_voxelSpace.OnInspect();
             ImGui::TreePop();
@@ -447,7 +453,6 @@ void InternodeLayer::OnInspect() {
 }
 
 void InternodeLayer::OnCreate() {
-    ClassRegistry::RegisterDataComponent<BranchPhysicsParameters>("BranchPhysicsParameters");
     ClassRegistry::RegisterDataComponent<BranchCylinder>("BranchCylinder");
     ClassRegistry::RegisterDataComponent<BranchCylinderWidth>("BranchCylinderWidth");
     ClassRegistry::RegisterDataComponent<BranchPointer>("BranchPointer");
@@ -522,12 +527,6 @@ void InternodeLayer::OnCreate() {
     Editor::RegisterComponentDataInspector<InternodeStatistics>(
             [](Entity entity, IDataComponent *data, bool isRoot) {
                 auto *ltw = reinterpret_cast<InternodeStatistics *>(data);
-                ltw->OnInspect();
-            });
-
-    Editor::RegisterComponentDataInspector<BranchPhysicsParameters>(
-            [](Entity entity, IDataComponent *data, bool isRoot) {
-                auto *ltw = reinterpret_cast<BranchPhysicsParameters *>(data);
                 ltw->OnInspect();
             });
 
@@ -989,6 +988,22 @@ void InternodeLayer::CalculateStatistics() {
         }
     }
 
+}
+
+void InternodeLayer::FixedUpdate() {
+    if(m_enablePhysics){
+        auto fbmField = m_fBMField.Get<FBMField>();
+        if(m_applyFBMField && fbmField){
+            std::vector<Entity> internodes;
+            internodes.clear();
+            m_internodesQuery.ToEntityArray(Entities::GetCurrentScene(), internodes);
+            for(const auto& internode : internodes){
+                const auto position = internode.GetDataComponent<GlobalTransform>().GetPosition();
+                auto force = fbmField->GetT(position, Application::Time().CurrentTime(), 10.0f, 0.02f, 6) * m_forceFactor;
+                internode.GetOrSetPrivateComponent<RigidBody>().lock()->AddForce(force);
+            }
+        }
+    }
 }
 
 

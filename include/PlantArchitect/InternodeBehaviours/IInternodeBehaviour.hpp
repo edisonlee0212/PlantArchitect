@@ -379,6 +379,7 @@ namespace PlantArchitect {
         internode->m_resource = std::make_unique<T>();
         internode->m_foliage = parentInternode->m_foliage;
         internode->m_currentRoot = parentInternode->m_currentRoot;
+        internode->m_branchPhysicsParameters = parentInternode->m_branchPhysicsParameters;
         internode->OnRetrieve();
 
         return retVal;

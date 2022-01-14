@@ -19,13 +19,16 @@ namespace PlantArchitect {
         IndexRange,
         StrahlerNumber,
     };
-
+    struct BranchPhysicsParameters;
     class IInternodeBehaviour;
     class PLANT_ARCHITECT_API InternodeLayer : public ILayer {
         void PreparePhysics(const Entity& entity, const Entity& child, const BranchPhysicsParameters& branchPhysicsParameters);
 
     public:
-        bool m_enablePhysics = true;
+        AssetRef m_fBMField;
+        float m_forceFactor = 1.0f;
+        bool m_applyFBMField = false;
+        bool m_enablePhysics = false;
         void DrawColorModeSelectionMenu();
         void PreparePhysics();
         void CalculateStatistics();
@@ -33,7 +36,7 @@ namespace PlantArchitect {
          * The EntityQuery for filtering all internodes.
          */
         EntityQuery m_internodesQuery;
-
+        void FixedUpdate() override;
         void LateUpdate() override;
 
         void Simulate(int iterations);

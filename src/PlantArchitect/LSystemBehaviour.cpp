@@ -27,7 +27,7 @@ void LSystemBehaviour::OnCreate() {
             Entities::CreateEntityArchetype("L-System Internode", InternodeInfo(), InternodeStatistics(),
                                                  LSystemTag(), LSystemParameters(),
                                                  BranchColor(), BranchCylinder(), BranchCylinderWidth(),
-                                                 BranchPointer(), BranchPhysicsParameters());
+                                                 BranchPointer());
     m_internodesQuery = Entities::CreateEntityQuery();
     m_internodesQuery.SetAllFilters(LSystemTag());
 }
@@ -212,13 +212,11 @@ bool LSystemBehaviour::InternalInternodeCheck(const Entity &target) {
 
 Entity LSystemBehaviour::Retrieve() {
     auto retVal = RetrieveHelper<EmptyInternodeResource>();
-    retVal.SetDataComponent(BranchPhysicsParameters());
     return retVal;
 }
 
 Entity LSystemBehaviour::Retrieve(const Entity &parent) {
     auto retVal = RetrieveHelper<EmptyInternodeResource>(parent);
-    retVal.SetDataComponent(parent.GetDataComponent<BranchPhysicsParameters>());
     return retVal;
 }
 

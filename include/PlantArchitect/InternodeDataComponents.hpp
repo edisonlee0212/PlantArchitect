@@ -39,23 +39,7 @@ namespace PlantArchitect {
         int m_hortonOrdering = 0;
         void OnInspect();
     };
-    struct PLANT_ARCHITECT_API BranchPhysicsParameters : public IDataComponent{
-#pragma region Physics
-        float m_density = 1.0f;
-        float m_linearDamping = 2.0f;
-        float m_angularDamping = 2.0f;
-        int m_positionSolverIteration = 8;
-        int m_velocitySolverIteration = 8;
-        float m_jointDriveStiffnessFactor = 3000.0f;
-        float m_jointDriveStiffnessThicknessFactor = 4.0f;
-        float m_jointDriveDampingFactor = 10.0f;
-        float m_jointDriveDampingThicknessFactor = 4.0f;
-        bool m_enableAccelerationForDrive = true;
-#pragma endregion
-        void Serialize(YAML::Emitter &out);
-        void Deserialize(const YAML::Node &in);
-        void OnInspect();
-    };
+
 
 #pragma region Debug rendering
 

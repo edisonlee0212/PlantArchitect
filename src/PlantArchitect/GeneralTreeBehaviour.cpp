@@ -270,7 +270,7 @@ void GeneralTreeBehaviour::OnCreate() {
                                             GeneralTreeParameters(), InternodeStatus(),
                                             InternodeWaterPressure(), InternodeWater(), InternodeIllumination(),
                                             BranchColor(), BranchCylinder(), BranchCylinderWidth(),
-                                            BranchPointer(), BranchPhysicsParameters());
+                                            BranchPointer());
     m_internodesQuery = Entities::CreateEntityQuery();
     m_internodesQuery.SetAllFilters(GeneralTreeTag());
 }
@@ -320,7 +320,6 @@ Entity GeneralTreeBehaviour::Retrieve() {
     retVal.SetDataComponent(InternodeWater());
     retVal.SetDataComponent(InternodeIllumination());
     retVal.SetDataComponent(InternodeStatus());
-    retVal.SetDataComponent(BranchPhysicsParameters());
     return retVal;
 }
 

@@ -24,6 +24,25 @@ namespace PlantArchitect {
     };
     struct LSystemCommand;
     class InternodeFoliage;
+
+    struct PLANT_ARCHITECT_API BranchPhysicsParameters {
+#pragma region Physics
+        float m_density = 1.0f;
+        float m_linearDamping = 2.0f;
+        float m_angularDamping = 2.0f;
+        int m_positionSolverIteration = 8;
+        int m_velocitySolverIteration = 8;
+        float m_jointDriveStiffnessFactor = 3000.0f;
+        float m_jointDriveStiffnessThicknessFactor = 4.0f;
+        float m_jointDriveDampingFactor = 10.0f;
+        float m_jointDriveDampingThicknessFactor = 4.0f;
+        bool m_enableAccelerationForDrive = true;
+#pragma endregion
+        void Serialize(YAML::Emitter &out);
+        void Deserialize(const YAML::Node &in);
+        void OnInspect();
+    };
+
     class PLANT_ARCHITECT_API Internode : public IPrivateComponent {
         void ExportLSystemCommandsHelper(int& index, const Entity &target, std::vector<LSystemCommand> &commands);
         void CollectInternodesHelper(const Entity &target, std::vector<Entity> &results);
@@ -42,6 +61,8 @@ namespace PlantArchitect {
          */
         std::vector<InternodeRingSegment> m_rings;
     public:
+        BranchPhysicsParameters m_branchPhysicsParameters;
+
         /**
          * The generated matrices of foliage
          */
