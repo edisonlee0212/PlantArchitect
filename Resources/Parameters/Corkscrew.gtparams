@@ -16,4 +16,4 @@ m_randomPruningOrderProtection: 1
 m_randomPruningBaseAgeMax: [-0.100000001, 0.00700000022, 0.5]
 m_lowBranchPruning: 0.150000006
 m_saggingFactorThicknessReductionMax: [6, 3, 0.5]
-m_matureAge: 40
+m_matureAge: 35
