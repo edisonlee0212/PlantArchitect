@@ -1,6 +1,6 @@
 m_lateralBudCount: 2
 m_branchingAngleMeanVariance: [45, 1]
-m_rollAngleMeanVariance: [120, 10]
+m_rollAngleMeanVariance: [120, 1]
 m_apicalAngleMeanVariance: [0, 0]
 m_gravitropism: -0.0500000007
 m_phototropism: 0

@@ -137,9 +137,10 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
                 ExportGraph(behaviour, exportPath);
             }
             if (m_exportCSV) {
+                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path() / csvFolder / pipeline.m_parameterFileName);
                 auto exportPath = std::filesystem::absolute(
-                        ProjectManager::GetProjectPath().parent_path() / csvFolder /
-                        (prefix + ".csv"));
+                        ProjectManager::GetProjectPath().parent_path() / csvFolder / pipeline.m_parameterFileName /
+                        (std::to_string(pipeline.m_generalTreeParameters.m_gravitropism) + "_" + prefix + ".csv"));
                 ExportCSV(behaviour, exportPath);
             }
             if (m_exportBranchCapture) RenderBranchCapture();
@@ -178,7 +179,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
                 SetUpCamera();
             } else {
                 m_remainingInstanceAmount--;
-                //pipeline.m_generalTreeParameters.m_gravitropism = (m_generationAmount - m_remainingInstanceAmount) % 5 * 0.05f - 0.1f;
+                pipeline.m_generalTreeParameters.m_gravitropism = (m_generationAmount - m_remainingInstanceAmount) % 5 * 0.05f - 0.1f;
                 m_pitchAngle = m_pitchAngleStart;
                 m_turnAngle = 0;
                 if (m_remainingInstanceAmount == 0) {
