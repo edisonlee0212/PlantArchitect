@@ -1000,7 +1000,8 @@ void InternodeLayer::FixedUpdate() {
             for(const auto& internode : internodes){
                 const auto position = internode.GetDataComponent<GlobalTransform>().GetPosition();
                 auto force = fbmField->GetT(position, Application::Time().CurrentTime(), 10.0f, 0.02f, 6) * m_forceFactor;
-                internode.GetOrSetPrivateComponent<RigidBody>().lock()->AddForce(force);
+                auto rigidBody = internode.GetOrSetPrivateComponent<RigidBody>().lock();
+                if(rigidBody->Registered()) rigidBody->AddForce(force);
             }
         }
     }

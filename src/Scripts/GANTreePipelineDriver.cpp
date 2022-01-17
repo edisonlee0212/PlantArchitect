@@ -17,21 +17,11 @@ void GANTreePipelineDriver::OnInspect() {
             if (std::filesystem::exists(m_folderPath) && std::filesystem::is_directory(m_folderPath)) {
                 for (const auto &entry: std::filesystem::directory_iterator(m_folderPath)) {
                     if (!std::filesystem::is_directory(entry.path())) {
-                        if (entry.path().filename().string() == "Birch.gtparams") {
+
+                        if (entry.path().extension().string() == ".gtparams") {
                             m_parameterFilePaths.push_back(entry.path());
                         }
-                        if (entry.path().filename().string() == "Pine.gtparams") {
-                            m_parameterFilePaths.push_back(entry.path());
-                        }
-                        if (entry.path().filename().string() == "Tulip.gtparams") {
-                            m_parameterFilePaths.push_back(entry.path());
-                        }
-                        if (entry.path().filename().string() == "Hazel.gtparams") {
-                            m_parameterFilePaths.push_back(entry.path());
-                        }
-                        if (entry.path().filename().string() == "Cabbage.gtparams") {
-                            m_parameterFilePaths.push_back(entry.path());
-                        }
+
                     }
                 }
             }
@@ -63,7 +53,8 @@ void GANTreePipelineDriver::LateUpdate() {
     pipelineBehaviour->m_perTreeGrowthIteration = pipeline->m_generalTreeParameters.m_matureAge;
     pipelineBehaviour->DisableAllExport();
     pipelineBehaviour->m_exportCSV = true;
-    pipelineBehaviour->m_exportImage = false;
+    pipelineBehaviour->m_exportImage = true;
+    pipelineBehaviour->m_exportOBJ = true;
     pipelineBehaviour->m_generationAmount = m_instancePerSpecie;
     pipelineBehaviour->Start();
 
