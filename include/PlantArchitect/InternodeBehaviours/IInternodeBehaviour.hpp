@@ -5,10 +5,10 @@
 #include <Serialization.hpp>
 #include "InternodeFoliage.hpp"
 #include "InternodeLayer.hpp"
+
 using namespace UniEngine;
 namespace PlantArchitect {
     struct SpaceColonizationParameters;
-
     class PLANT_ARCHITECT_API IInternodeBehaviour : public IAsset {
         friend class InternodeLayer;
     protected:
@@ -22,34 +22,26 @@ namespace PlantArchitect {
          * The EntityArchetype for creating internodes, must be set when created.
          */
         EntityArchetype m_internodeArchetype;
-        Entity m_recycleStorageEntity;
         std::mutex m_internodeFactoryLock;
 
         /**
-         * Disable and recycle the internode to the pool.
-         * @param internode
-         */
-        void RecycleSingle(const Entity &internode);
-
-        /**
-         * Get or create an internode from the pool.
+         * Get or create an internode.
          * @tparam T The type of resource that will be added to the internode.
          * @param parent The parent of the internode.
          * @return An entity represent the internode.
          */
         template<typename T>
-        Entity RetrieveHelper(const Entity &parent);
+        Entity CreateHelper(const Entity &parent);
 
         /**
-         * Get or create a root internode from the pool.
+         * Get or create a root internode.
          * @tparam T T The type of resource that will be added to the internode.
          * @param internodeFoliage The foliage module of the root internode. Will be shared from all new internodes grown from this internode.
          * @return An entity represent the internode.
          */
         template<typename T>
-        Entity RetrieveHelper();
+        Entity CreateHelper();
 
-        void RecycleButton();
 
 #pragma endregion
 #pragma region Helpers
@@ -65,9 +57,10 @@ namespace PlantArchitect {
 
         void FoliageSkinnedMeshGenerator(std::vector<Entity> &entities,
                                          std::vector<int> &parentIndices,
-                                        std::vector<SkinnedVertex> &vertices,
-                                        std::vector<unsigned> &indices);
-        void PrepareInternodeForSkeletalAnimation(const Entity &entity, Entity& branchMesh, Entity& foliage);
+                                         std::vector<SkinnedVertex> &vertices,
+                                         std::vector<unsigned> &indices);
+
+        void PrepareInternodeForSkeletalAnimation(const Entity &entity, Entity &branchMesh, Entity &foliage);
 
 #pragma endregion
 
@@ -77,14 +70,14 @@ namespace PlantArchitect {
 
         void ApplyTropism(const glm::vec3 &targetDir, float tropism, glm::vec3 &front, glm::vec3 &up);
 
-        virtual Entity Retrieve() = 0;
+        virtual Entity CreateInternode() = 0;
 
-        virtual Entity Retrieve(const Entity &parent) = 0;
+        virtual Entity CreateInternode(const Entity &parent) = 0;
 
         /*
-         * Disable and recycle the internode and all its descendents to the pool.
+         * Disable and recycle the internode and all its descendents.
          */
-        void Recycle(const Entity &internode);
+        void DestroyInternode(const Entity &internode);
 
         /**
          * Handle main growth here.
@@ -95,7 +88,7 @@ namespace PlantArchitect {
          * Generate skinned mesh for internodes.
          * @param entities
          */
-        virtual void
+        void
         GenerateSkinnedMeshes(float subdivision = 4.0f, float resolution = 0.02f);
 
         /**
@@ -137,7 +130,8 @@ namespace PlantArchitect {
                                       const std::function<void(Entity endNode)> &endNodeAction);
 
 
-        void ParallelForEachRoot(std::vector<Entity>& roots, const std::function<void(int rootIndex, Entity root)> &action);
+        void
+        ParallelForEachRoot(std::vector<Entity> &roots, const std::function<void(int rootIndex, Entity root)> &action);
 
         /**
          * Check if the entity is valid internode.
@@ -169,12 +163,15 @@ namespace PlantArchitect {
         );
 
     };
-    template <typename T>
-    void InternodeLayer::PushInternodeBehaviour(const std::shared_ptr<T>& behaviour) {
-        if(!behaviour.get()) return;
+
+    template<typename T>
+    void InternodeLayer::PushInternodeBehaviour(const std::shared_ptr<T> &behaviour) {
+        if (!behaviour.get()) return;
         bool search = false;
         for (auto &i: m_internodeBehaviours) {
-            if (i.Get<IInternodeBehaviour>()->GetTypeName() == std::dynamic_pointer_cast<IInternodeBehaviour>(behaviour)->GetTypeName()) search = true;
+            if (i.Get<IInternodeBehaviour>()->GetTypeName() ==
+                std::dynamic_pointer_cast<IInternodeBehaviour>(behaviour)->GetTypeName())
+                search = true;
         }
         if (!search) {
             m_internodeBehaviours.emplace_back(std::dynamic_pointer_cast<IInternodeBehaviour>(behaviour));
@@ -190,6 +187,7 @@ namespace PlantArchitect {
         }
         return nullptr;
     }
+
     template<typename T>
     void IInternodeBehaviour::CreateInternodeMenu(const std::string &menuTitle,
                                                   const std::string &parameterExtension,
@@ -356,21 +354,13 @@ namespace PlantArchitect {
     }
 
     template<typename T>
-    Entity IInternodeBehaviour::RetrieveHelper(const Entity &parent) {
+    Entity IInternodeBehaviour::CreateHelper(const Entity &parent) {
         Entity retVal;
         std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
-        auto recycleEntity = m_recycleStorageEntity;
-        if (recycleEntity.IsValid()) retVal = recycleEntity.GetChild(0);
-        else m_recycleStorageEntity = Entity();
-        if (!retVal.IsNull()) {
-            retVal.SetParent(parent);
-            retVal.SetDataComponent(Transform());
-            retVal.SetEnabled(true);
-            retVal.GetOrSetPrivateComponent<Internode>().lock()->OnRetrieve();
-        } else {
-            retVal = Entities::CreateEntity(Entities::GetCurrentScene(), m_internodeArchetype, "Internode");
-            retVal.SetParent(parent);
-        }
+
+        retVal = Entities::CreateEntity(Entities::GetCurrentScene(), m_internodeArchetype, "Internode");
+        retVal.SetParent(parent);
+
         InternodeInfo internodeInfo;
         internodeInfo.m_isRealRoot = false;
         retVal.SetDataComponent(internodeInfo);
@@ -386,19 +376,12 @@ namespace PlantArchitect {
     }
 
     template<typename T>
-    Entity IInternodeBehaviour::RetrieveHelper() {
+    Entity IInternodeBehaviour::CreateHelper() {
         Entity retVal;
         std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
-        auto recycleEntity = m_recycleStorageEntity;
-        if (recycleEntity.IsValid()) retVal = recycleEntity.GetChild(0);
-        else m_recycleStorageEntity = Entity();
-        if (!retVal.IsNull()) {
-            recycleEntity.RemoveChild(retVal);
-            retVal.SetDataComponent(Transform());
-            retVal.SetEnabled(true);
-        } else {
-            retVal = Entities::CreateEntity(Entities::GetCurrentScene(), m_internodeArchetype, "Internode");
-        }
+
+        retVal = Entities::CreateEntity(Entities::GetCurrentScene(), m_internodeArchetype, "Internode");
+
         InternodeInfo internodeInfo;
         internodeInfo.m_isRealRoot = true;
         retVal.SetDataComponent(internodeInfo);
@@ -411,8 +394,6 @@ namespace PlantArchitect {
         CollectRoots();
         return retVal;
     }
-
-
 
 
 }

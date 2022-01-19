@@ -52,9 +52,9 @@ namespace PlantArchitect {
 
         void PushVolume(const std::shared_ptr<IVolume> &volume);
 
-        Entity Retrieve() override;
+        Entity CreateInternode() override;
 
-        Entity Retrieve(const Entity &parent) override;
+        Entity CreateInternode(const Entity &parent) override;
 
         Entity NewPlant(const SpaceColonizationParameters &params,
                         const Transform &transform);

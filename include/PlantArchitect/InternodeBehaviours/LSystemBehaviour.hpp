@@ -92,8 +92,8 @@ namespace PlantArchitect {
 
         void OnCreate() override;
 
-        Entity Retrieve() override;
+        Entity CreateInternode() override;
 
-        Entity Retrieve(const Entity &parent) override;
+        Entity CreateInternode(const Entity &parent) override;
     };
 }

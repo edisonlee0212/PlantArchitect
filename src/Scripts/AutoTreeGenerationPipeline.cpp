@@ -55,7 +55,7 @@ void AutoTreeGenerationPipeline::Update() {
                 pipelineBehaviour->OnAfterGrowth(*this);
                 if (m_status != AutoTreeGenerationPipelineStatus::AfterGrowth) {
                     if (pipelineBehaviour->m_currentGrowingTree.IsValid())
-                        m_currentInternodeBehaviour->Recycle(pipelineBehaviour->m_currentGrowingTree);
+                        m_currentInternodeBehaviour->DestroyInternode(pipelineBehaviour->m_currentGrowingTree);
                 }
                 break;
         }

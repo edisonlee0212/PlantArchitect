@@ -38,9 +38,9 @@ namespace PlantArchitect {
 
         void Grow(int iteration) override;
 
-        Entity Retrieve() override;
+        Entity CreateInternode() override;
 
-        Entity Retrieve(const Entity &parent) override;
+        Entity CreateInternode(const Entity &parent) override;
 
         Entity NewPlant(const GeneralTreeParameters &params, const Transform &transform);
     };

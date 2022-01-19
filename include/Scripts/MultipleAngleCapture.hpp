@@ -47,7 +47,7 @@ namespace Scripts {
         float m_distance = 4.5;
         float m_fov = 60;
         glm::ivec2 m_resolution = glm::ivec2(1024, 1024);
-
+        int m_startIndex = 0;
         //Options.
         BranchColorMode m_branchColorMode = BranchColorMode::None;
         bool m_exportOBJ = false;

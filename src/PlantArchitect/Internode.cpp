@@ -206,6 +206,7 @@ void Internode::Serialize(YAML::Emitter &out) {
 
     out << YAML::Key << "m_fromApicalBud" << YAML::Value << m_fromApicalBud;
 
+
     out << YAML::Key << "m_branchPhysicsParameters" << YAML::Value << YAML::BeginMap;
     m_branchPhysicsParameters.Serialize(out);
     out << YAML::EndMap;
@@ -223,6 +224,7 @@ void Internode::Deserialize(const YAML::Node &in) {
 }
 
 void Bud::OnInspect() {
+    ImGui::Text("Flush prob: %.3f", m_flushProbability);
     switch (m_status) {
         case BudStatus::Sleeping:
             ImGui::Text("Status: Sleeping");
@@ -240,10 +242,12 @@ void Bud::OnInspect() {
 }
 
 void Bud::Serialize(YAML::Emitter &out) {
+    out << YAML::Key << "m_flushProbability" << YAML::Value << m_flushProbability;
     out << YAML::Key << "m_status" << YAML::Value << (unsigned)m_status;
 }
 void Bud::Deserialize(const YAML::Node &in) {
     m_status = (BudStatus)in["m_status"].as<unsigned>();
+    m_flushProbability = in["m_flushProbability"].as<float>();
 }
 
 void Bud::Save(const std::string& name, YAML::Emitter &out) {

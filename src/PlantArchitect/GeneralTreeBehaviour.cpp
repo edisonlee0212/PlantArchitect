@@ -12,10 +12,6 @@
 using namespace PlantArchitect;
 
 void GeneralTreeBehaviour::Grow(int iteration) {
-    if (m_recycleStorageEntity.IsNull()) {
-        m_recycleStorageEntity = Entities::CreateEntity(Entities::GetCurrentScene(),
-                                                        "Recycled General Tree Internodes");
-    }
     Preprocess();
 #pragma region Main Growth
     Entities::ForEach<Transform, GlobalTransform, InternodeInfo, InternodeStatus, InternodeWater, InternodeIllumination, GeneralTreeParameters>
@@ -151,6 +147,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                                  ApplyTropism(internodeIllumination.m_direction,
                                               generalTreeParameters.m_phototropism, desiredGlobalFront,
                                               desiredGlobalUp);
+                                 lateralBud.m_flushProbability = flushProbability;
                                  lateralBud.m_newInternodeInfo = InternodeInfo();
                                  lateralBud.m_newInternodeInfo.m_layer = internodeInfo.m_layer + 1;
                                  lateralBud.m_newInternodeInfo.m_localRotation =
@@ -174,10 +171,11 @@ void GeneralTreeBehaviour::Grow(int iteration) {
         auto internodeInfo = entity.GetDataComponent<InternodeInfo>();
         if (internode->m_apicalBud.m_status == BudStatus::Flushing) {
             auto internodeStatus = entity.GetDataComponent<InternodeStatus>();
-            auto newInternodeEntity = Retrieve(entity);
+            auto newInternodeEntity = CreateInternode(entity);
             InternodeStatus newInternodeStatus;
             newInternodeStatus.m_desiredLocalRotation = internode->m_apicalBud.m_newInternodeInfo.m_localRotation;
             newInternodeStatus.m_branchingOrder = 0;
+            newInternodeStatus.m_recordedProbability = internode->m_apicalBud.m_flushProbability;
             newInternodeStatus.m_chainDistance = internodeStatus.m_chainDistance + internodeInfo.m_length;
             newInternodeEntity.SetDataComponent(newInternodeStatus);
             newInternodeEntity.SetDataComponent(parameters);
@@ -189,11 +187,12 @@ void GeneralTreeBehaviour::Grow(int iteration) {
         int branchingOrder = 1;
         for (auto &bud: internode->m_lateralBuds) {
             if (bud.m_status == BudStatus::Flushing) {
-                auto newInternodeEntity = Retrieve(entity);
+                auto newInternodeEntity = CreateInternode(entity);
                 InternodeStatus newInternodeStatus;
                 newInternodeStatus.m_branchingOrder = branchingOrder;
                 newInternodeStatus.m_desiredLocalRotation = bud.m_newInternodeInfo.m_localRotation;
                 newInternodeStatus.m_chainDistance = 0;
+                newInternodeStatus.m_recordedProbability = bud.m_flushProbability;
                 newInternodeEntity.SetDataComponent(newInternodeStatus);
                 newInternodeEntity.SetDataComponent(parameters);
                 newInternodeEntity.SetDataComponent(bud.m_newInternodeInfo);
@@ -276,7 +275,6 @@ void GeneralTreeBehaviour::OnCreate() {
 }
 
 void GeneralTreeBehaviour::OnInspect() {
-    RecycleButton();
     CreateInternodeMenu<GeneralTreeParameters>
             ("New General Tree Wizard",
              ".gtparams",
@@ -315,16 +313,16 @@ bool GeneralTreeBehaviour::InternalInternodeCheck(const Entity &target) {
     return target.HasDataComponent<GeneralTreeTag>();
 }
 
-Entity GeneralTreeBehaviour::Retrieve() {
-    auto retVal = RetrieveHelper<DefaultInternodeResource>();
+Entity GeneralTreeBehaviour::CreateInternode() {
+    auto retVal = CreateHelper<DefaultInternodeResource>();
     retVal.SetDataComponent(InternodeWater());
     retVal.SetDataComponent(InternodeIllumination());
     retVal.SetDataComponent(InternodeStatus());
     return retVal;
 }
 
-Entity GeneralTreeBehaviour::Retrieve(const Entity &parent) {
-    auto retVal = RetrieveHelper<DefaultInternodeResource>(parent);
+Entity GeneralTreeBehaviour::CreateInternode(const Entity &parent) {
+    auto retVal = CreateHelper<DefaultInternodeResource>(parent);
     retVal.SetDataComponent(InternodeWater());
     retVal.SetDataComponent(InternodeIllumination());
     retVal.SetDataComponent(InternodeStatus());
@@ -332,7 +330,7 @@ Entity GeneralTreeBehaviour::Retrieve(const Entity &parent) {
 }
 
 Entity GeneralTreeBehaviour::NewPlant(const GeneralTreeParameters &params, const Transform &transform) {
-    auto entity = Retrieve();
+    auto entity = CreateInternode();
     Transform internodeTransform;
     internodeTransform.m_value =
             glm::translate(glm::vec3(0.0f)) *
@@ -374,7 +372,7 @@ GeneralTreeBehaviour::ImportGraphTree(const std::filesystem::path &path, const G
         int layerSize = in["layersize"].as<int>();
         auto layers = in["layers"];
         auto rootLayer = layers["0"];
-        root = Retrieve();
+        root = CreateInternode();
         root.SetName(name);
         std::vector<GanNode> previousNodes;
         previousNodes.resize(10000);
@@ -404,7 +402,7 @@ GeneralTreeBehaviour::ImportGraphTree(const std::filesystem::path &path, const G
                 if (parentNodeId == -1) parentNodeId = 0;
                 auto &parentGanNode = previousNodes[parentNodeId];
                 GanNode ganNode;
-                ganNode.m_internode = Retrieve(parentGanNode.m_internode);
+                ganNode.m_internode = CreateInternode(parentGanNode.m_internode);
                 ganNode.m_start = parentGanNode.m_start + parentGanNode.m_length *
                                                           (glm::normalize(parentGanNode.m_globalRotation) *
                                                            glm::vec3(0, 0, -1));
@@ -509,12 +507,12 @@ void GeneralTreeBehaviour::Preprocess() {
                                 if (childInternodeStatus.m_distanceToRoot /
                                     internodeStatus.m_maxDistanceToAnyBranchEnd <
                                     childParameter.m_lowBranchPruning) {
-                                    Recycle(child);
+                                    DestroyInternode(child);
                                     return;
                                 }
                             }
                             if (childGlobalTransform.GetPosition().y < 0) {
-                                Recycle(child);
+                                DestroyInternode(child);
                                 return;
                             }
                             auto childInternode = child.GetOrSetPrivateComponent<Internode>().lock();
@@ -558,7 +556,7 @@ void GeneralTreeBehaviour::Preprocess() {
                                     if (childInternodeStatus.m_order >
                                         endNodeParameters.m_randomPruningOrderProtection &&
                                         randomFactor > glm::linearRand(0.0f, 1.0f)) {
-                                        RecycleSingle(child);
+                                        DestroyInternode(child);
                                         return;
                                     }
                                     parentInternodeStatus.m_inhibitor +=

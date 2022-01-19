@@ -11,7 +11,6 @@ bool JSONTreeBehaviour::InternalInternodeCheck(const Entity &target) {
 }
 
 void JSONTreeBehaviour::OnInspect() {
-    RecycleButton();
     static JSONTreeParameters parameters;
     parameters.OnInspect();
     //button here
@@ -40,13 +39,13 @@ void JSONTreeBehaviour::OnCreate() {
     m_internodesQuery.SetAllFilters(JSONTreeTag());
 }
 
-Entity JSONTreeBehaviour::Retrieve() {
-    auto retVal = RetrieveHelper<EmptyInternodeResource>();
+Entity JSONTreeBehaviour::CreateInternode() {
+    auto retVal = CreateHelper<EmptyInternodeResource>();
     return retVal;
 }
 
-Entity JSONTreeBehaviour::Retrieve(const Entity &parent) {
-    auto retVal = RetrieveHelper<EmptyInternodeResource>(parent);
+Entity JSONTreeBehaviour::CreateInternode(const Entity &parent) {
+    auto retVal = CreateHelper<EmptyInternodeResource>(parent);
     return retVal;
 }
 

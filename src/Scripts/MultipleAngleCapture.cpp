@@ -44,13 +44,15 @@ void MultipleAngleCapture::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) 
 }
 
 void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
-    auto camera = m_cameraEntity.Get().GetOrSetPrivateComponent<Camera>().lock();
-    camera->SetRequireRendering(true);
     auto behaviour = pipeline.GetBehaviour();
-    if (m_rendering) {
-        behaviour->GenerateSkinnedMeshes();
-        m_rendering = false;
-        return;
+    auto camera = m_cameraEntity.Get().GetOrSetPrivateComponent<Camera>().lock();
+    if (m_exportOBJ || m_exportImage || m_exportDepth || m_exportBranchCapture) {
+        camera->SetRequireRendering(true);
+        if (m_rendering) {
+            behaviour->GenerateSkinnedMeshes();
+            m_rendering = false;
+            return;
+        }
     }
     auto internodeLayer = Application::GetLayer<InternodeLayer>();
     auto behaviourType = pipeline.GetBehaviourType();
@@ -68,7 +70,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
             spaceColonizationBehaviour->m_attractionPoints.clear();
             break;
     }
-    prefix += std::to_string(m_generationAmount - m_remainingInstanceAmount);
+    prefix += std::to_string(m_generationAmount - m_remainingInstanceAmount + m_startIndex);
     switch (m_captureStatus) {
         case MultipleAngleCaptureStatus::Info: {
             auto imagesFolder = m_currentExportFolder / "Image";
@@ -100,8 +102,11 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
                 lString->SetPathAndSave(
                         lStringFolder / (std::to_string(m_generationAmount - m_remainingInstanceAmount) + ".lstring"));
             }
-            internodeLayer->UpdateBranchColors();
-            behaviour->GenerateSkinnedMeshes();
+
+            if (m_exportOBJ || m_exportImage || m_exportDepth || m_exportBranchCapture) {
+                behaviour->GenerateSkinnedMeshes();
+                internodeLayer->UpdateBranchColors();
+            }
             if (m_exportOBJ) {
                 Entity foliage, branch;
                 m_currentGrowingTree.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
@@ -137,7 +142,8 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
                 ExportGraph(behaviour, exportPath);
             }
             if (m_exportCSV) {
-                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path() / csvFolder / pipeline.m_parameterFileName);
+                std::filesystem::create_directories(
+                        ProjectManager::GetProjectPath().parent_path() / csvFolder / pipeline.m_parameterFileName);
                 auto exportPath = std::filesystem::absolute(
                         ProjectManager::GetProjectPath().parent_path() / csvFolder / pipeline.m_parameterFileName /
                         (prefix + ".csv"));
@@ -207,7 +213,7 @@ void MultipleAngleCapture::OnInspect() {
         ImGui::DragFloat("Branch width", &m_branchWidth, 0.01f);
         ImGui::DragInt("Generation Amount", &m_generationAmount);
         ImGui::DragInt("Growth iteration", &m_perTreeGrowthIteration);
-
+        ImGui::DragInt("Start Index", &m_startIndex);
         ImGui::Text("Data export:");
         ImGui::Checkbox("Export OBJ", &m_exportOBJ);
         ImGui::Checkbox("Export Graph", &m_exportGraph);
@@ -526,7 +532,6 @@ void MultipleAngleCapture::ExportCSV(const std::shared_ptr<IInternodeBehaviour> 
     ofs.open(path.c_str(), std::ofstream::out | std::ofstream::trunc);
     if (ofs.is_open()) {
         std::string output;
-
         std::vector<std::vector<std::pair<int, Entity>>> internodes;
         internodes.resize(128);
         internodes[0].emplace_back(-1, m_currentGrowingTree);
@@ -534,7 +539,7 @@ void MultipleAngleCapture::ExportCSV(const std::shared_ptr<IInternodeBehaviour> 
                                             [&](Entity parent, Entity child) {
                                                 if (!behaviour->InternodeCheck(child)) return;
                                                 auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
-                                                if(childInternodeInfo.m_endNode) return;
+                                                if (childInternodeInfo.m_endNode) return;
                                                 internodes[childInternodeInfo.m_layer].emplace_back(parent.GetIndex(),
                                                                                                     child);
                                             });

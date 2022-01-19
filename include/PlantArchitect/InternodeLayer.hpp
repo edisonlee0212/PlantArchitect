@@ -4,6 +4,7 @@
 #include <VoxelSpace.hpp>
 #include "InternodeDataComponents.hpp"
 #include "ILayer.hpp"
+#include "FBM.hpp"
 using namespace UniEngine;
 namespace PlantArchitect {
     enum class BranchColorMode{
@@ -25,7 +26,7 @@ namespace PlantArchitect {
         void PreparePhysics(const Entity& entity, const Entity& child, const BranchPhysicsParameters& branchPhysicsParameters);
 
     public:
-        AssetRef m_fBMField;
+        FBM m_fBMField;
         float m_forceFactor = 1.0f;
         bool m_applyFBMField = false;
         bool m_enablePhysics = false;

@@ -2,18 +2,13 @@
 // Created by lllll on 12/28/2021.
 //
 
-#include "FBMField.hpp"
+#include "FBM.hpp"
 
-void PlantArchitect::FBMField::OnCreate() {
+void PlantArchitect::FBM::OnCreate() {
 }
 
-void PlantArchitect::FBMField::Serialize(YAML::Emitter &out) {
-}
 
-void PlantArchitect::FBMField::Deserialize(const YAML::Node &in) {
-}
-
-void PlantArchitect::FBMField::OnInspect() {
+void PlantArchitect::FBM::OnInspect() {
     static bool draw = true;
     ImGui::Checkbox("Render field", &draw);
     if (draw) {
@@ -131,28 +126,28 @@ void PlantArchitect::FBMField::OnInspect() {
     }
 }
 
-float PlantArchitect::FBMField::Get(const glm::vec3 &in, unsigned int level) {
+float PlantArchitect::FBM::Get(const glm::vec3 &in, unsigned int octaves) {
     float f = 0;
     float sum = 0.0f;
     float factor = 0.5f;
     glm::vec3 p = in;
-    for (unsigned i = 0; i < level; i++) {
-        f += factor * m_noise(p);
+    for (unsigned i = 0; i < octaves; i++) {
+        f += factor * glm::simplex(p);
         sum += factor;
         factor /= 2.0f;
-        if (i < level - 1) {
+        if (i < octaves - 1) {
             p = m_m * p * (2.0f + (float) i * 0.01f);
         }
     }
     return f / sum;
 }
 
-glm::vec3 PlantArchitect::FBMField::Get3(const glm::vec3 &in, unsigned int level) {
+glm::vec3 PlantArchitect::FBM::Get3(const glm::vec3 &in, unsigned int level) {
     return {Get(in, level), Get(in + glm::vec3(0.25, 0.57, 0.14), level),
             Get(in + glm::vec3(0.63, 0.23, 0.56), level)};
 }
 
-glm::vec3 PlantArchitect::FBMField::GetT(const glm::vec3 &q, float t, float frequency, float density, int level) {
+glm::vec3 PlantArchitect::FBM::GetT(const glm::vec3 &q, float t, float frequency, float density, int level) {
     auto q1 = frequency * glm::sin(t + glm::simplex(q));
     return Get3(density * (q + q1), level);
 }

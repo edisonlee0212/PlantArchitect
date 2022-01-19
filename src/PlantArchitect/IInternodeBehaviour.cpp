@@ -12,37 +12,9 @@
 
 using namespace PlantArchitect;
 
-void IInternodeBehaviour::Recycle(const Entity &internode) {
-    auto children = internode.GetChildren();
-    if (!children.empty()) {
-        for (const auto &child: children) {
-            Recycle(child);
-        }
-    }
-    RecycleSingle(internode);
-}
-
-void IInternodeBehaviour::RecycleSingle(const Entity &internode) {
+void IInternodeBehaviour::DestroyInternode(const Entity &internode) {
     std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
-    if (!m_recycleStorageEntity.IsValid()) {
-        m_recycleStorageEntity = Entity();
-        Entities::DeleteEntity(Entities::GetCurrentScene(), internode);
-        return;
-    }
-    if (!InternodeCheck(internode)) {
-        Entities::DeleteEntity(Entities::GetCurrentScene(), internode);
-        return;
-    }
-    Entities::ForEachPrivateComponent(Entities::GetCurrentScene(), internode,
-                                           [&](PrivateComponentElement &element) {
-                                               if (element.m_typeId != typeid(Internode).hash_code())
-                                                   Entities::RemovePrivateComponent(
-                                                           Entities::GetCurrentScene(), internode,
-                                                           element.m_typeId);
-                                           });
-    internode.GetOrSetPrivateComponent<Internode>().lock()->OnRecycle();
-    internode.SetParent(m_recycleStorageEntity);
-    internode.SetEnabled(false);
+    Entities::DeleteEntity(Entities::GetCurrentScene(), internode);
 }
 
 void
@@ -684,15 +656,6 @@ void IInternodeBehaviour::TreeGraphWalkerEndToRoot(const Entity &root, const Ent
         }
         currentNode = parent;
     }
-}
-
-void IInternodeBehaviour::RecycleButton() {
-    static Entity target;
-    ImGui::Text("Recycle here: ");
-    ImGui::SameLine();
-    Editor::DragAndDropButton(target);
-    if (!target.IsNull()) Recycle(target);
-    target = Entity();
 }
 
 void IInternodeBehaviour::ParallelForEachRoot(std::vector<Entity> &roots,

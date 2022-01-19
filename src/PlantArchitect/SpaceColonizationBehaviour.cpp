@@ -26,10 +26,6 @@ void SpaceColonizationBehaviour::OnCreate() {
 void SpaceColonizationBehaviour::Grow(int iteration) {
 
     if (m_attractionPoints.empty()) return;
-    if (m_recycleStorageEntity.IsNull()) {
-        m_recycleStorageEntity = Entities::CreateEntity(Entities::GetCurrentScene(),
-                                                             "Recycled General Tree Internodes");
-    }
     std::vector<int> removeMarks;
     removeMarks.resize(m_attractionPoints.size());
     memset(removeMarks.data(), 0, removeMarks.size() * sizeof(bool));
@@ -142,12 +138,12 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
                     duplicate = true;
             });
             if (duplicate) continue;
-            newNode = Retrieve(entity);
+            newNode = CreateInternode(entity);
             tag.m_truck = false;
             newNode.SetDataComponent(tag);
             entity.SetDataComponent(tag);
         } else if (tag.m_truck) {
-            newNode = Retrieve(entity);
+            newNode = CreateInternode(entity);
             newFront = glm::normalize(m_center - newPosition);
             newNode.SetDataComponent(tag);
             tag.m_truck = false;
@@ -218,8 +214,6 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
 }
 
 void SpaceColonizationBehaviour::OnInspect() {
-    RecycleButton();
-
     CreateInternodeMenu<SpaceColonizationParameters>
             ("New Space Colonization Plant Wizard",
              ".scparams",
@@ -341,18 +335,18 @@ bool SpaceColonizationBehaviour::InternalInternodeCheck(const Entity &target) {
     return target.HasDataComponent<SpaceColonizationTag>();
 }
 
-Entity SpaceColonizationBehaviour::Retrieve() {
-    auto retVal = RetrieveHelper<EmptyInternodeResource>();
+Entity SpaceColonizationBehaviour::CreateInternode() {
+    auto retVal = CreateHelper<EmptyInternodeResource>();
     return retVal;
 }
 
-Entity SpaceColonizationBehaviour::Retrieve(const Entity &parent) {
-    auto retVal = RetrieveHelper<EmptyInternodeResource>(parent);
+Entity SpaceColonizationBehaviour::CreateInternode(const Entity &parent) {
+    auto retVal = CreateHelper<EmptyInternodeResource>(parent);
     return retVal;
 }
 
 Entity SpaceColonizationBehaviour::NewPlant(const SpaceColonizationParameters &params, const Transform &transform) {
-    auto entity = Retrieve();
+    auto entity = CreateInternode();
     Transform internodeTransform;
     internodeTransform.m_value =
             glm::translate(glm::vec3(0.0f)) *

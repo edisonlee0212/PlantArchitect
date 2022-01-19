@@ -11,7 +11,6 @@
 using namespace PlantArchitect;
 
 void LSystemBehaviour::OnInspect() {
-    RecycleButton();
     static float resolution = 0.02;
     static float subdivision = 4.0;
     ImGui::DragFloat("Resolution", &resolution, 0.001f);
@@ -56,16 +55,16 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
                         UNIENGINE_WARNING("Root exists!");
                         //Calculate the local rotation as quaternion from euler angles.
                         newInfo.m_localRotation = glm::quat(currentState.m_eulerRotation);
-                        //We need to create a child node with this function. Here Retrieve(Entity) will instantiate a new internode for you and set it as a child of current internode.
-                        internode = Retrieve(root);
+                        //We need to create a child node with this function. Here CreateInternode(Entity) will instantiate a new internode for you and set it as a child of current internode.
+                        internode = CreateInternode(root);
                         //Apply the parameter to this internode, this is necessary everytime you create a new internode.
                         internode.SetDataComponent(parameters);
                     }else {
                         //Calculate the local rotation as quaternion from euler angles.
                         newInfo.m_localRotation = glm::quat(currentState.m_eulerRotation);
                         //If this is the first push in the string, we create the root internode.
-                        //The node creation is handled by the Retrieve() function. The internode creation is performed in a factory pattern.
-                        root = internode = Retrieve();
+                        //The node creation is handled by the CreateInternode() function. The internode creation is performed in a factory pattern.
+                        root = internode = CreateInternode();
                         //Apply the parameter to this internode, this is necessary everytime you create a new internode.
                         internode.SetDataComponent(parameters);
                         rootExists = true;
@@ -73,8 +72,8 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
                 } else {
                     //Calculate the local rotation as quaternion from euler angles.
                     newInfo.m_localRotation = glm::quat(currentState.m_eulerRotation);
-                    //We need to create a child node with this function. Here Retrieve(Entity) will instantiate a new internode for you and set it as a child of current internode.
-                    internode = Retrieve(internode);
+                    //We need to create a child node with this function. Here CreateInternode(Entity) will instantiate a new internode for you and set it as a child of current internode.
+                    internode = CreateInternode(internode);
                     //Apply the parameter to this internode, this is necessary everytime you create a new internode.
                     internode.SetDataComponent(parameters);
                 }
@@ -210,13 +209,13 @@ bool LSystemBehaviour::InternalInternodeCheck(const Entity &target) {
     return target.HasDataComponent<LSystemTag>();
 }
 
-Entity LSystemBehaviour::Retrieve() {
-    auto retVal = RetrieveHelper<EmptyInternodeResource>();
+Entity LSystemBehaviour::CreateInternode() {
+    auto retVal = CreateHelper<EmptyInternodeResource>();
     return retVal;
 }
 
-Entity LSystemBehaviour::Retrieve(const Entity &parent) {
-    auto retVal = RetrieveHelper<EmptyInternodeResource>(parent);
+Entity LSystemBehaviour::CreateInternode(const Entity &parent) {
+    auto retVal = CreateHelper<EmptyInternodeResource>(parent);
     return retVal;
 }
 

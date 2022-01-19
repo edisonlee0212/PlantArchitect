@@ -16,6 +16,7 @@ namespace PlantArchitect {
     struct PLANT_ARCHITECT_API Bud : public ISerializable{
         BudStatus m_status = BudStatus::Sleeping;
         InternodeInfo m_newInternodeInfo;
+        float m_flushProbability = 0;
         void OnInspect();
         void Serialize(YAML::Emitter &out) override;
         void Deserialize(const YAML::Node &in) override;
