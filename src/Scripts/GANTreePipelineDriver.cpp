@@ -14,16 +14,57 @@ void GANTreePipelineDriver::OnInspect() {
     ImGui::DragInt("Amount per specie", &m_instancePerSpecie, 1, 0, 99999);
     if (m_parameterFilePaths.empty()) {
         if (ImGui::Button("Start")) {
+            m_parameterFilePaths.push_back(m_folderPath / "Oak.gtparams");
+            m_parameterFilePaths.push_back(m_folderPath / "Birch.gtparams");
+
+            /*
             if (std::filesystem::exists(m_folderPath) && std::filesystem::is_directory(m_folderPath)) {
                 for (const auto &entry: std::filesystem::directory_iterator(m_folderPath)) {
                     if (!std::filesystem::is_directory(entry.path())) {
                         if (entry.path().filename().string() == "Elm.gtparams") {
-                            m_parameterFilePaths.push_back(entry.path());
+                            m_parameterFilePaths.push_back(m_folderPath / "Elm.gtparams");
+                            break;
                         }
-
+                    }
+                    if (!std::filesystem::is_directory(entry.path())) {
+                        if (entry.path().filename().string() == "Oak.gtparams") {
+                            m_parameterFilePaths.push_back(entry.path());
+                            break;
+                        }
+                    }
+                    if (!std::filesystem::is_directory(entry.path())) {
+                        if (entry.path().filename().string() == "Maple.gtparams") {
+                            m_parameterFilePaths.push_back(entry.path());
+                            break;
+                        }
+                    }
+                    if (!std::filesystem::is_directory(entry.path())) {
+                        if (entry.path().filename().string() == "Hazel.gtparams") {
+                            m_parameterFilePaths.push_back(entry.path());
+                            break;
+                        }
+                    }
+                    if (!std::filesystem::is_directory(entry.path())) {
+                        if (entry.path().filename().string() == "Corkscrew.gtparams") {
+                            m_parameterFilePaths.push_back(entry.path());
+                            break;
+                        }
+                    }
+                    if (!std::filesystem::is_directory(entry.path())) {
+                        if (entry.path().filename().string() == "Cabbage.gtparams") {
+                            m_parameterFilePaths.push_back(entry.path());
+                            break;
+                        }
+                    }
+                    if (!std::filesystem::is_directory(entry.path())) {
+                        if (entry.path().filename().string() == "Birch.gtparams") {
+                            m_parameterFilePaths.push_back(entry.path());
+                            break;
+                        }
                     }
                 }
-            }
+
+            }*/
         }
     } else {
         ImGui::Text("Busy...");
