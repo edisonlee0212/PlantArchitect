@@ -4,6 +4,5 @@
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/3rdParty/RayTracerFacility" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/3rdParty/UniEngine" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/3rdParty/UniEngine/3rdParty/pybind11" vcs="Git" />
   </component>
 </project>
