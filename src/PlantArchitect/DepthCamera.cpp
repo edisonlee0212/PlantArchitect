@@ -69,7 +69,7 @@ void DepthCamera::OnCreate() {
     m_resolutionY = 1;
 
     m_colorTexture = AssetManager::CreateAsset<Texture2D>();
-    m_colorTexture->m_name = "CameraTexture";
+    m_colorTexture->SetName("CameraTexture");
     m_colorTexture->UnsafeGetGLTexture() = std::make_shared<OpenGLUtils::GLTexture2D>(
             0, GL_RGB32F, m_resolutionX, m_resolutionY, false);
     m_colorTexture->UnsafeGetGLTexture()->SetData(0, GL_RGB32F, GL_RGB, GL_FLOAT, 0);

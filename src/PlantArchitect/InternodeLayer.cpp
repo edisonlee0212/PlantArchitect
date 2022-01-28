@@ -508,59 +508,69 @@ void InternodeLayer::OnCreate() {
     Editor::RegisterComponentDataInspector<InternodeInfo>([](Entity entity, IDataComponent *data, bool isRoot) {
         auto *ltw = reinterpret_cast<InternodeInfo *>(data);
         ltw->OnInspect();
+        return false;
     });
 
     Editor::RegisterComponentDataInspector<GeneralTreeParameters>(
             [](Entity entity, IDataComponent *data, bool isRoot) {
                 auto *ltw = reinterpret_cast<GeneralTreeParameters *>(data);
                 ltw->OnInspect();
+                return false;
             });
 
     Editor::RegisterComponentDataInspector<InternodeStatus>(
             [](Entity entity, IDataComponent *data, bool isRoot) {
                 auto *ltw = reinterpret_cast<InternodeStatus *>(data);
                 ltw->OnInspect();
+                return false;
             });
 
     Editor::RegisterComponentDataInspector<InternodeWaterPressure>(
             [](Entity entity, IDataComponent *data, bool isRoot) {
                 auto *ltw = reinterpret_cast<InternodeWaterPressure *>(data);
                 ltw->OnInspect();
+                return false;
             });
 
     Editor::RegisterComponentDataInspector<InternodeStatistics>(
             [](Entity entity, IDataComponent *data, bool isRoot) {
                 auto *ltw = reinterpret_cast<InternodeStatistics *>(data);
                 ltw->OnInspect();
+                return false;
             });
 
     Editor::RegisterComponentDataInspector<BranchColor>(
             [](Entity entity, IDataComponent *data, bool isRoot) {
                 auto *ltw = reinterpret_cast<BranchColor *>(data);
                 ltw->OnInspect();
+                return false;
             });
 
     Editor::RegisterComponentDataInspector<BranchCylinderWidth>(
             [](Entity entity, IDataComponent *data, bool isRoot) {
                 auto *ltw = reinterpret_cast<BranchCylinderWidth *>(data);
                 ltw->OnInspect();
+                return false;
             });
 
     Editor::RegisterComponentDataInspector<InternodeWater>([](Entity entity, IDataComponent *data, bool isRoot) {
         auto *ltw = reinterpret_cast<InternodeWater *>(data);
         ltw->OnInspect();
+        return false;
     });
 
     Editor::RegisterComponentDataInspector<InternodeIllumination>(
             [](Entity entity, IDataComponent *data, bool isRoot) {
                 auto *ltw = reinterpret_cast<InternodeIllumination *>(data);
                 ltw->OnInspect();
+                return false;
             });
 
     Editor::RegisterComponentDataInspector<SpaceColonizationParameters>(
             [](Entity entity, IDataComponent *data, bool isRoot) {
                 auto *ltw = reinterpret_cast<SpaceColonizationParameters *>(data);
                 ltw->OnInspect();
+                return false;
             });
 
     auto spaceColonizationBehaviour = AssetManager::CreateAsset<SpaceColonizationBehaviour>();
@@ -995,35 +1005,31 @@ void InternodeLayer::CalculateStatistics() {
 }
 
 void InternodeLayer::FixedUpdate() {
-    if(Application::IsPlaying()) {
+    if (Application::IsPlaying()) {
         if (m_enablePhysics) {
             if (m_applyFBMField) {
-                /*
                 std::vector<Entity> internodes;
+                std::vector<glm::vec3> forces;
                 internodes.clear();
-                m_internodesQuery.ToEntityArray(Entities::GetCurrentScene(), internodes);
-                for(const auto& internode : internodes){
-                    const auto position = internode.GetDataComponent<GlobalTransform>().GetPosition();
-                    if(internode.HasPrivateComponent<RigidBody>()) {
-                        auto force = m_fBMField.GetT(position, Application::Time().CurrentTime(), 10.0f, 0.02f, 6) *
-                                     m_forceFactor;
-                        auto rigidBody = internode.GetOrSetPrivateComponent<RigidBody>().lock();
-                        if (rigidBody->Registered()) rigidBody->AddForce(force);
-                    }
-                }
-                 */
+                m_internodesQuery.ToEntityArray(Entities::GetCurrentScene(), internodes, false);
+                forces.resize(internodes.size());
                 Entities::ForEach<GlobalTransform>(Entities::GetCurrentScene(), Jobs::Workers(), m_internodesQuery,
                                                    [&](int i, Entity entity, GlobalTransform &globalTransform) {
                                                        const auto position = entity.GetDataComponent<GlobalTransform>().GetPosition();
-                                                       if (entity.HasPrivateComponent<RigidBody>()) {
-                                                           auto force = m_fBMField.GetT(position,
-                                                                                        Application::Time().CurrentTime(),
-                                                                                        10.0f, 0.02f, 6) *
-                                                                        m_forceFactor;
-                                                           auto rigidBody = entity.GetOrSetPrivateComponent<RigidBody>().lock();
-                                                           if (rigidBody->Registered()) rigidBody->AddForce(force);
-                                                       }
-                                                   });
+                                                       forces[i] = m_fBMField.GetT(position,
+                                                                                   Application::Time().CurrentTime(),
+                                                                                   10.0f, 0.02f, 6) *
+                                                                   m_forceFactor;
+                                                   }, false);
+
+                for (int i = 0; i < internodes.size(); i++) {
+                    auto& internode = internodes[i];
+                    const auto position = internode.GetDataComponent<GlobalTransform>().GetPosition();
+                    if (internode.IsEnabled() && internode.HasPrivateComponent<RigidBody>()) {
+                        auto rigidBody = internode.GetOrSetPrivateComponent<RigidBody>().lock();
+                        if (rigidBody->Registered()) rigidBody->AddForce(forces[i]);
+                    }
+                }
             }
         }
     }

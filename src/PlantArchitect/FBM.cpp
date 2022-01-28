@@ -47,7 +47,7 @@ void PlantArchitect::FBM::OnInspect() {
         static bool useColor = false;
         ImGui::Checkbox("Color Cube", &useColor);
 
-        if(!useColor) {
+        if (!useColor) {
             static float lineWidth = 0.05f;
             static float pointSize = 0.1f;
             static std::vector<glm::vec3> starts;
@@ -135,9 +135,7 @@ float PlantArchitect::FBM::Get(const glm::vec3 &in, unsigned int octaves) {
         f += factor * glm::simplex(p);
         sum += factor;
         factor /= 2.0f;
-        if (i < octaves - 1) {
-            p = m_m * p * (2.0f + (float) i * 0.01f);
-        }
+        p = m_m * p * (2.0f + (float) i * 0.01f);
     }
     return f / sum;
 }
