@@ -50,6 +50,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                          if (internodeWater.m_value == 0) return;
                          float desiredLength = glm::gaussRand(generalTreeParameters.m_internodeLengthMeanVariance.x,
                                                               generalTreeParameters.m_internodeLengthMeanVariance.y);
+                         internodeStatus.m_branchLength -= internodeInfo.m_length;
                          internodeInfo.m_length += internodeWater.m_value;
                          internodeWater.m_value = 0;
                          if (internodeInfo.m_length > desiredLength) {
@@ -95,6 +96,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                                  internode->m_lateralBuds.push_back(std::move(newLateralBud));
                              }
                          }
+                         internodeStatus.m_branchLength += internodeInfo.m_length;
                      }
                          break;
                      case BudStatus::Flushed: {
@@ -176,7 +178,8 @@ void GeneralTreeBehaviour::Grow(int iteration) {
             newInternodeStatus.m_desiredLocalRotation = internode->m_apicalBud.m_newInternodeInfo.m_localRotation;
             newInternodeStatus.m_branchingOrder = 0;
             newInternodeStatus.m_recordedProbability = internode->m_apicalBud.m_flushProbability;
-            newInternodeStatus.m_chainDistance = internodeStatus.m_chainDistance + internodeInfo.m_length;
+            newInternodeStatus.m_branchLength =
+                    internodeStatus.m_branchLength + internode->m_apicalBud.m_newInternodeInfo.m_length;
             newInternodeEntity.SetDataComponent(newInternodeStatus);
             newInternodeEntity.SetDataComponent(parameters);
             newInternodeEntity.SetDataComponent(internode->m_apicalBud.m_newInternodeInfo);
@@ -191,7 +194,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                 InternodeStatus newInternodeStatus;
                 newInternodeStatus.m_branchingOrder = branchingOrder;
                 newInternodeStatus.m_desiredLocalRotation = bud.m_newInternodeInfo.m_localRotation;
-                newInternodeStatus.m_chainDistance = 0;
+                newInternodeStatus.m_branchLength = bud.m_newInternodeInfo.m_length;
                 newInternodeStatus.m_recordedProbability = bud.m_flushProbability;
                 newInternodeEntity.SetDataComponent(newInternodeStatus);
                 newInternodeEntity.SetDataComponent(parameters);
@@ -254,13 +257,35 @@ void GeneralTreeBehaviour::Grow(int iteration) {
             parent.SetDataComponent(parentInternodeInfo);
         }, [](Entity endNode) {
         });
+        CalculateChainDistance(root, 0);
     });
 #pragma endregion
 
 
 #pragma endregion
 }
-
+void GeneralTreeBehaviour::CalculateChainDistance(const Entity &target, float previousChainDistance){
+    int childAmount = 0;
+    target.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child){
+        if(!InternodeCheck(child)) return;
+        childAmount += 1;
+    });
+    auto internodeInfo = target.GetDataComponent<InternodeInfo>();
+    auto internodeStatus = target.GetDataComponent<InternodeStatus>();
+    internodeStatus.m_chainDistance = previousChainDistance + internodeInfo.m_length;
+    target.SetDataComponent(internodeStatus);
+    if(childAmount == 1){
+        target.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child){
+            if(!InternodeCheck(child)) return;
+            CalculateChainDistance(child, internodeStatus.m_chainDistance);
+        });
+    }else if(childAmount > 1){
+        target.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child){
+            if(!InternodeCheck(child)) return;
+            CalculateChainDistance(child, 0);
+        });
+    }
+}
 void GeneralTreeBehaviour::OnCreate() {
 
     m_internodeArchetype =
@@ -420,15 +445,15 @@ GeneralTreeBehaviour::ImportGraphTree(const std::filesystem::path &path, const G
 #pragma endregion
 
                 InternodeStatus internodeStatus;
-                if(node["age"]){
+                if (node["age"]) {
                     int age = node["age"].as<int>();
                     internodeStatus.m_age = age;
                 }
-                if(node["childorder"]){
+                if (node["childorder"]) {
                     int childorder = node["childorder"].as<int>();
 
                 }
-                if(node["level"]){
+                if (node["level"]) {
                     int level = node["level"].as<int>();
                     internodeStatus.m_level = level;
                 }
@@ -485,7 +510,7 @@ void GeneralTreeBehaviour::Preprocess() {
         auto internode = root.GetOrSetPrivateComponent<Internode>().lock();
         auto parameters = root.GetDataComponent<GeneralTreeParameters>();
         internode->m_currentRoot = root;
-        internodeStatus.m_distanceToRoot = 0;
+        internodeStatus.m_rootDistance = 0;
         internodeInfo.m_endNode = false;
         internodeStatus.m_biomass = internodeInfo.m_length * internodeInfo.m_thickness * internodeInfo.m_thickness;
         root.SetDataComponent(internodeInfo);
@@ -504,7 +529,7 @@ void GeneralTreeBehaviour::Preprocess() {
                             //Low branch pruning.
                             if (childInternodeStatus.m_order != 0) {
                                 auto childParameter = child.GetDataComponent<GeneralTreeParameters>();
-                                if (childInternodeStatus.m_distanceToRoot /
+                                if (childInternodeStatus.m_rootDistance /
                                     internodeStatus.m_maxDistanceToAnyBranchEnd <
                                     childParameter.m_lowBranchPruning) {
                                     DestroyInternode(child);
@@ -517,8 +542,8 @@ void GeneralTreeBehaviour::Preprocess() {
                             }
                             auto childInternode = child.GetOrSetPrivateComponent<Internode>().lock();
                             childInternode->m_currentRoot = root;
-                            childInternodeStatus.m_distanceToRoot =
-                                    parentInternodeInfo.m_length + parentInternodeStatus.m_distanceToRoot;
+                            childInternodeStatus.m_rootDistance =
+                                    parentInternodeInfo.m_length + parentInternodeStatus.m_rootDistance;
                             childInternodeStatus.m_biomass =
                                     childInternodeInfo.m_length * childInternodeInfo.m_thickness;
                             if (!childInternode->m_fromApicalBud) {

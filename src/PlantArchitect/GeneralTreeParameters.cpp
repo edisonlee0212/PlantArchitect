@@ -134,8 +134,9 @@ void InternodeStatus::OnInspect() {
     ImGui::Text(("Age: " + std::to_string(m_age)).c_str());
     ImGui::Text(("Sagging: " + std::to_string(m_sagging)).c_str());
     ImGui::Text(("Inhibitor: " + std::to_string(m_inhibitor)).c_str());
-    ImGui::Text(("DistanceToRoot: " + std::to_string(m_distanceToRoot)).c_str());
+    ImGui::Text(("DistanceToRoot: " + std::to_string(m_rootDistance)).c_str());
     ImGui::Text(("ChainDistance: " + std::to_string(m_chainDistance)).c_str());
+    ImGui::Text(("Dist to start: " + std::to_string(m_branchLength)).c_str());
     ImGui::Text(("MaxDistanceToAnyBranchEnd: " + std::to_string(m_maxDistanceToAnyBranchEnd)).c_str());
     ImGui::Text(("TotalDistanceToAllBranchEnds: " + std::to_string(m_totalDistanceToAllBranchEnds)).c_str());
     ImGui::Text(("Order: " + std::to_string(m_order)).c_str());

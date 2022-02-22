@@ -80,8 +80,9 @@ namespace PlantArchitect {
         float m_apicalControl = 0;
         float m_inhibitor = 0;
         float m_level = 0;
-        float m_distanceToRoot = 0;
+        float m_rootDistance = 0;
         float m_chainDistance = 0;
+        float m_branchLength = 0;
         float m_maxDistanceToAnyBranchEnd = 0;
         float m_totalDistanceToAllBranchEnds = 0;
         float m_order = 0;

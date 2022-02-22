@@ -36,7 +36,7 @@ namespace Scripts {
         bool m_autoAdjustCamera = true;
         int m_generationAmount = 2;
         PrivateComponentRef m_volume;
-        std::filesystem::path m_currentExportFolder = "MultipleAngleCapture_Export/";
+        std::filesystem::path m_currentExportFolder = "Datasets/";
         float m_branchWidth = 0.04f;
         float m_nodeSize = 0.05f;
         glm::vec3 m_focusPoint = glm::vec3(0, 3, 0);
@@ -52,10 +52,10 @@ namespace Scripts {
         BranchColorMode m_branchColorMode = BranchColorMode::None;
         bool m_exportOBJ = false;
         bool m_exportCSV = true;
-        bool m_exportGraph = true;
+        bool m_exportGraph = false;
         bool m_exportImage = false;
         bool m_exportDepth = false;
-        bool m_exportMatrices = true;
+        bool m_exportMatrices = false;
         bool m_exportBranchCapture = false;
         bool m_exportLString = false;
         EntityRef m_cameraEntity;

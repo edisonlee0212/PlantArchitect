@@ -81,19 +81,19 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
             auto csvFolder = m_currentExportFolder / "CSV";
             auto lStringFolder = m_currentExportFolder / "LString";
             if (m_exportImage)
-                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path() / imagesFolder);
+                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path().parent_path() / imagesFolder);
             if (m_exportOBJ)
-                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path() / objFolder);
+                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path().parent_path() / objFolder);
             if (m_exportDepth)
-                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path() / depthFolder);
+                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path().parent_path() / depthFolder);
             if (m_exportBranchCapture)
-                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path() / branchFolder);
+                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path().parent_path() / branchFolder);
             if (m_exportGraph)
-                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path() / graphFolder);
+                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path().parent_path() / graphFolder);
             if (m_exportCSV)
-                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path() / csvFolder);
+                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path().parent_path() / csvFolder);
             if (m_exportLString)
-                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path() / lStringFolder);
+                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path().parent_path() / lStringFolder);
 
             if (m_exportLString) {
                 auto lString = AssetManager::CreateAsset<LString>();
@@ -118,7 +118,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
                     if (smr->m_skinnedMesh.Get<SkinnedMesh>() &&
                         !smr->m_skinnedMesh.Get<SkinnedMesh>()->UnsafeGetSkinnedVertices().empty()) {
                         auto exportPath = std::filesystem::absolute(
-                                ProjectManager::GetProjectPath().parent_path() / objFolder /
+                                ProjectManager::GetProjectPath().parent_path().parent_path() / objFolder /
                                 (prefix + "_foliage.obj"));
                         UNIENGINE_LOG(exportPath.string());
                         smr->m_skinnedMesh.Get<SkinnedMesh>()->Export(exportPath);
@@ -129,7 +129,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
                     if (smr->m_skinnedMesh.Get<SkinnedMesh>() &&
                         !smr->m_skinnedMesh.Get<SkinnedMesh>()->UnsafeGetSkinnedVertices().empty()) {
                         auto exportPath = std::filesystem::absolute(
-                                ProjectManager::GetProjectPath().parent_path() / objFolder /
+                                ProjectManager::GetProjectPath().parent_path().parent_path() / objFolder /
                                 (prefix + "_branch.obj"));
                         smr->m_skinnedMesh.Get<SkinnedMesh>()->Export(exportPath);
                     }
@@ -137,15 +137,15 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
             }
             if (m_exportGraph) {
                 auto exportPath = std::filesystem::absolute(
-                        ProjectManager::GetProjectPath().parent_path() / graphFolder /
+                        ProjectManager::GetProjectPath().parent_path().parent_path() / graphFolder /
                         (prefix + ".yml"));
                 ExportGraph(behaviour, exportPath);
             }
             if (m_exportCSV) {
                 std::filesystem::create_directories(
-                        ProjectManager::GetProjectPath().parent_path() / csvFolder / pipeline.m_parameterFileName);
+                        ProjectManager::GetProjectPath().parent_path().parent_path() / csvFolder / pipeline.m_parameterFileName);
                 auto exportPath = std::filesystem::absolute(
-                        ProjectManager::GetProjectPath().parent_path() / csvFolder / pipeline.m_parameterFileName /
+                        ProjectManager::GetProjectPath().parent_path().parent_path() / csvFolder / pipeline.m_parameterFileName /
                         (prefix + ".csv"));
                 ExportCSV(behaviour, exportPath);
             }
@@ -190,7 +190,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
                 m_turnAngle = 0;
                 if (m_remainingInstanceAmount == 0) {
                     if (m_exportMatrices) {
-                        ExportMatrices(ProjectManager::GetProjectPath().parent_path() / m_currentExportFolder /
+                        ExportMatrices(ProjectManager::GetProjectPath().parent_path().parent_path() / m_currentExportFolder /
                                        (prefix + "_camera_matrices.yml"));
                     }
                     ProjectManager::ScanProjectFolder(true);
@@ -205,9 +205,9 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
 }
 
 void MultipleAngleCapture::OnInspect() {
-    Editor::DragAndDropButton(m_volume, "Volume", {"CubeVolume", "RadialBoundingVolume"}, false);
+    Editor::DragAndDropButton(m_volume, "Volume", {"CubeVolume","RadialBoundingVolume"}, false);
     Editor::DragAndDropButton(m_foliagePhyllotaxis, "Phyllotaxis",
-                              {"EmptyInternodePhyllotaxis", "DefaultInternodePhyllotaxis"}, true);
+                              {"EmptyInternodePhyllotaxis","DefaultInternodePhyllotaxis"}, true);
     ImGui::Checkbox("Auto adjust camera", &m_autoAdjustCamera);
     if (ImGui::TreeNodeEx("Pipeline Settings")) {
         ImGui::DragFloat("Branch width", &m_branchWidth, 0.01f);
@@ -491,7 +491,7 @@ void MultipleAngleCapture::ExportGraphNode(const std::shared_ptr<IInternodeBehav
     auto internodeStatus = internode.GetDataComponent<InternodeStatus>();
     out << YAML::Key << "Branching Order" << internodeStatus.m_branchingOrder;
     out << YAML::Key << "Level" << internodeStatus.m_level;
-    out << YAML::Key << "Distance to Root" << internodeStatus.m_distanceToRoot;
+    out << YAML::Key << "Distance to Root" << internodeStatus.m_rootDistance;
     out << YAML::Key << "Local Rotation" << transform.GetRotation();
     out << YAML::Key << "Global Rotation" << globalRotation;
     out << YAML::Key << "Position" << position + front * internodeInfo.m_length;
@@ -543,10 +543,10 @@ void MultipleAngleCapture::ExportCSV(const std::shared_ptr<IInternodeBehaviour> 
                                                 internodes[childInternodeInfo.m_layer].emplace_back(parent.GetIndex(),
                                                                                                     child);
                                             });
-        output += "in_id, in_pos_x, in_pos_y, in_pos_z, in_front_x, in_front_y, in_front_z, in_up_x, in_up_y, in_up_z, in_thickness, in_length, in_root_distance, in_chain_distance, in_level, in_flush_age, in_quat_x, in_quat_y, in_quat_z, in_quat_w, ";
-        output += "out0_id, out0_pos_x, out0_pos_y, out0_pos_z, out0_front_x, out0_front_y, out0_front_z, out0_up_x, out0_up_y, out0_up_z, out0_thickness, out0_length, out0_root_distance, out0_chain_distance, out0_level, out0_flush_age, out0_quat_x, out0_quat_y, out0_quat_z, out0_quat_w, ";
-        output += "out1_id, out1_pos_x, out1_pos_y, out1_pos_z, out1_front_x, out1_front_y, out1_front_z, out1_up_x, out1_up_y, out1_up_z, out1_thickness, out1_length, out1_root_distance, out1_chain_distance, out1_level, out1_flush_age, out1_quat_x, out1_quat_y, out1_quat_z, out1_quat_w, ";
-        output += "out2_id, out2_pos_x, out2_pos_y, out2_pos_z, out2_front_x, out2_front_y, out2_front_z, out2_up_x, out2_up_y, out2_up_z, out2_thickness, out2_length, out2_root_distance, out2_chain_distance, out2_level, out2_flush_age, out2_quat_x, out2_quat_y, out2_quat_z, out2_quat_w\n";
+        output +="in_id,in_pos_x,in_pos_y,in_pos_z,in_front_x,in_front_y,in_front_z,in_up_x,in_up_y,in_up_z,in_thickness,in_length,in_root_distance,in_chain_distance,in_distance_to_branch_start,in_level,in_flush_age,in_quat_x,in_quat_y,in_quat_z,in_quat_w,";
+        output +="out0_id,out0_pos_x,out0_pos_y,out0_pos_z,out0_front_x,out0_front_y,out0_front_z,out0_up_x,out0_up_y,out0_up_z,out0_thickness,out0_length,out0_root_distance,out0_chain_distance,out0_distance_to_branch_start,out0_level,out0_flush_age,out0_quat_x,out0_quat_y,out0_quat_z,out0_quat_w,";
+        output +="out1_id,out1_pos_x,out1_pos_y,out1_pos_z,out1_front_x,out1_front_y,out1_front_z,out1_up_x,out1_up_y,out1_up_z,out1_thickness,out1_length,out1_root_distance,out1_chain_distance,out1_distance_to_branch_start,out1_level,out1_flush_age,out1_quat_x,out1_quat_y,out1_quat_z,out1_quat_w,";
+        output +="out2_id,out2_pos_x,out2_pos_y,out2_pos_z,out2_front_x,out2_front_y,out2_front_z,out2_up_x,out2_up_y,out2_up_z,out2_thickness,out2_length,out2_root_distance,out2_chain_distance,out2_distance_to_branch_start,out2_level,out2_flush_age,out2_quat_x,out2_quat_y,out2_quat_z,out2_quat_w\n";
         int layerIndex = 0;
         for (const auto &layer: internodes) {
             if (layer.empty()) break;
@@ -573,37 +573,38 @@ void MultipleAngleCapture::ExportCSV(const std::shared_ptr<IInternodeBehaviour> 
                 auto rotation = transform.GetRotation();
                 auto internodeInfo = internode.GetDataComponent<InternodeInfo>();
                 auto internodeStatus = internode.GetDataComponent<InternodeStatus>();
-                row += std::to_string(internode.GetIndex()) + ", ";
+                row += std::to_string(internode.GetIndex()) + ",";
 
-                row += std::to_string(position.x) + ", ";
-                row += std::to_string(position.y) + ", ";
-                row += std::to_string(position.z) + ", ";
+                row += std::to_string(position.x) + ",";
+                row += std::to_string(position.y) + ",";
+                row += std::to_string(position.z) + ",";
 
-                row += std::to_string(front.x) + ", ";
-                row += std::to_string(front.y) + ", ";
-                row += std::to_string(front.z) + ", ";
+                row += std::to_string(front.x) + ",";
+                row += std::to_string(front.y) + ",";
+                row += std::to_string(front.z) + ",";
 
-                row += std::to_string(up.x) + ", ";
-                row += std::to_string(up.y) + ", ";
-                row += std::to_string(up.z) + ", ";
+                row += std::to_string(up.x) + ",";
+                row += std::to_string(up.y) + ",";
+                row += std::to_string(up.z) + ",";
 
-                row += std::to_string(internodeInfo.m_thickness) + ", ";
-                row += std::to_string(internodeInfo.m_length) + ", ";
-                row += std::to_string(internodeStatus.m_distanceToRoot) + ", ";
-                row += std::to_string(internodeStatus.m_chainDistance) + ", ";
-                row += std::to_string(internodeStatus.m_level) + ", ";
+                row += std::to_string(internodeInfo.m_thickness) + ",";
+                row += std::to_string(internodeInfo.m_length) + ",";
+                row += std::to_string(internodeStatus.m_rootDistance) + ",";
+                row += std::to_string(internodeStatus.m_chainDistance) + ",";
+                row += std::to_string(internodeStatus.m_branchLength) + ",";
+                row += std::to_string(internodeStatus.m_level) + ",";
 
-                row += std::to_string(internodeStatus.m_age) + ", ";
+                row += std::to_string(internodeStatus.m_age) + ",";
 
-                row += std::to_string(globalRotation.x) + ", ";
-                row += std::to_string(globalRotation.y) + ", ";
-                row += std::to_string(globalRotation.z) + ", ";
-                row += std::to_string(globalRotation.w) + ", ";
+                row += std::to_string(globalRotation.x) + ",";
+                row += std::to_string(globalRotation.y) + ",";
+                row += std::to_string(globalRotation.z) + ",";
+                row += std::to_string(globalRotation.w) + ",";
 
                 for (int i = 0; i < 3; i++) {
                     auto child = children[i];
                     if (child.IsNull() || child.GetDataComponent<InternodeInfo>().m_endNode) {
-                        row += "N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A";
+                        row += "N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A";
                     } else {
                         auto globalTransformChild = child.GetDataComponent<GlobalTransform>();
                         auto transformChild = child.GetDataComponent<Transform>();
@@ -615,34 +616,35 @@ void MultipleAngleCapture::ExportCSV(const std::shared_ptr<IInternodeBehaviour> 
                         auto rotationChildChild = transformChild.GetRotation();
                         auto internodeInfoChild = child.GetDataComponent<InternodeInfo>();
                         auto internodeStatusChild = child.GetDataComponent<InternodeStatus>();
-                        row += std::to_string(child.GetIndex()) + ", ";
-                        row += std::to_string(positionChild.x) + ", ";
-                        row += std::to_string(positionChild.y) + ", ";
-                        row += std::to_string(positionChild.z) + ", ";
+                        row += std::to_string(child.GetIndex()) + ",";
+                        row += std::to_string(positionChild.x) + ",";
+                        row += std::to_string(positionChild.y) + ",";
+                        row += std::to_string(positionChild.z) + ",";
 
-                        row += std::to_string(frontChild.x) + ", ";
-                        row += std::to_string(frontChild.y) + ", ";
-                        row += std::to_string(frontChild.z) + ", ";
+                        row += std::to_string(frontChild.x) + ",";
+                        row += std::to_string(frontChild.y) + ",";
+                        row += std::to_string(frontChild.z) + ",";
 
-                        row += std::to_string(upChild.x) + ", ";
-                        row += std::to_string(upChild.y) + ", ";
-                        row += std::to_string(upChild.z) + ", ";
+                        row += std::to_string(upChild.x) + ",";
+                        row += std::to_string(upChild.y) + ",";
+                        row += std::to_string(upChild.z) + ",";
 
-                        row += std::to_string(internodeInfoChild.m_thickness) + ", ";
-                        row += std::to_string(internodeInfoChild.m_length) + ", ";
-                        row += std::to_string(internodeStatusChild.m_distanceToRoot) + ", ";
-                        row += std::to_string(internodeStatusChild.m_chainDistance) + ", ";
-                        row += std::to_string(internodeStatusChild.m_level) + ", ";
+                        row += std::to_string(internodeInfoChild.m_thickness) + ",";
+                        row += std::to_string(internodeInfoChild.m_length) + ",";
+                        row += std::to_string(internodeStatusChild.m_rootDistance) + ",";
+                        row += std::to_string(internodeStatusChild.m_chainDistance) + ",";
+                        row += std::to_string(internodeStatusChild.m_branchLength) + ",";
+                        row += std::to_string(internodeStatusChild.m_level) + ",";
 
-                        row += std::to_string(internodeStatusChild.m_age) + ", ";
+                        row += std::to_string(internodeStatusChild.m_age) + ",";
 
-                        row += std::to_string(globalRotationChild.x) + ", ";
-                        row += std::to_string(globalRotationChild.y) + ", ";
-                        row += std::to_string(globalRotationChild.z) + ", ";
+                        row += std::to_string(globalRotationChild.x) + ",";
+                        row += std::to_string(globalRotationChild.y) + ",";
+                        row += std::to_string(globalRotationChild.z) + ",";
                         row += std::to_string(globalRotationChild.w);
                     }
                     if (i == 2) row += "\n";
-                    else row += ", ";
+                    else row += ",";
                 }
                 output += row;
             }
