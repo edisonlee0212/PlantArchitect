@@ -99,16 +99,6 @@ namespace PlantArchitect {
          */
         void CollectInternodes(std::vector<Entity> &results);
         /**
-         * Actions to take when the internode is retrieved from the factory.
-         */
-        void OnRetrieve();
-
-        /**
-         * Action to take when the internode is recycled to the factory.
-         */
-        void OnRecycle();
-
-        /**
          * Collect resource (auxin, nutrients, etc.)
          * @param deltaTime How much time the action takes.
          */

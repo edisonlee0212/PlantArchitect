@@ -357,10 +357,8 @@ namespace PlantArchitect {
     Entity IInternodeBehaviour::CreateHelper(const Entity &parent) {
         Entity retVal;
         std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
-
         retVal = Entities::CreateEntity(Entities::GetCurrentScene(), m_internodeArchetype, "Internode");
         retVal.SetParent(parent);
-
         InternodeInfo internodeInfo;
         internodeInfo.m_isRealRoot = false;
         retVal.SetDataComponent(internodeInfo);
@@ -370,8 +368,6 @@ namespace PlantArchitect {
         internode->m_foliage = parentInternode->m_foliage;
         internode->m_currentRoot = parentInternode->m_currentRoot;
         internode->m_branchPhysicsParameters = parentInternode->m_branchPhysicsParameters;
-        internode->OnRetrieve();
-
         return retVal;
     }
 
@@ -379,9 +375,7 @@ namespace PlantArchitect {
     Entity IInternodeBehaviour::CreateHelper() {
         Entity retVal;
         std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
-
         retVal = Entities::CreateEntity(Entities::GetCurrentScene(), m_internodeArchetype, "Internode");
-
         InternodeInfo internodeInfo;
         internodeInfo.m_isRealRoot = true;
         retVal.SetDataComponent(internodeInfo);
@@ -390,7 +384,6 @@ namespace PlantArchitect {
         internode->m_currentRoot = retVal;
         internode->m_resource = Serialization::ProduceSerializable<T>();
         internode->m_foliage = AssetManager::CreateAsset<InternodeFoliage>("Foliage");
-        internode->OnRetrieve();
         CollectRoots();
         return retVal;
     }
