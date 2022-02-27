@@ -19,7 +19,7 @@ void Internode::OnCreate() {
     m_apicalBud.m_status = BudStatus::Sleeping;
     m_lateralBuds.clear();
     m_fromApicalBud = true;
-    GetOwner().SetDataComponent(InternodeInfo());
+
 }
 
 
