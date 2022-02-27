@@ -88,8 +88,6 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
                     newInfo.m_localRotation = glm::quat(currentState.m_eulerRotation);
                     //We need to create a child node with this function. Here CreateInternode(Entity) will instantiate a new internode for you and set it as a child of current internode.
                     internode = CreateInternode(internode);
-                    //Apply the parameter to this internode, this is necessary everytime you create a new internode.
-                    internode.SetDataComponent(parameters);
                 }
                 newInfo.m_length = command.m_value;
                 newInfo.m_thickness = 0.2f;
@@ -147,7 +145,7 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
     }
 
     Transform rootTransform;
-    rootTransform.SetRotation(root.GetDataComponent<InternodeInfo>().m_localRotation);
+    rootTransform.SetRotation(rootInternode.GetDataComponent<InternodeInfo>().m_localRotation);
     rootInternode.SetDataComponent(rootTransform);
 
     //Since we only stored the rotation data into internode info without applying it to the local transformation matrix of the internode, we do it here.
@@ -207,9 +205,8 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
         });
         parentInternodeInfo.m_thickness = glm::pow(thicknessCollection, parameters.m_thicknessFactor);
         parent.SetDataComponent(parentInternodeInfo);
-    }, [](Entity endNode) {
+    }, [&](Entity endNode) {
         auto internodeInfo = endNode.GetDataComponent<InternodeInfo>();
-        auto parameters = endNode.GetDataComponent<LSystemParameters>();
         internodeInfo.m_thickness = parameters.m_endNodeThickness;
         endNode.SetDataComponent(internodeInfo);
     });

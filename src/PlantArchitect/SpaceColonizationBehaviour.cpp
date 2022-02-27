@@ -42,10 +42,13 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
     removeMarks.resize(m_attractionPoints.size());
     memset(removeMarks.data(), 0, removeMarks.size() * sizeof(bool));
     //1. Check and remove points.
-    Entities::ForEach<InternodeInfo, GlobalTransform, SpaceColonizationParameters>
+    Entities::ForEach<InternodeInfo, GlobalTransform>
             (Entities::GetCurrentScene(), Jobs::Workers(), m_internodesQuery,
-             [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &globalTransform,
-                 SpaceColonizationParameters &spaceColonizationParameters) {
+             [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &globalTransform) {
+                 auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
+                 auto rootEntity = internode->m_currentRoot.Get();
+                 if (!RootCheck(rootEntity)) return;
+                 auto spaceColonizationParameters = rootEntity.GetDataComponent<SpaceColonizationParameters>();
                  glm::vec3 position = globalTransform.GetPosition() +
                                       internodeInfo.m_length *
                                       (globalTransform.GetRotation() * glm::vec3(0, 0, -1));
@@ -129,8 +132,6 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
     std::vector<Entity> entities;
     m_internodesQuery.ToEntityArray(Entities::GetCurrentScene(), entities);
     for (const auto &entity: entities) {
-        if (!entity.IsEnabled()) continue;
-        auto parameter = entity.GetDataComponent<SpaceColonizationParameters>();
         auto internodeInfo = entity.GetDataComponent<InternodeInfo>();
         auto globalTransform = entity.GetDataComponent<GlobalTransform>();
         auto tag = entity.GetDataComponent<SpaceColonizationTag>();
@@ -170,12 +171,12 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
                 glm::translate(newPosition) * glm::mat4_cast(glm::quatLookAt(newFront, newUp)) *
                 glm::scale(glm::vec3(1.0f));
         newNode.SetDataComponent(newNodeGlobalTransform);
-        newNode.SetDataComponent(parameter);
+        auto newInternode = newNode.GetOrSetPrivateComponent<Internode>().lock();
+        auto parameter = newInternode->m_currentRoot.Get().GetDataComponent<SpaceColonizationParameters>();
         InternodeInfo newInfo;
         newInfo.m_length = glm::gaussRand(parameter.m_internodeLengthMean, parameter.m_internodeLengthVariance);
         newInfo.m_thickness = parameter.m_endNodeThickness;
         newNode.SetDataComponent(newInfo);
-        auto newInternode = newNode.GetOrSetPrivateComponent<Internode>().lock();
     }
     std::vector<Entity> currentRoots;
     m_rootsQuery.ToEntityArray(Entities::GetCurrentScene(), currentRoots);
@@ -203,27 +204,27 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
 
     Entities::ForEach<GlobalTransform>(Entities::GetCurrentScene(), Jobs::Workers(), m_rootsQuery,
                                        [&](int i, Entity entity, GlobalTransform &globalTransform) {
+                                           if (!RootCheck(entity)) return;
+                                           auto spaceColonizationParameters = entity.GetDataComponent<SpaceColonizationParameters>();
                                            entity.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
                                                if (!InternodeCheck(child)) return;
                                                TreeGraphWalkerEndToRoot(child, [&](Entity parent) {
                                                    float thicknessCollection = 0.0f;
                                                    auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
-                                                   auto parameters = parent.GetDataComponent<SpaceColonizationParameters>();
                                                    parent.ForEachChild(
                                                            [&](const std::shared_ptr<Scene> &scene, Entity child) {
                                                                if (!InternodeCheck(child)) return;
                                                                auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
                                                                thicknessCollection += glm::pow(
                                                                        childInternodeInfo.m_thickness,
-                                                                       1.0f / parameters.m_thicknessFactor);
+                                                                       1.0f / spaceColonizationParameters.m_thicknessFactor);
                                                            });
                                                    parentInternodeInfo.m_thickness = glm::pow(thicknessCollection,
-                                                                                              parameters.m_thicknessFactor);
+                                                                                              spaceColonizationParameters.m_thicknessFactor);
                                                    parent.SetDataComponent(parentInternodeInfo);
-                                               }, [](Entity endNode) {
+                                               }, [&](Entity endNode) {
                                                    auto internodeInfo = endNode.GetDataComponent<InternodeInfo>();
-                                                   auto parameters = endNode.GetDataComponent<SpaceColonizationParameters>();
-                                                   internodeInfo.m_thickness = parameters.m_endNodeThickness;
+                                                   internodeInfo.m_thickness = spaceColonizationParameters.m_endNodeThickness;
                                                    endNode.SetDataComponent(internodeInfo);
                                                });
                                            });

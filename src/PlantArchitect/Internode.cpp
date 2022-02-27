@@ -109,6 +109,12 @@ void Internode::OnInspect() {
         AssetManager::Share(lString);
         ExportLString(lString);
     }
+    FileUtils::SaveFile("Export L-String", "L-System string", {".lstring"}, [&](const std::filesystem::path &path) {
+        auto lString = AssetManager::CreateAsset<LString>();
+        ExportLString(lString);
+        lString->Export(path);
+    }, false);
+
     if (ImGui::Button("Calculate L-String Indices")) {
         int index = 0;
         std::vector<LSystemCommand> commands;
