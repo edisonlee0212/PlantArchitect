@@ -22,7 +22,7 @@ namespace PlantArchitect {
     };
     struct BranchPhysicsParameters;
     class IPlantBehaviour;
-    class PLANT_ARCHITECT_API InternodeLayer : public ILayer {
+    class PLANT_ARCHITECT_API PlantLayer : public ILayer {
         void PreparePhysics(const Entity& entity, const Entity& child, const BranchPhysicsParameters& branchPhysicsParameters);
 
     public:
@@ -37,6 +37,7 @@ namespace PlantArchitect {
          * The EntityQuery for filtering all internodes.
          */
         EntityQuery m_internodesQuery;
+        EntityQuery m_branchesQuery;
         void FixedUpdate() override;
         void LateUpdate() override;
 
@@ -46,7 +47,7 @@ namespace PlantArchitect {
 
         void OnInspect() override;
 
-        std::shared_ptr<Camera> m_internodeDebuggingCamera;
+        std::shared_ptr<Camera> m_visualizationCamera;
 
         template<typename T>
         void PushInternodeBehaviour(const std::shared_ptr<T>& behaviour);
@@ -63,10 +64,12 @@ namespace PlantArchitect {
         int m_indexDivider = 512;
         int m_indexRangeMin = 128;
         int m_indexRangeMax = 512;
+        void UpdateInternodeColors();
+        void UpdateInternodeCylinder();
         void UpdateBranchColors();
-        void UpdateBranchCylinder(const float &width = 0.01f);
-        void UpdateBranchPointer(const float &length,
-                                 const float &width = 0.01f);
+        void UpdateBranchCylinder();
+        void UpdateInternodePointer(const float &length,
+                                    const float &width = 0.01f);
     private:
         VoxelSpace m_voxelSpace;
 
@@ -77,8 +80,8 @@ namespace PlantArchitect {
 
 #pragma region Internode debugging camera
 
-        int m_internodeDebuggingCameraResolutionX = 1;
-        int m_internodeDebuggingCameraResolutionY = 1;
+        int m_visualizationCameraResolutionX = 1;
+        int m_visualizationCameraResolutionY = 1;
         float m_lastX = 0;
         float m_lastY = 0;
         float m_lastScrollY = 0;
@@ -89,12 +92,10 @@ namespace PlantArchitect {
 
 #pragma region Rendering
 
-
-        float m_connectionWidth = 1.0f;
-
         float m_pointerLength = 0.4f;
         float m_pointerWidth = 0.02f;
 
+        bool m_drawInternodes = true;
         bool m_drawBranches = true;
         bool m_drawPointers = false;
 
@@ -102,9 +103,10 @@ namespace PlantArchitect {
 
         bool m_autoUpdate = false;
 
-        float m_branchColorValueMultiplier = 1.0f;
-        float m_branchColorValueCompressFactor = 0.0f;
-        glm::vec3 m_branchColor = glm::vec3(0, 1, 0);
+        float m_internodeColorValueMultiplier = 1.0f;
+        float m_internodeColorValueCompressFactor = 0.0f;
+        glm::vec3 m_branchColor = glm::vec3(1, 1, 0);
+        glm::vec3 m_internodeColor = glm::vec3(0, 1, 0);
         std::vector<glm::vec3> m_randomColors;
         glm::vec4 m_pointerColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.5f);
 
@@ -112,8 +114,9 @@ namespace PlantArchitect {
         OpenGLUtils::GLVBO m_internodeColorBuffer;
 
         void UpdateInternodeCamera();
+        void RenderInternodeCylinders();
+        void RenderInternodePointers();
         void RenderBranchCylinders();
-        void RenderBranchPointers();
 #pragma endregion
 #pragma endregion
     };

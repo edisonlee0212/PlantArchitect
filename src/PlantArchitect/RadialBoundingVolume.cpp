@@ -1,4 +1,4 @@
-#include <InternodeLayer.hpp>
+#include <PlantLayer.hpp>
 #include <PlantDataComponents.hpp>
 #include <RadialBoundingVolume.hpp>
 #include <Internode.hpp>

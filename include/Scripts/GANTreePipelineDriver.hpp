@@ -1,5 +1,5 @@
 #pragma once
-#include <InternodeLayer.hpp>
+#include <PlantLayer.hpp>
 #include <GeneralTreeBehaviour.hpp>
 #include <SpaceColonizationBehaviour.hpp>
 #include <LSystemBehaviour.hpp>

@@ -20,21 +20,28 @@ namespace PlantArchitect {
         float m_jointDriveDampingThicknessFactor = 4.0f;
         bool m_enableAccelerationForDrive = true;
 #pragma endregion
+
         void Serialize(YAML::Emitter &out);
+
         void Deserialize(const YAML::Node &in);
+
         void OnInspect();
     };
 
     class PLANT_ARCHITECT_API Branch : public IPrivateComponent {
     public:
-
         /**
          * The current root of the internode.
          */
         EntityRef m_currentRoot;
-
+/**
+         * The current root of the internode.
+         */
+        EntityRef m_currentInternode;
         BranchPhysicsParameters m_branchPhysicsParameters;
+
         void Relink(const std::unordered_map<Handle, Handle> &map, const std::shared_ptr<Scene> &scene) override;
+
         void OnInspect() override;
 
         void Serialize(YAML::Emitter &out) override;

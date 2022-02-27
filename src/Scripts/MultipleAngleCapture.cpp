@@ -5,7 +5,7 @@
 #include "MultipleAngleCapture.hpp"
 #include "DepthCamera.hpp"
 #include "Entities.hpp"
-#include "InternodeLayer.hpp"
+#include "PlantLayer.hpp"
 #include "AssetManager.hpp"
 #include "LSystemBehaviour.hpp"
 #include "IVolume.hpp"
@@ -54,7 +54,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
             return;
         }
     }
-    auto internodeLayer = Application::GetLayer<InternodeLayer>();
+    auto internodeLayer = Application::GetLayer<PlantLayer>();
     auto behaviourType = pipeline.GetBehaviourType();
     std::string prefix;
     switch (behaviourType) {
@@ -105,7 +105,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
 
             if (m_exportOBJ || m_exportImage || m_exportDepth || m_exportBranchCapture) {
                 behaviour->GenerateSkinnedMeshes();
-                internodeLayer->UpdateBranchColors();
+                internodeLayer->UpdateInternodeColors();
             }
             if (m_exportOBJ) {
                 Entity foliage, branch;
@@ -219,7 +219,7 @@ void MultipleAngleCapture::OnInspect() {
         ImGui::Checkbox("Export Graph", &m_exportGraph);
         ImGui::Checkbox("Export CSV", &m_exportCSV);
         ImGui::Checkbox("Export LString", &m_exportLString);
-        Application::GetLayer<InternodeLayer>()->DrawColorModeSelectionMenu();
+        Application::GetLayer<PlantLayer>()->DrawColorModeSelectionMenu();
 
         ImGui::Text("Rendering export:");
         ImGui::Checkbox("Export Depth", &m_exportDepth);
@@ -334,12 +334,12 @@ bool MultipleAngleCapture::SetUpCamera() {
 }
 
 void MultipleAngleCapture::RenderBranchCapture() {
-    auto internodeQuery = Application::GetLayer<InternodeLayer>()->m_internodesQuery;
+    auto internodeQuery = Application::GetLayer<PlantLayer>()->m_internodesQuery;
     /*
-    Entities::ForEach<BranchColor, InternodeInfo>(
+    Entities::ForEach<InternodeColor, InternodeInfo>(
             Entities::GetCurrentScene(), JobManager::PrimaryWorkers(),
             internodeQuery,
-            [=](int i, Entity entity, BranchColor &internodeRenderColor,
+            [=](int i, Entity entity, InternodeColor &internodeRenderColor,
                 InternodeInfo &internodeInfo) {
                 internodeRenderColor.m_value = glm::vec4(((entity.GetIndex() / 4096) % 64) / 64.0f,
                                                          ((entity.GetIndex() / 64) % 64) / 64.0f,
@@ -347,10 +347,10 @@ void MultipleAngleCapture::RenderBranchCapture() {
             },
             true);
     */
-    Entities::ForEach<GlobalTransform, BranchCylinder, InternodeInfo>(
+    Entities::ForEach<GlobalTransform, InternodeCylinder, InternodeInfo>(
             Entities::GetCurrentScene(), Jobs::Workers(),
             internodeQuery,
-            [=](int i, Entity entity, GlobalTransform &ltw, BranchCylinder &c,
+            [=](int i, Entity entity, GlobalTransform &ltw, InternodeCylinder &c,
                 InternodeInfo &internodeInfo) {
                 glm::vec3 scale;
                 glm::quat rotation;
@@ -378,12 +378,12 @@ void MultipleAngleCapture::RenderBranchCapture() {
             true);
 
     m_branchCaptureCamera->Clear();
-    std::vector<BranchCylinder> branchCylinders;
-    internodeQuery.ToComponentDataArray<BranchCylinder>(Entities::GetCurrentScene(),
-                                                        branchCylinders);
-    std::vector<BranchColor> branchColors;
-    internodeQuery.ToComponentDataArray<BranchColor>(Entities::GetCurrentScene(),
-                                                     branchColors);
+    std::vector<InternodeCylinder> branchCylinders;
+    internodeQuery.ToComponentDataArray<InternodeCylinder>(Entities::GetCurrentScene(),
+                                                           branchCylinders);
+    std::vector<InternodeColor> branchColors;
+    internodeQuery.ToComponentDataArray<InternodeColor>(Entities::GetCurrentScene(),
+                                                        branchColors);
     std::vector<GlobalTransform> branchGlobalTransforms;
     internodeQuery.ToComponentDataArray<GlobalTransform>(Entities::GetCurrentScene(),
                                                          branchGlobalTransforms);

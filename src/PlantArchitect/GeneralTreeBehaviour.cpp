@@ -3,7 +3,7 @@
 //
 
 #include "GeneralTreeBehaviour.hpp"
-#include "InternodeLayer.hpp"
+#include "PlantLayer.hpp"
 #include <DefaultInternodeResource.hpp>
 #include "EmptyInternodeResource.hpp"
 #include "TransformLayer.hpp"
@@ -286,6 +286,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
 
 
 #pragma endregion
+    UpdateBranches();
 }
 
 void GeneralTreeBehaviour::CalculateChainDistance(const Entity &target, float previousChainDistance) {
@@ -317,8 +318,8 @@ void GeneralTreeBehaviour::OnCreate() {
                                             GeneralTreeTag(),
                                             InternodeStatus(),
                                             InternodeWaterPressure(), InternodeWater(), InternodeIllumination(),
-                                            BranchColor(), BranchCylinder(), BranchCylinderWidth(),
-                                            BranchPointer());
+                                            InternodeColor(), InternodeCylinder(), InternodeCylinderWidth(),
+                                            InternodePointer());
     m_internodesQuery = Entities::CreateEntityQuery();
     m_internodesQuery.SetAllFilters(InternodeInfo(), GeneralTreeTag());
 
@@ -331,7 +332,8 @@ void GeneralTreeBehaviour::OnCreate() {
 
     m_branchArchetype =
             Entities::CreateEntityArchetype("General Tree Branch", BranchInfo(),
-                                            GeneralTreeTag());
+                                            GeneralTreeTag(),
+                                            BranchColor(), BranchCylinder(), BranchCylinderWidth());
     m_branchesQuery = Entities::CreateEntityQuery();
     m_branchesQuery.SetAllFilters(BranchInfo(), GeneralTreeTag());
 }
@@ -878,8 +880,8 @@ void GeneralTreeBehaviour::Preprocess(std::vector<Entity> &currentRoots) {
 #pragma endregion
 }
 
-Entity GeneralTreeBehaviour::CreateBranch(const Entity &parent) {
-    auto retVal = CreateBranchHelper(parent);
+Entity GeneralTreeBehaviour::CreateBranch(const Entity &parent, const Entity &internode) {
+    auto retVal = CreateBranchHelper(parent, internode);
     return retVal;
 }
 

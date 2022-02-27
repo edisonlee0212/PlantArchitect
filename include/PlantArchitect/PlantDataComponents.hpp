@@ -1,13 +1,28 @@
 #pragma once
+
 #include <plant_architect_export.h>
+
 using namespace UniEngine;
 namespace PlantArchitect {
     struct PLANT_ARCHITECT_API RootInfo : public IDataComponent {
 
     };
     struct PLANT_ARCHITECT_API BranchInfo : public IDataComponent {
-
+        /**
+         * The thickness of the internode
+         */
+        float m_thickness = 1.0f;
+        /**
+         * The length of the internode
+         */
+        float m_length = 0;
+        /*
+         * Whether this node is end node.
+         */
+        bool m_endNode = true;
+        void OnInspect();
     };
+
     /*
      * Describe the current basic structural information. Will be used for mesh generation.
      */
@@ -36,20 +51,56 @@ namespace PlantArchitect {
          * The layer of internode.
          */
         unsigned m_layer = 0;
+
         void OnInspect();
     };
+
     struct PLANT_ARCHITECT_API InternodeStatistics : public IDataComponent {
         int m_lSystemStringIndex = 0;
         int m_strahlerOrder = 0;
         int m_hortonOrdering = 0;
+
         void OnInspect();
     };
 
 
 #pragma region Debug rendering
 
+    struct PLANT_ARCHITECT_API InternodeColor : IDataComponent {
+        glm::vec4 m_value;
+
+        void OnInspect();
+    };
+
+    struct PLANT_ARCHITECT_API InternodeCylinder : IDataComponent {
+        glm::mat4 m_value;
+
+        bool operator==(const InternodeCylinder &other) const {
+            return other.m_value == m_value;
+        }
+    };
+
+    struct PLANT_ARCHITECT_API InternodeCylinderWidth : IDataComponent {
+        float m_value;
+
+        bool operator==(const InternodeCylinderWidth &other) const {
+            return other.m_value == m_value;
+        }
+
+        void OnInspect();
+    };
+
+    struct PLANT_ARCHITECT_API InternodePointer : IDataComponent {
+        glm::mat4 m_value;
+
+        bool operator==(const InternodePointer &other) const {
+            return other.m_value == m_value;
+        }
+    };
+
     struct PLANT_ARCHITECT_API BranchColor : IDataComponent {
         glm::vec4 m_value;
+
         void OnInspect();
     };
 
@@ -67,15 +118,8 @@ namespace PlantArchitect {
         bool operator==(const BranchCylinderWidth &other) const {
             return other.m_value == m_value;
         }
+
         void OnInspect();
-    };
-
-    struct PLANT_ARCHITECT_API BranchPointer : IDataComponent {
-        glm::mat4 m_value;
-
-        bool operator==(const BranchCylinder &other) const {
-            return other.m_value == m_value;
-        }
     };
 
 #pragma endregion

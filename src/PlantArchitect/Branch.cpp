@@ -60,6 +60,7 @@ void Branch::OnInspect() {
 
 void Branch::Serialize(YAML::Emitter &out) {
     m_currentRoot.Save("m_currentRoot", out);
+    m_currentInternode.Save("m_currentInternode", out);
     out << YAML::Key << "m_branchPhysicsParameters" << YAML::Value << YAML::BeginMap;
     m_branchPhysicsParameters.Serialize(out);
     out << YAML::EndMap;
@@ -67,9 +68,13 @@ void Branch::Serialize(YAML::Emitter &out) {
 
 void Branch::Deserialize(const YAML::Node &in) {
     m_currentRoot.Load("m_currentRoot", in);
+    m_currentInternode.Load("m_currentInternode", in);
     if (in["m_branchPhysicsParameters"]) m_branchPhysicsParameters.Deserialize(in["m_branchPhysicsParameters"]);
 }
 
 void Branch::Relink(const std::unordered_map<Handle, Handle> &map, const std::shared_ptr<Scene> &scene) {
     m_currentRoot.Relink(map);
+    m_currentInternode.Relink(map);
 }
+
+

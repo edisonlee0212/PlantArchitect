@@ -22,7 +22,7 @@ void AutoTreeGenerationPipeline::Update() {
                 pipelineBehaviour->OnIdle(*this);
                 break;
             case AutoTreeGenerationPipelineStatus::BeforeGrowth:
-                Application::GetLayer<InternodeLayer>()->m_enablePhysics = false;
+                Application::GetLayer<PlantLayer>()->m_enablePhysics = false;
                 switch (m_behaviourType) {
                     case BehaviourType::GeneralTree:
                         pipelineBehaviour->m_currentGrowingTree = std::dynamic_pointer_cast<GeneralTreeBehaviour>(
@@ -47,7 +47,7 @@ void AutoTreeGenerationPipeline::Update() {
                 }
                 break;
             case AutoTreeGenerationPipelineStatus::Growth: {
-                Application::GetLayer<InternodeLayer>()->Simulate(pipelineBehaviour->m_perTreeGrowthIteration);
+                Application::GetLayer<PlantLayer>()->Simulate(pipelineBehaviour->m_perTreeGrowthIteration);
                 m_status = AutoTreeGenerationPipelineStatus::AfterGrowth;
             }
                 break;
@@ -163,15 +163,15 @@ void AutoTreeGenerationPipeline::UpdateInternodeBehaviour() {
     switch (m_behaviourType) {
         case BehaviourType::GeneralTree:
             m_currentInternodeBehaviour = std::dynamic_pointer_cast<IPlantBehaviour>(
-                    Application::GetLayer<InternodeLayer>()->GetInternodeBehaviour<GeneralTreeBehaviour>());
+                    Application::GetLayer<PlantLayer>()->GetInternodeBehaviour<GeneralTreeBehaviour>());
             break;
         case BehaviourType::LSystem:
             m_currentInternodeBehaviour = std::dynamic_pointer_cast<IPlantBehaviour>(
-                    Application::GetLayer<InternodeLayer>()->GetInternodeBehaviour<LSystemBehaviour>());
+                    Application::GetLayer<PlantLayer>()->GetInternodeBehaviour<LSystemBehaviour>());
             break;
         case BehaviourType::SpaceColonization:
             m_currentInternodeBehaviour = std::dynamic_pointer_cast<IPlantBehaviour>(
-                    Application::GetLayer<InternodeLayer>()->GetInternodeBehaviour<SpaceColonizationBehaviour>());
+                    Application::GetLayer<PlantLayer>()->GetInternodeBehaviour<SpaceColonizationBehaviour>());
             break;
     }
 }

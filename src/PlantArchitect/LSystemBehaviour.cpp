@@ -3,7 +3,7 @@
 //
 
 #include "LSystemBehaviour.hpp"
-#include "InternodeLayer.hpp"
+#include "PlantLayer.hpp"
 #include "EmptyInternodeResource.hpp"
 #include "TransformLayer.hpp"
 #include "InternodeFoliage.hpp"
@@ -25,8 +25,8 @@ void LSystemBehaviour::OnCreate() {
     m_internodeArchetype =
             Entities::CreateEntityArchetype("L-System Internode", InternodeInfo(), InternodeStatistics(),
                                             LSystemTag(),
-                                            BranchColor(), BranchCylinder(), BranchCylinderWidth(),
-                                            BranchPointer());
+                                            InternodeColor(), InternodeCylinder(), InternodeCylinderWidth(),
+                                            InternodePointer());
     m_internodesQuery = Entities::CreateEntityQuery();
     m_internodesQuery.SetAllFilters(InternodeInfo(), LSystemTag());
 
@@ -37,7 +37,8 @@ void LSystemBehaviour::OnCreate() {
 
     m_branchArchetype =
             Entities::CreateEntityArchetype("L-System Branch", BranchInfo(),
-                                            LSystemTag());
+                                            LSystemTag(),
+                                            BranchColor(), BranchCylinder(), BranchCylinderWidth());
     m_branchesQuery = Entities::CreateEntityQuery();
     m_branchesQuery.SetAllFilters(BranchInfo(), LSystemTag());
 }
@@ -211,7 +212,7 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
         endNode.SetDataComponent(internodeInfo);
     });
 
-    Application::GetLayer<InternodeLayer>()->CalculateStatistics();
+    Application::GetLayer<PlantLayer>()->CalculateStatistics();
     return root;
 }
 
@@ -235,8 +236,8 @@ Entity LSystemBehaviour::CreateRoot(Entity &rootInternode, Entity &rootBranch) {
     return CreateRootHelper<EmptyInternodeResource>(rootInternode, rootBranch);
 }
 
-Entity LSystemBehaviour::CreateBranch(const Entity &parent) {
-    return CreateBranchHelper(parent);
+Entity LSystemBehaviour::CreateBranch(const Entity &parent, const Entity &internode) {
+    return CreateBranchHelper(parent, internode);
 }
 
 
@@ -390,7 +391,7 @@ void LString::ParseLString(const std::string &string) {
 void LString::OnInspect() {
     if (ImGui::Button("Instantiate")) {
         auto parameters = LSystemParameters();
-        Application::GetLayer<InternodeLayer>()->GetInternodeBehaviour<LSystemBehaviour>()->FormPlant(
+        Application::GetLayer<PlantLayer>()->GetInternodeBehaviour<LSystemBehaviour>()->FormPlant(
                 AssetManager::Get<LString>(GetHandle()), parameters);
     }
 }

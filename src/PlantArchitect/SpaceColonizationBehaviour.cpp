@@ -5,7 +5,7 @@
 #include "SpaceColonizationBehaviour.hpp"
 #include "EmptyInternodeResource.hpp"
 #include "CubeVolume.hpp"
-#include "InternodeLayer.hpp"
+#include "PlantLayer.hpp"
 #include "TransformLayer.hpp"
 #include "EditorLayer.hpp"
 
@@ -15,8 +15,8 @@ void SpaceColonizationBehaviour::OnCreate() {
     m_internodeArchetype =
             Entities::CreateEntityArchetype("Space Colonization Internode", InternodeInfo(), InternodeStatistics(),
                                             SpaceColonizationTag(), SpaceColonizationIncentive(),
-                                            BranchColor(), BranchCylinder(), BranchCylinderWidth(),
-                                            BranchPointer());
+                                            InternodeColor(), InternodeCylinder(), InternodeCylinderWidth(),
+                                            InternodePointer());
     m_internodesQuery = Entities::CreateEntityQuery();
     m_internodesQuery.SetAllFilters(InternodeInfo(), SpaceColonizationTag());
 
@@ -29,7 +29,8 @@ void SpaceColonizationBehaviour::OnCreate() {
 
     m_branchArchetype =
             Entities::CreateEntityArchetype("Space Colonization Branch", BranchInfo(),
-                                            SpaceColonizationTag());
+                                            SpaceColonizationTag(),
+                                            BranchColor(), BranchCylinder(), BranchCylinderWidth());
     m_branchesQuery = Entities::CreateEntityQuery();
     m_branchesQuery.SetAllFilters(BranchInfo(), SpaceColonizationTag());
     m_volumes.clear();
@@ -317,10 +318,10 @@ void SpaceColonizationBehaviour::OnInspect() {
             Graphics::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube, renderColor,
                                              displayMatrices, glm::mat4(1.0f), renderSize);
             auto editorLayer = Application::GetLayer<EditorLayer>();
-            auto internodeLayer = Application::GetLayer<InternodeLayer>();
+            auto internodeLayer = Application::GetLayer<PlantLayer>();
             if (editorLayer && internodeLayer) {
                 Graphics::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube,
-                                                 internodeLayer->m_internodeDebuggingCamera,
+                                                 internodeLayer->m_visualizationCamera,
                                                  editorLayer->m_sceneCameraPosition,
                                                  editorLayer->m_sceneCameraRotation, renderColor,
                                                  displayMatrices, glm::mat4(1.0f), renderSize);
@@ -400,8 +401,8 @@ Entity SpaceColonizationBehaviour::CreateRoot(Entity &rootInternode, Entity &roo
     return CreateRootHelper<EmptyInternodeResource>(rootInternode, rootBranch);
 }
 
-Entity SpaceColonizationBehaviour::CreateBranch(const Entity &parent) {
-    return CreateBranchHelper(parent);
+Entity SpaceColonizationBehaviour::CreateBranch(const Entity &parent, const Entity &internode) {
+    return CreateBranchHelper(parent, internode);
 }
 
 void SpaceColonizationParameters::OnInspect() {

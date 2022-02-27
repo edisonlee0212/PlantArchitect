@@ -3,7 +3,7 @@
 //
 
 #include "Internode.hpp"
-#include "InternodeLayer.hpp"
+#include "PlantLayer.hpp"
 #include "LSystemBehaviour.hpp"
 #include "AssetManager.hpp"
 #include "InternodeFoliage.hpp"

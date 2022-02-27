@@ -6,14 +6,14 @@
 #include "Branch.hpp"
 #include <Serialization.hpp>
 #include "InternodeFoliage.hpp"
-#include "InternodeLayer.hpp"
+#include "PlantLayer.hpp"
 
 using namespace UniEngine;
 namespace PlantArchitect {
     struct SpaceColonizationParameters;
 
     class PLANT_ARCHITECT_API IPlantBehaviour : public IAsset {
-        friend class InternodeLayer;
+        friend class PlantLayer;
 
     protected:
 #pragma region InternodeFactory
@@ -59,7 +59,7 @@ namespace PlantArchitect {
          * @param parent The parent of the branch.
          * @return An entity represent the branch.
          */
-        Entity CreateBranchHelper(const Entity &parent);
+        Entity CreateBranchHelper(const Entity &parent, const Entity &internode);
 
         /**
          * Get or create a root.
@@ -95,21 +95,28 @@ namespace PlantArchitect {
         virtual bool InternalRootCheck(const Entity &target) = 0;
 
         virtual bool InternalBranchCheck(const Entity &target) = 0;
-
+        void UpdateBranchHelper(const Entity& currentBranch, const Entity& currentInternode);
     public:
-        
+        void UpdateBranches();
         void ApplyTropism(const glm::vec3 &targetDir, float tropism, glm::vec3 &front, glm::vec3 &up);
 
         virtual Entity CreateRoot(Entity &rootInternode, Entity &rootBranch) = 0;
 
-        virtual Entity CreateBranch(const Entity &parent) = 0;
+        virtual Entity CreateBranch(const Entity &parent, const Entity &internode) = 0;
 
         virtual Entity CreateInternode(const Entity &parent) = 0;
 
-        /*
-         * Disable and recycle the internode and all its descendents.
+        /**
+         * Remove the internode and all its descendents.
+         * @param internode target internode to be removed
          */
         void DestroyInternode(const Entity &internode);
+
+        /**
+         * Remove the branch and all its descendents. The linked internodes will also be deleted.
+         * @param branch target branch to be removed
+         */
+        void DestroyBranch(const Entity &branch);
 
         /**
          * Handle main growth here.
@@ -231,7 +238,7 @@ namespace PlantArchitect {
     };
 
     template<typename T>
-    void InternodeLayer::PushInternodeBehaviour(const std::shared_ptr<T> &behaviour) {
+    void PlantLayer::PushInternodeBehaviour(const std::shared_ptr<T> &behaviour) {
         if (!behaviour.get()) return;
         bool search = false;
         for (auto &i: m_internodeBehaviours) {
@@ -245,7 +252,7 @@ namespace PlantArchitect {
     }
 
     template<typename T>
-    std::shared_ptr<T> InternodeLayer::GetInternodeBehaviour() {
+    std::shared_ptr<T> PlantLayer::GetInternodeBehaviour() {
         for (auto &i: m_internodeBehaviours) {
             if (i.Get<IPlantBehaviour>()->GetTypeName() == Serialization::GetSerializableTypeName<T>()) {
                 return i.Get<T>();
@@ -457,9 +464,15 @@ namespace PlantArchitect {
         internode->m_foliage = AssetManager::CreateAsset<InternodeFoliage>("Foliage");
         internode->m_currentRoot = rootEntity;
         BranchInfo branchInfo;
+        branchInfo.m_endNode = true;
         rootBranch.SetDataComponent(branchInfo);
         auto branch = rootBranch.GetOrSetPrivateComponent<Branch>().lock();
         branch->m_currentRoot = rootEntity;
+        branch->m_currentInternode = rootInternode;
         return rootEntity;
     }
+
+
+
+
 }

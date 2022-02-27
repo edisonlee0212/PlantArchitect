@@ -21,10 +21,24 @@ void InternodeStatistics::OnInspect() {
     ImGui::Text(("Horton: " + std::to_string(m_hortonOrdering)).c_str());
 }
 
+void InternodeColor::OnInspect() {
+    ImGui::ColorEdit4("Color", &m_value.x);
+}
+
+void InternodeCylinderWidth::OnInspect() {
+    ImGui::Text(("Value: " + std::to_string(m_value)).c_str());
+}
+
 void BranchColor::OnInspect() {
     ImGui::ColorEdit4("Color", &m_value.x);
 }
 
 void BranchCylinderWidth::OnInspect() {
-    ImGui::Text(("Horton: " + std::to_string(m_value)).c_str());
+    ImGui::Text(("Value: " + std::to_string(m_value)).c_str());
+}
+
+void BranchInfo::OnInspect() {
+    ImGui::Text(("Thickness: " + std::to_string(m_thickness)).c_str());
+    ImGui::Text(("Length: " + std::to_string(m_length)).c_str());
+    ImGui::Text(("Is end node: " + std::to_string(m_endNode)).c_str());
 }

@@ -31,7 +31,7 @@
 #include "RadialBoundingVolume.hpp"
 #include "DepthCamera.hpp"
 #include "MultipleAngleCapture.hpp"
-#include "InternodeLayer.hpp"
+#include "PlantLayer.hpp"
 
 using namespace PlantArchitect;
 #ifdef RAYTRACERFACILITY
@@ -56,7 +56,7 @@ int main() {
 #ifdef RAYTRACERFACILITY
     Application::PushLayer<RayTracerLayer>();
 #endif
-    auto internodesLayer = Application::PushLayer<InternodeLayer>();
+    auto internodesLayer = Application::PushLayer<PlantLayer>();
 #pragma region Engine Loop
     Application::Start();
 #pragma endregion
