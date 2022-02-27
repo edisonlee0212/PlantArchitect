@@ -28,18 +28,18 @@ void LSystemBehaviour::OnCreate() {
                                             BranchColor(), BranchCylinder(), BranchCylinderWidth(),
                                             BranchPointer());
     m_internodesQuery = Entities::CreateEntityQuery();
-    m_internodesQuery.SetAllFilters(LSystemTag());
+    m_internodesQuery.SetAllFilters(InternodeInfo(), LSystemTag());
 
     m_rootArchetype =
             Entities::CreateEntityArchetype("L-System Root", RootInfo(), LSystemTag(), LSystemParameters());
     m_rootsQuery = Entities::CreateEntityQuery();
-    m_rootsQuery.SetAllFilters(LSystemTag());
+    m_rootsQuery.SetAllFilters(RootInfo(), LSystemTag());
 
     m_branchArchetype =
             Entities::CreateEntityArchetype("L-System Branch", BranchInfo(),
                                             LSystemTag());
     m_branchesQuery = Entities::CreateEntityQuery();
-    m_branchesQuery.SetAllFilters(LSystemTag());
+    m_branchesQuery.SetAllFilters(BranchInfo(), LSystemTag());
 }
 
 

@@ -491,6 +491,8 @@ void InternodeLayer::OnCreate() {
     ClassRegistry::RegisterPrivateComponent<Root>("Root");
 
     ClassRegistry::RegisterDataComponent<InternodeInfo>("InternodeInfo");
+    ClassRegistry::RegisterDataComponent<RootInfo>("RootInfo");
+    ClassRegistry::RegisterDataComponent<BranchInfo>("BranchInfo");
     ClassRegistry::RegisterDataComponent<InternodeStatistics>("InternodeStatistics");
 
     ClassRegistry::RegisterAsset<InternodeFoliage>("InternodeFoliage", ".internodefoliage");

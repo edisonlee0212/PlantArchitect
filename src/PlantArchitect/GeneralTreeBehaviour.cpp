@@ -319,20 +319,20 @@ void GeneralTreeBehaviour::OnCreate() {
                                             BranchColor(), BranchCylinder(), BranchCylinderWidth(),
                                             BranchPointer());
     m_internodesQuery = Entities::CreateEntityQuery();
-    m_internodesQuery.SetAllFilters(GeneralTreeTag());
+    m_internodesQuery.SetAllFilters(InternodeInfo(), GeneralTreeTag());
 
     m_rootArchetype =
             Entities::CreateEntityArchetype("General Tree Root", RootInfo(),
                                             GeneralTreeTag(),
                                             GeneralTreeParameters());
     m_rootsQuery = Entities::CreateEntityQuery();
-    m_rootsQuery.SetAllFilters(GeneralTreeTag());
+    m_rootsQuery.SetAllFilters(RootInfo(), GeneralTreeTag());
 
     m_branchArchetype =
-            Entities::CreateEntityArchetype("General Tree Branch", RootInfo(),
+            Entities::CreateEntityArchetype("General Tree Branch", BranchInfo(),
                                             GeneralTreeTag());
     m_branchesQuery = Entities::CreateEntityQuery();
-    m_branchesQuery.SetAllFilters(GeneralTreeTag());
+    m_branchesQuery.SetAllFilters(BranchInfo(), GeneralTreeTag());
 }
 
 void GeneralTreeBehaviour::OnInspect() {
@@ -382,7 +382,7 @@ bool GeneralTreeBehaviour::InternalBranchCheck(const Entity &target) {
     return target.HasDataComponent<GeneralTreeTag>();
 }
 
-Entity GeneralTreeBehaviour::CreateRoot(Entity& rootInternode, Entity& rootBranch) {
+Entity GeneralTreeBehaviour::CreateRoot(Entity &rootInternode, Entity &rootBranch) {
     auto root = CreateRootHelper<DefaultInternodeResource>(rootInternode, rootBranch);
     rootInternode.SetDataComponent(InternodeWater());
     rootInternode.SetDataComponent(InternodeIllumination());
@@ -397,7 +397,6 @@ Entity GeneralTreeBehaviour::CreateInternode(const Entity &parent) {
     retVal.SetDataComponent(InternodeStatus());
     return retVal;
 }
-
 
 
 Entity GeneralTreeBehaviour::NewPlant(const GeneralTreeParameters &params, const Transform &transform) {
@@ -850,13 +849,12 @@ void GeneralTreeBehaviour::Preprocess(std::vector<Entity> &currentRoots) {
         waterDividends[plantIndex] = 1.0f;// totalWater[plantIndex] / totalRequests[plantIndex];
         if (totalRequests[plantIndex] == 0) waterDividends[plantIndex] = 0;
     }
-    Entities::ForEach<InternodeInfo, InternodeWaterPressure, InternodeStatus, InternodeIllumination, InternodeWater, GeneralTreeParameters>
+    Entities::ForEach<InternodeInfo, InternodeWaterPressure, InternodeStatus, InternodeIllumination, InternodeWater>
             (Entities::GetCurrentScene(), Jobs::Workers(), m_internodesQuery,
              [&](int i, Entity entity, InternodeInfo &internodeInfo,
                  InternodeWaterPressure &internodeWaterPressure,
                  InternodeStatus &internodeStatus, InternodeIllumination &internodeIllumination,
-                 InternodeWater &internodeWater,
-                 GeneralTreeParameters &generalTreeParameters) {
+                 InternodeWater &internodeWater) {
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
                  auto rootEntity = internode->m_currentRoot.Get();
                  if (!RootCheck(rootEntity)) return;

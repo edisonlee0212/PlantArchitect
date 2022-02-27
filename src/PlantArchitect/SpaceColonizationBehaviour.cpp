@@ -18,20 +18,20 @@ void SpaceColonizationBehaviour::OnCreate() {
                                             BranchColor(), BranchCylinder(), BranchCylinderWidth(),
                                             BranchPointer());
     m_internodesQuery = Entities::CreateEntityQuery();
-    m_internodesQuery.SetAllFilters(SpaceColonizationTag());
+    m_internodesQuery.SetAllFilters(InternodeInfo(), SpaceColonizationTag());
 
     m_rootArchetype =
             Entities::CreateEntityArchetype("Space Colonization Root", RootInfo(),
                                             SpaceColonizationTag(),
                                             SpaceColonizationParameters());
     m_rootsQuery = Entities::CreateEntityQuery();
-    m_rootsQuery.SetAllFilters(SpaceColonizationTag());
+    m_rootsQuery.SetAllFilters(RootInfo(), SpaceColonizationTag());
 
     m_branchArchetype =
             Entities::CreateEntityArchetype("Space Colonization Branch", BranchInfo(),
                                             SpaceColonizationTag());
     m_branchesQuery = Entities::CreateEntityQuery();
-    m_branchesQuery.SetAllFilters(SpaceColonizationTag());
+    m_branchesQuery.SetAllFilters(BranchInfo(), SpaceColonizationTag());
     m_volumes.clear();
 }
 
