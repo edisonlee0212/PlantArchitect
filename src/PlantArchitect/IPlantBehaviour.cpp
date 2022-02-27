@@ -77,7 +77,7 @@ void IPlantBehaviour::UpdateBranches() {
                                            }
                                            glm::vec3 front = childPosition - translation;
                                            branchInfo.m_length = glm::length(front);
-                                           globalTransform.SetRotation(glm::quatLookAt(glm::normalize(front), up));
+                                           if(branchInfo.m_length > 0.0f)globalTransform.SetRotation(glm::quatLookAt(glm::normalize(front), up));
                                        }, true);
     for (const auto &root: roots) {
         if (!RootCheck(root)) return;

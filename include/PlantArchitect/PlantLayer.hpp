@@ -99,9 +99,10 @@ namespace PlantArchitect {
         bool m_drawBranches = true;
         bool m_drawPointers = false;
 
-        float m_transparency = 0.7f;
+        float m_internodeTransparency = 0.5f;
+        float m_branchTransparency = 0.5f;
 
-        bool m_autoUpdate = false;
+        bool m_autoUpdate = true;
 
         float m_internodeColorValueMultiplier = 1.0f;
         float m_internodeColorValueCompressFactor = 0.0f;

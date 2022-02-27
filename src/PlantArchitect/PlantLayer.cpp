@@ -22,25 +22,12 @@ using namespace PlantArchitect;
 
 void PlantLayer::PreparePhysics(const Entity &entity, const Entity &child,
                                 const BranchPhysicsParameters &branchPhysicsParameters) {
-    auto internodeInfo = entity.GetDataComponent<InternodeInfo>();
-    auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
-    auto parentRigidBody = entity.GetOrSetPrivateComponent<RigidBody>().lock();
-    parentRigidBody->SetEnableGravity(false);
-    parentRigidBody->SetDensityAndMassCenter(branchPhysicsParameters.m_density *
-                                             internodeInfo.m_thickness *
-                                             internodeInfo.m_thickness * internodeInfo.m_length);
-    parentRigidBody->SetLinearDamping(branchPhysicsParameters.m_linearDamping);
-    parentRigidBody->SetAngularDamping(branchPhysicsParameters.m_angularDamping);
-    parentRigidBody->SetSolverIterations(branchPhysicsParameters.m_positionSolverIteration,
-                                         branchPhysicsParameters.m_velocitySolverIteration);
-    parentRigidBody->SetAngularVelocity(glm::vec3(0.0f));
-    parentRigidBody->SetLinearVelocity(glm::vec3(0.0f));
-
+    auto childBranchInfo = child.GetDataComponent<BranchInfo>();
     auto rigidBody = child.GetOrSetPrivateComponent<RigidBody>().lock();
     rigidBody->SetEnableGravity(false);
     rigidBody->SetDensityAndMassCenter(branchPhysicsParameters.m_density *
-                                       childInternodeInfo.m_thickness *
-                                       childInternodeInfo.m_thickness * childInternodeInfo.m_length);
+                                               childBranchInfo.m_thickness *
+                                               childBranchInfo.m_thickness * childBranchInfo.m_length);
     rigidBody->SetLinearDamping(branchPhysicsParameters.m_linearDamping);
     rigidBody->SetAngularDamping(branchPhysicsParameters.m_angularDamping);
     rigidBody->SetSolverIterations(branchPhysicsParameters.m_positionSolverIteration,
@@ -54,10 +41,10 @@ void PlantLayer::PreparePhysics(const Entity &entity, const Entity &child,
     joint->SetMotion(MotionAxis::SwingY, MotionType::Free);
     joint->SetMotion(MotionAxis::SwingZ, MotionType::Free);
     joint->SetDrive(DriveType::Swing,
-                    glm::pow(childInternodeInfo.m_thickness,
+                    glm::pow(childBranchInfo.m_thickness,
                              branchPhysicsParameters.m_jointDriveStiffnessThicknessFactor) *
                     branchPhysicsParameters.m_jointDriveStiffnessFactor,
-                    glm::pow(childInternodeInfo.m_thickness,
+                    glm::pow(childBranchInfo.m_thickness,
                              branchPhysicsParameters.m_jointDriveDampingThicknessFactor) *
                     branchPhysicsParameters.m_jointDriveDampingFactor,
                     branchPhysicsParameters.m_enableAccelerationForDrive);
@@ -101,17 +88,53 @@ void PlantLayer::Simulate(int iterations) {
 }
 
 void PlantLayer::PreparePhysics() {
-    /*
     auto physicsLayer = Application::GetLayer<PhysicsLayer>();
     if (!physicsLayer) return;
     for (auto &i: m_internodeBehaviours) {
         auto behaviour = i.Get<IPlantBehaviour>();
         if (behaviour) {
-            for (const auto &root: behaviour->m_currentRoots) {
-                auto branchPhysicsParameter = root.GetOrSetPrivateComponent<Internode>().lock()->m_branchPhysicsParameters;
-                behaviour->InternodeGraphWalkerRootToEnd(root, root, [&](Entity parent, Entity child) {
-                    PreparePhysics(parent, child, branchPhysicsParameter);
-                });
+            std::vector<Entity> roots;
+            behaviour->m_rootsQuery.ToEntityArray(Entities::GetCurrentScene(), roots);
+            for (const auto &root : roots) {
+                auto children = root.GetChildren();
+                for(const auto& child : children) {
+                    if(child.HasPrivateComponent<Branch>()) {
+                        auto branchPhysicsParameters = child.GetOrSetPrivateComponent<Branch>().lock()->m_branchPhysicsParameters;
+                        auto rootRigidBody = root.GetOrSetPrivateComponent<RigidBody>().lock();
+                        if(!rootRigidBody->IsKinematic()) rootRigidBody->SetKinematic(true);
+                        auto childBranchInfo = child.GetDataComponent<BranchInfo>();
+                        auto rigidBody = child.GetOrSetPrivateComponent<RigidBody>().lock();
+                        rigidBody->SetEnableGravity(false);
+                        rigidBody->SetDensityAndMassCenter(branchPhysicsParameters.m_density *
+                                                           childBranchInfo.m_thickness *
+                                                           childBranchInfo.m_thickness * childBranchInfo.m_length);
+                        rigidBody->SetLinearDamping(branchPhysicsParameters.m_linearDamping);
+                        rigidBody->SetAngularDamping(branchPhysicsParameters.m_angularDamping);
+                        rigidBody->SetSolverIterations(branchPhysicsParameters.m_positionSolverIteration,
+                                                       branchPhysicsParameters.m_velocitySolverIteration);
+                        rigidBody->SetAngularVelocity(glm::vec3(0.0f));
+                        rigidBody->SetLinearVelocity(glm::vec3(0.0f));
+
+                        auto joint = child.GetOrSetPrivateComponent<Joint>().lock();
+                        joint->Link(root);
+                        joint->SetType(JointType::D6);
+                        joint->SetMotion(MotionAxis::SwingY, MotionType::Free);
+                        joint->SetMotion(MotionAxis::SwingZ, MotionType::Free);
+                        joint->SetDrive(DriveType::Swing,
+                                        glm::pow(childBranchInfo.m_thickness,
+                                                 branchPhysicsParameters.m_jointDriveStiffnessThicknessFactor) *
+                                        branchPhysicsParameters.m_jointDriveStiffnessFactor,
+                                        glm::pow(childBranchInfo.m_thickness,
+                                                 branchPhysicsParameters.m_jointDriveDampingThicknessFactor) *
+                                        branchPhysicsParameters.m_jointDriveDampingFactor,
+                                        branchPhysicsParameters.m_enableAccelerationForDrive);
+
+                        behaviour->BranchGraphWalkerRootToEnd(child, [&](Entity parent, Entity child) {
+                            PreparePhysics(parent, child, branchPhysicsParameters);
+                        });
+                        break;
+                    }
+                }
             }
         }
     }
@@ -119,7 +142,6 @@ void PlantLayer::PreparePhysics() {
     physicsLayer->UploadRigidBodyShapes(activeScene);
     physicsLayer->UploadTransforms(activeScene, true);
     physicsLayer->UploadJointLinks(activeScene);
-     */
 }
 
 #pragma region Methods
@@ -232,20 +254,21 @@ void PlantLayer::OnInspect() {
                 if (ImGui::BeginMenu("Settings")) {
 #pragma region Menu
                     ImGui::Checkbox("Auto update", &m_autoUpdate);
-                    ImGui::SliderFloat("Alpha", &m_transparency, 0, 1);
                     ImGui::Checkbox("Internodes", &m_drawInternodes);
                     if (m_drawInternodes) {
 
                         if (ImGui::TreeNodeEx("Internode settings",
                                               ImGuiTreeNodeFlags_DefaultOpen)) {
+                            ImGui::SliderFloat("Transparency", &m_internodeTransparency, 0, 1);
                             DrawColorModeSelectionMenu();
                             ImGui::TreePop();
                         }
                     }
                     ImGui::Checkbox("Branches", &m_drawBranches);
-                    if(m_drawBranches){
+                    if (m_drawBranches) {
                         if (ImGui::TreeNodeEx("Branch settings",
                                               ImGuiTreeNodeFlags_DefaultOpen)) {
+                            ImGui::SliderFloat("Transparency", &m_branchTransparency, 0, 1);
                             ImGui::TreePop();
                         }
                     }
@@ -623,7 +646,7 @@ void PlantLayer::UpdateInternodeColors() {
             m_internodesQuery,
             [=](int i, Entity entity, InternodeColor &internodeRenderColor,
                 InternodeInfo &internodeInfo) {
-                internodeRenderColor.m_value = glm::vec4(m_internodeColor, m_transparency);
+                internodeRenderColor.m_value = glm::vec4(m_internodeColor, m_internodeTransparency);
             },
             true);
 
@@ -635,13 +658,13 @@ void PlantLayer::UpdateInternodeColors() {
                                                                [=](int i, Entity entity,
                                                                    InternodeColor &internodeRenderColor,
                                                                    InternodeStatus &internodeStatus) {
-                                                                internodeRenderColor.m_value = glm::vec4(
-                                                                        glm::vec3(m_internodeColorValueMultiplier *
-                                                                                  glm::pow(
-                                                                                          (float) internodeStatus.m_order,
-                                                                                          m_internodeColorValueCompressFactor)),
-                                                                        m_transparency);
-                                                            },
+                                                                   internodeRenderColor.m_value = glm::vec4(
+                                                                           glm::vec3(m_internodeColorValueMultiplier *
+                                                                                     glm::pow(
+                                                                                             (float) internodeStatus.m_order,
+                                                                                             m_internodeColorValueCompressFactor)),
+                                                                           m_internodeTransparency);
+                                                               },
                                                                true);
             break;
         case BranchColorMode::Level:
@@ -651,13 +674,13 @@ void PlantLayer::UpdateInternodeColors() {
                                                                [=](int i, Entity entity,
                                                                    InternodeColor &internodeRenderColor,
                                                                    InternodeStatus &internodeStatus) {
-                                                                internodeRenderColor.m_value = glm::vec4(
-                                                                        glm::vec3(m_internodeColorValueMultiplier *
-                                                                                  glm::pow(
-                                                                                          (float) internodeStatus.m_level,
-                                                                                          m_internodeColorValueCompressFactor)),
-                                                                        m_transparency);
-                                                            },
+                                                                   internodeRenderColor.m_value = glm::vec4(
+                                                                           glm::vec3(m_internodeColorValueMultiplier *
+                                                                                     glm::pow(
+                                                                                             (float) internodeStatus.m_level,
+                                                                                             m_internodeColorValueCompressFactor)),
+                                                                           m_internodeTransparency);
+                                                               },
                                                                true);
             break;
         case BranchColorMode::ApicalControl:
@@ -671,7 +694,7 @@ void PlantLayer::UpdateInternodeColors() {
                         internodeRenderColor.m_value = glm::vec4(glm::vec3(m_internodeColorValueMultiplier *
                                                                            glm::pow(internodeStatus.m_apicalControl,
                                                                                     m_internodeColorValueCompressFactor)),
-                                                                 m_transparency);
+                                                                 m_internodeTransparency);
                     },
                     true);
             break;
@@ -682,12 +705,12 @@ void PlantLayer::UpdateInternodeColors() {
                                                               [=](int i, Entity entity,
                                                                   InternodeColor &internodeRenderColor,
                                                                   InternodeWater &internodeWater) {
-                                                               internodeRenderColor.m_value = glm::vec4(
-                                                                       glm::vec3(m_internodeColorValueMultiplier *
-                                                                                 glm::pow(internodeWater.m_value,
-                                                                                          m_internodeColorValueCompressFactor)),
-                                                                       m_transparency);
-                                                           },
+                                                                  internodeRenderColor.m_value = glm::vec4(
+                                                                          glm::vec3(m_internodeColorValueMultiplier *
+                                                                                    glm::pow(internodeWater.m_value,
+                                                                                             m_internodeColorValueCompressFactor)),
+                                                                          m_internodeTransparency);
+                                                              },
                                                               true);
             break;
         case BranchColorMode::WaterPressure:
@@ -697,14 +720,14 @@ void PlantLayer::UpdateInternodeColors() {
                                                                       [=](int i, Entity entity,
                                                                           InternodeColor &internodeRenderColor,
                                                                           InternodeWaterPressure &internodeWaterPressure) {
-                                                                       internodeRenderColor.m_value = glm::vec4(
-                                                                               glm::vec3(
-                                                                                       m_internodeColorValueMultiplier *
-                                                                                       glm::pow(
-                                                                                               internodeWaterPressure.m_value,
-                                                                                               m_internodeColorValueCompressFactor)),
-                                                                               m_transparency);
-                                                                   },
+                                                                          internodeRenderColor.m_value = glm::vec4(
+                                                                                  glm::vec3(
+                                                                                          m_internodeColorValueMultiplier *
+                                                                                          glm::pow(
+                                                                                                  internodeWaterPressure.m_value,
+                                                                                                  m_internodeColorValueCompressFactor)),
+                                                                                  m_internodeTransparency);
+                                                                      },
                                                                       true);
             break;
         case BranchColorMode::Proximity:
@@ -714,13 +737,13 @@ void PlantLayer::UpdateInternodeColors() {
                                                              [=](int i, Entity entity,
                                                                  InternodeColor &internodeRenderColor,
                                                                  InternodeInfo &internodeInfo) {
-                                                              internodeRenderColor.m_value = glm::vec4(
-                                                                      glm::vec3(m_internodeColorValueMultiplier *
-                                                                                glm::pow(
-                                                                                        internodeInfo.m_neighborsProximity,
-                                                                                        m_internodeColorValueCompressFactor)),
-                                                                      m_transparency);
-                                                          },
+                                                                 internodeRenderColor.m_value = glm::vec4(
+                                                                         glm::vec3(m_internodeColorValueMultiplier *
+                                                                                   glm::pow(
+                                                                                           internodeInfo.m_neighborsProximity,
+                                                                                           m_internodeColorValueCompressFactor)),
+                                                                         m_internodeTransparency);
+                                                             },
                                                              true);
             break;
         case BranchColorMode::Inhibitor:
@@ -730,13 +753,13 @@ void PlantLayer::UpdateInternodeColors() {
                                                                [=](int i, Entity entity,
                                                                    InternodeColor &internodeRenderColor,
                                                                    InternodeStatus &internodeStatus) {
-                                                                internodeRenderColor.m_value = glm::vec4(
-                                                                        glm::vec3(m_internodeColorValueMultiplier *
-                                                                                  glm::pow(
-                                                                                          internodeStatus.m_inhibitor,
-                                                                                          m_internodeColorValueCompressFactor)),
-                                                                        m_transparency);
-                                                            },
+                                                                   internodeRenderColor.m_value = glm::vec4(
+                                                                           glm::vec3(m_internodeColorValueMultiplier *
+                                                                                     glm::pow(
+                                                                                             internodeStatus.m_inhibitor,
+                                                                                             m_internodeColorValueCompressFactor)),
+                                                                           m_internodeTransparency);
+                                                               },
                                                                true);
             break;
         case BranchColorMode::IndexDivider:
@@ -746,13 +769,13 @@ void PlantLayer::UpdateInternodeColors() {
                                                                    [=](int i, Entity entity,
                                                                        InternodeColor &internodeRenderColor,
                                                                        InternodeStatistics &internodeStatistics) {
-                                                                    internodeRenderColor.m_value = glm::vec4(
-                                                                            glm::vec3(
-                                                                                    m_randomColors[
-                                                                                            internodeStatistics.m_lSystemStringIndex /
-                                                                                            m_indexDivider]),
-                                                                            1.0f);
-                                                                },
+                                                                       internodeRenderColor.m_value = glm::vec4(
+                                                                               glm::vec3(
+                                                                                       m_randomColors[
+                                                                                               internodeStatistics.m_lSystemStringIndex /
+                                                                                               m_indexDivider]),
+                                                                               1.0f);
+                                                                   },
                                                                    true);
             break;
         case BranchColorMode::IndexRange:
@@ -762,16 +785,16 @@ void PlantLayer::UpdateInternodeColors() {
                                                                    [=](int i, Entity entity,
                                                                        InternodeColor &internodeRenderColor,
                                                                        InternodeStatistics &internodeStatistics) {
-                                                                    glm::vec3 color = glm::vec3(1.0f);
-                                                                    if (internodeStatistics.m_lSystemStringIndex >
-                                                                        m_indexRangeMin &&
-                                                                        internodeStatistics.m_lSystemStringIndex <
-                                                                        m_indexRangeMax) {
-                                                                        color = glm::vec3(0.0f, 0.0f, 1.0f);
-                                                                    }
-                                                                    internodeRenderColor.m_value = glm::vec4(color,
-                                                                                                             1.0f);
-                                                                },
+                                                                       glm::vec3 color = glm::vec3(1.0f);
+                                                                       if (internodeStatistics.m_lSystemStringIndex >
+                                                                           m_indexRangeMin &&
+                                                                           internodeStatistics.m_lSystemStringIndex <
+                                                                           m_indexRangeMax) {
+                                                                           color = glm::vec3(0.0f, 0.0f, 1.0f);
+                                                                       }
+                                                                       internodeRenderColor.m_value = glm::vec4(color,
+                                                                                                                1.0f);
+                                                                   },
                                                                    true);
             break;
         case BranchColorMode::StrahlerNumber:
@@ -781,12 +804,12 @@ void PlantLayer::UpdateInternodeColors() {
                                                                    [=](int i, Entity entity,
                                                                        InternodeColor &internodeRenderColor,
                                                                        InternodeStatistics &internodeStatistics) {
-                                                                    internodeRenderColor.m_value = glm::vec4(
-                                                                            glm::vec3(
-                                                                                    m_randomColors[
-                                                                                            internodeStatistics.m_strahlerOrder]),
-                                                                            1.0f);
-                                                                },
+                                                                       internodeRenderColor.m_value = glm::vec4(
+                                                                               glm::vec3(
+                                                                                       m_randomColors[
+                                                                                               internodeStatistics.m_strahlerOrder]),
+                                                                               1.0f);
+                                                                   },
                                                                    true);
             break;
         default:
@@ -809,7 +832,7 @@ void PlantLayer::UpdateInternodeCylinder() {
             Jobs::Workers(),
             m_internodesQuery,
             [](int i, Entity entity, GlobalTransform &ltw, InternodeCylinder &c,
-                    InternodeCylinderWidth &branchCylinderWidth, InternodeInfo &internodeInfo) {
+               InternodeCylinderWidth &branchCylinderWidth, InternodeInfo &internodeInfo) {
                 glm::vec3 scale;
                 glm::quat rotation;
                 glm::vec3 translation;
@@ -1087,7 +1110,7 @@ void PlantLayer::UpdateBranchColors() {
             Entities::GetCurrentScene(), Jobs::Workers(),
             m_branchesQuery,
             [=](int i, Entity entity, BranchColor &branchRenderColor) {
-                branchRenderColor.m_value = glm::vec4(m_branchColor, m_transparency);
+                branchRenderColor.m_value = glm::vec4(m_branchColor, m_branchTransparency);
             },
             true);
 }
@@ -1097,10 +1120,10 @@ void PlantLayer::RenderBranchCylinders() {
     if (!editorLayer) return;
     std::vector<BranchCylinder> branchCylinders;
     m_branchesQuery.ToComponentDataArray<BranchCylinder>(Entities::GetCurrentScene(),
-                                                              branchCylinders);
+                                                         branchCylinders);
     std::vector<BranchColor> branchColors;
     m_branchesQuery.ToComponentDataArray<BranchColor>(Entities::GetCurrentScene(),
-                                                           branchColors);
+                                                      branchColors);
     if (!branchCylinders.empty())
         Graphics::DrawGizmoMeshInstancedColored(
                 DefaultResources::Primitives::Cylinder, m_visualizationCamera,
