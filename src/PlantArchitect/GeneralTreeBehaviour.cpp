@@ -12,18 +12,20 @@
 using namespace PlantArchitect;
 
 void GeneralTreeBehaviour::Grow(int iteration) {
-    Preprocess();
+    std::vector<Entity> currentRoots;
+    m_rootsQuery.ToEntityArray(Entities::GetCurrentScene(), currentRoots, true);
+    Preprocess(currentRoots);
 #pragma region Main Growth
-    Entities::ForEach<Transform, GlobalTransform, InternodeInfo, InternodeStatus, InternodeWater, InternodeIllumination, GeneralTreeParameters>
+    Entities::ForEach<Transform, GlobalTransform, InternodeInfo, InternodeStatus, InternodeWater, InternodeIllumination>
             (Entities::GetCurrentScene(), Jobs::Workers(), m_internodesQuery,
              [&](int i, Entity entity,
                  Transform &transform, GlobalTransform &globalTransform,
                  InternodeInfo &internodeInfo, InternodeStatus &internodeStatus,
-                 InternodeWater &internodeWater, InternodeIllumination &internodeIllumination,
-                 GeneralTreeParameters &generalTreeParameters) {
+                 InternodeWater &internodeWater, InternodeIllumination &internodeIllumination) {
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
-                 auto root = internode->m_currentRoot.Get();
-                 if (root.IsNull() || !root.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
+                 auto rootEntity = internode->m_currentRoot.Get();
+                 if (!RootCheck(rootEntity)) return;
+                 auto generalTreeParameters = rootEntity.GetDataComponent<GeneralTreeParameters>();
                  internodeStatus.m_age++;
                  //0. Apply sagging here.
                  auto parent = entity.GetParent();
@@ -167,9 +169,6 @@ void GeneralTreeBehaviour::Grow(int iteration) {
     for (const auto &entity: entities) {
         if (!entity.IsEnabled()) continue;
         auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
-        auto root = internode->m_currentRoot.Get();
-        if (root.IsNull() || !root.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
-        auto parameters = entity.GetDataComponent<GeneralTreeParameters>();
         auto internodeInfo = entity.GetDataComponent<InternodeInfo>();
         if (internode->m_apicalBud.m_status == BudStatus::Flushing) {
             auto internodeStatus = entity.GetDataComponent<InternodeStatus>();
@@ -181,7 +180,6 @@ void GeneralTreeBehaviour::Grow(int iteration) {
             newInternodeStatus.m_branchLength =
                     internodeStatus.m_branchLength + internode->m_apicalBud.m_newInternodeInfo.m_length;
             newInternodeEntity.SetDataComponent(newInternodeStatus);
-            newInternodeEntity.SetDataComponent(parameters);
             newInternodeEntity.SetDataComponent(internode->m_apicalBud.m_newInternodeInfo);
             internode->m_apicalBud.m_status = BudStatus::Flushed;
             auto newInternode = newInternodeEntity.GetOrSetPrivateComponent<Internode>().lock();
@@ -197,7 +195,6 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                 newInternodeStatus.m_branchLength = bud.m_newInternodeInfo.m_length;
                 newInternodeStatus.m_recordedProbability = bud.m_flushProbability;
                 newInternodeEntity.SetDataComponent(newInternodeStatus);
-                newInternodeEntity.SetDataComponent(parameters);
                 newInternodeEntity.SetDataComponent(bud.m_newInternodeInfo);
                 bud.m_status = BudStatus::Flushed;
                 auto newInternode = newInternodeEntity.GetOrSetPrivateComponent<Internode>().lock();
@@ -212,9 +209,6 @@ void GeneralTreeBehaviour::Grow(int iteration) {
              [&](int i, Entity entity,
                  Transform &transform, InternodeInfo &internodeInfo) {
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
-                 auto root = internode->m_currentRoot.Get();
-                 if (root.IsNull() || !root.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
-
                  auto parent = entity.GetParent();
                  if (parent.IsNull() || !parent.HasDataComponent<InternodeInfo>()) return;
                  auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
@@ -222,8 +216,15 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                                     internodeInfo.m_localRotation, glm::vec3(1.0f));
              }, true);
 
+    Entities::ForEach<Transform, GlobalTransform>(Entities::GetCurrentScene(), Jobs::Workers(), m_rootsQuery,
+                                                  [&](int i, Entity entity,
+                                                      Transform &transform, GlobalTransform &globalTransform) {
+                                                      Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(
+                                                              Entities::GetCurrentScene(),
+                                                              entity);
+                                                  }, true);
+    /*
     ParallelForEachRoot(m_currentRoots, [&](int plantIndex, Entity root) {
-        if (!root.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
         auto parent = root.GetParent();
         auto rootTransform = root.GetDataComponent<Transform>();
         GlobalTransform rootGlobalTransform;
@@ -234,69 +235,104 @@ void GeneralTreeBehaviour::Grow(int iteration) {
             rootGlobalTransform.m_value = rootTransform.m_value;
         }
         root.SetDataComponent(rootGlobalTransform);
-        Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(Entities::GetCurrentScene(),
-                                                                                       root);
+
     });
+     */
 #pragma endregion
 #pragma region PostProcess
 #pragma region Transform
-    ParallelForEachRoot(m_currentRoots, [&](int plantIndex, Entity root) {
-        if (!root.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
-        TreeGraphWalkerEndToRoot(root, root, [&](Entity parent) {
-            float thicknessCollection = 0.0f;
-            auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
-            auto parameters = parent.GetDataComponent<GeneralTreeParameters>();
-            parent.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
-                if (!InternodeCheck(child)) return;
-                auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
-                thicknessCollection += glm::pow(childInternodeInfo.m_thickness,
-                                                1.0f / parameters.m_endNodeThicknessAndControl.y);
-            });
-            parentInternodeInfo.m_thickness = glm::pow(thicknessCollection,
-                                                       parameters.m_endNodeThicknessAndControl.y);
-            parent.SetDataComponent(parentInternodeInfo);
-        }, [](Entity endNode) {
-        });
-        CalculateChainDistance(root, 0);
-    });
+    Entities::ForEach<Transform, GlobalTransform, GeneralTreeParameters>(Entities::GetCurrentScene(), Jobs::Workers(),
+                                                                         m_rootsQuery,
+                                                                         [&](int i, Entity entity,
+                                                                             Transform &transform,
+                                                                             GlobalTransform &globalTransform,
+                                                                             GeneralTreeParameters &generalTreeParameters) {
+                                                                             entity.ForEachChild(
+                                                                                     [&](const std::shared_ptr<Scene> &currentScene,
+                                                                                         Entity child) {
+                                                                                         if (!InternodeCheck(
+                                                                                                 child))
+                                                                                             return;
+                                                                                         TreeGraphWalkerEndToRoot(child,
+                                                                                                                  [&](Entity parent) {
+                                                                                                                      float thicknessCollection = 0.0f;
+                                                                                                                      auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
+                                                                                                                      parent.ForEachChild(
+                                                                                                                              [&](const std::shared_ptr<Scene> &scene,
+                                                                                                                                  Entity child) {
+                                                                                                                                  if (!InternodeCheck(
+                                                                                                                                          child))
+                                                                                                                                      return;
+                                                                                                                                  auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
+                                                                                                                                  thicknessCollection += glm::pow(
+                                                                                                                                          childInternodeInfo.m_thickness,
+                                                                                                                                          1.0f /
+                                                                                                                                          generalTreeParameters.m_endNodeThicknessAndControl.y);
+                                                                                                                              });
+                                                                                                                      parentInternodeInfo.m_thickness = glm::pow(
+                                                                                                                              thicknessCollection,
+                                                                                                                              generalTreeParameters.m_endNodeThicknessAndControl.y);
+                                                                                                                      parent.SetDataComponent(
+                                                                                                                              parentInternodeInfo);
+                                                                                                                  },
+                                                                                                                  [](Entity endNode) {
+                                                                                                                  });
+                                                                                         CalculateChainDistance(child,
+                                                                                                                0);
+                                                                                     });
+                                                                         }, true);
 #pragma endregion
 
 
 #pragma endregion
 }
-void GeneralTreeBehaviour::CalculateChainDistance(const Entity &target, float previousChainDistance){
+
+void GeneralTreeBehaviour::CalculateChainDistance(const Entity &target, float previousChainDistance) {
     int childAmount = 0;
-    target.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child){
-        if(!InternodeCheck(child)) return;
+    target.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
+        if (!InternodeCheck(child)) return;
         childAmount += 1;
     });
     auto internodeInfo = target.GetDataComponent<InternodeInfo>();
     auto internodeStatus = target.GetDataComponent<InternodeStatus>();
     internodeStatus.m_chainDistance = previousChainDistance + internodeInfo.m_length;
     target.SetDataComponent(internodeStatus);
-    if(childAmount == 1){
-        target.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child){
-            if(!InternodeCheck(child)) return;
+    if (childAmount == 1) {
+        target.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
+            if (!InternodeCheck(child)) return;
             CalculateChainDistance(child, internodeStatus.m_chainDistance);
         });
-    }else if(childAmount > 1){
-        target.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child){
-            if(!InternodeCheck(child)) return;
+    } else if (childAmount > 1) {
+        target.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
+            if (!InternodeCheck(child)) return;
             CalculateChainDistance(child, 0);
         });
     }
 }
-void GeneralTreeBehaviour::OnCreate() {
 
+void GeneralTreeBehaviour::OnCreate() {
     m_internodeArchetype =
             Entities::CreateEntityArchetype("General Tree Internode", InternodeInfo(), InternodeStatistics(),
                                             GeneralTreeTag(),
-                                            GeneralTreeParameters(), InternodeStatus(),
+                                            InternodeStatus(),
                                             InternodeWaterPressure(), InternodeWater(), InternodeIllumination(),
                                             BranchColor(), BranchCylinder(), BranchCylinderWidth(),
                                             BranchPointer());
     m_internodesQuery = Entities::CreateEntityQuery();
     m_internodesQuery.SetAllFilters(GeneralTreeTag());
+
+    m_rootArchetype =
+            Entities::CreateEntityArchetype("General Tree Root", RootInfo(),
+                                            GeneralTreeTag(),
+                                            GeneralTreeParameters());
+    m_rootsQuery = Entities::CreateEntityQuery();
+    m_rootsQuery.SetAllFilters(GeneralTreeTag());
+
+    m_branchArchetype =
+            Entities::CreateEntityArchetype("General Tree Branch", RootInfo(),
+                                            GeneralTreeTag());
+    m_branchesQuery = Entities::CreateEntityQuery();
+    m_branchesQuery.SetAllFilters(GeneralTreeTag());
 }
 
 void GeneralTreeBehaviour::OnInspect() {
@@ -316,7 +352,7 @@ void GeneralTreeBehaviour::OnInspect() {
              },
              [&](const GeneralTreeParameters &params,
                  const Transform &transform) {
-                 return NewPlant(params, transform);
+                 NewPlant(params, transform);
              }
             );
 
@@ -338,12 +374,20 @@ bool GeneralTreeBehaviour::InternalInternodeCheck(const Entity &target) {
     return target.HasDataComponent<GeneralTreeTag>();
 }
 
-Entity GeneralTreeBehaviour::CreateInternode() {
-    auto retVal = CreateHelper<DefaultInternodeResource>();
-    retVal.SetDataComponent(InternodeWater());
-    retVal.SetDataComponent(InternodeIllumination());
-    retVal.SetDataComponent(InternodeStatus());
-    return retVal;
+bool GeneralTreeBehaviour::InternalRootCheck(const Entity &target) {
+    return target.HasDataComponent<GeneralTreeTag>();
+}
+
+bool GeneralTreeBehaviour::InternalBranchCheck(const Entity &target) {
+    return target.HasDataComponent<GeneralTreeTag>();
+}
+
+Entity GeneralTreeBehaviour::CreateRoot(Entity& rootInternode, Entity& rootBranch) {
+    auto root = CreateRootHelper<DefaultInternodeResource>(rootInternode, rootBranch);
+    rootInternode.SetDataComponent(InternodeWater());
+    rootInternode.SetDataComponent(InternodeIllumination());
+    rootInternode.SetDataComponent(InternodeStatus());
+    return root;
 }
 
 Entity GeneralTreeBehaviour::CreateInternode(const Entity &parent) {
@@ -354,31 +398,36 @@ Entity GeneralTreeBehaviour::CreateInternode(const Entity &parent) {
     return retVal;
 }
 
+
+
 Entity GeneralTreeBehaviour::NewPlant(const GeneralTreeParameters &params, const Transform &transform) {
-    auto entity = CreateInternode();
+    Entity rootInternode, rootBranch;
+    auto root = CreateRoot(rootInternode, rootBranch);
     Transform internodeTransform;
     internodeTransform.m_value =
             glm::translate(glm::vec3(0.0f)) *
             glm::mat4_cast(glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f))) *
             glm::scale(glm::vec3(1.0f));
     internodeTransform.m_value = transform.m_value * internodeTransform.m_value;
-    entity.SetDataComponent(internodeTransform);
+    rootInternode.SetDataComponent(internodeTransform);
     GeneralTreeTag tag;
-    entity.SetDataComponent(tag);
+    rootInternode.SetDataComponent(tag);
     InternodeInfo newInfo;
     newInfo.m_length = 0;
     newInfo.m_layer = 0;
-    newInfo.m_isRealRoot = true;
     newInfo.m_thickness = params.m_endNodeThicknessAndControl.x;
-    entity.SetDataComponent(newInfo);
-    entity.SetDataComponent(params);
+    rootInternode.SetDataComponent(newInfo);
+    root.SetDataComponent(params);
 
-    auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
+    auto internode = rootInternode.GetOrSetPrivateComponent<Internode>().lock();
     internode->m_fromApicalBud = true;
     internode->m_foliage.Get<InternodeFoliage>()->m_foliagePhyllotaxis = AssetManager::CreateAsset<DefaultInternodePhyllotaxis>();
-    auto waterFeeder = entity.GetOrSetPrivateComponent<InternodeWaterFeeder>().lock();
+    auto waterFeeder = rootInternode.GetOrSetPrivateComponent<InternodeWaterFeeder>().lock();
 
-    return entity;
+    auto branch = rootBranch.GetOrSetPrivateComponent<Branch>().lock();
+    branch->m_branchPhysicsParameters = BranchPhysicsParameters();
+
+    return root;
 }
 
 Entity
@@ -397,14 +446,15 @@ GeneralTreeBehaviour::ImportGraphTree(const std::filesystem::path &path, const G
         int layerSize = in["layersize"].as<int>();
         auto layers = in["layers"];
         auto rootLayer = layers["0"];
-        root = CreateInternode();
+        Entity rootInternode, rootBranch;
+        auto root = CreateRoot(rootInternode, rootBranch);
         root.SetName(name);
         std::vector<GanNode> previousNodes;
         previousNodes.resize(10000);
         GanNode rootNode;
         rootNode.m_start = glm::vec3(0, 0, 0);
         rootNode.m_globalRotation = glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f));
-        rootNode.m_internode = root;
+        rootNode.m_internode = rootInternode;
         int rootIndex = 0;
         rootNode.m_length = 1.0f;
         InternodeInfo rootInternodeInfo;
@@ -413,9 +463,9 @@ GeneralTreeBehaviour::ImportGraphTree(const std::filesystem::path &path, const G
         GlobalTransform rootGlobalTransform;
         rootGlobalTransform.SetRotation(rootNode.m_globalRotation);
         rootGlobalTransform.SetPosition(rootNode.m_start);
-        root.SetDataComponent(rootGlobalTransform);
-        root.SetDataComponent(rootInternodeInfo);
-        root.SetDataComponent(parameters);
+        rootInternode.SetDataComponent(rootGlobalTransform);
+        rootInternode.SetDataComponent(rootInternodeInfo);
+        rootInternode.SetDataComponent(parameters);
         previousNodes[0] = rootNode;
         for (int layerIndex = 0; layerIndex < layerSize; layerIndex++) {
             auto layer = layers[std::to_string(layerIndex)];
@@ -467,14 +517,13 @@ GeneralTreeBehaviour::ImportGraphTree(const std::filesystem::path &path, const G
             }
         }
 
-        Entities::ForEach<GlobalTransform, Transform, InternodeInfo, InternodeStatus, GeneralTreeParameters>
+        Entities::ForEach<GlobalTransform, Transform, InternodeInfo, InternodeStatus>
                 (Entities::GetCurrentScene(),
                  Jobs::Workers(), m_internodesQuery,
                  [](int i, Entity entity,
                     GlobalTransform &globalTransform,
                     Transform &transform,
-                    InternodeInfo &internodeInfo, InternodeStatus &internodeStatus,
-                    GeneralTreeParameters &generalTreeParameters) {
+                    InternodeInfo &internodeInfo, InternodeStatus &internodeStatus) {
                      auto parent = entity.GetParent();
                      if (parent.IsNull()) {
                          internodeInfo.m_localRotation = globalTransform.GetRotation();
@@ -496,206 +545,228 @@ GeneralTreeBehaviour::ImportGraphTree(const std::filesystem::path &path, const G
     return root;
 }
 
-void GeneralTreeBehaviour::Preprocess() {
-    int plantSize = m_currentRoots.size();
+void GeneralTreeBehaviour::Preprocess(std::vector<Entity> &currentRoots) {
+    auto plantSize = currentRoots.size();
 #pragma region PreProcess
 #pragma region InternodeStatus
-    std::vector<glm::vec3> plantCenters;
-    plantCenters.resize(plantSize);
-    ParallelForEachRoot(m_currentRoots, [&](int plantIndex, Entity root) {
-        if (!root.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
-        auto internodeInfo = root.GetDataComponent<InternodeInfo>();
-        auto internodeStatus = root.GetDataComponent<InternodeStatus>();
-        auto internodeGlobalTransform = root.GetDataComponent<GlobalTransform>();
-        auto internode = root.GetOrSetPrivateComponent<Internode>().lock();
-        auto parameters = root.GetDataComponent<GeneralTreeParameters>();
-        internode->m_currentRoot = root;
-        internodeStatus.m_rootDistance = 0;
-        internodeInfo.m_endNode = false;
-        internodeStatus.m_biomass = internodeInfo.m_length * internodeInfo.m_thickness * internodeInfo.m_thickness;
-        root.SetDataComponent(internodeInfo);
-        root.SetDataComponent(internodeStatus);
-        auto center = internodeGlobalTransform.GetPosition();
-        int amount = 1;
-        TreeGraphWalker(root, root,
-                        [&](Entity parent, Entity child) {
-                            auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
-                            auto parentInternodeStatus = parent.GetDataComponent<InternodeStatus>();
-                            auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
-                            auto childInternodeStatus = child.GetDataComponent<InternodeStatus>();
-                            auto childGlobalTransform = child.GetDataComponent<GlobalTransform>();
-                            center += childGlobalTransform.GetPosition();
-                            amount++;
-                            //Low branch pruning.
-                            if (childInternodeStatus.m_order != 0) {
-                                auto childParameter = child.GetDataComponent<GeneralTreeParameters>();
-                                if (childInternodeStatus.m_rootDistance /
-                                    internodeStatus.m_maxDistanceToAnyBranchEnd <
-                                    childParameter.m_lowBranchPruning) {
-                                    DestroyInternode(child);
-                                    return;
-                                }
-                            }
-                            if (childGlobalTransform.GetPosition().y < 0) {
-                                DestroyInternode(child);
-                                return;
-                            }
-                            auto childInternode = child.GetOrSetPrivateComponent<Internode>().lock();
-                            childInternode->m_currentRoot = root;
-                            childInternodeStatus.m_rootDistance =
-                                    parentInternodeInfo.m_length + parentInternodeStatus.m_rootDistance;
-                            childInternodeStatus.m_biomass =
-                                    childInternodeInfo.m_length * childInternodeInfo.m_thickness;
-                            if (!childInternode->m_fromApicalBud) {
-                                childInternodeStatus.m_order = parentInternodeStatus.m_order + 1;
-                            } else {
-                                childInternodeStatus.m_order = parentInternodeStatus.m_order;
-                            }
-                            child.SetDataComponent(childInternodeInfo);
-                            child.SetDataComponent(childInternodeStatus);
-                        },
-                        [&](Entity parent) {
-                            auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
-                            auto parentInternodeStatus = parent.GetDataComponent<InternodeStatus>();
-                            auto parentParameters = parent.GetDataComponent<GeneralTreeParameters>();
-                            parentInternodeInfo.m_endNode = false;
-                            parentInternodeStatus.m_inhibitor = 0;
-                            parentInternodeStatus.m_totalDistanceToAllBranchEnds = parentInternodeStatus.m_childTotalBiomass = 0;
-                            float maxDistanceToAnyBranchEnd = -1.0f;
-                            float maxTotalDistanceToAllBranchEnds = -1.0f;
-                            float maxChildTotalBiomass = -1.0f;
-                            Entity largestChild;
-                            Entity longestChild;
-                            Entity heaviestChild;
-                            parent.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
-                                if (!InternodeCheck(child)) return;
-                                auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
-                                auto childInternodeStatus = child.GetDataComponent<InternodeStatus>();
-                                if (childInternodeInfo.m_endNode) {
-                                    auto endNodeParameters = child.GetDataComponent<GeneralTreeParameters>();
-                                    auto endNodeInternode = child.GetOrSetPrivateComponent<Internode>().lock();
-                                    float randomFactor = glm::min(endNodeParameters.m_randomPruningBaseAgeMax.z,
-                                                                  endNodeParameters.m_randomPruningBaseAgeMax.x +
-                                                                  endNodeParameters.m_randomPruningBaseAgeMax.y *
-                                                                  childInternodeStatus.m_age);
-                                    if (childInternodeStatus.m_order >
-                                        endNodeParameters.m_randomPruningOrderProtection &&
-                                        randomFactor > glm::linearRand(0.0f, 1.0f)) {
-                                        DestroyInternode(child);
-                                        return;
-                                    }
-                                    parentInternodeStatus.m_inhibitor +=
-                                            endNodeParameters.m_apicalDominanceBaseAgeDist.x *
-                                            glm::pow(endNodeParameters.m_apicalDominanceBaseAgeDist.y,
-                                                     childInternodeStatus.m_age);
-                                } else {
-                                    parentInternodeStatus.m_inhibitor +=
-                                            childInternodeStatus.m_inhibitor *
-                                            glm::pow(parentParameters.m_apicalDominanceBaseAgeDist.z,
-                                                     parentInternodeInfo.m_length);
-                                }
+    Entities::ForEach<Transform, GeneralTreeParameters>
+            (Entities::GetCurrentScene(),
+             Jobs::Workers(), m_rootsQuery,
+             [&](int i, Entity entity, Transform &transform, GeneralTreeParameters &generalTreeParameters
+             ) {
+                 if (!RootCheck(entity)) return;
+                 auto root = entity.GetOrSetPrivateComponent<Root>().lock();
+                 int amount = 1;
+                 auto center = glm::vec3(0);
+                 entity.ForEachChild(
+                         [&](const std::shared_ptr<Scene> &currentScene,
+                             Entity child) {
+                             if (!InternodeCheck(child)) return;
+                             auto internodeInfo = child.GetDataComponent<InternodeInfo>();
+                             auto internodeStatus = child.GetDataComponent<InternodeStatus>();
+                             auto internodeGlobalTransform = child.GetDataComponent<GlobalTransform>();
+                             auto internode = child.GetOrSetPrivateComponent<Internode>().lock();
+                             internodeStatus.m_rootDistance = 0;
+                             internodeInfo.m_endNode = false;
+                             internodeStatus.m_biomass =
+                                     internodeInfo.m_length * internodeInfo.m_thickness * internodeInfo.m_thickness;
+                             child.SetDataComponent(internodeInfo);
+                             child.SetDataComponent(internodeStatus);
+                             center += internodeGlobalTransform.GetPosition();
+                             TreeGraphWalker(child,
+                                             [&](Entity parent, Entity child) {
+                                                 auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
+                                                 auto parentInternodeStatus = parent.GetDataComponent<InternodeStatus>();
+                                                 auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
+                                                 auto childInternodeStatus = child.GetDataComponent<InternodeStatus>();
+                                                 auto childGlobalTransform = child.GetDataComponent<GlobalTransform>();
+                                                 center += childGlobalTransform.GetPosition();
+                                                 amount++;
+                                                 //Low branch pruning.
+                                                 if (childInternodeStatus.m_order != 0) {
+                                                     if (childInternodeStatus.m_rootDistance /
+                                                         internodeStatus.m_maxDistanceToAnyBranchEnd <
+                                                         generalTreeParameters.m_lowBranchPruning) {
+                                                         DestroyInternode(child);
+                                                         return;
+                                                     }
+                                                 }
+                                                 if (childGlobalTransform.GetPosition().y < 0) {
+                                                     DestroyInternode(child);
+                                                     return;
+                                                 }
+                                                 auto childInternode = child.GetOrSetPrivateComponent<Internode>().lock();
+                                                 childInternodeStatus.m_rootDistance =
+                                                         parentInternodeInfo.m_length +
+                                                         parentInternodeStatus.m_rootDistance;
+                                                 childInternodeStatus.m_biomass =
+                                                         childInternodeInfo.m_length * childInternodeInfo.m_thickness;
+                                                 if (!childInternode->m_fromApicalBud) {
+                                                     childInternodeStatus.m_order = parentInternodeStatus.m_order + 1;
+                                                 } else {
+                                                     childInternodeStatus.m_order = parentInternodeStatus.m_order;
+                                                 }
+                                                 child.SetDataComponent(childInternodeInfo);
+                                                 child.SetDataComponent(childInternodeStatus);
+                                             },
+                                             [&](Entity parent) {
+                                                 auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
+                                                 auto parentInternodeStatus = parent.GetDataComponent<InternodeStatus>();
+                                                 parentInternodeInfo.m_endNode = false;
+                                                 parentInternodeStatus.m_inhibitor = 0;
+                                                 parentInternodeStatus.m_totalDistanceToAllBranchEnds = parentInternodeStatus.m_childTotalBiomass = 0;
+                                                 float maxDistanceToAnyBranchEnd = -1.0f;
+                                                 float maxTotalDistanceToAllBranchEnds = -1.0f;
+                                                 float maxChildTotalBiomass = -1.0f;
+                                                 Entity largestChild;
+                                                 Entity longestChild;
+                                                 Entity heaviestChild;
+                                                 parent.ForEachChild(
+                                                         [&](const std::shared_ptr<Scene> &scene, Entity child) {
+                                                             if (!InternodeCheck(child)) return;
+                                                             auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
+                                                             auto childInternodeStatus = child.GetDataComponent<InternodeStatus>();
+                                                             if (childInternodeInfo.m_endNode) {
+                                                                 auto endNodeInternode = child.GetOrSetPrivateComponent<Internode>().lock();
+                                                                 float randomFactor = glm::min(
+                                                                         generalTreeParameters.m_randomPruningBaseAgeMax.z,
+                                                                         generalTreeParameters.m_randomPruningBaseAgeMax.x +
+                                                                         generalTreeParameters.m_randomPruningBaseAgeMax.y *
+                                                                         childInternodeStatus.m_age);
+                                                                 if (childInternodeStatus.m_order >
+                                                                     generalTreeParameters.m_randomPruningOrderProtection &&
+                                                                     randomFactor > glm::linearRand(0.0f, 1.0f)) {
+                                                                     DestroyInternode(child);
+                                                                     return;
+                                                                 }
+                                                                 parentInternodeStatus.m_inhibitor +=
+                                                                         generalTreeParameters.m_apicalDominanceBaseAgeDist.x *
+                                                                         glm::pow(
+                                                                                 generalTreeParameters.m_apicalDominanceBaseAgeDist.y,
+                                                                                 childInternodeStatus.m_age);
+                                                             } else {
+                                                                 parentInternodeStatus.m_inhibitor +=
+                                                                         childInternodeStatus.m_inhibitor *
+                                                                         glm::pow(
+                                                                                 generalTreeParameters.m_apicalDominanceBaseAgeDist.z,
+                                                                                 parentInternodeInfo.m_length);
+                                                             }
 
-                                float childTotalDistanceToAllBranchEnds =
-                                        childInternodeStatus.m_totalDistanceToAllBranchEnds +
-                                        childInternodeInfo.m_length;
-                                float childTotalBiomass =
-                                        childInternodeStatus.m_childTotalBiomass + childInternodeStatus.m_biomass;
-                                float childMaxDistanceToAnyBranchEnd =
-                                        childInternodeStatus.m_maxDistanceToAnyBranchEnd +
-                                        childInternodeInfo.m_length;
-                                parentInternodeStatus.m_totalDistanceToAllBranchEnds += childTotalDistanceToAllBranchEnds;
-                                parentInternodeStatus.m_childTotalBiomass += childTotalBiomass;
-                                if (maxTotalDistanceToAllBranchEnds < childTotalDistanceToAllBranchEnds) {
-                                    maxTotalDistanceToAllBranchEnds = childTotalDistanceToAllBranchEnds;
-                                    largestChild = child;
-                                }
-                                if (maxDistanceToAnyBranchEnd < childMaxDistanceToAnyBranchEnd) {
-                                    maxDistanceToAnyBranchEnd = childMaxDistanceToAnyBranchEnd;
-                                    longestChild = child;
-                                }
-                                if (maxChildTotalBiomass < childTotalBiomass) {
-                                    maxChildTotalBiomass = childTotalBiomass;
-                                    heaviestChild = child;
-                                }
-                            });
-                            parent.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
-                                if (!InternodeCheck(child)) return;
-                                auto childInternodeStatus = child.GetDataComponent<InternodeStatus>();
-                                childInternodeStatus.m_largestChild = largestChild == child;
-                                childInternodeStatus.m_longestChild = longestChild == child;
-                                childInternodeStatus.m_heaviestChild = heaviestChild == child;
-                                child.SetDataComponent(childInternodeStatus);
-                            });
-                            parentInternodeStatus.m_maxDistanceToAnyBranchEnd = maxDistanceToAnyBranchEnd;
-                            parentInternodeStatus.m_sagging =
-                                    glm::min(parentParameters.m_saggingFactorThicknessReductionMax.z,
-                                             parentParameters.m_saggingFactorThicknessReductionMax.x *
-                                             parentInternodeStatus.m_childTotalBiomass /
-                                             glm::pow(parentInternodeInfo.m_thickness /
-                                                      parentParameters.m_endNodeThicknessAndControl.x,
-                                                      parentParameters.m_saggingFactorThicknessReductionMax.y));
-                            parent.SetDataComponent(parentInternodeStatus);
-                            parent.SetDataComponent(parentInternodeInfo);
-                        },
-                        [&](Entity endNode) {
-                            auto endNodeInternodeInfo = endNode.GetDataComponent<InternodeInfo>();
-                            auto endNodeInternodeStatus = endNode.GetDataComponent<InternodeStatus>();
-                            endNodeInternodeInfo.m_endNode = true;
-                            endNodeInternodeStatus.m_inhibitor = 0.0f;
-                            endNodeInternodeStatus.m_maxDistanceToAnyBranchEnd = endNodeInternodeStatus.m_totalDistanceToAllBranchEnds = endNodeInternodeStatus.m_childTotalBiomass = 0;
-                            endNodeInternodeStatus.m_largestChild = endNodeInternodeStatus.m_longestChild = endNodeInternodeStatus.m_heaviestChild = true;
-                            endNode.SetDataComponent(endNodeInternodeInfo);
-                            endNode.SetDataComponent(endNodeInternodeStatus);
-                        });
-        plantCenters[plantIndex] = center / static_cast<float>(amount);
-    });
-    ParallelForEachRoot(m_currentRoots, [&](int plantIndex, Entity root) {
-        TreeGraphWalkerRootToEnd(root, root, [](Entity parent, Entity child) {
-            auto parentInternodeStatus = parent.GetDataComponent<InternodeStatus>();
-            auto childInternodeStatus = child.GetDataComponent<InternodeStatus>();
-            if (childInternodeStatus.m_largestChild) {
-                childInternodeStatus.m_level = parentInternodeStatus.m_level;
-            } else {
-                childInternodeStatus.m_level = parentInternodeStatus.m_level + 1;
-            }
-            child.SetDataComponent(childInternodeStatus);
-        });
-    });
+                                                             float childTotalDistanceToAllBranchEnds =
+                                                                     childInternodeStatus.m_totalDistanceToAllBranchEnds +
+                                                                     childInternodeInfo.m_length;
+                                                             float childTotalBiomass =
+                                                                     childInternodeStatus.m_childTotalBiomass +
+                                                                     childInternodeStatus.m_biomass;
+                                                             float childMaxDistanceToAnyBranchEnd =
+                                                                     childInternodeStatus.m_maxDistanceToAnyBranchEnd +
+                                                                     childInternodeInfo.m_length;
+                                                             parentInternodeStatus.m_totalDistanceToAllBranchEnds += childTotalDistanceToAllBranchEnds;
+                                                             parentInternodeStatus.m_childTotalBiomass += childTotalBiomass;
+                                                             if (maxTotalDistanceToAllBranchEnds <
+                                                                 childTotalDistanceToAllBranchEnds) {
+                                                                 maxTotalDistanceToAllBranchEnds = childTotalDistanceToAllBranchEnds;
+                                                                 largestChild = child;
+                                                             }
+                                                             if (maxDistanceToAnyBranchEnd <
+                                                                 childMaxDistanceToAnyBranchEnd) {
+                                                                 maxDistanceToAnyBranchEnd = childMaxDistanceToAnyBranchEnd;
+                                                                 longestChild = child;
+                                                             }
+                                                             if (maxChildTotalBiomass < childTotalBiomass) {
+                                                                 maxChildTotalBiomass = childTotalBiomass;
+                                                                 heaviestChild = child;
+                                                             }
+                                                         });
+                                                 parent.ForEachChild(
+                                                         [&](const std::shared_ptr<Scene> &scene, Entity child) {
+                                                             if (!InternodeCheck(child)) return;
+                                                             auto childInternodeStatus = child.GetDataComponent<InternodeStatus>();
+                                                             childInternodeStatus.m_largestChild =
+                                                                     largestChild == child;
+                                                             childInternodeStatus.m_longestChild =
+                                                                     longestChild == child;
+                                                             childInternodeStatus.m_heaviestChild =
+                                                                     heaviestChild == child;
+                                                             child.SetDataComponent(childInternodeStatus);
+                                                         });
+                                                 parentInternodeStatus.m_maxDistanceToAnyBranchEnd = maxDistanceToAnyBranchEnd;
+                                                 parentInternodeStatus.m_sagging =
+                                                         glm::min(
+                                                                 generalTreeParameters.m_saggingFactorThicknessReductionMax.z,
+                                                                 generalTreeParameters.m_saggingFactorThicknessReductionMax.x *
+                                                                 parentInternodeStatus.m_childTotalBiomass /
+                                                                 glm::pow(parentInternodeInfo.m_thickness /
+                                                                          generalTreeParameters.m_endNodeThicknessAndControl.x,
+                                                                          generalTreeParameters.m_saggingFactorThicknessReductionMax.y));
+                                                 parent.SetDataComponent(parentInternodeStatus);
+                                                 parent.SetDataComponent(parentInternodeInfo);
+                                             },
+                                             [&](Entity endNode) {
+                                                 auto endNodeInternodeInfo = endNode.GetDataComponent<InternodeInfo>();
+                                                 auto endNodeInternodeStatus = endNode.GetDataComponent<InternodeStatus>();
+                                                 endNodeInternodeInfo.m_endNode = true;
+                                                 endNodeInternodeStatus.m_inhibitor = 0.0f;
+                                                 endNodeInternodeStatus.m_maxDistanceToAnyBranchEnd = endNodeInternodeStatus.m_totalDistanceToAllBranchEnds = endNodeInternodeStatus.m_childTotalBiomass = 0;
+                                                 endNodeInternodeStatus.m_largestChild = endNodeInternodeStatus.m_longestChild = endNodeInternodeStatus.m_heaviestChild = true;
+                                                 endNode.SetDataComponent(endNodeInternodeInfo);
+                                                 endNode.SetDataComponent(endNodeInternodeStatus);
+                                             });
+
+                         });
+                 root->m_center = center / static_cast<float>(amount);
+             });
+    Entities::ForEach<Transform>
+            (Entities::GetCurrentScene(),
+             Jobs::Workers(), m_rootsQuery,
+             [&](int i, Entity entity, Transform &transform
+             ) {
+                 entity.ForEachChild(
+                         [&](const std::shared_ptr<Scene> &currentScene,
+                             Entity child) {
+                             if (!InternodeCheck(child)) return;
+                             TreeGraphWalkerRootToEnd(child, [](Entity parent, Entity child) {
+                                 auto parentInternodeStatus = parent.GetDataComponent<InternodeStatus>();
+                                 auto childInternodeStatus = child.GetDataComponent<InternodeStatus>();
+                                 if (childInternodeStatus.m_largestChild) {
+                                     childInternodeStatus.m_level = parentInternodeStatus.m_level;
+                                 } else {
+                                     childInternodeStatus.m_level = parentInternodeStatus.m_level + 1;
+                                 }
+                                 child.SetDataComponent(childInternodeStatus);
+                             });
+                         });
+             });
 #pragma endregion
     auto workerSize = Jobs::Workers().Size();
 #pragma region Illumination
     Entities::ForEach<InternodeInfo, InternodeIllumination, GlobalTransform>
             (Entities::GetCurrentScene(), Jobs::Workers(), m_internodesQuery,
-             [&](int i, Entity entity, InternodeInfo &internodeTag, InternodeIllumination &internodeIllumination,
+             [&](int i, Entity entity, InternodeInfo &internodeTag,
+                 InternodeIllumination &internodeIllumination,
                  GlobalTransform &internodeGlobalTransform) {
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
-                 auto root = internode->m_currentRoot.Get();
-                 int plantIndex = 0;
-                 for (const auto &plant: m_currentRoots) {
-                     if (root == plant) {
-                         auto difference = internodeGlobalTransform.GetPosition() - plantCenters[plantIndex];
-                         internodeIllumination.m_direction = glm::normalize(difference);
-                         internodeIllumination.m_intensity = 1.0f;
-                         if (internodeIllumination.m_intensity < 0.1) {
-                             internodeIllumination.m_direction = glm::vec3(0.0f, 1.0f, 0.0f);
-                             internodeIllumination.m_intensity = 0.1f;
-                         }
-                         break;
-                     }
-                     plantIndex++;
+                 auto rootEntity = internode->m_currentRoot.Get();
+                 if (!RootCheck(rootEntity)) return;
+                 auto root = rootEntity.GetOrSetPrivateComponent<Root>().lock();
+                 auto difference =
+                         internodeGlobalTransform.GetPosition() - root->m_center;
+                 internodeIllumination.m_direction = glm::normalize(difference);
+                 internodeIllumination.m_intensity = 1.0f;
+                 if (internodeIllumination.m_intensity < 0.1) {
+                     internodeIllumination.m_direction = glm::vec3(0.0f, 1.0f, 0.0f);
+                     internodeIllumination.m_intensity = 0.1f;
                  }
-
              }, true);
 #pragma endregion
 #pragma region Water
 #pragma region Collect water requests
     Entities::ForEach<InternodeInfo, InternodeWaterPressure, InternodeStatus, InternodeIllumination>
             (Entities::GetCurrentScene(), Jobs::Workers(), m_internodesQuery,
-             [&](int i, Entity entity, InternodeInfo &internodeInfo, InternodeWaterPressure &internodeWaterPressure,
+             [&](int i, Entity entity, InternodeInfo &internodeInfo,
+                 InternodeWaterPressure &internodeWaterPressure,
                  InternodeStatus &internodeStatus, InternodeIllumination &internodeIllumination) {
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
-                 auto root = internode->m_currentRoot.Get();
-                 if (root.IsNull() || !root.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
                  if (internode->m_apicalBud.m_status == BudStatus::Sleeping) {
                      internodeWaterPressure.m_value = 1;
                  } else {
@@ -709,20 +780,20 @@ void GeneralTreeBehaviour::Preprocess() {
         i.resize(plantSize);
         for (auto &j: i) j = 0;
     }
-    Entities::ForEach<InternodeInfo, InternodeWaterPressure, InternodeStatus, InternodeIllumination, InternodeWater, GeneralTreeParameters>
+    Entities::ForEach<InternodeInfo, InternodeWaterPressure, InternodeStatus, InternodeIllumination, InternodeWater>
             (Entities::GetCurrentScene(), Jobs::Workers(), m_internodesQuery,
-             [&](int i, Entity entity, InternodeInfo &internodeInfo, InternodeWaterPressure &internodeWaterPressure,
+             [&](int i, Entity entity, InternodeInfo &internodeInfo,
+                 InternodeWaterPressure &internodeWaterPressure,
                  InternodeStatus &internodeStatus, InternodeIllumination &internodeIllumination,
-                 InternodeWater &internodeWater,
-                 GeneralTreeParameters &generalTreeParameters) {
+                 InternodeWater &internodeWater) {
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
-                 auto root = internode->m_currentRoot.Get();
-                 if (root.IsNull() || !root.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
-                 //int age = internode->m_currentRoot.Get().GetDataComponent<InternodeStatus>().m_age;
-                 internodeStatus.CalculateApicalControl(generalTreeParameters.m_apicalControl);
+                 auto rootEntity = internode->m_currentRoot.Get();
+                 if (!RootCheck(rootEntity)) return;
+                 auto generalTreeParameters = rootEntity.GetDataComponent<GeneralTreeParameters>();
                  int plantIndex = 0;
-                 for (const auto &plant: m_currentRoots) {
-                     if (root == plant) {
+                 for (const auto &plant: currentRoots) {
+                     if (rootEntity == plant) {
+                         internodeStatus.CalculateApicalControl(generalTreeParameters.m_apicalControl);
                          totalRequestCollector[i % workerSize][plantIndex] +=
                                  internodeStatus.m_apicalControl *
                                  internodeWaterPressure.m_value *
@@ -750,15 +821,16 @@ void GeneralTreeBehaviour::Preprocess() {
     }
     Entities::ForEach<InternodeInfo, InternodeWaterPressure, InternodeStatus, InternodeIllumination, InternodeWater>
             (Entities::GetCurrentScene(), Jobs::Workers(), m_internodesQuery,
-             [&](int i, Entity entity, InternodeInfo &internodeInfo, InternodeWaterPressure &internodeWaterPressure,
+             [&](int i, Entity entity, InternodeInfo &internodeInfo,
+                 InternodeWaterPressure &internodeWaterPressure,
                  InternodeStatus &internodeStatus, InternodeIllumination &internodeIllumination,
                  InternodeWater &internodeWater) {
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
-                 auto root = internode->m_currentRoot.Get();
-                 if (root.IsNull() || !root.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
+                 auto rootEntity = internode->m_currentRoot.Get();
+                 if (!RootCheck(rootEntity)) return;
                  int plantIndex = 0;
-                 for (const auto &plant: m_currentRoots) {
-                     if (root == plant) {
+                 for (const auto &plant: currentRoots) {
+                     if (rootEntity == plant) {
                          totalWaterCollector[i % workerSize][plantIndex] += internodeWater.m_value;
                          break;
                      }
@@ -780,16 +852,17 @@ void GeneralTreeBehaviour::Preprocess() {
     }
     Entities::ForEach<InternodeInfo, InternodeWaterPressure, InternodeStatus, InternodeIllumination, InternodeWater, GeneralTreeParameters>
             (Entities::GetCurrentScene(), Jobs::Workers(), m_internodesQuery,
-             [&](int i, Entity entity, InternodeInfo &internodeInfo, InternodeWaterPressure &internodeWaterPressure,
+             [&](int i, Entity entity, InternodeInfo &internodeInfo,
+                 InternodeWaterPressure &internodeWaterPressure,
                  InternodeStatus &internodeStatus, InternodeIllumination &internodeIllumination,
                  InternodeWater &internodeWater,
                  GeneralTreeParameters &generalTreeParameters) {
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
-                 auto root = internode->m_currentRoot.Get();
-                 if (root.IsNull() || !root.GetDataComponent<InternodeInfo>().m_isRealRoot) return;
+                 auto rootEntity = internode->m_currentRoot.Get();
+                 if (!RootCheck(rootEntity)) return;
                  int plantIndex = 0;
-                 for (const auto &plant: m_currentRoots) {
-                     if (root == plant) {
+                 for (const auto &plant: currentRoots) {
+                     if (rootEntity == plant) {
                          internodeWater.m_value =
                                  internodeStatus.m_apicalControl *
                                  waterDividends[plantIndex] * internodeWaterPressure.m_value *
@@ -802,6 +875,11 @@ void GeneralTreeBehaviour::Preprocess() {
 #pragma endregion
 #pragma endregion
 #pragma endregion
+}
+
+Entity GeneralTreeBehaviour::CreateBranch(const Entity &parent) {
+    auto retVal = CreateBranchHelper(parent);
+    return retVal;
 }
 
 

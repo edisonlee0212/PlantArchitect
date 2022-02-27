@@ -24,11 +24,22 @@ void LSystemBehaviour::OnInspect() {
 void LSystemBehaviour::OnCreate() {
     m_internodeArchetype =
             Entities::CreateEntityArchetype("L-System Internode", InternodeInfo(), InternodeStatistics(),
-                                                 LSystemTag(), LSystemParameters(),
-                                                 BranchColor(), BranchCylinder(), BranchCylinderWidth(),
-                                                 BranchPointer());
+                                            LSystemTag(),
+                                            BranchColor(), BranchCylinder(), BranchCylinderWidth(),
+                                            BranchPointer());
     m_internodesQuery = Entities::CreateEntityQuery();
     m_internodesQuery.SetAllFilters(LSystemTag());
+
+    m_rootArchetype =
+            Entities::CreateEntityArchetype("L-System Root", RootInfo(), LSystemTag(), LSystemParameters());
+    m_rootsQuery = Entities::CreateEntityQuery();
+    m_rootsQuery.SetAllFilters(LSystemTag());
+
+    m_branchArchetype =
+            Entities::CreateEntityArchetype("L-System Branch", BranchInfo(),
+                                            LSystemTag());
+    m_branchesQuery = Entities::CreateEntityQuery();
+    m_branchesQuery.SetAllFilters(LSystemTag());
 }
 
 
@@ -42,7 +53,9 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
     std::vector<Entity> entityStack;
     int index = 1;
     Entity root;
+    Entity rootInternode;
     Entity internode;
+    Entity rootBranch;
     bool rootExists = false;
     for (const auto &command: commands) {
         switch (command.m_type) {
@@ -56,17 +69,18 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
                         //Calculate the local rotation as quaternion from euler angles.
                         newInfo.m_localRotation = glm::quat(currentState.m_eulerRotation);
                         //We need to create a child node with this function. Here CreateInternode(Entity) will instantiate a new internode for you and set it as a child of current internode.
-                        internode = CreateInternode(root);
+                        internode = CreateInternode(internode);
                         //Apply the parameter to this internode, this is necessary everytime you create a new internode.
                         internode.SetDataComponent(parameters);
-                    }else {
+                    } else {
                         //Calculate the local rotation as quaternion from euler angles.
                         newInfo.m_localRotation = glm::quat(currentState.m_eulerRotation);
                         //If this is the first push in the string, we create the root internode.
                         //The node creation is handled by the CreateInternode() function. The internode creation is performed in a factory pattern.
-                        root = internode = CreateInternode();
+                        root = CreateRoot(rootInternode, rootBranch);
+                        internode = rootInternode;
                         //Apply the parameter to this internode, this is necessary everytime you create a new internode.
-                        internode.SetDataComponent(parameters);
+                        root.SetDataComponent(parameters);
                         rootExists = true;
                     }
                 } else {
@@ -134,10 +148,10 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
 
     Transform rootTransform;
     rootTransform.SetRotation(root.GetDataComponent<InternodeInfo>().m_localRotation);
-    root.SetDataComponent(rootTransform);
+    rootInternode.SetDataComponent(rootTransform);
 
     //Since we only stored the rotation data into internode info without applying it to the local transformation matrix of the internode, we do it here.
-    TreeGraphWalkerRootToEnd(root, root, [](Entity parent, Entity child) {
+    TreeGraphWalkerRootToEnd(rootInternode, [](Entity parent, Entity child) {
         auto parentGlobalTransform = parent.GetDataComponent<GlobalTransform>();
         auto parentPosition = parentGlobalTransform.GetPosition();
         auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
@@ -182,10 +196,9 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
                                                                                    root);
 
     //Calculate other properties like thickness after the structure of the tree is ready.
-    TreeGraphWalkerEndToRoot(root, root, [&](Entity parent) {
+    TreeGraphWalkerEndToRoot(rootInternode, [&](Entity parent) {
         float thicknessCollection = 0.0f;
         auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
-        auto parameters = parent.GetDataComponent<LSystemParameters>();
         parent.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
             if (!InternodeCheck(child)) return;
             auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
@@ -209,14 +222,24 @@ bool LSystemBehaviour::InternalInternodeCheck(const Entity &target) {
     return target.HasDataComponent<LSystemTag>();
 }
 
-Entity LSystemBehaviour::CreateInternode() {
-    auto retVal = CreateHelper<EmptyInternodeResource>();
-    return retVal;
+Entity LSystemBehaviour::CreateInternode(const Entity &parent) {
+    return CreateHelper<EmptyInternodeResource>(parent);
 }
 
-Entity LSystemBehaviour::CreateInternode(const Entity &parent) {
-    auto retVal = CreateHelper<EmptyInternodeResource>(parent);
-    return retVal;
+bool LSystemBehaviour::InternalRootCheck(const Entity &target) {
+    return target.HasDataComponent<LSystemTag>();
+}
+
+bool LSystemBehaviour::InternalBranchCheck(const Entity &target) {
+    return target.HasDataComponent<LSystemTag>();
+}
+
+Entity LSystemBehaviour::CreateRoot(Entity &rootInternode, Entity &rootBranch) {
+    return CreateRootHelper<EmptyInternodeResource>(rootInternode, rootBranch);
+}
+
+Entity LSystemBehaviour::CreateBranch(const Entity &parent) {
+    return CreateBranchHelper(parent);
 }
 
 

@@ -3,52 +3,48 @@
 #include "InternodeRingSegment.hpp"
 #include <plant_architect_export.h>
 #include <IInternodeResource.hpp>
-#include <InternodeDataComponents.hpp>
+#include <TreeDataComponents.hpp>
+
 using namespace UniEngine;
 namespace PlantArchitect {
     struct LString;
-    enum class PLANT_ARCHITECT_API BudStatus{
+    enum class PLANT_ARCHITECT_API BudStatus {
         Sleeping,
         Flushing,
         Flushed,
         Died
     };
-    struct PLANT_ARCHITECT_API Bud : public ISerializable{
+
+    struct PLANT_ARCHITECT_API Bud : public ISerializable {
         BudStatus m_status = BudStatus::Sleeping;
         InternodeInfo m_newInternodeInfo;
         float m_flushProbability = 0;
+
         void OnInspect();
+
         void Serialize(YAML::Emitter &out) override;
+
         void Deserialize(const YAML::Node &in) override;
-        void Save(const std::string& name, YAML::Emitter &out);
-        void Load(const std::string& name, const YAML::Node &in);
+
+        void Save(const std::string &name, YAML::Emitter &out);
+
+        void Load(const std::string &name, const YAML::Node &in);
     };
+
     struct LSystemCommand;
+
     class InternodeFoliage;
 
-    struct PLANT_ARCHITECT_API BranchPhysicsParameters {
-#pragma region Physics
-        float m_density = 1.0f;
-        float m_linearDamping = 2.0f;
-        float m_angularDamping = 2.0f;
-        int m_positionSolverIteration = 8;
-        int m_velocitySolverIteration = 8;
-        float m_jointDriveStiffnessFactor = 3000.0f;
-        float m_jointDriveStiffnessThicknessFactor = 4.0f;
-        float m_jointDriveDampingFactor = 10.0f;
-        float m_jointDriveDampingThicknessFactor = 4.0f;
-        bool m_enableAccelerationForDrive = true;
-#pragma endregion
-        void Serialize(YAML::Emitter &out);
-        void Deserialize(const YAML::Node &in);
-        void OnInspect();
-    };
 
     class PLANT_ARCHITECT_API Internode : public IPrivateComponent {
-        void ExportLSystemCommandsHelper(int& index, const Entity &target, std::vector<LSystemCommand> &commands);
+        void ExportLSystemCommandsHelper(int &index, const Entity &target, std::vector<LSystemCommand> &commands);
+
         void CollectInternodesHelper(const Entity &target, std::vector<Entity> &results);
-        friend class IInternodeBehaviour;
+
+        friend class IPlantBehaviour;
+
         friend class InternodeFoliage;
+
         /**
          * Normal direction for mesh generation
          */
@@ -62,16 +58,15 @@ namespace PlantArchitect {
          */
         std::vector<InternodeRingSegment> m_rings;
     public:
-        BranchPhysicsParameters m_branchPhysicsParameters;
+        /**
+         * The current root of the internode.
+         */
+        EntityRef m_currentRoot;
 
         /**
          * The generated matrices of foliage
          */
         std::vector<glm::mat4> m_foliageMatrices;
-        /**
-         * The current root of the internode.
-         */
-        EntityRef m_currentRoot;
 
         /**
          * Whether this internode is formed from an apical bud
@@ -93,16 +88,20 @@ namespace PlantArchitect {
          * The axillary or lateral bud.
          */
         std::vector<Bud> m_lateralBuds;
+
         /**
          * Collect all subsequent internodes from this internode.
          * @param results a list of internodes as descendents
          */
         void CollectInternodes(std::vector<Entity> &results);
+
         /**
          * Collect resource (auxin, nutrients, etc.)
          * @param deltaTime How much time the action takes.
          */
         void CollectResource(float deltaTime);
+
+        void Relink(const std::unordered_map<Handle, Handle> &map, const std::shared_ptr<Scene> &scene) override;
 
         /**
          * Down stream the resources.
@@ -121,13 +120,12 @@ namespace PlantArchitect {
         /*
          * Parse the structure of the internodes and set up commands.
          */
-        void ExportLString(const std::shared_ptr<LString>& lString);
+        void ExportLString(const std::shared_ptr<LString> &lString);
 
         void OnInspect() override;
 
         void CollectAssetRef(std::vector<AssetRef> &list) override;
 
-        void Relink(const std::unordered_map<Handle, Handle> &map, const std::shared_ptr<Scene> &scene) override;
 
         void PostCloneAction(const std::shared_ptr<IPrivateComponent> &target) override;
 
@@ -135,40 +133,42 @@ namespace PlantArchitect {
 
         void Deserialize(const YAML::Node &in) override;
     };
-    template <typename T>
-    void SaveList(const std::string& name, std::vector<T>& target, YAML::Emitter &out){
-        if(target.empty()) return;
+
+    template<typename T>
+    void SaveList(const std::string &name, std::vector<T> &target, YAML::Emitter &out) {
+        if (target.empty()) return;
         out << YAML::Key << name << YAML::Value << YAML::BeginSeq;
         for (auto &i: target) {
             out << YAML::BeginMap;
-            static_cast<ISerializable*>(&i)->Serialize(out);
+            static_cast<ISerializable *>(&i)->Serialize(out);
             out << YAML::EndMap;
         }
         out << YAML::EndSeq;
     }
-    template <typename T>
-    void LoadList(const std::string& name, std::vector<T> target, const YAML::Node &in){
-        if(in[name]){
+
+    template<typename T>
+    void LoadList(const std::string &name, std::vector<T> target, const YAML::Node &in) {
+        if (in[name]) {
             target.clear();
-            for(const auto& i : in[name]){
+            for (const auto &i: in[name]) {
                 T instance;
-                static_cast<ISerializable*>(&instance)->Deserialize(i);
+                static_cast<ISerializable *>(&instance)->Deserialize(i);
                 target.push_back(instance);
             }
         }
     }
-    template <typename T>
-    void SaveListAsBinary(const std::string& name, const std::vector<T>& target, YAML::Emitter &out){
-        if (!target.empty())
-        {
+
+    template<typename T>
+    void SaveListAsBinary(const std::string &name, const std::vector<T> &target, YAML::Emitter &out) {
+        if (!target.empty()) {
             out << YAML::Key << name << YAML::Value
-                << YAML::Binary((const unsigned char *)target.data(), target.size() * sizeof(T));
+                << YAML::Binary((const unsigned char *) target.data(), target.size() * sizeof(T));
         }
     }
-    template <typename T>
-    void LoadListFromBinary(const std::string& name, std::vector<T> target, const YAML::Node &in){
-        if (in[name])
-        {
+
+    template<typename T>
+    void LoadListFromBinary(const std::string &name, std::vector<T> target, const YAML::Node &in) {
+        if (in[name]) {
             YAML::Binary binaryList = in[name].as<YAML::Binary>();
             target.resize(binaryList.size() / sizeof(T));
             std::memcpy(target.data(), binaryList.data(), binaryList.size());

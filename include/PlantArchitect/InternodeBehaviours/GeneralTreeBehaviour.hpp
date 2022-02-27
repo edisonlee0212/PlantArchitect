@@ -1,7 +1,7 @@
 #pragma once
 
 #include <plant_architect_export.h>
-#include <IInternodeBehaviour.hpp>
+#include <IPlantBehaviour.hpp>
 #include <GeneralTreeParameters.hpp>
 
 using namespace UniEngine;
@@ -25,17 +25,19 @@ namespace PlantArchitect {
         void OnInspect() override;
     };
 
-    class PLANT_ARCHITECT_API GeneralTreeBehaviour : public IInternodeBehaviour {
+    class PLANT_ARCHITECT_API GeneralTreeBehaviour : public IPlantBehaviour {
 
         Entity ImportGraphTree(const std::filesystem::path &path, const GeneralTreeParameters &parameters);
 
     protected:
         bool InternalInternodeCheck(const Entity &target) override;
+        bool InternalRootCheck(const Entity &target) override;
+        bool InternalBranchCheck(const Entity &target) override;
 
         void CalculateChainDistance(const Entity &target, float previousChainDistance);
 
     public:
-        void Preprocess();
+        void Preprocess(std::vector<Entity>& currentRoots);
 
         void OnInspect() override;
 
@@ -43,8 +45,8 @@ namespace PlantArchitect {
 
         void Grow(int iteration) override;
 
-        Entity CreateInternode() override;
-
+        Entity CreateRoot(Entity& rootInternode, Entity& rootBranch) override;
+        Entity CreateBranch(const Entity &parent) override;
         Entity CreateInternode(const Entity &parent) override;
 
         Entity NewPlant(const GeneralTreeParameters &params, const Transform &transform);

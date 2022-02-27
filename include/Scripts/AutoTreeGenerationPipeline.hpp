@@ -22,7 +22,7 @@ namespace Scripts {
     class AutoTreeGenerationPipeline : public IPrivateComponent {
         void DropBehaviourButton();
 
-        std::shared_ptr<IInternodeBehaviour> m_currentInternodeBehaviour;
+        std::shared_ptr<IPlantBehaviour> m_currentInternodeBehaviour;
         BehaviourType m_behaviourType = BehaviourType::GeneralTree;
     public:
         void UpdateInternodeBehaviour();
@@ -40,7 +40,7 @@ namespace Scripts {
         void Serialize(YAML::Emitter &out) override;
         void Deserialize(const YAML::Node &in) override;
         BehaviourType GetBehaviourType();
-        std::shared_ptr<IInternodeBehaviour> GetBehaviour();
+        std::shared_ptr<IPlantBehaviour> GetBehaviour();
         void CollectAssetRef(std::vector<AssetRef> &list) override;
     };
 

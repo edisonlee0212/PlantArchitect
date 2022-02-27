@@ -2,7 +2,7 @@
 // Created by lllll on 10/26/2021.
 //
 
-#include "InternodeDataComponents.hpp"
+#include "TreeDataComponents.hpp"
 using namespace PlantArchitect;
 
 void InternodeInfo::OnInspect() {

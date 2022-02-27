@@ -22,10 +22,10 @@ namespace Scripts {
         bool SetUpCamera();
         void RenderBranchCapture();
         void ExportMatrices(const std::filesystem::path& path);
-        void ExportGraphNode(const std::shared_ptr<IInternodeBehaviour>& behaviour, YAML::Emitter &out, int parentIndex, const Entity& internode);
-        void ExportGraph(const std::shared_ptr<IInternodeBehaviour>& behaviour, const std::filesystem::path& path);
+        void ExportGraphNode(const std::shared_ptr<IPlantBehaviour>& behaviour, YAML::Emitter &out, int parentIndex, const Entity& internode);
+        void ExportGraph(const std::shared_ptr<IPlantBehaviour>& behaviour, const std::filesystem::path& path);
 
-        void ExportCSV(const std::shared_ptr<IInternodeBehaviour>& behaviour, const std::filesystem::path& path);
+        void ExportCSV(const std::shared_ptr<IPlantBehaviour>& behaviour, const std::filesystem::path& path);
 
         std::shared_ptr<Camera> m_branchCaptureCamera;
         glm::vec3 m_cameraPosition;

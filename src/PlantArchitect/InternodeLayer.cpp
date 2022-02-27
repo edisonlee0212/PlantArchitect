@@ -5,7 +5,7 @@
 #include "InternodeLayer.hpp"
 #include <Internode.hpp>
 #include "EditorLayer.hpp"
-#include <InternodeDataComponents.hpp>
+#include <TreeDataComponents.hpp>
 #include "GeneralTreeBehaviour.hpp"
 #include "SpaceColonizationBehaviour.hpp"
 #include "GeneralTreeParameters.hpp"
@@ -17,7 +17,6 @@
 #include "DefaultInternodeResource.hpp"
 #include "EmptyInternodeResource.hpp"
 #include "DefaultInternodePhyllotaxis.hpp"
-#include "JSONTreeBehaviour.hpp"
 #include "FBM.hpp"
 
 using namespace PlantArchitect;
@@ -67,12 +66,6 @@ void InternodeLayer::PreparePhysics(const Entity &entity, const Entity &child,
 
 void InternodeLayer::Simulate(int iterations) {
     for (int iteration = 0; iteration < iterations; iteration++) {
-        if (iteration == 0) {
-            for (auto &i: m_internodeBehaviours) {
-                auto behaviour = i.Get<IInternodeBehaviour>();
-                if (behaviour) behaviour->CollectRoots();
-            }
-        }
         m_voxelSpace.Clear();
         Entities::ForEach<InternodeInfo, GlobalTransform>
                 (Entities::GetCurrentScene(), Jobs::Workers(), m_internodesQuery,
@@ -97,7 +90,7 @@ void InternodeLayer::Simulate(int iterations) {
                                                  });
                  }, true);
         for (auto &i: m_internodeBehaviours) {
-            auto behaviour = i.Get<IInternodeBehaviour>();
+            auto behaviour = i.Get<IPlantBehaviour>();
             if (behaviour) behaviour->Grow(iteration);
         }
     }
@@ -109,10 +102,11 @@ void InternodeLayer::Simulate(int iterations) {
 }
 
 void InternodeLayer::PreparePhysics() {
+    /*
     auto physicsLayer = Application::GetLayer<PhysicsLayer>();
     if (!physicsLayer) return;
     for (auto &i: m_internodeBehaviours) {
-        auto behaviour = i.Get<IInternodeBehaviour>();
+        auto behaviour = i.Get<IPlantBehaviour>();
         if (behaviour) {
             for (const auto &root: behaviour->m_currentRoots) {
                 auto branchPhysicsParameter = root.GetOrSetPrivateComponent<Internode>().lock()->m_branchPhysicsParameters;
@@ -126,6 +120,7 @@ void InternodeLayer::PreparePhysics() {
     physicsLayer->UploadRigidBodyShapes(activeScene);
     physicsLayer->UploadTransforms(activeScene, true);
     physicsLayer->UploadJointLinks(activeScene);
+     */
 }
 
 #pragma region Methods
@@ -177,15 +172,15 @@ void InternodeLayer::OnInspect() {
                                       {"GeneralTreeBehaviour", "SpaceColonizationBehaviour", "LSystemBehaviour",
                                        "JSONTreeBehaviour"},
                                       false);
-            if (temp.Get<IInternodeBehaviour>()) {
-                PushInternodeBehaviour(temp.Get<IInternodeBehaviour>());
+            if (temp.Get<IPlantBehaviour>()) {
+                PushInternodeBehaviour(temp.Get<IPlantBehaviour>());
                 temp.Clear();
             }
             if (ImGui::TreeNodeEx("Internode Behaviours", ImGuiTreeNodeFlags_DefaultOpen)) {
                 int index = 0;
                 bool skip = false;
                 for (auto &i: m_internodeBehaviours) {
-                    auto ptr = i.Get<IInternodeBehaviour>();
+                    auto ptr = i.Get<IPlantBehaviour>();
                     ImGui::Button(("Slot " + std::to_string(index) + ": " + ptr->m_name).c_str());
                     if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
                         Editor::GetInstance().m_inspectingAsset = ptr;
@@ -213,7 +208,7 @@ void InternodeLayer::OnInspect() {
                 if (skip) {
                     int index2 = 0;
                     for (auto &i: m_internodeBehaviours) {
-                        if (!i.Get<IInternodeBehaviour>()) {
+                        if (!i.Get<IPlantBehaviour>()) {
                             m_internodeBehaviours.erase(m_internodeBehaviours.begin() + index2);
                             break;
                         }
@@ -488,16 +483,12 @@ void InternodeLayer::OnCreate() {
     ClassRegistry::RegisterDataComponent<LSystemParameters>("LSystemParameters");
     ClassRegistry::RegisterAsset<LSystemBehaviour>("LSystemBehaviour", ".lsbehaviour");
 
-    ClassRegistry::RegisterAsset<JSONData>("JSONData", ".jsondata");
-    AssetManager::RegisterExternalAssetTypeExtensions<JSONData>({".json", ".txt"});
-    ClassRegistry::RegisterDataComponent<JSONTreeTag>("JSONTreeTag");
-    ClassRegistry::RegisterDataComponent<JSONTreeParameters>("JSONTreeParameters");
-    ClassRegistry::RegisterAsset<JSONTreeBehaviour>("JSONTreeBehaviour", ".jtbehaviour");
-
     ClassRegistry::RegisterSerializable<EmptyInternodeResource>("EmptyInternodeResource");
     ClassRegistry::RegisterSerializable<DefaultInternodeResource>("DefaultInternodeResource");
     ClassRegistry::RegisterSerializable<Bud>("LateralBud");
     ClassRegistry::RegisterPrivateComponent<Internode>("Internode");
+    ClassRegistry::RegisterPrivateComponent<Branch>("Branch");
+    ClassRegistry::RegisterPrivateComponent<Root>("Root");
 
     ClassRegistry::RegisterDataComponent<InternodeInfo>("InternodeInfo");
     ClassRegistry::RegisterDataComponent<InternodeStatistics>("InternodeStatistics");
@@ -576,12 +567,10 @@ void InternodeLayer::OnCreate() {
     auto spaceColonizationBehaviour = AssetManager::CreateAsset<SpaceColonizationBehaviour>();
     auto lSystemBehaviour = AssetManager::CreateAsset<LSystemBehaviour>();
     auto generalTreeBehaviour = AssetManager::CreateAsset<GeneralTreeBehaviour>();
-    auto jsonTreeBehaviour = AssetManager::CreateAsset<JSONTreeBehaviour>();
     PushInternodeBehaviour(
-            std::dynamic_pointer_cast<IInternodeBehaviour>(spaceColonizationBehaviour));
-    PushInternodeBehaviour(std::dynamic_pointer_cast<IInternodeBehaviour>(lSystemBehaviour));
-    PushInternodeBehaviour(std::dynamic_pointer_cast<IInternodeBehaviour>(generalTreeBehaviour));
-    PushInternodeBehaviour(std::dynamic_pointer_cast<JSONTreeBehaviour>(jsonTreeBehaviour));
+            std::dynamic_pointer_cast<IPlantBehaviour>(spaceColonizationBehaviour));
+    PushInternodeBehaviour(std::dynamic_pointer_cast<IPlantBehaviour>(lSystemBehaviour));
+    PushInternodeBehaviour(std::dynamic_pointer_cast<IPlantBehaviour>(generalTreeBehaviour));
 
     m_randomColors.resize(8192);
     for (int i = 0; i < 8192; i++) {
@@ -956,48 +945,54 @@ void InternodeLayer::DrawColorModeSelectionMenu() {
 void InternodeLayer::CalculateStatistics() {
     auto scene = Entities::GetCurrentScene();
     for (auto &i: m_internodeBehaviours) {
-        auto behaviour = i.Get<IInternodeBehaviour>();
+        auto behaviour = i.Get<IPlantBehaviour>();
         if (behaviour) {
-            for (auto root: behaviour->m_currentRoots) {
-                behaviour->TreeGraphWalker(root, root,
-                                           [](Entity parent, Entity child) {
+            std::vector<Entity> currentRoots;
+            behaviour->m_rootsQuery.ToEntityArray(Entities::GetCurrentScene(), currentRoots);
+            for (auto root: currentRoots) {
+                root.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
+                    if (!behaviour->InternodeCheck(child)) return;
+                    behaviour->TreeGraphWalker(child,
+                                               [](Entity parent, Entity child) {
 
-                                           },
-                                           [](Entity parent) {
-                                               auto parentStat = parent.GetDataComponent<InternodeStatistics>();
-                                               std::vector<int> indices;
-                                               parent.ForEachChild(
-                                                       [&](const std::shared_ptr<Scene> &scene, Entity child) {
-                                                           indices.push_back(
-                                                                   child.GetDataComponent<InternodeStatistics>().m_strahlerOrder);
-                                                       });
-                                               if (indices.empty()) { parentStat.m_strahlerOrder = 1; }
-                                               else if (indices.size() == 1) {
-                                                   parentStat.m_strahlerOrder = indices[0];
-                                               } else {
-                                                   bool different = false;
-                                                   int maxIndex = indices[0];
-                                                   for (int i = 1; i < indices.size(); i++) {
-                                                       if (indices[i] != maxIndex) {
-                                                           different = true;
-                                                           maxIndex = glm::max(maxIndex, indices[i]);
+                                               },
+                                               [](Entity parent) {
+                                                   auto parentStat = parent.GetDataComponent<InternodeStatistics>();
+                                                   std::vector<int> indices;
+                                                   parent.ForEachChild(
+                                                           [&](const std::shared_ptr<Scene> &scene, Entity child) {
+                                                               indices.push_back(
+                                                                       child.GetDataComponent<InternodeStatistics>().m_strahlerOrder);
+                                                           });
+                                                   if (indices.empty()) { parentStat.m_strahlerOrder = 1; }
+                                                   else if (indices.size() == 1) {
+                                                       parentStat.m_strahlerOrder = indices[0];
+                                                   } else {
+                                                       bool different = false;
+                                                       int maxIndex = indices[0];
+                                                       for (int i = 1; i < indices.size(); i++) {
+                                                           if (indices[i] != maxIndex) {
+                                                               different = true;
+                                                               maxIndex = glm::max(maxIndex, indices[i]);
+                                                           }
+                                                       }
+                                                       if (different) {
+                                                           parentStat.m_strahlerOrder = maxIndex;
+                                                       } else {
+                                                           parentStat.m_strahlerOrder = maxIndex + 1;
                                                        }
                                                    }
-                                                   if (different) {
-                                                       parentStat.m_strahlerOrder = maxIndex;
-                                                   } else {
-                                                       parentStat.m_strahlerOrder = maxIndex + 1;
-                                                   }
-                                               }
 
-                                               parent.SetDataComponent(parentStat);
-                                           },
-                                           [](Entity endNode) {
-                                               auto endNodeStat = endNode.GetDataComponent<InternodeStatistics>();
-                                               endNodeStat.m_strahlerOrder = 1;
-                                               endNode.SetDataComponent(endNodeStat);
-                                           }
-                );
+                                                   parent.SetDataComponent(parentStat);
+                                               },
+                                               [](Entity endNode) {
+                                                   auto endNodeStat = endNode.GetDataComponent<InternodeStatistics>();
+                                                   endNodeStat.m_strahlerOrder = 1;
+                                                   endNode.SetDataComponent(endNodeStat);
+                                               }
+                    );
+                });
+
             }
         }
     }
@@ -1023,7 +1018,7 @@ void InternodeLayer::FixedUpdate() {
                                                    }, false);
 
                 for (int i = 0; i < internodes.size(); i++) {
-                    auto& internode = internodes[i];
+                    auto &internode = internodes[i];
                     const auto position = internode.GetDataComponent<GlobalTransform>().GetPosition();
                     if (internode.IsEnabled() && internode.HasPrivateComponent<RigidBody>()) {
                         auto rigidBody = internode.GetOrSetPrivateComponent<RigidBody>().lock();

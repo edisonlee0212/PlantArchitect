@@ -2,7 +2,7 @@
 #include "Application.hpp"
 #include "plant_architect_export.h"
 #include <VoxelSpace.hpp>
-#include "InternodeDataComponents.hpp"
+#include "TreeDataComponents.hpp"
 #include "ILayer.hpp"
 #include "FBM.hpp"
 using namespace UniEngine;
@@ -21,7 +21,7 @@ namespace PlantArchitect {
         StrahlerNumber,
     };
     struct BranchPhysicsParameters;
-    class IInternodeBehaviour;
+    class IPlantBehaviour;
     class PLANT_ARCHITECT_API InternodeLayer : public ILayer {
         void PreparePhysics(const Entity& entity, const Entity& child, const BranchPhysicsParameters& branchPhysicsParameters);
 

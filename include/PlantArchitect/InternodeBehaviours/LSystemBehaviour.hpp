@@ -1,7 +1,7 @@
 #pragma once
 
 #include <plant_architect_export.h>
-#include <IInternodeBehaviour.hpp>
+#include <IPlantBehaviour.hpp>
 
 using namespace UniEngine;
 namespace PlantArchitect {
@@ -81,9 +81,11 @@ namespace PlantArchitect {
         int m_index = 0;
     };
 
-    class PLANT_ARCHITECT_API LSystemBehaviour : public IInternodeBehaviour {
+    class PLANT_ARCHITECT_API LSystemBehaviour : public IPlantBehaviour {
     protected:
         bool InternalInternodeCheck(const Entity &target) override;
+        bool InternalRootCheck(const Entity &target) override;
+        bool InternalBranchCheck(const Entity &target) override;
 
     public:
         Entity FormPlant(const std::shared_ptr<LString> &lString, const LSystemParameters &parameters);
@@ -92,8 +94,8 @@ namespace PlantArchitect {
 
         void OnCreate() override;
 
-        Entity CreateInternode() override;
-
+        Entity CreateRoot(Entity& rootInternode, Entity& rootBranch) override;
+        Entity CreateBranch(const Entity &parent) override;
         Entity CreateInternode(const Entity &parent) override;
     };
 }

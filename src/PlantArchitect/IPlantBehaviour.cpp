@@ -2,25 +2,27 @@
 // Created by lllll on 8/27/2021.
 //
 
-#include "IInternodeBehaviour.hpp"
+#include "IPlantBehaviour.hpp"
 #include "Internode.hpp"
 #include "Curve.hpp"
 #include "InternodeLayer.hpp"
 #include "IInternodePhyllotaxis.hpp"
 #include "InternodeFoliage.hpp"
-#include "InternodeDataComponents.hpp"
+#include "TreeDataComponents.hpp"
 
 using namespace PlantArchitect;
 
-void IInternodeBehaviour::DestroyInternode(const Entity &internode) {
+void IPlantBehaviour::DestroyInternode(const Entity &internode) {
     std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
     Entities::DeleteEntity(Entities::GetCurrentScene(), internode);
 }
 
 void
-IInternodeBehaviour::GenerateSkinnedMeshes(float subdivision,
-                                           float resolution) {
-    int plantSize = m_currentRoots.size();
+IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
+                                       float resolution) {
+    std::vector<Entity> currentRoots;
+    m_rootsQuery.ToEntityArray(Entities::GetCurrentScene(), currentRoots);
+    int plantSize = currentRoots.size();
     std::vector<std::vector<Entity>> boundEntitiesLists;
     std::vector<std::vector<unsigned>> boneIndicesLists;
     std::vector<std::vector<int>> parentIndicesLists;
@@ -33,7 +35,7 @@ IInternodeBehaviour::GenerateSkinnedMeshes(float subdivision,
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
         results.push_back(Jobs::Workers().Push([&, plantIndex](int id) {
             TreeNodeCollector(boundEntitiesLists[plantIndex],
-                              parentIndicesLists[plantIndex], -1, m_currentRoots[plantIndex], m_currentRoots[plantIndex]);
+                              parentIndicesLists[plantIndex], -1, currentRoots[plantIndex], currentRoots[plantIndex]);
         }).share());
     }
     for (const auto &i: results)
@@ -50,7 +52,7 @@ IInternodeBehaviour::GenerateSkinnedMeshes(float subdivision,
                                        entity.GetOrSetPrivateComponent<Internode>().lock();
                                internode->m_rings.clear();
                                auto rootGlobalTransform = globalTransform;
-                               auto root = internode->m_currentRoot.Get();
+                               auto root = internode->GetOwner().GetRoot();
                                if (root != entity) {
                                    rootGlobalTransform = root.GetDataComponent<GlobalTransform>();
                                }
@@ -133,7 +135,7 @@ IInternodeBehaviour::GenerateSkinnedMeshes(float subdivision,
                          entity.GetOrSetPrivateComponent<Internode>().lock();
                  internode->m_foliageMatrices.clear();
                  auto rootGlobalTransform = globalTransform;
-                 auto root = internode->m_currentRoot.Get();
+                 auto root = internode->GetOwner().GetRoot();
                  if (root != entity) {
                      rootGlobalTransform = root.GetDataComponent<GlobalTransform>();
                  }
@@ -149,7 +151,7 @@ IInternodeBehaviour::GenerateSkinnedMeshes(float subdivision,
              });
 #pragma endregion
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
-        const auto &plant = m_currentRoots[plantIndex];
+        const auto &plant = currentRoots[plantIndex];
         Entity branch, foliage;
         PrepareInternodeForSkeletalAnimation(plant, branch, foliage);
         {
@@ -246,16 +248,14 @@ IInternodeBehaviour::GenerateSkinnedMeshes(float subdivision,
     }
 }
 
-void IInternodeBehaviour::TreeNodeCollector(std::vector<Entity> &boundEntities, std::vector<int> &parentIndices,
-                                            const int &parentIndex, const Entity &node, const Entity &root) {
+void IPlantBehaviour::TreeNodeCollector(std::vector<Entity> &boundEntities, std::vector<int> &parentIndices,
+                                        const int &parentIndex, const Entity &node, const Entity &root) {
     if (!node.HasDataComponent<InternodeInfo>() || !node.HasPrivateComponent<Internode>()) return;
     boundEntities.push_back(node);
     parentIndices.push_back(parentIndex);
     const size_t currentIndex = boundEntities.size() - 1;
     auto internodeInfo = node.GetDataComponent<InternodeInfo>();
     auto internode = node.GetOrSetPrivateComponent<Internode>().lock();
-    //internodeInfo.m_index = currentIndex;
-    internode->m_currentRoot = root;
     if (node.GetChildrenAmount() == 0) internodeInfo.m_endNode = true;
     else internodeInfo.m_endNode = false;
     node.SetDataComponent(internodeInfo);
@@ -265,10 +265,10 @@ void IInternodeBehaviour::TreeNodeCollector(std::vector<Entity> &boundEntities, 
 
 }
 
-void IInternodeBehaviour::FoliageSkinnedMeshGenerator(std::vector<Entity> &entities,
-                                                      std::vector<int> &parentIndices,
-                                                      std::vector<SkinnedVertex> &vertices,
-                                                      std::vector<unsigned int> &indices) {
+void IPlantBehaviour::FoliageSkinnedMeshGenerator(std::vector<Entity> &entities,
+                                                  std::vector<int> &parentIndices,
+                                                  std::vector<SkinnedVertex> &vertices,
+                                                  std::vector<unsigned int> &indices) {
     auto quadMesh = DefaultResources::Primitives::Quad;
     auto &quadTriangles = quadMesh->UnsafeGetTriangles();
     auto quadVerticesSize = quadMesh->GetVerticesAmount();
@@ -323,9 +323,9 @@ void IInternodeBehaviour::FoliageSkinnedMeshGenerator(std::vector<Entity> &entit
     }
 }
 
-void IInternodeBehaviour::BranchSkinnedMeshGenerator(std::vector<Entity> &entities, std::vector<int> &parentIndices,
-                                                     std::vector<SkinnedVertex> &vertices,
-                                                     std::vector<unsigned int> &indices) {
+void IPlantBehaviour::BranchSkinnedMeshGenerator(std::vector<Entity> &entities, std::vector<int> &parentIndices,
+                                                 std::vector<SkinnedVertex> &vertices,
+                                                 std::vector<unsigned int> &indices) {
     int parentStep = -1;
     for (int internodeIndex = 0; internodeIndex < entities.size();
          internodeIndex++) {
@@ -489,7 +489,7 @@ void IInternodeBehaviour::BranchSkinnedMeshGenerator(std::vector<Entity> &entiti
 }
 
 void
-IInternodeBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, Entity &branchMesh, Entity &foliage) {
+IPlantBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, Entity &branchMesh, Entity &foliage) {
     entity.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
         if (child.GetName() == "Branch") {
             branchMesh = child;
@@ -530,29 +530,25 @@ IInternodeBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, 
     branchMesh.SetParent(entity);
     foliage.SetParent(entity);
 }
-
-void IInternodeBehaviour::CollectRoots() {
-    std::mutex plantCollectionMutex;
-    m_currentRoots.clear();
-    Entities::ForEach<InternodeInfo>(Entities::GetCurrentScene(), Jobs::Workers(),
-                                          m_internodesQuery,
-                                          [&](int index, Entity entity, InternodeInfo &internodeInfo) {
-                                              if (!entity.HasPrivateComponent<Internode>()) return;
-                                              entity.GetOrSetPrivateComponent<Internode>().lock()->m_currentRoot = entity;
-                                              auto parent = entity.GetParent();
-                                              if (parent.IsNull() || !parent.HasPrivateComponent<Internode>()) {
-                                                  std::lock_guard<std::mutex> lock(plantCollectionMutex);
-                                                  m_currentRoots.push_back(entity);
-                                              }
-                                          });
+Entity IPlantBehaviour::CreateBranchHelper(const Entity &parent) {
+    Entity retVal;
+    std::lock_guard<std::mutex> lockGuard(m_branchFactoryLock);
+    retVal = Entities::CreateEntity(Entities::GetCurrentScene(), m_branchArchetype, "Branch");
+    retVal.SetParent(parent);
+    BranchInfo branchInfo;
+    retVal.SetDataComponent(branchInfo);
+    auto parentBranch = parent.GetOrSetPrivateComponent<Branch>().lock();
+    auto branch = retVal.GetOrSetPrivateComponent<Branch>().lock();
+    branch->m_branchPhysicsParameters = parentBranch->m_branchPhysicsParameters;
+    branch->m_currentRoot = parentBranch->m_currentRoot;
+    return retVal;
 }
-
 void
-IInternodeBehaviour::TreeGraphWalker(const Entity &root, const Entity &node,
-                                     const std::function<void(Entity, Entity)> &rootToEndAction,
-                                     const std::function<void(Entity)> &endToRootAction,
-                                     const std::function<void(Entity)> &endNodeAction) {
-    auto currentNode = node;
+IPlantBehaviour::TreeGraphWalker(const Entity &startInternode,
+                                 const std::function<void(Entity, Entity)> &rootToEndAction,
+                                 const std::function<void(Entity)> &endToRootAction,
+                                 const std::function<void(Entity)> &endNodeAction) {
+    auto currentNode = startInternode;
     while (currentNode.GetChildrenAmount() == 1) {
         Entity child = currentNode.GetChildren()[0];
         if (InternodeCheck(child)) {
@@ -570,7 +566,7 @@ IInternodeBehaviour::TreeGraphWalker(const Entity &root, const Entity &node,
                 rootToEndAction(currentNode, child);
             }
             if (InternodeCheck(child)) {
-                TreeGraphWalker(root, child, rootToEndAction, endToRootAction, endNodeAction);
+                TreeGraphWalker(child, rootToEndAction, endToRootAction, endNodeAction);
                 if (InternodeCheck(child)) {
                     trueChildAmount++;
                 }
@@ -582,7 +578,7 @@ IInternodeBehaviour::TreeGraphWalker(const Entity &root, const Entity &node,
     } else {
         endToRootAction(currentNode);
     }
-    while (currentNode != node) {
+    while (currentNode != startInternode) {
         auto parent = currentNode.GetParent();
         endToRootAction(parent);
         if (!InternodeCheck(currentNode)) {
@@ -592,15 +588,25 @@ IInternodeBehaviour::TreeGraphWalker(const Entity &root, const Entity &node,
     }
 }
 
-bool IInternodeBehaviour::InternodeCheck(const Entity &target) {
+bool IPlantBehaviour::InternodeCheck(const Entity &target) {
     return target.IsValid() && target.IsEnabled() && target.HasDataComponent<InternodeInfo>() &&
            target.HasPrivateComponent<Internode>() &&
            InternalInternodeCheck(target);
 }
 
-void IInternodeBehaviour::TreeGraphWalkerRootToEnd(const Entity &root, const Entity &node,
-                                                   const std::function<void(Entity, Entity)> &rootToEndAction) {
-    auto currentNode = node;
+bool IPlantBehaviour::RootCheck(const Entity &target) {
+    return target.IsValid() && target.IsEnabled() && target.HasDataComponent<RootInfo>() &&
+           target.HasPrivateComponent<Root>() &&
+           InternalRootCheck(target);
+}
+bool IPlantBehaviour::BranchCheck(const Entity &target) {
+    return target.IsValid() && target.IsEnabled() && target.HasDataComponent<BranchInfo>() &&
+           target.HasPrivateComponent<Branch>() &&
+           InternalBranchCheck(target);
+}
+void IPlantBehaviour::TreeGraphWalkerRootToEnd(const Entity &startInternode,
+                                               const std::function<void(Entity, Entity)> &rootToEndAction) {
+    auto currentNode = startInternode;
     while (currentNode.GetChildrenAmount() == 1) {
         Entity child = currentNode.GetChildren()[0];
         if (InternodeCheck(child)) {
@@ -615,16 +621,16 @@ void IInternodeBehaviour::TreeGraphWalkerRootToEnd(const Entity &root, const Ent
         for (const auto &child: children) {
             if (InternodeCheck(child)) {
                 rootToEndAction(currentNode, child);
-                TreeGraphWalkerRootToEnd(root, child, rootToEndAction);
+                TreeGraphWalkerRootToEnd(child, rootToEndAction);
             }
         }
     }
 }
 
-void IInternodeBehaviour::TreeGraphWalkerEndToRoot(const Entity &root, const Entity &node,
-                                                   const std::function<void(Entity)> &endToRootAction,
-                                                   const std::function<void(Entity)> &endNodeAction) {
-    auto currentNode = node;
+void IPlantBehaviour::TreeGraphWalkerEndToRoot(const Entity &startInternode,
+                                               const std::function<void(Entity)> &endToRootAction,
+                                               const std::function<void(Entity)> &endNodeAction) {
+    auto currentNode = startInternode;
     while (currentNode.GetChildrenAmount() == 1) {
         Entity child = currentNode.GetChildren()[0];
         if (child.IsValid()) {
@@ -636,7 +642,7 @@ void IInternodeBehaviour::TreeGraphWalkerEndToRoot(const Entity &root, const Ent
         auto children = currentNode.GetChildren();
         for (const auto &child: children) {
             if (InternodeCheck(child)) {
-                TreeGraphWalkerEndToRoot(root, child, endToRootAction, endNodeAction);
+                TreeGraphWalkerEndToRoot(child, endToRootAction, endNodeAction);
                 if (InternodeCheck(child)) {
                     trueChildAmount++;
                 }
@@ -648,7 +654,7 @@ void IInternodeBehaviour::TreeGraphWalkerEndToRoot(const Entity &root, const Ent
     } else {
         endToRootAction(currentNode);
     }
-    while (currentNode != node) {
+    while (currentNode != startInternode) {
         auto parent = currentNode.GetParent();
         endToRootAction(parent);
         if (!InternodeCheck(currentNode)) {
@@ -658,20 +664,7 @@ void IInternodeBehaviour::TreeGraphWalkerEndToRoot(const Entity &root, const Ent
     }
 }
 
-void IInternodeBehaviour::ParallelForEachRoot(std::vector<Entity> &roots,
-                                              const std::function<void(int rootIndex, Entity root)> &action) {
-    auto plantSize = roots.size();
-    std::vector<std::shared_future<void>> results;
-    for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
-        results.push_back(Jobs::Workers().Push([&, plantIndex](int id) {
-            action(plantIndex, roots[plantIndex]);
-        }).share());
-    }
-    for (const auto &i: results)
-        i.wait();
-}
-
-void IInternodeBehaviour::ApplyTropism(const glm::vec3 &targetDir, float tropism, glm::vec3 &front, glm::vec3 &up) {
+void IPlantBehaviour::ApplyTropism(const glm::vec3 &targetDir, float tropism, glm::vec3 &front, glm::vec3 &up) {
     const glm::vec3 dir = glm::normalize(targetDir);
     const float dotP = glm::abs(glm::dot(front, dir));
     if (dotP < 0.99f && dotP > -0.99f) {
