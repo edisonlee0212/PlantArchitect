@@ -149,7 +149,7 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
     rootInternode.SetDataComponent(rootTransform);
 
     //Since we only stored the rotation data into internode info without applying it to the local transformation matrix of the internode, we do it here.
-    TreeGraphWalkerRootToEnd(rootInternode, [](Entity parent, Entity child) {
+    InternodeGraphWalkerRootToEnd(rootInternode, [](Entity parent, Entity child) {
         auto parentGlobalTransform = parent.GetDataComponent<GlobalTransform>();
         auto parentPosition = parentGlobalTransform.GetPosition();
         auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
@@ -194,7 +194,7 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
                                                                                    root);
 
     //Calculate other properties like thickness after the structure of the tree is ready.
-    TreeGraphWalkerEndToRoot(rootInternode, [&](Entity parent) {
+    InternodeGraphWalkerEndToRoot(rootInternode, [&](Entity parent) {
         float thicknessCollection = 0.0f;
         auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
         parent.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
@@ -220,7 +220,7 @@ bool LSystemBehaviour::InternalInternodeCheck(const Entity &target) {
 }
 
 Entity LSystemBehaviour::CreateInternode(const Entity &parent) {
-    return CreateHelper<EmptyInternodeResource>(parent);
+    return CreateInternodeHelper<EmptyInternodeResource>(parent);
 }
 
 bool LSystemBehaviour::InternalRootCheck(const Entity &target) {

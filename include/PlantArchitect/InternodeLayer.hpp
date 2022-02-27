@@ -2,7 +2,7 @@
 #include "Application.hpp"
 #include "plant_architect_export.h"
 #include <VoxelSpace.hpp>
-#include "TreeDataComponents.hpp"
+#include "PlantDataComponents.hpp"
 #include "ILayer.hpp"
 #include "FBM.hpp"
 using namespace UniEngine;

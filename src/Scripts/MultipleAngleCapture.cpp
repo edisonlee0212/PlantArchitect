@@ -422,12 +422,13 @@ void MultipleAngleCapture::ExportGraph(const std::shared_ptr<IPlantBehaviour> &b
         internodes[0].emplace_back(-1, m_currentGrowingTree);
         m_currentGrowingTree.ForEachChild([&](const std::shared_ptr<Scene>& scene, Entity child){
             if(!behaviour->InternodeCheck(child)) return;
-            behaviour->TreeGraphWalkerRootToEnd(child,
-                                                [&](Entity parent, Entity child) {
-                                                    auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
-                                                    internodes[childInternodeInfo.m_layer].emplace_back(parent.GetIndex(),
-                                                                                                        child);
-                                                });
+            behaviour->InternodeGraphWalkerRootToEnd(child,
+                                                     [&](Entity parent, Entity child) {
+                                                         auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
+                                                         internodes[childInternodeInfo.m_layer].emplace_back(
+                                                                 parent.GetIndex(),
+                                                                 child);
+                                                     });
         });
 
         out << YAML::Key << "Layers" << YAML::Value << YAML::BeginSeq;
@@ -540,13 +541,14 @@ void MultipleAngleCapture::ExportCSV(const std::shared_ptr<IPlantBehaviour> &beh
         internodes[0].emplace_back(-1, m_currentGrowingTree);
         m_currentGrowingTree.ForEachChild([&](const std::shared_ptr<Scene>& scene, Entity child){
             if(!behaviour->InternodeCheck(child)) return;
-            behaviour->TreeGraphWalkerRootToEnd(child,
-                                                [&](Entity parent, Entity child) {
-                                                    auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
-                                                    if (childInternodeInfo.m_endNode) return;
-                                                    internodes[childInternodeInfo.m_layer].emplace_back(parent.GetIndex(),
-                                                                                                        child);
-                                                });
+            behaviour->InternodeGraphWalkerRootToEnd(child,
+                                                     [&](Entity parent, Entity child) {
+                                                         auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
+                                                         if (childInternodeInfo.m_endNode) return;
+                                                         internodes[childInternodeInfo.m_layer].emplace_back(
+                                                                 parent.GetIndex(),
+                                                                 child);
+                                                     });
         });
         output +="in_id,in_pos_x,in_pos_y,in_pos_z,in_front_x,in_front_y,in_front_z,in_up_x,in_up_y,in_up_z,in_thickness,in_length,in_root_distance,in_chain_distance,in_distance_to_branch_start,in_level,in_flush_age,in_quat_x,in_quat_y,in_quat_z,in_quat_w,";
         output +="out0_id,out0_pos_x,out0_pos_y,out0_pos_z,out0_front_x,out0_front_y,out0_front_z,out0_up_x,out0_up_y,out0_up_z,out0_thickness,out0_length,out0_root_distance,out0_chain_distance,out0_distance_to_branch_start,out0_level,out0_flush_age,out0_quat_x,out0_quat_y,out0_quat_z,out0_quat_w,";

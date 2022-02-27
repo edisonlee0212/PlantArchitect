@@ -208,7 +208,7 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
                                            auto spaceColonizationParameters = entity.GetDataComponent<SpaceColonizationParameters>();
                                            entity.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
                                                if (!InternodeCheck(child)) return;
-                                               TreeGraphWalkerEndToRoot(child, [&](Entity parent) {
+                                               InternodeGraphWalkerEndToRoot(child, [&](Entity parent) {
                                                    float thicknessCollection = 0.0f;
                                                    auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
                                                    parent.ForEachChild(
@@ -217,7 +217,8 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
                                                                auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
                                                                thicknessCollection += glm::pow(
                                                                        childInternodeInfo.m_thickness,
-                                                                       1.0f / spaceColonizationParameters.m_thicknessFactor);
+                                                                       1.0f /
+                                                                       spaceColonizationParameters.m_thicknessFactor);
                                                            });
                                                    parentInternodeInfo.m_thickness = glm::pow(thicknessCollection,
                                                                                               spaceColonizationParameters.m_thicknessFactor);
@@ -356,7 +357,7 @@ bool SpaceColonizationBehaviour::InternalInternodeCheck(const Entity &target) {
 }
 
 Entity SpaceColonizationBehaviour::CreateInternode(const Entity &parent) {
-    return CreateHelper<EmptyInternodeResource>(parent);
+    return CreateInternodeHelper<EmptyInternodeResource>(parent);
 }
 
 Entity SpaceColonizationBehaviour::NewPlant(const SpaceColonizationParameters &params, const Transform &transform) {

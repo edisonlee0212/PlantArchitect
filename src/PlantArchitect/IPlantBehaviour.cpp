@@ -8,7 +8,7 @@
 #include "InternodeLayer.hpp"
 #include "IInternodePhyllotaxis.hpp"
 #include "InternodeFoliage.hpp"
-#include "TreeDataComponents.hpp"
+#include "PlantDataComponents.hpp"
 
 using namespace PlantArchitect;
 
@@ -544,10 +544,10 @@ Entity IPlantBehaviour::CreateBranchHelper(const Entity &parent) {
     return retVal;
 }
 void
-IPlantBehaviour::TreeGraphWalker(const Entity &startInternode,
-                                 const std::function<void(Entity, Entity)> &rootToEndAction,
-                                 const std::function<void(Entity)> &endToRootAction,
-                                 const std::function<void(Entity)> &endNodeAction) {
+IPlantBehaviour::InternodeGraphWalker(const Entity &startInternode,
+                                      const std::function<void(Entity, Entity)> &rootToEndAction,
+                                      const std::function<void(Entity)> &endToRootAction,
+                                      const std::function<void(Entity)> &endNodeAction) {
     auto currentNode = startInternode;
     while (currentNode.GetChildrenAmount() == 1) {
         Entity child = currentNode.GetChildren()[0];
@@ -566,7 +566,7 @@ IPlantBehaviour::TreeGraphWalker(const Entity &startInternode,
                 rootToEndAction(currentNode, child);
             }
             if (InternodeCheck(child)) {
-                TreeGraphWalker(child, rootToEndAction, endToRootAction, endNodeAction);
+                InternodeGraphWalker(child, rootToEndAction, endToRootAction, endNodeAction);
                 if (InternodeCheck(child)) {
                     trueChildAmount++;
                 }
@@ -604,8 +604,8 @@ bool IPlantBehaviour::BranchCheck(const Entity &target) {
            target.HasPrivateComponent<Branch>() &&
            InternalBranchCheck(target);
 }
-void IPlantBehaviour::TreeGraphWalkerRootToEnd(const Entity &startInternode,
-                                               const std::function<void(Entity, Entity)> &rootToEndAction) {
+void IPlantBehaviour::InternodeGraphWalkerRootToEnd(const Entity &startInternode,
+                                                    const std::function<void(Entity, Entity)> &rootToEndAction) {
     auto currentNode = startInternode;
     while (currentNode.GetChildrenAmount() == 1) {
         Entity child = currentNode.GetChildren()[0];
@@ -621,15 +621,15 @@ void IPlantBehaviour::TreeGraphWalkerRootToEnd(const Entity &startInternode,
         for (const auto &child: children) {
             if (InternodeCheck(child)) {
                 rootToEndAction(currentNode, child);
-                TreeGraphWalkerRootToEnd(child, rootToEndAction);
+                InternodeGraphWalkerRootToEnd(child, rootToEndAction);
             }
         }
     }
 }
 
-void IPlantBehaviour::TreeGraphWalkerEndToRoot(const Entity &startInternode,
-                                               const std::function<void(Entity)> &endToRootAction,
-                                               const std::function<void(Entity)> &endNodeAction) {
+void IPlantBehaviour::InternodeGraphWalkerEndToRoot(const Entity &startInternode,
+                                                    const std::function<void(Entity)> &endToRootAction,
+                                                    const std::function<void(Entity)> &endNodeAction) {
     auto currentNode = startInternode;
     while (currentNode.GetChildrenAmount() == 1) {
         Entity child = currentNode.GetChildren()[0];
@@ -642,7 +642,7 @@ void IPlantBehaviour::TreeGraphWalkerEndToRoot(const Entity &startInternode,
         auto children = currentNode.GetChildren();
         for (const auto &child: children) {
             if (InternodeCheck(child)) {
-                TreeGraphWalkerEndToRoot(child, endToRootAction, endNodeAction);
+                InternodeGraphWalkerEndToRoot(child, endToRootAction, endNodeAction);
                 if (InternodeCheck(child)) {
                     trueChildAmount++;
                 }
@@ -663,7 +663,108 @@ void IPlantBehaviour::TreeGraphWalkerEndToRoot(const Entity &startInternode,
         currentNode = parent;
     }
 }
+void IPlantBehaviour::BranchGraphWalker(const Entity &startBranch,
+                                        const std::function<void(Entity, Entity)> &rootToEndAction,
+                                        const std::function<void(Entity)> &endToRootAction,
+                                        const std::function<void(Entity)> &endNodeAction) {
+    auto currentNode = startBranch;
+    while (currentNode.GetChildrenAmount() == 1) {
+        Entity child = currentNode.GetChildren()[0];
+        if (BranchCheck(child)) {
+            rootToEndAction(currentNode, child);
+        }
+        if (BranchCheck(child)) {
+            currentNode = child;
+        }
+    }
+    int trueChildAmount = 0;
+    if (currentNode.GetChildrenAmount() != 0) {
+        auto children = currentNode.GetChildren();
+        for (const auto &child: children) {
+            if (BranchCheck(child)) {
+                rootToEndAction(currentNode, child);
+            }
+            if (BranchCheck(child)) {
+                BranchGraphWalker(child, rootToEndAction, endToRootAction, endNodeAction);
+                if (BranchCheck(child)) {
+                    trueChildAmount++;
+                }
+            }
+        }
+    }
+    if (trueChildAmount == 0) {
+        endNodeAction(currentNode);
+    } else {
+        endToRootAction(currentNode);
+    }
+    while (currentNode != startBranch) {
+        auto parent = currentNode.GetParent();
+        endToRootAction(parent);
+        if (!BranchCheck(currentNode)) {
+            endNodeAction(parent);
+        }
+        currentNode = parent;
+    }
+}
+void IPlantBehaviour::BranchGraphWalkerRootToEnd(const Entity &startBranch,
+                                                 const std::function<void(Entity, Entity)> &rootToEndAction) {
+    auto currentNode = startBranch;
+    while (currentNode.GetChildrenAmount() == 1) {
+        Entity child = currentNode.GetChildren()[0];
+        if (BranchCheck(child)) {
+            rootToEndAction(currentNode, child);
+        }
+        if (BranchCheck(child)) {
+            currentNode = child;
+        }
+    }
+    if (currentNode.GetChildrenAmount() != 0) {
+        auto children = currentNode.GetChildren();
+        for (const auto &child: children) {
+            if (BranchCheck(child)) {
+                rootToEndAction(currentNode, child);
+                BranchGraphWalkerRootToEnd(child, rootToEndAction);
+            }
+        }
+    }
+}
 
+void IPlantBehaviour::BranchGraphWalkerEndToRoot(const Entity &startBranch,
+                                                 const std::function<void(Entity)> &endToRootAction,
+                                                 const std::function<void(Entity)> &endNodeAction) {
+    auto currentNode = startBranch;
+    while (currentNode.GetChildrenAmount() == 1) {
+        Entity child = currentNode.GetChildren()[0];
+        if (child.IsValid()) {
+            currentNode = child;
+        }
+    }
+    int trueChildAmount = 0;
+    if (currentNode.GetChildrenAmount() != 0) {
+        auto children = currentNode.GetChildren();
+        for (const auto &child: children) {
+            if (BranchCheck(child)) {
+                BranchGraphWalkerEndToRoot(child, endToRootAction, endNodeAction);
+                if (BranchCheck(child)) {
+                    trueChildAmount++;
+                }
+            }
+        }
+    }
+    if (trueChildAmount == 0) {
+        endNodeAction(currentNode);
+    } else {
+        endToRootAction(currentNode);
+    }
+    while (currentNode != startBranch) {
+        auto parent = currentNode.GetParent();
+        endToRootAction(parent);
+        if (!BranchCheck(currentNode)) {
+            endNodeAction(parent);
+        }
+        currentNode = parent;
+    }
+}
 void IPlantBehaviour::ApplyTropism(const glm::vec3 &targetDir, float tropism, glm::vec3 &front, glm::vec3 &up) {
     const glm::vec3 dir = glm::normalize(targetDir);
     const float dotP = glm::abs(glm::dot(front, dir));

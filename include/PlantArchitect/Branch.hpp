@@ -3,7 +3,7 @@
 #include "InternodeRingSegment.hpp"
 #include <plant_architect_export.h>
 #include <IInternodeResource.hpp>
-#include <TreeDataComponents.hpp>
+#include <PlantDataComponents.hpp>
 
 using namespace UniEngine;
 namespace PlantArchitect {

@@ -1,5 +1,5 @@
 #include <InternodeLayer.hpp>
-#include <TreeDataComponents.hpp>
+#include <PlantDataComponents.hpp>
 #include <RadialBoundingVolume.hpp>
 #include <Internode.hpp>
 using namespace PlantArchitect;

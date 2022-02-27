@@ -5,10 +5,9 @@
 #include "InternodeLayer.hpp"
 #include <Internode.hpp>
 #include "EditorLayer.hpp"
-#include <TreeDataComponents.hpp>
+#include <PlantDataComponents.hpp>
 #include "GeneralTreeBehaviour.hpp"
 #include "SpaceColonizationBehaviour.hpp"
-#include "GeneralTreeParameters.hpp"
 #include "LSystemBehaviour.hpp"
 #include "CubeVolume.hpp"
 #include "RadialBoundingVolume.hpp"
@@ -110,7 +109,7 @@ void InternodeLayer::PreparePhysics() {
         if (behaviour) {
             for (const auto &root: behaviour->m_currentRoots) {
                 auto branchPhysicsParameter = root.GetOrSetPrivateComponent<Internode>().lock()->m_branchPhysicsParameters;
-                behaviour->TreeGraphWalkerRootToEnd(root, root, [&](Entity parent, Entity child) {
+                behaviour->InternodeGraphWalkerRootToEnd(root, root, [&](Entity parent, Entity child) {
                     PreparePhysics(parent, child, branchPhysicsParameter);
                 });
             }
@@ -954,44 +953,44 @@ void InternodeLayer::CalculateStatistics() {
             for (auto root: currentRoots) {
                 root.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
                     if (!behaviour->InternodeCheck(child)) return;
-                    behaviour->TreeGraphWalker(child,
-                                               [](Entity parent, Entity child) {
+                    behaviour->InternodeGraphWalker(child,
+                                                    [](Entity parent, Entity child) {
 
-                                               },
-                                               [](Entity parent) {
-                                                   auto parentStat = parent.GetDataComponent<InternodeStatistics>();
-                                                   std::vector<int> indices;
-                                                   parent.ForEachChild(
-                                                           [&](const std::shared_ptr<Scene> &scene, Entity child) {
-                                                               indices.push_back(
-                                                                       child.GetDataComponent<InternodeStatistics>().m_strahlerOrder);
-                                                           });
-                                                   if (indices.empty()) { parentStat.m_strahlerOrder = 1; }
-                                                   else if (indices.size() == 1) {
-                                                       parentStat.m_strahlerOrder = indices[0];
-                                                   } else {
-                                                       bool different = false;
-                                                       int maxIndex = indices[0];
-                                                       for (int i = 1; i < indices.size(); i++) {
-                                                           if (indices[i] != maxIndex) {
-                                                               different = true;
-                                                               maxIndex = glm::max(maxIndex, indices[i]);
-                                                           }
-                                                       }
-                                                       if (different) {
-                                                           parentStat.m_strahlerOrder = maxIndex;
-                                                       } else {
-                                                           parentStat.m_strahlerOrder = maxIndex + 1;
-                                                       }
-                                                   }
+                                                    },
+                                                    [](Entity parent) {
+                                                        auto parentStat = parent.GetDataComponent<InternodeStatistics>();
+                                                        std::vector<int> indices;
+                                                        parent.ForEachChild(
+                                                                [&](const std::shared_ptr<Scene> &scene, Entity child) {
+                                                                    indices.push_back(
+                                                                            child.GetDataComponent<InternodeStatistics>().m_strahlerOrder);
+                                                                });
+                                                        if (indices.empty()) { parentStat.m_strahlerOrder = 1; }
+                                                        else if (indices.size() == 1) {
+                                                            parentStat.m_strahlerOrder = indices[0];
+                                                        } else {
+                                                            bool different = false;
+                                                            int maxIndex = indices[0];
+                                                            for (int i = 1; i < indices.size(); i++) {
+                                                                if (indices[i] != maxIndex) {
+                                                                    different = true;
+                                                                    maxIndex = glm::max(maxIndex, indices[i]);
+                                                                }
+                                                            }
+                                                            if (different) {
+                                                                parentStat.m_strahlerOrder = maxIndex;
+                                                            } else {
+                                                                parentStat.m_strahlerOrder = maxIndex + 1;
+                                                            }
+                                                        }
 
-                                                   parent.SetDataComponent(parentStat);
-                                               },
-                                               [](Entity endNode) {
-                                                   auto endNodeStat = endNode.GetDataComponent<InternodeStatistics>();
-                                                   endNodeStat.m_strahlerOrder = 1;
-                                                   endNode.SetDataComponent(endNodeStat);
-                                               }
+                                                        parent.SetDataComponent(parentStat);
+                                                    },
+                                                    [](Entity endNode) {
+                                                        auto endNodeStat = endNode.GetDataComponent<InternodeStatistics>();
+                                                        endNodeStat.m_strahlerOrder = 1;
+                                                        endNode.SetDataComponent(endNodeStat);
+                                                    }
                     );
                 });
 

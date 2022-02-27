@@ -11,8 +11,10 @@
 using namespace UniEngine;
 namespace PlantArchitect {
     struct SpaceColonizationParameters;
+
     class PLANT_ARCHITECT_API IPlantBehaviour : public IAsset {
         friend class InternodeLayer;
+
     protected:
 #pragma region InternodeFactory
         /**
@@ -42,6 +44,7 @@ namespace PlantArchitect {
 
         std::mutex m_internodeFactoryLock;
         std::mutex m_branchFactoryLock;
+
         /**
          * Get or create an internode.
          * @tparam T The type of resource that will be added to the internode.
@@ -49,7 +52,7 @@ namespace PlantArchitect {
          * @return An entity represent the internode.
          */
         template<typename T>
-        Entity CreateHelper(const Entity &parent);
+        Entity CreateInternodeHelper(const Entity &parent);
 
         /**
          * Get or create an branch.
@@ -64,7 +67,8 @@ namespace PlantArchitect {
          * @return An entity represent the root internode.
          */
         template<typename T>
-        Entity CreateRootHelper(Entity& rootInternode, Entity& rootBranch);
+        Entity CreateRootHelper(Entity &rootInternode, Entity &rootBranch);
+
 #pragma endregion
 #pragma region Helpers
 
@@ -87,14 +91,19 @@ namespace PlantArchitect {
 #pragma endregion
 
         virtual bool InternalInternodeCheck(const Entity &target) = 0;
-        virtual bool InternalRootCheck(const Entity &target) = 0;
-        virtual bool InternalBranchCheck(const Entity &target) = 0;
-    public:
 
+        virtual bool InternalRootCheck(const Entity &target) = 0;
+
+        virtual bool InternalBranchCheck(const Entity &target) = 0;
+
+    public:
+        
         void ApplyTropism(const glm::vec3 &targetDir, float tropism, glm::vec3 &front, glm::vec3 &up);
 
-        virtual Entity CreateRoot(Entity& rootInternode, Entity& rootBranch) = 0;
+        virtual Entity CreateRoot(Entity &rootInternode, Entity &rootBranch) = 0;
+
         virtual Entity CreateBranch(const Entity &parent) = 0;
+
         virtual Entity CreateInternode(const Entity &parent) = 0;
 
         /*
@@ -116,34 +125,64 @@ namespace PlantArchitect {
 
 
         /**
-         * A helper method that traverse target plant from root internode to end internodes, and come back from end to root.
-         * @param node Walker node, should be same as root. It's your responsibility to make sure the root is valid.
+         * A helper method that traverse target plant internodes from root to end, and come back from end to root.
+         * @param node Start node.
          * @param rootToEndAction The action to take during traversal from root to end. You must not delete the parent during the action.
          * @param endToRootAction The action to take during traversal from end to root. You must not delete the parent during the action.
          * @param endNodeAction The action to take for end nodes. You must not delete the end node during the action.
          */
-        void TreeGraphWalker(const Entity &startInternode,
-                             const std::function<void(Entity parent, Entity child)> &rootToEndAction,
-                             const std::function<void(Entity parent)> &endToRootAction,
-                             const std::function<void(Entity endNode)> &endNodeAction);
+        void InternodeGraphWalker(const Entity &startInternode,
+                                  const std::function<void(Entity parent, Entity child)> &rootToEndAction,
+                                  const std::function<void(Entity parent)> &endToRootAction,
+                                  const std::function<void(Entity endNode)> &endNodeAction);
 
         /**
-         * A helper method that traverse target plant from root internode to end internodes.
-         * @param node Walker node, should be same as root. It's your responsibility to make sure the root is valid.
+         * A helper method that traverse target plant internodes from root to end.
+         * @param node Start node.
          * @param rootToEndAction The action to take during traversal from root to end.
          */
-        void TreeGraphWalkerRootToEnd(const Entity &startInternode,
-                                      const std::function<void(Entity parent, Entity child)> &rootToEndAction);
+        void InternodeGraphWalkerRootToEnd(const Entity &startInternode,
+                                           const std::function<void(Entity parent, Entity child)> &rootToEndAction);
 
         /**
-         * A helper method that traverse target plant from end internodes to root internode.
-         * @param node Walker node, should be same as root. It's your responsibility to make sure the root is valid.
+         * A helper method that traverse target plant internodes from end to root.
+         * @param node Start node.
          * @param endToRootAction The action to take during traversal from end to root. You must not delete the parent during the action.
          * @param endNodeAction The action to take for end nodes. You must not delete the end node during the action.
          */
-        void TreeGraphWalkerEndToRoot(const Entity &startInternode,
-                                      const std::function<void(Entity parent)> &endToRootAction,
-                                      const std::function<void(Entity endNode)> &endNodeAction);
+        void InternodeGraphWalkerEndToRoot(const Entity &startInternode,
+                                           const std::function<void(Entity parent)> &endToRootAction,
+                                           const std::function<void(Entity endNode)> &endNodeAction);
+
+        /**
+         * A helper method that traverse target plant branches from root to end, and come back from end to root.
+         * @param node Start node.
+         * @param rootToEndAction The action to take during traversal from root to end. You must not delete the parent during the action.
+         * @param endToRootAction The action to take during traversal from end to root. You must not delete the parent during the action.
+         * @param endNodeAction The action to take for end. You must not delete the end node during the action.
+         */
+        void BranchGraphWalker(const Entity &startBranch,
+                               const std::function<void(Entity parent, Entity child)> &rootToEndAction,
+                               const std::function<void(Entity parent)> &endToRootAction,
+                               const std::function<void(Entity endNode)> &endNodeAction);
+
+        /**
+         * A helper method that traverse target plant branches from root to end.
+         * @param node Start node.
+         * @param rootToEndAction The action to take during traversal from root to end.
+         */
+        void BranchGraphWalkerRootToEnd(const Entity &startBranch,
+                                        const std::function<void(Entity parent, Entity child)> &rootToEndAction);
+
+        /**
+         * A helper method that traverse target plant branches from end to root.
+         * @param node Start node.
+         * @param endToRootAction The action to take during traversal from end to root. You must not delete the parent during the action.
+         * @param endNodeAction The action to take for end nodes. You must not delete the end node during the action.
+         */
+        void BranchGraphWalkerEndToRoot(const Entity &startBranch,
+                                        const std::function<void(Entity parent)> &endToRootAction,
+                                        const std::function<void(Entity endNode)> &endNodeAction);
 
 
         /**
@@ -152,6 +191,7 @@ namespace PlantArchitect {
          * @return True if the entity is valid and contains [InternodeInfo] and [Internode], false otherwise.
          */
         bool InternodeCheck(const Entity &target);
+
 /**
          * Check if the entity is valid root.
          * @param target Target for check.
@@ -165,6 +205,7 @@ namespace PlantArchitect {
          * @return True if the entity is valid and contains [BranchInfo] and [Branch], false otherwise.
          */
         bool BranchCheck(const Entity &target);
+
         /**
          * The GUI menu template for creating an specific kind of internode.
          * @tparam T The target parameter of the internode.
@@ -184,7 +225,7 @@ namespace PlantArchitect {
                                  const std::function<void(const T &params,
                                                           const std::filesystem::path &path)> &parameterSerializer,
                                  const std::function<void(const T &params,
-                                                            const Transform &transform)> &internodeCreator
+                                                          const Transform &transform)> &internodeCreator
         );
 
     };
@@ -218,11 +259,11 @@ namespace PlantArchitect {
                                               const std::string &parameterExtension,
                                               const std::function<void(T &params)> &parameterInspector,
                                               const std::function<void(T &params,
-                                                                           const std::filesystem::path &path)> &parameterDeserializer,
+                                                                       const std::filesystem::path &path)> &parameterDeserializer,
                                               const std::function<void(const T &params,
-                                                                           const std::filesystem::path &path)> &parameterSerializer,
+                                                                       const std::filesystem::path &path)> &parameterSerializer,
                                               const std::function<void(const T &params,
-                                                                             const Transform &transform)> &internodeCreator
+                                                                       const Transform &transform)> &internodeCreator
     ) {
         if (ImGui::Button("Create...")) {
             ImGui::OpenPopup(menuTitle.c_str());
@@ -379,7 +420,7 @@ namespace PlantArchitect {
     }
 
     template<typename T>
-    Entity IPlantBehaviour::CreateHelper(const Entity &parent) {
+    Entity IPlantBehaviour::CreateInternodeHelper(const Entity &parent) {
         Entity retVal;
         std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
         retVal = Entities::CreateEntity(Entities::GetCurrentScene(), m_internodeArchetype, "Internode");
@@ -393,8 +434,9 @@ namespace PlantArchitect {
         internode->m_currentRoot = parentInternode->m_currentRoot;
         return retVal;
     }
+
     template<typename T>
-    Entity IPlantBehaviour::CreateRootHelper(Entity& rootInternode, Entity& rootBranch) {
+    Entity IPlantBehaviour::CreateRootHelper(Entity &rootInternode, Entity &rootBranch) {
         std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
         Entity rootEntity;
         rootEntity = Entities::CreateEntity(Entities::GetCurrentScene(), m_rootArchetype, "Root");
@@ -420,8 +462,4 @@ namespace PlantArchitect {
         branch->m_currentRoot = rootEntity;
         return rootEntity;
     }
-
-
-
-
 }
