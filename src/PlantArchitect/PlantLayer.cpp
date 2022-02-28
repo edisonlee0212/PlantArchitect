@@ -256,9 +256,9 @@ void PlantLayer::OnInspect() {
                     ImGui::Checkbox("Auto update", &m_autoUpdate);
                     ImGui::Checkbox("Internodes", &m_drawInternodes);
                     if (m_drawInternodes) {
-
                         if (ImGui::TreeNodeEx("Internode settings",
                                               ImGuiTreeNodeFlags_DefaultOpen)) {
+                            ImGui::Text("Current Internode amount: %zu", m_internodesQuery.GetEntityAmount(Entities::GetCurrentScene(), false));
                             ImGui::SliderFloat("Transparency", &m_internodeTransparency, 0, 1);
                             DrawColorModeSelectionMenu();
                             ImGui::TreePop();
@@ -268,6 +268,8 @@ void PlantLayer::OnInspect() {
                     if (m_drawBranches) {
                         if (ImGui::TreeNodeEx("Branch settings",
                                               ImGuiTreeNodeFlags_DefaultOpen)) {
+                            ImGui::Text("Current Branch amount: %zu", m_branchesQuery.GetEntityAmount(Entities::GetCurrentScene(), false));
+
                             ImGui::SliderFloat("Transparency", &m_branchTransparency, 0, 1);
                             ImGui::TreePop();
                         }
