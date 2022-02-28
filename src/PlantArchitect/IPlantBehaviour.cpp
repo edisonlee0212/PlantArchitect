@@ -26,64 +26,65 @@ void IPlantBehaviour::UpdateBranches() {
         if (!rootInternode.IsValid() || !rootBranch.IsValid()) return;
         auto children = rootBranch.GetChildren();
         for (const auto &i: children) Entities::DeleteEntity(Entities::GetCurrentScene(), i);
-        rootBranch.SetDataComponent(rootInternode.GetDataComponent<GlobalTransform>());
+        auto branch = rootBranch.GetOrSetPrivateComponent<Branch>().lock();
+        branch->m_internodeChain.clear();
+        BranchGraphWalkerRootToEnd(rootBranch, [](Entity parent, Entity child) {
+            child.GetOrSetPrivateComponent<Branch>().lock()->m_internodeChain.clear();
+        });
         UpdateBranchHelper(rootBranch, rootInternode);
-    }
-    Entities::ForEach<GlobalTransform, BranchInfo>(Entities::GetCurrentScene(), Jobs::Workers(), m_branchesQuery,
-                                       [&](int i, Entity entity,
-                                           GlobalTransform &globalTransform, BranchInfo& branchInfo) {
-                                           glm::vec3 scale;
-                                           glm::quat rotation;
-                                           glm::vec3 translation;
-                                           glm::vec3 skew;
-                                           glm::vec4 perspective;
-                                           glm::decompose(globalTransform.m_value, scale, rotation, translation, skew,
-                                                          perspective);
-                                           glm::vec3 up = rotation * glm::vec3(0, 1, 0);
-                                           glm::vec3 childPosition;
-                                           Entity childBranch;
-                                           bool hasChild = false;
-                                           entity.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
-                                               if (!hasChild && BranchCheck(child)) {
-                                                   childBranch = child;
-                                                   hasChild = true;
-                                               }
-                                           });
-                                           Entity internodeEntity = entity.GetOrSetPrivateComponent<Branch>().lock()->m_currentInternode.Get();
-                                           auto internodeInfo = internodeEntity.GetDataComponent<InternodeInfo>();
-                                           branchInfo.m_thickness = internodeInfo.m_thickness;
-                                           if(hasChild){
-                                               branchInfo.m_endNode = false;
-                                               childPosition = childBranch.GetDataComponent<GlobalTransform>().GetPosition();
-                                           }else{
-                                               branchInfo.m_endNode = true;
-                                               auto endInternode = internodeEntity;
-                                               while(!endInternode.GetDataComponent<InternodeInfo>().m_endNode){
-                                                   auto children = endInternode.GetChildren();
-                                                   for(const auto& child : children){
-                                                       if(InternodeCheck(child)) endInternode = child;
-                                                   }
-                                               }
-                                               auto endInternodeGT = endInternode.GetDataComponent<GlobalTransform>();
-                                               auto endInternodeII = endInternode.GetDataComponent<InternodeInfo>();
-                                               glm::vec3 endInternodeScale;
-                                               glm::quat endInternodeRotation;
-                                               glm::vec3 endInternodeTranslation;
-                                               glm::vec3 endInternodeSkew;
-                                               glm::vec4 endInternodePerspective;
-                                               glm::decompose(endInternodeGT.m_value, endInternodeScale, endInternodeRotation, endInternodeTranslation, endInternodeSkew,
-                                                              endInternodePerspective);
-                                               childPosition = endInternodeTranslation + endInternodeRotation * glm::vec3(0, 0, -1) * endInternodeII.m_length;
-                                           }
-                                           glm::vec3 front = childPosition - translation;
-                                           branchInfo.m_length = glm::length(front);
-                                           if(branchInfo.m_length > 0.0f)globalTransform.SetRotation(glm::quatLookAt(glm::normalize(front), up));
-                                       }, true);
-    for (const auto &root: roots) {
-        if (!RootCheck(root)) return;
-        Entity rootBranch;
-        root.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
-            if (BranchCheck(child)) rootBranch = child;
+        {
+            auto branchInfo = rootBranch.GetDataComponent<BranchInfo>();
+            auto branchStartInternodeGT = branch->m_internodeChain.front().GetDataComponent<GlobalTransform>();
+            auto branchEndInternodeGT = branch->m_internodeChain.back().GetDataComponent<GlobalTransform>();
+            auto branchStartInternodeInfo = branch->m_internodeChain.front().GetDataComponent<InternodeInfo>();
+            auto branchEndInternodeInfo = branch->m_internodeChain.back().GetDataComponent<InternodeInfo>();
+            glm::vec3 scale;
+            glm::quat rotation;
+            glm::vec3 translation;
+            glm::vec3 skew;
+            glm::vec4 perspective;
+            glm::decompose(branchEndInternodeGT.m_value, scale, rotation, translation, skew,
+                           perspective);
+            auto branchEndPosition = translation + rotation * glm::vec3(0, 0, -1) * branchEndInternodeInfo.m_length;
+            auto branchStartPosition = branchStartInternodeGT.GetPosition();
+            GlobalTransform branchGT;
+            branchInfo.m_length = glm::length(branchStartPosition - branchEndPosition);
+            if (branchInfo.m_length > 0) branchGT.m_value = glm::translate(branchEndPosition) * glm::mat4_cast(
+                        glm::quatLookAt(glm::normalize(branchEndPosition - branchStartPosition),
+                                        rotation * glm::vec3(0, 1, 0))) * glm::scale(glm::vec3(1.0f));
+            else branchGT.SetPosition(branchEndPosition);
+            branchInfo.m_thickness = branchStartInternodeInfo.m_thickness;
+
+            rootBranch.SetDataComponent(branchGT);
+            rootBranch.SetDataComponent(branchInfo);
+        }
+        BranchGraphWalkerRootToEnd(rootBranch, [](Entity parent, Entity child) {
+            auto branch = child.GetOrSetPrivateComponent<Branch>().lock();
+            auto branchInfo = child.GetDataComponent<BranchInfo>();
+            auto branchStartInternodeGT = branch->m_internodeChain.front().GetDataComponent<GlobalTransform>();
+            auto branchEndInternodeGT = branch->m_internodeChain.back().GetDataComponent<GlobalTransform>();
+            auto branchStartInternodeInfo = branch->m_internodeChain.front().GetDataComponent<InternodeInfo>();
+            auto branchEndInternodeInfo = branch->m_internodeChain.back().GetDataComponent<InternodeInfo>();
+            glm::vec3 scale;
+            glm::quat rotation;
+            glm::vec3 translation;
+            glm::vec3 skew;
+            glm::vec4 perspective;
+            glm::decompose(branchEndInternodeGT.m_value, scale, rotation, translation, skew,
+                           perspective);
+            auto branchEndPosition = translation + rotation * glm::vec3(0, 0, -1) * branchEndInternodeInfo.m_length;
+            auto branchStartPosition = branchStartInternodeGT.GetPosition();
+            GlobalTransform branchGT;
+            branchInfo.m_length = glm::length(branchStartPosition - branchEndPosition);
+            if (branchInfo.m_length > 0) branchGT.m_value = glm::translate(branchEndPosition) * glm::mat4_cast(
+                        glm::quatLookAt(glm::normalize(branchEndPosition - branchStartPosition),
+                                        rotation * glm::vec3(0, 1, 0))) * glm::scale(glm::vec3(1.0f));
+            else branchGT.SetPosition(branchEndPosition);
+
+            branchInfo.m_thickness = branchStartInternodeInfo.m_thickness;
+
+            child.SetDataComponent(branchGT);
+            child.SetDataComponent(branchInfo);
         });
         Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(
                 Entities::GetCurrentScene(),
@@ -106,6 +107,7 @@ void IPlantBehaviour::DestroyBranch(const Entity &branch) {
 void
 IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
                                        float resolution) {
+    //UpdateBranches();
     std::vector<Entity> currentRoots;
     m_rootsQuery.ToEntityArray(Entities::GetCurrentScene(), currentRoots);
     int plantSize = currentRoots.size();
@@ -120,8 +122,14 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
     std::vector<std::shared_future<void>> results;
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
         results.push_back(Jobs::Workers().Push([&, plantIndex](int id) {
-            TreeNodeCollector(boundEntitiesLists[plantIndex],
-                              parentIndicesLists[plantIndex], -1, currentRoots[plantIndex], currentRoots[plantIndex]);
+            auto children = currentRoots[plantIndex].GetChildren();
+            for (const auto &child: children) {
+                if (BranchCheck(child)) {
+                    BranchCollector(boundEntitiesLists[plantIndex],
+                                    parentIndicesLists[plantIndex], -1, child);
+                    break;
+                }
+            }
         }).share());
     }
     for (const auto &i: results)
@@ -238,17 +246,23 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
              });
 #pragma endregion
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
-        const auto &plant = currentRoots[plantIndex];
-        Entity branch, foliage;
-        PrepareInternodeForSkeletalAnimation(plant, branch, foliage);
+        const auto &root = currentRoots[plantIndex];
+        auto children = root.GetChildren();
+        Entity rootInternode, rootBranch;
+        for (const auto &child: children) {
+            if (InternodeCheck(child)) rootInternode = child;
+            else if (BranchCheck(child)) rootBranch = child;
+        }
+        Entity branchMesh, foliageMesh;
+        PrepareInternodeForSkeletalAnimation(root, branchMesh, foliageMesh);
         {
 #pragma region Branch mesh
-            auto animator = branch.GetOrSetPrivateComponent<Animator>().lock();
-            auto skinnedMeshRenderer = branch.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
+            auto animator = branchMesh.GetOrSetPrivateComponent<Animator>().lock();
+            auto skinnedMeshRenderer = branchMesh.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
             skinnedMeshRenderer->SetEnabled(true);
-            auto treeData = plant.GetOrSetPrivateComponent<Internode>().lock();
+            auto internode = rootInternode.GetOrSetPrivateComponent<Internode>().lock();
             const auto plantGlobalTransform =
-                    plant.GetDataComponent<GlobalTransform>();
+                    root.GetDataComponent<GlobalTransform>();
 #pragma region Animator
             std::vector<glm::mat4> offsetMatrices;
             std::vector<std::string> names;
@@ -287,16 +301,17 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
         {
 
 #pragma region Foliage mesh
-            auto animator = foliage.GetOrSetPrivateComponent<Animator>().lock();
-            auto skinnedMeshRenderer = foliage.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
+            auto animator = foliageMesh.GetOrSetPrivateComponent<Animator>().lock();
+            auto skinnedMeshRenderer = foliageMesh.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
             auto material = skinnedMeshRenderer->m_material.Get<Material>();
             skinnedMeshRenderer->SetEnabled(true);
-            auto internode = plant.GetOrSetPrivateComponent<Internode>().lock();
+            auto internode = rootInternode.GetOrSetPrivateComponent<Internode>().lock();
             auto foliage = internode->m_foliage.Get<InternodeFoliage>();
-            if (foliage->m_foliageTexture.Get<Texture2D>()) material->m_albedoTexture = foliage->m_foliageTexture.Get<Texture2D>();
+            if (foliage && foliage->m_foliageTexture.Get<Texture2D>())
+                material->m_albedoTexture = foliage->m_foliageTexture.Get<Texture2D>();
             material->m_albedoColor = foliage->m_foliageColor;
             const auto plantGlobalTransform =
-                    plant.GetDataComponent<GlobalTransform>();
+                    root.GetDataComponent<GlobalTransform>();
 #pragma region Animator
             std::vector<glm::mat4> offsetMatrices;
             std::vector<std::string> names;
@@ -335,19 +350,14 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
     }
 }
 
-void IPlantBehaviour::TreeNodeCollector(std::vector<Entity> &boundEntities, std::vector<int> &parentIndices,
-                                        const int &parentIndex, const Entity &node, const Entity &root) {
-    if (!node.HasDataComponent<InternodeInfo>() || !node.HasPrivateComponent<Internode>()) return;
+void IPlantBehaviour::BranchCollector(std::vector<Entity> &boundEntities, std::vector<int> &parentIndices,
+                                      const int &parentIndex, const Entity &node) {
+    if (!BranchCheck(node)) return;
     boundEntities.push_back(node);
     parentIndices.push_back(parentIndex);
     const size_t currentIndex = boundEntities.size() - 1;
-    auto internodeInfo = node.GetDataComponent<InternodeInfo>();
-    auto internode = node.GetOrSetPrivateComponent<Internode>().lock();
-    if (node.GetChildrenAmount() == 0) internodeInfo.m_endNode = true;
-    else internodeInfo.m_endNode = false;
-    node.SetDataComponent(internodeInfo);
     node.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
-        TreeNodeCollector(boundEntities, parentIndices, currentIndex, child, root);
+        if (BranchCheck(child)) BranchCollector(boundEntities, parentIndices, currentIndex, child);
     });
 
 }
@@ -414,179 +424,183 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(std::vector<Entity> &entities, 
                                                  std::vector<SkinnedVertex> &vertices,
                                                  std::vector<unsigned int> &indices) {
     int parentStep = -1;
-    for (int internodeIndex = 0; internodeIndex < entities.size();
-         internodeIndex++) {
+    for (int branchIndex = 0; branchIndex < entities.size();
+         branchIndex++) {
         int parentIndex = 0;
-        if (internodeIndex != 0) parentIndex = parentIndices[internodeIndex];
-        auto &entity = entities[internodeIndex];
-        auto internodeGlobalTransform = entity.GetDataComponent<GlobalTransform>();
-        glm::vec3 newNormalDir;
-        if (internodeIndex != 0) {
-            newNormalDir = entities[parentIndex].GetOrSetPrivateComponent<Internode>().lock()->m_normalDir;
-        } else {
-            newNormalDir = internodeGlobalTransform.GetRotation() *
-                           glm::vec3(1.0f, 0.0f, 0.0f);
-        }
-        const glm::vec3 front =
-                internodeGlobalTransform.GetRotation() *
-                glm::vec3(0.0f, 0.0f, -1.0f);
-        newNormalDir = glm::cross(glm::cross(front, newNormalDir), front);
-        auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
-        auto branchColor = entity.GetDataComponent<InternodeColor>();
-        internode->m_normalDir = newNormalDir;
-        if (internode->m_rings.empty()) {
-            continue;
-        }
-        auto step = internode->m_step;
-        // For stitching
-        const int pStep = parentStep > 0 ? parentStep : step;
-        parentStep = step;
-
-        float angleStep = 360.0f / static_cast<float>(pStep);
-        int vertexIndex = vertices.size();
-        SkinnedVertex archetype;
-        archetype.m_color = branchColor.m_value;
-        float textureXStep = 1.0f / pStep * 4.0f;
-
-        const auto startPosition = internode->m_rings.at(0).m_startPosition;
-        const auto endPosition = internode->m_rings.back().m_endPosition;
-        for (int i = 0; i < pStep; i++) {
-            archetype.m_position =
-                    internode->m_rings.at(0).GetPoint(newNormalDir, angleStep * i, true);
-
-            float distanceToStart = 0;
-            float distanceToEnd = 1;
-            archetype.m_bondId =
-                    glm::ivec4(internodeIndex, parentIndex, -1, -1);
-            archetype.m_bondId2 = glm::ivec4(-1, -1, -1, -1);
-            archetype.m_weight = glm::vec4(
-                    distanceToStart / (distanceToStart + distanceToEnd),
-                    distanceToEnd / (distanceToStart + distanceToEnd), 0.0f, 0.0f);
-            archetype.m_weight2 = glm::vec4(0.0f);
-
-            const float x =
-                    i < pStep / 2 ? i * textureXStep : (pStep - i) * textureXStep;
-            archetype.m_texCoords = glm::vec2(x, 0.0f);
-            vertices.push_back(archetype);
-        }
-        std::vector<float> angles;
-        angles.resize(step);
-        std::vector<float> pAngles;
-        pAngles.resize(pStep);
-
-        for (auto i = 0; i < pStep; i++) {
-            pAngles[i] = angleStep * i;
-        }
-        angleStep = 360.0f / static_cast<float>(step);
-        for (auto i = 0; i < step; i++) {
-            angles[i] = angleStep * i;
-        }
-
-        std::vector<unsigned> pTarget;
-        std::vector<unsigned> target;
-        pTarget.resize(pStep);
-        target.resize(step);
-        for (int i = 0; i < pStep; i++) {
-            // First we allocate nearest vertices for parent.
-            auto minAngleDiff = 360.0f;
-            for (auto j = 0; j < step; j++) {
-                const float diff = glm::abs(pAngles[i] - angles[j]);
-                if (diff < minAngleDiff) {
-                    minAngleDiff = diff;
-                    pTarget[i] = j;
-                }
-            }
-        }
-        for (int i = 0; i < step; i++) {
-            // Second we allocate nearest vertices for child
-            float minAngleDiff = 360.0f;
-            for (int j = 0; j < pStep; j++) {
-                const float diff = glm::abs(angles[i] - pAngles[j]);
-                if (diff < minAngleDiff) {
-                    minAngleDiff = diff;
-                    target[i] = j;
-                }
-            }
-        }
-        for (int i = 0; i < pStep; i++) {
-            if (pTarget[i] == pTarget[i == pStep - 1 ? 0 : i + 1]) {
-                indices.push_back(vertexIndex + i);
-                indices.push_back(vertexIndex + (i == pStep - 1 ? 0 : i + 1));
-                indices.push_back(vertexIndex + pStep + pTarget[i]);
+        if (branchIndex != 0) parentIndex = parentIndices[branchIndex];
+        auto &branchEntity = entities[branchIndex];
+        auto branchGlobalTransform = branchEntity.GetDataComponent<GlobalTransform>();
+        auto branch = branchEntity.GetOrSetPrivateComponent<Branch>().lock();
+        for (const auto &internodeEntity: branch->m_internodeChain) {
+            auto internodeGlobalTransform = internodeEntity.GetDataComponent<GlobalTransform>();
+            glm::vec3 newNormalDir;
+            if (branchIndex != 0) {
+                newNormalDir = entities[parentIndex].GetOrSetPrivateComponent<Internode>().lock()->m_normalDir;
             } else {
-                indices.push_back(vertexIndex + i);
-                indices.push_back(vertexIndex + (i == pStep - 1 ? 0 : i + 1));
-                indices.push_back(vertexIndex + pStep + pTarget[i]);
-
-                indices.push_back(vertexIndex + pStep +
-                                  pTarget[i == pStep - 1 ? 0 : i + 1]);
-                indices.push_back(vertexIndex + pStep + pTarget[i]);
-                indices.push_back(vertexIndex + (i == pStep - 1 ? 0 : i + 1));
+                newNormalDir = internodeGlobalTransform.GetRotation() *
+                               glm::vec3(1.0f, 0.0f, 0.0f);
             }
-        }
+            const glm::vec3 front =
+                    internodeGlobalTransform.GetRotation() *
+                    glm::vec3(0.0f, 0.0f, -1.0f);
+            newNormalDir = glm::cross(glm::cross(front, newNormalDir), front);
+            auto internode = internodeEntity.GetOrSetPrivateComponent<Internode>().lock();
+            auto branchColor = internodeEntity.GetDataComponent<InternodeColor>();
+            internode->m_normalDir = newNormalDir;
+            if (internode->m_rings.empty()) {
+                continue;
+            }
+            auto step = internode->m_step;
+            // For stitching
+            const int pStep = parentStep > 0 ? parentStep : step;
+            parentStep = step;
 
-        vertexIndex += pStep;
-        textureXStep = 1.0f / step * 4.0f;
-        const int ringSize = internode->m_rings.size();
-        for (auto ringIndex = 0; ringIndex < ringSize; ringIndex++) {
-            for (auto i = 0; i < step; i++) {
-                archetype.m_position = internode->m_rings.at(ringIndex).GetPoint(
-                        newNormalDir, angleStep * i, false);
+            float angleStep = 360.0f / static_cast<float>(pStep);
+            int vertexIndex = vertices.size();
+            SkinnedVertex archetype;
+            archetype.m_color = branchColor.m_value;
+            float textureXStep = 1.0f / pStep * 4.0f;
 
-                float distanceToStart = glm::distance(
-                        internode->m_rings.at(ringIndex).m_endPosition, startPosition);
-                float distanceToEnd = glm::distance(
-                        internode->m_rings.at(ringIndex).m_endPosition, endPosition);
+            const auto startPosition = internode->m_rings.at(0).m_startPosition;
+            const auto endPosition = internode->m_rings.back().m_endPosition;
+            for (int i = 0; i < pStep; i++) {
+                archetype.m_position =
+                        internode->m_rings.at(0).GetPoint(newNormalDir, angleStep * i, true);
+
+                float distanceToStart = 0;
+                float distanceToEnd = 1;
                 archetype.m_bondId =
-                        glm::ivec4(internodeIndex, parentIndex, -1, -1);
+                        glm::ivec4(branchIndex, parentIndex, -1, -1);
                 archetype.m_bondId2 = glm::ivec4(-1, -1, -1, -1);
                 archetype.m_weight = glm::vec4(
                         distanceToStart / (distanceToStart + distanceToEnd),
                         distanceToEnd / (distanceToStart + distanceToEnd), 0.0f, 0.0f);
                 archetype.m_weight2 = glm::vec4(0.0f);
 
-                const auto x =
-                        i < (step / 2) ? i * textureXStep : (step - i) * textureXStep;
-                const auto y = ringIndex % 2 == 0 ? 1.0f : 0.0f;
-                archetype.m_texCoords = glm::vec2(x, y);
+                const float x =
+                        i < pStep / 2 ? i * textureXStep : (pStep - i) * textureXStep;
+                archetype.m_texCoords = glm::vec2(x, 0.0f);
                 vertices.push_back(archetype);
             }
-            if (ringIndex != 0) {
-                for (int i = 0; i < step - 1; i++) {
-                    // Down triangle
-                    indices.push_back(vertexIndex + (ringIndex - 1) * step + i);
-                    indices.push_back(vertexIndex + (ringIndex - 1) * step + i + 1);
-                    indices.push_back(vertexIndex + (ringIndex) * step + i);
-                    // Up triangle
-                    indices.push_back(vertexIndex + (ringIndex) * step + i + 1);
-                    indices.push_back(vertexIndex + (ringIndex) * step + i);
-                    indices.push_back(vertexIndex + (ringIndex - 1) * step + i + 1);
+            std::vector<float> angles;
+            angles.resize(step);
+            std::vector<float> pAngles;
+            pAngles.resize(pStep);
+
+            for (auto i = 0; i < pStep; i++) {
+                pAngles[i] = angleStep * i;
+            }
+            angleStep = 360.0f / static_cast<float>(step);
+            for (auto i = 0; i < step; i++) {
+                angles[i] = angleStep * i;
+            }
+
+            std::vector<unsigned> pTarget;
+            std::vector<unsigned> target;
+            pTarget.resize(pStep);
+            target.resize(step);
+            for (int i = 0; i < pStep; i++) {
+                // First we allocate nearest vertices for parent.
+                auto minAngleDiff = 360.0f;
+                for (auto j = 0; j < step; j++) {
+                    const float diff = glm::abs(pAngles[i] - angles[j]);
+                    if (diff < minAngleDiff) {
+                        minAngleDiff = diff;
+                        pTarget[i] = j;
+                    }
                 }
-                // Down triangle
-                indices.push_back(vertexIndex + (ringIndex - 1) * step + step - 1);
-                indices.push_back(vertexIndex + (ringIndex - 1) * step);
-                indices.push_back(vertexIndex + (ringIndex) * step + step - 1);
-                // Up triangle
-                indices.push_back(vertexIndex + (ringIndex) * step);
-                indices.push_back(vertexIndex + (ringIndex) * step + step - 1);
-                indices.push_back(vertexIndex + (ringIndex - 1) * step);
+            }
+            for (int i = 0; i < step; i++) {
+                // Second we allocate nearest vertices for child
+                float minAngleDiff = 360.0f;
+                for (int j = 0; j < pStep; j++) {
+                    const float diff = glm::abs(angles[i] - pAngles[j]);
+                    if (diff < minAngleDiff) {
+                        minAngleDiff = diff;
+                        target[i] = j;
+                    }
+                }
+            }
+            for (int i = 0; i < pStep; i++) {
+                if (pTarget[i] == pTarget[i == pStep - 1 ? 0 : i + 1]) {
+                    indices.push_back(vertexIndex + i);
+                    indices.push_back(vertexIndex + (i == pStep - 1 ? 0 : i + 1));
+                    indices.push_back(vertexIndex + pStep + pTarget[i]);
+                } else {
+                    indices.push_back(vertexIndex + i);
+                    indices.push_back(vertexIndex + (i == pStep - 1 ? 0 : i + 1));
+                    indices.push_back(vertexIndex + pStep + pTarget[i]);
+
+                    indices.push_back(vertexIndex + pStep +
+                                      pTarget[i == pStep - 1 ? 0 : i + 1]);
+                    indices.push_back(vertexIndex + pStep + pTarget[i]);
+                    indices.push_back(vertexIndex + (i == pStep - 1 ? 0 : i + 1));
+                }
+            }
+
+            vertexIndex += pStep;
+            textureXStep = 1.0f / step * 4.0f;
+            const int ringSize = internode->m_rings.size();
+            for (auto ringIndex = 0; ringIndex < ringSize; ringIndex++) {
+                for (auto i = 0; i < step; i++) {
+                    archetype.m_position = internode->m_rings.at(ringIndex).GetPoint(
+                            newNormalDir, angleStep * i, false);
+
+                    float distanceToStart = glm::distance(
+                            internode->m_rings.at(ringIndex).m_endPosition, startPosition);
+                    float distanceToEnd = glm::distance(
+                            internode->m_rings.at(ringIndex).m_endPosition, endPosition);
+                    archetype.m_bondId =
+                            glm::ivec4(branchIndex, parentIndex, -1, -1);
+                    archetype.m_bondId2 = glm::ivec4(-1, -1, -1, -1);
+                    archetype.m_weight = glm::vec4(
+                            distanceToStart / (distanceToStart + distanceToEnd),
+                            distanceToEnd / (distanceToStart + distanceToEnd), 0.0f, 0.0f);
+                    archetype.m_weight2 = glm::vec4(0.0f);
+
+                    const auto x =
+                            i < (step / 2) ? i * textureXStep : (step - i) * textureXStep;
+                    const auto y = ringIndex % 2 == 0 ? 1.0f : 0.0f;
+                    archetype.m_texCoords = glm::vec2(x, y);
+                    vertices.push_back(archetype);
+                }
+                if (ringIndex != 0) {
+                    for (int i = 0; i < step - 1; i++) {
+                        // Down triangle
+                        indices.push_back(vertexIndex + (ringIndex - 1) * step + i);
+                        indices.push_back(vertexIndex + (ringIndex - 1) * step + i + 1);
+                        indices.push_back(vertexIndex + (ringIndex) * step + i);
+                        // Up triangle
+                        indices.push_back(vertexIndex + (ringIndex) * step + i + 1);
+                        indices.push_back(vertexIndex + (ringIndex) * step + i);
+                        indices.push_back(vertexIndex + (ringIndex - 1) * step + i + 1);
+                    }
+                    // Down triangle
+                    indices.push_back(vertexIndex + (ringIndex - 1) * step + step - 1);
+                    indices.push_back(vertexIndex + (ringIndex - 1) * step);
+                    indices.push_back(vertexIndex + (ringIndex) * step + step - 1);
+                    // Up triangle
+                    indices.push_back(vertexIndex + (ringIndex) * step);
+                    indices.push_back(vertexIndex + (ringIndex) * step + step - 1);
+                    indices.push_back(vertexIndex + (ringIndex - 1) * step);
+                }
             }
         }
     }
 }
 
 void
-IPlantBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, Entity &branchMesh, Entity &foliage) {
+IPlantBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, Entity &branchMesh, Entity &foliageMesh) {
     entity.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
-        if (child.GetName() == "Branch") {
+        if (child.GetName() == "BranchMesh") {
             branchMesh = child;
-        } else if (child.GetName() == "Foliage") {
-            foliage = child;
+        } else if (child.GetName() == "FoliageMesh") {
+            foliageMesh = child;
         }
     });
 
     {
-        if (branchMesh.IsNull()) branchMesh = Entities::CreateEntity(Entities::GetCurrentScene(), "Branch");
+        if (branchMesh.IsNull()) branchMesh = Entities::CreateEntity(Entities::GetCurrentScene(), "BranchMesh");
         auto animator = branchMesh.GetOrSetPrivateComponent<Animator>().lock();
         auto skinnedMeshRenderer =
                 branchMesh.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
@@ -600,10 +614,10 @@ IPlantBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, Enti
         skinnedMeshRenderer->m_animator = branchMesh.GetOrSetPrivateComponent<Animator>().lock();
     }
     {
-        if (foliage.IsNull()) foliage = Entities::CreateEntity(Entities::GetCurrentScene(), "Foliage");
-        auto animator = foliage.GetOrSetPrivateComponent<Animator>().lock();
+        if (foliageMesh.IsNull()) foliageMesh = Entities::CreateEntity(Entities::GetCurrentScene(), "FoliageMesh");
+        auto animator = foliageMesh.GetOrSetPrivateComponent<Animator>().lock();
         auto skinnedMeshRenderer =
-                foliage.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
+                foliageMesh.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
         skinnedMeshRenderer->m_skinnedMesh = AssetManager::CreateAsset<SkinnedMesh>();
         auto skinnedMat = AssetManager::LoadMaterial(
                 DefaultResources::GLPrograms::StandardSkinnedProgram);
@@ -612,10 +626,10 @@ IPlantBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, Enti
         skinnedMat->m_roughness = 1.0f;
         skinnedMat->m_metallic = 0.0f;
         skinnedMat->m_cullingMode = MaterialCullingMode::Off;
-        skinnedMeshRenderer->m_animator = foliage.GetOrSetPrivateComponent<Animator>().lock();
+        skinnedMeshRenderer->m_animator = foliageMesh.GetOrSetPrivateComponent<Animator>().lock();
     }
     branchMesh.SetParent(entity);
-    foliage.SetParent(entity);
+    foliageMesh.SetParent(entity);
 }
 
 Entity IPlantBehaviour::CreateBranchHelper(const Entity &parent, const Entity &internode) {
@@ -701,6 +715,7 @@ void IPlantBehaviour::UpdateBranchHelper(const Entity &currentBranch, const Enti
     currentInternode.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
         if (InternodeCheck(child)) trueChildAmount++;
     });
+    currentBranch.GetOrSetPrivateComponent<Branch>().lock()->m_internodeChain.push_back(currentInternode);
     if (trueChildAmount > 1) {
         BranchInfo branchInfo;
         branchInfo.m_endNode = false;
@@ -708,7 +723,6 @@ void IPlantBehaviour::UpdateBranchHelper(const Entity &currentBranch, const Enti
         currentInternode.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
             if (!InternodeCheck(child)) return;
             auto newBranch = CreateBranch(currentBranch, child);
-            newBranch.SetDataComponent(child.GetDataComponent<GlobalTransform>());
             UpdateBranchHelper(newBranch, child);
         });
     } else if (trueChildAmount == 1) {
@@ -717,6 +731,7 @@ void IPlantBehaviour::UpdateBranchHelper(const Entity &currentBranch, const Enti
             UpdateBranchHelper(currentBranch, child);
         });
     }
+
 }
 
 void IPlantBehaviour::InternodeGraphWalkerRootToEnd(const Entity &startInternode,

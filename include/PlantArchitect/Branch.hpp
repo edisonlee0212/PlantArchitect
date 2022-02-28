@@ -29,7 +29,11 @@ namespace PlantArchitect {
     };
 
     class PLANT_ARCHITECT_API Branch : public IPrivateComponent {
+
+
     public:
+        std::vector<Entity> m_internodeChain;
+
         /**
          * The current root of the internode.
          */
@@ -41,7 +45,7 @@ namespace PlantArchitect {
         BranchPhysicsParameters m_branchPhysicsParameters;
 
         void Relink(const std::unordered_map<Handle, Handle> &map, const std::shared_ptr<Scene> &scene) override;
-
+        void OnDestroy();
         void OnInspect() override;
 
         void Serialize(YAML::Emitter &out) override;

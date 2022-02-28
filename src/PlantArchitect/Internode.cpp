@@ -120,7 +120,8 @@ void Internode::OnInspect() {
         std::vector<LSystemCommand> commands;
         ExportLSystemCommandsHelper(index, GetOwner(), commands);
     }
-    m_foliage.Get<InternodeFoliage>()->OnInspect();
+    auto foliage = m_foliage.Get<InternodeFoliage>();
+    if (foliage) foliage->OnInspect();
 
     if (ImGui::TreeNodeEx("Buds")) {
         ImGui::Text("Apical bud:");

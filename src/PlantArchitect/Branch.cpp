@@ -56,6 +56,13 @@ void BranchPhysicsParameters::OnInspect() {
 
 void Branch::OnInspect() {
     m_branchPhysicsParameters.OnInspect();
+    ImGui::Text("Chain size: %d", m_internodeChain.size());
+    if(ImGui::TreeNode("Chain")){
+        for(const auto& i : m_internodeChain){
+            ImGui::Text("Index: %d", i.GetIndex());
+        }
+        ImGui::TreePop();
+    }
 }
 
 void Branch::Serialize(YAML::Emitter &out) {
@@ -75,6 +82,10 @@ void Branch::Deserialize(const YAML::Node &in) {
 void Branch::Relink(const std::unordered_map<Handle, Handle> &map, const std::shared_ptr<Scene> &scene) {
     m_currentRoot.Relink(map);
     m_currentInternode.Relink(map);
+}
+
+void Branch::OnDestroy() {
+    m_internodeChain.clear();
 }
 
 

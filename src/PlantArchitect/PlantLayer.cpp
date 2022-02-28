@@ -876,9 +876,9 @@ void PlantLayer::UpdateBranchCylinder() {
                                perspective);
                 const auto direction = glm::normalize(rotation * glm::vec3(0, 0, -1));
                 const glm::vec3 position2 =
-                        translation + internodeInfo.m_length * direction;
+                        translation - internodeInfo.m_length * direction;
                 rotation = glm::quatLookAt(
-                        direction, glm::vec3(direction.y, direction.z, direction.x));
+                        direction, glm::vec3(-direction.y, -direction.z, -direction.x));
                 rotation *= glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f));
                 const glm::mat4 rotationTransform = glm::mat4_cast(rotation);
                 branchCylinderWidth.m_value = internodeInfo.m_thickness;

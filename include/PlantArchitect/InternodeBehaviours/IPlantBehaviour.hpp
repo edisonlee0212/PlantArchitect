@@ -72,9 +72,9 @@ namespace PlantArchitect {
 #pragma endregion
 #pragma region Helpers
 
-        void TreeNodeCollector(std::vector<Entity> &boundEntities,
-                               std::vector<int> &parentIndices,
-                               const int &parentIndex, const Entity &node, const Entity &root);
+        void BranchCollector(std::vector<Entity> &boundEntities,
+                             std::vector<int> &parentIndices,
+                             const int &parentIndex, const Entity &node);
 
         void BranchSkinnedMeshGenerator(std::vector<Entity> &entities,
                                         std::vector<int> &parentIndices,
@@ -86,7 +86,7 @@ namespace PlantArchitect {
                                          std::vector<SkinnedVertex> &vertices,
                                          std::vector<unsigned> &indices);
 
-        void PrepareInternodeForSkeletalAnimation(const Entity &entity, Entity &branchMesh, Entity &foliage);
+        void PrepareInternodeForSkeletalAnimation(const Entity &entity, Entity &branchMesh, Entity &foliageMesh);
 
 #pragma endregion
 
