@@ -641,7 +641,6 @@ Entity IPlantBehaviour::CreateBranchHelper(const Entity &parent, const Entity &i
     retVal.SetDataComponent(branchInfo);
     auto parentBranch = parent.GetOrSetPrivateComponent<Branch>().lock();
     auto branch = retVal.GetOrSetPrivateComponent<Branch>().lock();
-    branch->m_branchPhysicsParameters = parentBranch->m_branchPhysicsParameters;
     branch->m_currentRoot = parentBranch->m_currentRoot;
     branch->m_currentInternode = internode;
     return retVal;

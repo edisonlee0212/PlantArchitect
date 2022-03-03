@@ -19,6 +19,7 @@ namespace PlantArchitect {
         IndexDivider,
         IndexRange,
         StrahlerNumber,
+        ChildCount
     };
     struct BranchPhysicsParameters;
     class IPlantBehaviour;
@@ -99,8 +100,8 @@ namespace PlantArchitect {
         bool m_drawBranches = true;
         bool m_drawPointers = false;
 
-        float m_internodeTransparency = 0.5f;
-        float m_branchTransparency = 0.5f;
+        float m_internodeTransparency = 0.75f;
+        float m_branchTransparency = 0.25f;
 
         bool m_autoUpdate = true;
 
@@ -113,6 +114,8 @@ namespace PlantArchitect {
 
         std::vector<Entity> m_entitiesWithRenderer;
         OpenGLUtils::GLVBO m_internodeColorBuffer;
+
+        glm::vec4 m_childCountColors[4] = {glm::vec4(1, 1, 1, 0.5), glm::vec4(0, 0, 1, 1), glm::vec4(0, 1, 0, 1), glm::vec4(1, 0, 0, 1)};
 
         void UpdateInternodeCamera();
         void RenderInternodeCylinders();

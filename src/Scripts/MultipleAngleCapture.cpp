@@ -580,6 +580,9 @@ void MultipleAngleCapture::ExportCSV(const std::shared_ptr<IPlantBehaviour> &beh
                 auto rotation = transform.GetRotation();
                 auto internodeInfo = internode.GetDataComponent<InternodeInfo>();
                 auto internodeStatus = internode.GetDataComponent<InternodeStatus>();
+
+                position += glm::normalize(front) * internodeInfo.m_length;
+
                 row += std::to_string(internode.GetIndex()) + ",";
 
                 row += std::to_string(position.x) + ",";
@@ -623,6 +626,9 @@ void MultipleAngleCapture::ExportCSV(const std::shared_ptr<IPlantBehaviour> &beh
                         auto rotationChildChild = transformChild.GetRotation();
                         auto internodeInfoChild = child.GetDataComponent<InternodeInfo>();
                         auto internodeStatusChild = child.GetDataComponent<InternodeStatus>();
+
+                        positionChild += glm::normalize(frontChild) * internodeInfoChild.m_length;
+
                         row += std::to_string(child.GetIndex()) + ",";
                         row += std::to_string(positionChild.x) + ",";
                         row += std::to_string(positionChild.y) + ",";

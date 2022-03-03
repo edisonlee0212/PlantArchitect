@@ -450,7 +450,6 @@ namespace PlantArchitect {
         RootInfo rootInfo;
         rootEntity.SetDataComponent(rootInfo);
         auto root = rootEntity.GetOrSetPrivateComponent<Root>().lock();
-
         rootInternode = Entities::CreateEntity(Entities::GetCurrentScene(), m_internodeArchetype, "Internode");
         rootInternode.SetParent(rootEntity);
 

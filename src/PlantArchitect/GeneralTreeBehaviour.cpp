@@ -427,7 +427,6 @@ Entity GeneralTreeBehaviour::NewPlant(const GeneralTreeParameters &params, const
     auto waterFeeder = rootInternode.GetOrSetPrivateComponent<InternodeWaterFeeder>().lock();
 
     auto branch = rootBranch.GetOrSetPrivateComponent<Branch>().lock();
-    branch->m_branchPhysicsParameters = BranchPhysicsParameters();
 
     return root;
 }

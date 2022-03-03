@@ -96,10 +96,10 @@ void PlantLayer::PreparePhysics() {
             std::vector<Entity> roots;
             behaviour->m_rootsQuery.ToEntityArray(Entities::GetCurrentScene(), roots);
             for (const auto &root : roots) {
+                auto branchPhysicsParameters = root.GetOrSetPrivateComponent<Root>().lock()->m_branchPhysicsParameters;
                 auto children = root.GetChildren();
                 for(const auto& child : children) {
                     if(child.HasPrivateComponent<Branch>()) {
-                        auto branchPhysicsParameters = child.GetOrSetPrivateComponent<Branch>().lock()->m_branchPhysicsParameters;
                         auto rootRigidBody = root.GetOrSetPrivateComponent<RigidBody>().lock();
                         if(!rootRigidBody->IsKinematic()) rootRigidBody->SetKinematic(true);
                         auto childBranchInfo = child.GetDataComponent<BranchInfo>();
@@ -814,6 +814,17 @@ void PlantLayer::UpdateInternodeColors() {
                                                                    },
                                                                    true);
             break;
+        case BranchColorMode::ChildCount:
+            Entities::ForEach<InternodeColor, InternodeStatistics>(Entities::GetCurrentScene(),
+                                                                   Jobs::Workers(),
+                                                                   m_internodesQuery,
+                                                                   [=](int i, Entity entity,
+                                                                       InternodeColor &internodeRenderColor,
+                                                                       InternodeStatistics &internodeStatistics) {
+                                                                       internodeRenderColor.m_value = m_childCountColors[internodeStatistics.m_childCount];
+                                                                   },
+                                                                   true);
+            break;
         default:
             break;
     }
@@ -994,10 +1005,10 @@ void PlantLayer::UpdateInternodeCamera() {
 
 static const char *BranchColorModes[]{"None", "Order", "Level", "Water", "ApicalControl",
                                       "WaterPressure",
-                                      "Proximity", "Inhibitor", "IndexDivider", "IndexRange", "StrahlerNumber"};
+                                      "Proximity", "Inhibitor", "IndexDivider", "IndexRange", "StrahlerNumber", "ChildCount"};
 
 void PlantLayer::DrawColorModeSelectionMenu() {
-    if (ImGui::TreeNodeEx("Branch Coloring")) {
+    if (ImGui::TreeNodeEx("Branch Coloring", ImGuiTreeNodeFlags_DefaultOpen)) {
         static int colorModeIndex = 0;
         if (ImGui::Combo("Color mode", &colorModeIndex, BranchColorModes,
                          IM_ARRAYSIZE(BranchColorModes))) {
@@ -1013,6 +1024,12 @@ void PlantLayer::DrawColorModeSelectionMenu() {
             case BranchColorMode::IndexRange:
                 ImGui::DragInt("Range Min", &m_indexRangeMin, 1, 0, m_indexRangeMax);
                 ImGui::DragInt("Range Max", &m_indexRangeMax, 1, m_indexRangeMin, 999999);
+                break;
+            case BranchColorMode::ChildCount:
+                ImGui::ColorEdit4("Color for 0", &m_childCountColors[0].x);
+                ImGui::ColorEdit4("Color for 1", &m_childCountColors[1].x);
+                ImGui::ColorEdit4("Color for 2", &m_childCountColors[2].x);
+                ImGui::ColorEdit4("Color for 3", &m_childCountColors[3].x);
                 break;
         }
         ImGui::TreePop();
@@ -1033,13 +1050,17 @@ void PlantLayer::CalculateStatistics() {
                                                     [](Entity parent, Entity child) {
 
                                                     },
-                                                    [](Entity parent) {
+                                                    [&](Entity parent) {
                                                         auto parentStat = parent.GetDataComponent<InternodeStatistics>();
                                                         std::vector<int> indices;
+                                                        parentStat.m_childCount = 0;
                                                         parent.ForEachChild(
                                                                 [&](const std::shared_ptr<Scene> &scene, Entity child) {
-                                                                    indices.push_back(
-                                                                            child.GetDataComponent<InternodeStatistics>().m_strahlerOrder);
+                                                                    if(behaviour->InternodeCheck(child)) {
+                                                                        indices.push_back(
+                                                                                child.GetDataComponent<InternodeStatistics>().m_strahlerOrder);
+                                                                        parentStat.m_childCount++;
+                                                                    }
                                                                 });
                                                         if (indices.empty()) { parentStat.m_strahlerOrder = 1; }
                                                         else if (indices.size() == 1) {
@@ -1065,6 +1086,7 @@ void PlantLayer::CalculateStatistics() {
                                                     [](Entity endNode) {
                                                         auto endNodeStat = endNode.GetDataComponent<InternodeStatistics>();
                                                         endNodeStat.m_strahlerOrder = 1;
+                                                        endNodeStat.m_childCount = 0;
                                                         endNode.SetDataComponent(endNodeStat);
                                                     }
                     );
