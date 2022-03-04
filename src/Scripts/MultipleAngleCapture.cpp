@@ -20,7 +20,14 @@ void MultipleAngleCapture::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) 
     }
     auto camera = m_cameraEntity.Get().GetOrSetPrivateComponent<Camera>().lock();
     camera->SetRequireRendering(true);
-    m_currentGrowingTree.GetOrSetPrivateComponent<Internode>().lock()->m_foliage.Get<InternodeFoliage>()->m_foliagePhyllotaxis = m_foliagePhyllotaxis;
+    Entity rootInternode;
+    auto children = m_currentGrowingTree.GetChildren();
+    for(const auto& i : children){
+        if(i.HasPrivateComponent<Internode>()) rootInternode = i;
+    }
+    auto internode = rootInternode.GetOrSetPrivateComponent<Internode>().lock();
+    auto foliage = internode->m_foliage.Get<InternodeFoliage>();
+    foliage->m_foliagePhyllotaxis = m_foliagePhyllotaxis;
     auto behaviour = pipeline.GetBehaviour();
     auto behaviourType = pipeline.GetBehaviourType();
     switch (behaviourType) {
@@ -70,6 +77,11 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
             spaceColonizationBehaviour->m_attractionPoints.clear();
             break;
     }
+    Entity rootInternode;
+    auto children = m_currentGrowingTree.GetChildren();
+    for(const auto& i : children){
+        if(i.HasPrivateComponent<Internode>()) rootInternode = i;
+    }
     prefix += std::to_string(m_generationAmount - m_remainingInstanceAmount + m_startIndex);
     switch (m_captureStatus) {
         case MultipleAngleCaptureStatus::Info: {
@@ -97,7 +109,8 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
 
             if (m_exportLString) {
                 auto lString = AssetManager::CreateAsset<LString>();
-                m_currentGrowingTree.GetOrSetPrivateComponent<Internode>().lock()->ExportLString(lString);
+
+                rootInternode.GetOrSetPrivateComponent<Internode>().lock()->ExportLString(lString);
                 //path here
                 lString->SetPathAndSave(
                         lStringFolder / (std::to_string(m_generationAmount - m_remainingInstanceAmount) + ".lstring"));
@@ -538,9 +551,9 @@ void MultipleAngleCapture::ExportCSV(const std::shared_ptr<IPlantBehaviour> &beh
         std::string output;
         std::vector<std::vector<std::pair<int, Entity>>> internodes;
         internodes.resize(128);
-        internodes[0].emplace_back(-1, m_currentGrowingTree);
         m_currentGrowingTree.ForEachChild([&](const std::shared_ptr<Scene>& scene, Entity child){
             if(!behaviour->InternodeCheck(child)) return;
+            internodes[0].emplace_back(-1, child);
             behaviour->InternodeGraphWalkerRootToEnd(child,
                                                      [&](Entity parent, Entity child) {
                                                          auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
