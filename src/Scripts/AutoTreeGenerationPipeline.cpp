@@ -22,7 +22,6 @@ void AutoTreeGenerationPipeline::Update() {
                 pipelineBehaviour->OnIdle(*this);
                 break;
             case AutoTreeGenerationPipelineStatus::BeforeGrowth:
-                Application::GetLayer<PlantLayer>()->m_enablePhysics = false;
                 switch (m_behaviourType) {
                     case BehaviourType::GeneralTree:
                         pipelineBehaviour->m_currentGrowingTree = std::dynamic_pointer_cast<GeneralTreeBehaviour>(
