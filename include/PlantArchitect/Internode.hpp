@@ -102,7 +102,7 @@ namespace PlantArchitect {
         void CollectResource(float deltaTime);
 
         void Relink(const std::unordered_map<Handle, Handle> &map, const std::shared_ptr<Scene> &scene) override;
-
+        void OnDestroy() override;
         /**
          * Down stream the resources.
          * @param deltaTime

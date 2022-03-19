@@ -19,6 +19,9 @@ void Internode::OnCreate() {
     m_apicalBud.m_status = BudStatus::Sleeping;
     m_lateralBuds.clear();
     m_fromApicalBud = true;
+    m_currentRoot.Clear();
+    m_foliage.Clear();
+    m_resource.reset();
 
 }
 
@@ -165,6 +168,19 @@ void Internode::Deserialize(const YAML::Node &in) {
     m_apicalBud.Load("m_apicalBud", in);
     LoadList("m_lateralBuds", m_lateralBuds, in);
     m_fromApicalBud = in["m_fromApicalBud"].as<bool>();
+}
+
+void Internode::OnDestroy() {
+    m_normalDir = glm::vec3(0, 0, 1);
+    m_step = 4;
+    m_foliageMatrices.clear();
+    m_rings.clear();
+    m_apicalBud.m_status = BudStatus::Sleeping;
+    m_lateralBuds.clear();
+    m_fromApicalBud = true;
+    m_currentRoot.Clear();
+    m_foliage.Clear();
+    m_resource.reset();
 }
 
 void Bud::OnInspect() {

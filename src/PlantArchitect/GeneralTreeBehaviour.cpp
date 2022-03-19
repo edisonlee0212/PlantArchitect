@@ -15,6 +15,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
     std::vector<Entity> currentRoots;
     m_rootsQuery.ToEntityArray(Entities::GetCurrentScene(), currentRoots, true);
     Preprocess(currentRoots);
+
 #pragma region Main Growth
     Entities::ForEach<Transform, GlobalTransform, InternodeInfo, InternodeStatus, InternodeWater, InternodeIllumination>
             (Entities::GetCurrentScene(), Jobs::Workers(), m_internodesQuery,
@@ -166,6 +167,8 @@ void GeneralTreeBehaviour::Grow(int iteration) {
              }, true);
     std::vector<Entity> entities;
     m_internodesQuery.ToEntityArray(Entities::GetCurrentScene(), entities);
+    int currentNodeCount = entities.size();
+
     for (const auto &entity: entities) {
         if (!entity.IsEnabled()) continue;
         auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
@@ -179,6 +182,8 @@ void GeneralTreeBehaviour::Grow(int iteration) {
             newInternodeStatus.m_recordedProbability = internode->m_apicalBud.m_flushProbability;
             newInternodeStatus.m_branchLength =
                     internodeStatus.m_branchLength + internode->m_apicalBud.m_newInternodeInfo.m_length;
+            newInternodeStatus.m_currentTotalNodeCount = currentNodeCount;
+            newInternodeStatus.m_startDensity = internodeInfo.m_neighborsProximity;
             newInternodeEntity.SetDataComponent(newInternodeStatus);
             newInternodeEntity.SetDataComponent(internode->m_apicalBud.m_newInternodeInfo);
             internode->m_apicalBud.m_status = BudStatus::Flushed;
@@ -194,6 +199,8 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                 newInternodeStatus.m_desiredLocalRotation = bud.m_newInternodeInfo.m_localRotation;
                 newInternodeStatus.m_branchLength = bud.m_newInternodeInfo.m_length;
                 newInternodeStatus.m_recordedProbability = bud.m_flushProbability;
+                newInternodeStatus.m_currentTotalNodeCount = currentNodeCount;
+                newInternodeStatus.m_startDensity = internodeInfo.m_neighborsProximity;
                 newInternodeEntity.SetDataComponent(newInternodeStatus);
                 newInternodeEntity.SetDataComponent(bud.m_newInternodeInfo);
                 bud.m_status = BudStatus::Flushed;
@@ -1028,6 +1035,8 @@ void InternodeStatus::OnInspect() {
     ImGui::Text(("Level: " + std::to_string(m_level)).c_str());
     ImGui::Text(("Biomass: " + std::to_string(m_biomass)).c_str());
     ImGui::Text(("ChildTotalBiomass: " + std::to_string(m_childTotalBiomass)).c_str());
+    ImGui::Text(("NodeCount: " + std::to_string(m_currentTotalNodeCount)).c_str());
+    ImGui::Text(("Start Density: " + std::to_string(m_startDensity)).c_str());
     glm::vec3 localRotation = glm::eulerAngles(m_desiredLocalRotation);
     ImGui::Text(("Desired local rotation: [" + std::to_string(glm::degrees(localRotation.x)) + ", " + std::to_string(glm::degrees(localRotation.y)) + ", " +std::to_string(glm::degrees(localRotation.z)) + "]").c_str());
 

@@ -60,6 +60,7 @@ namespace PlantArchitect {
         int m_strahlerOrder = 0;
         int m_hortonOrdering = 0;
         int m_childCount = 0;
+
         void OnInspect();
     };
 

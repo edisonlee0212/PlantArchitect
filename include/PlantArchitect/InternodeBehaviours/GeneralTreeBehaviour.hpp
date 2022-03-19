@@ -95,7 +95,8 @@ namespace PlantArchitect {
         float m_recordedProbability = 0;
         glm::quat m_desiredLocalRotation;
         float m_sagging = 0;
-
+        float m_currentTotalNodeCount = 0;
+        float m_startDensity = 0.0f;
         /**
          * Is child with largest total distance to all branch ends
          */

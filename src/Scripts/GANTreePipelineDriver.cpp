@@ -100,7 +100,6 @@ void GANTreePipelineDriver::LateUpdate() {
     pipelineBehaviour->m_perTreeGrowthIteration = pipeline->m_generalTreeParameters.m_matureAge;
     pipelineBehaviour->m_generationAmount = m_instancePerSpecie;
     pipelineBehaviour->Start();
-
     m_parameterFilePaths.pop_back();
 
 }

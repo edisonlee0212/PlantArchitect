@@ -36,6 +36,8 @@ void Branch::Relink(const std::unordered_map<Handle, Handle> &map, const std::sh
 
 void Branch::OnDestroy() {
     m_internodeChain.clear();
+    m_currentRoot.Clear();
+    m_currentInternode.Clear();
 }
 
 

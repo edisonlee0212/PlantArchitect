@@ -1,0 +1,7 @@
+.vs
+.vscode
+Release
+Debug
+*.exe
+/cmake-build-msvcdebug64/
+/cmake-build-msvcrelease64/	

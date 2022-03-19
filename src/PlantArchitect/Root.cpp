@@ -19,3 +19,7 @@ void Root::Deserialize(const YAML::Node &in) {
 
 void Root::OnCreate() {
 }
+
+void Root::OnDestroy() {
+    m_center = glm::vec3(0.0f);
+}
