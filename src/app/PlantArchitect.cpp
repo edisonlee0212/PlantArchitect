@@ -27,7 +27,6 @@
 #include "LSystemBehaviour.hpp"
 #include "AutoTreeGenerationPipeline.hpp"
 #include "DefaultInternodePhyllotaxis.hpp"
-#include "InternodeFoliage.hpp"
 #include "RadialBoundingVolume.hpp"
 #include "DepthCamera.hpp"
 #include "MultipleAngleCapture.hpp"

@@ -5,7 +5,6 @@
 #include "Root.hpp"
 #include "Branch.hpp"
 #include <Serialization.hpp>
-#include "InternodeFoliage.hpp"
 #include "PlantLayer.hpp"
 
 using namespace UniEngine;
@@ -437,7 +436,6 @@ namespace PlantArchitect {
         auto parentInternode = parent.GetOrSetPrivateComponent<Internode>().lock();
         auto internode = retVal.GetOrSetPrivateComponent<Internode>().lock();
         internode->m_resource = std::make_unique<T>();
-        internode->m_foliage = parentInternode->m_foliage;
         internode->m_currentRoot = parentInternode->m_currentRoot;
         return retVal;
     }
@@ -460,7 +458,6 @@ namespace PlantArchitect {
         rootInternode.SetDataComponent(internodeInfo);
         auto internode = rootInternode.GetOrSetPrivateComponent<Internode>().lock();
         internode->m_resource = Serialization::ProduceSerializable<T>();
-        internode->m_foliage = AssetManager::CreateAsset<InternodeFoliage>("Foliage");
         internode->m_currentRoot = rootEntity;
         BranchInfo branchInfo;
         branchInfo.m_endNode = true;

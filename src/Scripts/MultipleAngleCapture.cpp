@@ -9,7 +9,6 @@
 #include "AssetManager.hpp"
 #include "LSystemBehaviour.hpp"
 #include "IVolume.hpp"
-#include "InternodeFoliage.hpp"
 
 using namespace Scripts;
 
@@ -26,8 +25,7 @@ void MultipleAngleCapture::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) 
         if(i.HasPrivateComponent<Internode>()) rootInternode = i;
     }
     auto internode = rootInternode.GetOrSetPrivateComponent<Internode>().lock();
-    auto foliage = internode->m_foliage.Get<InternodeFoliage>();
-    foliage->m_foliagePhyllotaxis = m_foliagePhyllotaxis;
+    m_currentGrowingTree.GetOrSetPrivateComponent<Root>().lock()->m_foliagePhyllotaxis = m_foliagePhyllotaxis;
     auto behaviour = pipeline.GetBehaviour();
     auto behaviourType = pipeline.GetBehaviourType();
     switch (behaviourType) {

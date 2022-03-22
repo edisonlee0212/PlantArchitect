@@ -411,7 +411,10 @@ Entity GeneralTreeBehaviour::CreateInternode(const Entity &parent) {
 
 Entity GeneralTreeBehaviour::NewPlant(const GeneralTreeParameters &params, const Transform &transform) {
     Entity rootInternode, rootBranch;
-    auto root = CreateRoot(rootInternode, rootBranch);
+    auto rootEntity = CreateRoot(rootInternode, rootBranch);
+    auto root = rootEntity.GetOrSetPrivateComponent<Root>().lock();
+    root->m_foliagePhyllotaxis = AssetManager::CreateAsset<DefaultInternodePhyllotaxis>();
+
     Transform internodeTransform;
     internodeTransform.m_value =
             glm::translate(glm::vec3(0.0f)) *
@@ -426,16 +429,16 @@ Entity GeneralTreeBehaviour::NewPlant(const GeneralTreeParameters &params, const
     newInfo.m_layer = 0;
     newInfo.m_thickness = params.m_endNodeThicknessAndControl.x;
     rootInternode.SetDataComponent(newInfo);
-    root.SetDataComponent(params);
+    rootEntity.SetDataComponent(params);
 
     auto internode = rootInternode.GetOrSetPrivateComponent<Internode>().lock();
     internode->m_fromApicalBud = true;
-    internode->m_foliage.Get<InternodeFoliage>()->m_foliagePhyllotaxis = AssetManager::CreateAsset<DefaultInternodePhyllotaxis>();
+
     auto waterFeeder = rootInternode.GetOrSetPrivateComponent<InternodeWaterFeeder>().lock();
 
     auto branch = rootBranch.GetOrSetPrivateComponent<Branch>().lock();
 
-    return root;
+    return rootEntity;
 }
 
 Entity

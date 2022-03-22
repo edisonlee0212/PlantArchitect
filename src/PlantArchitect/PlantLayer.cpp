@@ -534,7 +534,6 @@ void PlantLayer::OnCreate() {
     ClassRegistry::RegisterDataComponent<BranchInfo>("BranchInfo");
     ClassRegistry::RegisterDataComponent<InternodeStatistics>("InternodeStatistics");
 
-    ClassRegistry::RegisterAsset<InternodeFoliage>("InternodeFoliage", ".internodefoliage");
     ClassRegistry::RegisterAsset<DefaultInternodePhyllotaxis>("DefaultInternodePhyllotaxis", ".defaultip");
 
     Editor::RegisterComponentDataInspector<InternodeInfo>([](Entity entity, IDataComponent *data, bool isRoot) {

@@ -16,7 +16,7 @@ void DefaultInternodePhyllotaxis::GenerateFoliage(const std::shared_ptr<Internod
     auto rotation = glm::abs(m_randomRotation);
     if(internodeInfo.m_endNode) {
         for (int i = 0; i < m_leafCount; i++) {
-            auto position = glm::vec3(glm::gaussRand(0.0f, radius), glm::gaussRand(0.0f, radius), glm::linearRand(0.0f - radius / 2.0f, length + radius / 2.0f));
+            auto position = glm::vec3(glm::gaussRand(0.0f, radius), glm::gaussRand(0.0f, radius), -glm::linearRand(0.0f - radius / 2.0f, length + radius / 2.0f));
             const auto transform =
                     relativeGlobalTransform.m_value *
                     (glm::translate(position) *

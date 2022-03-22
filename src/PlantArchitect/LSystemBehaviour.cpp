@@ -6,7 +6,6 @@
 #include "PlantLayer.hpp"
 #include "EmptyInternodeResource.hpp"
 #include "TransformLayer.hpp"
-#include "InternodeFoliage.hpp"
 
 using namespace PlantArchitect;
 

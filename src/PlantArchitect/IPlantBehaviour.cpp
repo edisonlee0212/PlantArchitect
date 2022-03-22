@@ -7,7 +7,6 @@
 #include "Curve.hpp"
 #include "PlantLayer.hpp"
 #include "IInternodePhyllotaxis.hpp"
-#include "InternodeFoliage.hpp"
 #include "PlantDataComponents.hpp"
 #include "TransformLayer.hpp"
 
@@ -229,32 +228,33 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
                          entity.GetOrSetPrivateComponent<Internode>().lock();
                  internode->m_foliageMatrices.clear();
                  auto rootGlobalTransform = globalTransform;
-                 auto root = internode->GetOwner().GetRoot();
-                 if (root != entity) {
-                     rootGlobalTransform = root.GetDataComponent<GlobalTransform>();
+                 auto rootEntity = internode->GetOwner().GetRoot();
+                 if (rootEntity != entity) {
+                     rootGlobalTransform = rootEntity.GetDataComponent<GlobalTransform>();
                  }
+                 auto root = rootEntity.GetOrSetPrivateComponent<Root>().lock();
                  auto inverseGlobalTransform = glm::inverse(rootGlobalTransform.m_value);
                  GlobalTransform relativeGlobalTransform;
                  GlobalTransform relativeParentGlobalTransform;
                  relativeGlobalTransform.m_value = inverseGlobalTransform * globalTransform.m_value;
                  relativeParentGlobalTransform.m_value =
                          inverseGlobalTransform * (glm::inverse(transform.m_value) * globalTransform.m_value);
-                 auto foliage = internode->m_foliage.Get<InternodeFoliage>();
-                 if (foliage)
-                     foliage->Generate(internode, internodeInfo,
+                 auto foliagePhyllotaxis = root->m_foliagePhyllotaxis.Get<IInternodePhyllotaxis>();
+                 if (foliagePhyllotaxis)
+                     foliagePhyllotaxis->GenerateFoliage(internode, internodeInfo,
                                        relativeGlobalTransform, relativeParentGlobalTransform);
              });
 #pragma endregion
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
-        const auto &root = currentRoots[plantIndex];
-        auto children = root.GetChildren();
+        const auto &rootEntity = currentRoots[plantIndex];
+        auto children = rootEntity.GetChildren();
         Entity rootInternode, rootBranch;
         for (const auto &child: children) {
             if (InternodeCheck(child)) rootInternode = child;
             else if (BranchCheck(child)) rootBranch = child;
         }
         Entity branchMesh, foliageMesh;
-        PrepareInternodeForSkeletalAnimation(root, branchMesh, foliageMesh);
+        PrepareInternodeForSkeletalAnimation(rootEntity, branchMesh, foliageMesh);
         {
 #pragma region Branch mesh
             auto animator = branchMesh.GetOrSetPrivateComponent<Animator>().lock();
@@ -262,7 +262,7 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
             skinnedMeshRenderer->SetEnabled(true);
             auto internode = rootInternode.GetOrSetPrivateComponent<Internode>().lock();
             const auto plantGlobalTransform =
-                    root.GetDataComponent<GlobalTransform>();
+                    rootEntity.GetDataComponent<GlobalTransform>();
 #pragma region Animator
             std::vector<glm::mat4> offsetMatrices;
             std::vector<std::string> names;
@@ -299,19 +299,18 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
 #pragma endregion
         }
         {
-
 #pragma region Foliage mesh
             auto animator = foliageMesh.GetOrSetPrivateComponent<Animator>().lock();
             auto skinnedMeshRenderer = foliageMesh.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
             auto material = skinnedMeshRenderer->m_material.Get<Material>();
             skinnedMeshRenderer->SetEnabled(true);
-            auto internode = rootInternode.GetOrSetPrivateComponent<Internode>().lock();
-            auto foliage = internode->m_foliage.Get<InternodeFoliage>();
-            if (foliage && foliage->m_foliageTexture.Get<Texture2D>())
-                material->m_albedoTexture = foliage->m_foliageTexture.Get<Texture2D>();
-            material->m_albedoColor = foliage->m_foliageColor;
+            auto root = rootEntity.GetOrSetPrivateComponent<Root>().lock();
+            auto foliagePhyllotaxis = root->m_foliagePhyllotaxis.Get<IInternodePhyllotaxis>();
+            if (root->m_foliageTexture.Get<Texture2D>())
+                material->m_albedoTexture = root->m_foliageTexture.Get<Texture2D>();
+            material->m_albedoColor = root->m_foliageColor;
             const auto plantGlobalTransform =
-                    root.GetDataComponent<GlobalTransform>();
+                    rootEntity.GetDataComponent<GlobalTransform>();
 #pragma region Animator
             std::vector<glm::mat4> offsetMatrices;
             std::vector<std::string> names;
@@ -370,52 +369,56 @@ void IPlantBehaviour::FoliageSkinnedMeshGenerator(std::vector<Entity> &entities,
     auto &quadTriangles = quadMesh->UnsafeGetTriangles();
     auto quadVerticesSize = quadMesh->GetVerticesAmount();
     size_t offset = 0;
-    for (int internodeIndex = 0; internodeIndex < entities.size();
-         internodeIndex++) {
+    for (int branchIndex = 0; branchIndex < entities.size();
+         branchIndex++) {
         int parentIndex = 0;
-        if (internodeIndex != 0) parentIndex = parentIndices[internodeIndex];
-        auto &entity = entities[internodeIndex];
-        auto internodeGlobalTransform = entity.GetDataComponent<GlobalTransform>();
-        auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
-        glm::vec3 newNormalDir;
-        if (internodeIndex != 0) {
-            newNormalDir = entities[parentIndex].GetOrSetPrivateComponent<Internode>().lock()->m_normalDir;
-        } else {
-            newNormalDir = internodeGlobalTransform.GetRotation() *
-                           glm::vec3(1.0f, 0.0f, 0.0f);
-        }
-        const glm::vec3 front =
-                internodeGlobalTransform.GetRotation() *
-                glm::vec3(0.0f, 0.0f, -1.0f);
-        newNormalDir = glm::cross(glm::cross(front, newNormalDir), front);
-        internode->m_normalDir = newNormalDir;
-        for (const auto &matrix: internode->m_foliageMatrices) {
-            SkinnedVertex archetype;
-            for (auto i = 0; i < quadMesh->GetVerticesAmount(); i++) {
-                archetype.m_position =
-                        matrix * glm::vec4(quadMesh->UnsafeGetVertices()[i].m_position, 1.0f);
-                archetype.m_normal = glm::normalize(glm::vec3(
-                        matrix * glm::vec4(quadMesh->UnsafeGetVertices()[i].m_normal, 0.0f)));
-                archetype.m_tangent = glm::normalize(glm::vec3(
-                        matrix *
-                        glm::vec4(quadMesh->UnsafeGetVertices()[i].m_tangent, 0.0f)));
-                archetype.m_texCoords =
-                        quadMesh->UnsafeGetVertices()[i].m_texCoords;
-                archetype.m_bondId = glm::ivec4(internodeIndex, -1, -1, -1);
-                archetype.m_weight = glm::vec4(1, 0, 0, 0);
-                archetype.m_bondId2 = glm::ivec4(-1, -1, -1, -1);
-                archetype.m_weight2 = glm::vec4(0, 0, 0, 0);
-                vertices.push_back(archetype);
+        if (branchIndex != 0) parentIndex = parentIndices[branchIndex];
+        auto &branchEntity = entities[branchIndex];
+        auto branchGlobalTransform = branchEntity.GetDataComponent<GlobalTransform>();
+        auto branch = branchEntity.GetOrSetPrivateComponent<Branch>().lock();
+        for (const auto &internodeEntity: branch->m_internodeChain) {
+            auto internodeGlobalTransform = internodeEntity.GetDataComponent<GlobalTransform>();
+            auto internode = internodeEntity.GetOrSetPrivateComponent<Internode>().lock();
+            glm::vec3 newNormalDir;
+            if (branchIndex != 0) {
+                newNormalDir = entities[parentIndex].GetOrSetPrivateComponent<Internode>().lock()->m_normalDir;
+            } else {
+                newNormalDir = internodeGlobalTransform.GetRotation() *
+                               glm::vec3(1.0f, 0.0f, 0.0f);
             }
-            for (auto triangle: quadTriangles) {
-                triangle.x += offset;
-                triangle.y += offset;
-                triangle.z += offset;
-                indices.push_back(triangle.x);
-                indices.push_back(triangle.y);
-                indices.push_back(triangle.z);
+            const glm::vec3 front =
+                    internodeGlobalTransform.GetRotation() *
+                    glm::vec3(0.0f, 0.0f, -1.0f);
+            newNormalDir = glm::cross(glm::cross(front, newNormalDir), front);
+            internode->m_normalDir = newNormalDir;
+            for (const auto &matrix: internode->m_foliageMatrices) {
+                SkinnedVertex archetype;
+                for (auto i = 0; i < quadMesh->GetVerticesAmount(); i++) {
+                    archetype.m_position =
+                            matrix * glm::vec4(quadMesh->UnsafeGetVertices()[i].m_position, 1.0f);
+                    archetype.m_normal = glm::normalize(glm::vec3(
+                            matrix * glm::vec4(quadMesh->UnsafeGetVertices()[i].m_normal, 0.0f)));
+                    archetype.m_tangent = glm::normalize(glm::vec3(
+                            matrix *
+                            glm::vec4(quadMesh->UnsafeGetVertices()[i].m_tangent, 0.0f)));
+                    archetype.m_texCoords =
+                            quadMesh->UnsafeGetVertices()[i].m_texCoords;
+                    archetype.m_bondId = glm::ivec4(branchIndex, -1, -1, -1);
+                    archetype.m_weight = glm::vec4(1, 0, 0, 0);
+                    archetype.m_bondId2 = glm::ivec4(-1, -1, -1, -1);
+                    archetype.m_weight2 = glm::vec4(0, 0, 0, 0);
+                    vertices.push_back(archetype);
+                }
+                for (auto triangle: quadTriangles) {
+                    triangle.x += offset;
+                    triangle.y += offset;
+                    triangle.z += offset;
+                    indices.push_back(triangle.x);
+                    indices.push_back(triangle.y);
+                    indices.push_back(triangle.z);
+                }
+                offset += quadVerticesSize;
             }
-            offset += quadVerticesSize;
         }
     }
 }

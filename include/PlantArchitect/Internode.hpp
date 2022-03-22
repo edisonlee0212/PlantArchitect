@@ -33,7 +33,6 @@ namespace PlantArchitect {
 
     struct LSystemCommand;
 
-    class InternodeFoliage;
 
 
     class PLANT_ARCHITECT_API Internode : public IPrivateComponent {
@@ -42,9 +41,6 @@ namespace PlantArchitect {
         void CollectInternodesHelper(const Entity &target, std::vector<Entity> &results);
 
         friend class IPlantBehaviour;
-
-        friend class InternodeFoliage;
-
         /**
          * Normal direction for mesh generation
          */
@@ -72,10 +68,7 @@ namespace PlantArchitect {
          * Whether this internode is formed from an apical bud
          */
         bool m_fromApicalBud;
-        /**
-         * The foliage module.
-         */
-        AssetRef m_foliage;
+
         /**
          * The resource storage for the internode.
          */

@@ -6,7 +6,6 @@
 #include "PlantLayer.hpp"
 #include "LSystemBehaviour.hpp"
 #include "AssetManager.hpp"
-#include "InternodeFoliage.hpp"
 
 using namespace PlantArchitect;
 
@@ -20,7 +19,6 @@ void Internode::OnCreate() {
     m_lateralBuds.clear();
     m_fromApicalBud = true;
     m_currentRoot.Clear();
-    m_foliage.Clear();
     m_resource.reset();
 
 }
@@ -123,8 +121,6 @@ void Internode::OnInspect() {
         std::vector<LSystemCommand> commands;
         ExportLSystemCommandsHelper(index, GetOwner(), commands);
     }
-    auto foliage = m_foliage.Get<InternodeFoliage>();
-    if (foliage) foliage->OnInspect();
 
     if (ImGui::TreeNodeEx("Buds")) {
         ImGui::Text("Apical bud:");
@@ -143,7 +139,6 @@ void Internode::OnInspect() {
 }
 
 void Internode::CollectAssetRef(std::vector<AssetRef> &list) {
-    list.push_back(m_foliage);
 }
 
 void Internode::PostCloneAction(const std::shared_ptr<IPrivateComponent> &target) {
@@ -152,7 +147,6 @@ void Internode::PostCloneAction(const std::shared_ptr<IPrivateComponent> &target
 
 void Internode::Serialize(YAML::Emitter &out) {
     m_currentRoot.Save("m_currentRoot", out);
-    m_foliage.Save("m_foliage", out);
     m_apicalBud.Save("m_apicalBud", out);
     SaveList("m_lateralBuds", m_lateralBuds, out);
     out << YAML::Key << "m_fromApicalBud" << YAML::Value << m_fromApicalBud;
@@ -164,7 +158,6 @@ void Internode::Relink(const std::unordered_map<Handle, Handle> &map, const std:
 
 void Internode::Deserialize(const YAML::Node &in) {
     m_currentRoot.Load("m_currentRoot", in);
-    m_foliage.Load("m_foliage", in);
     m_apicalBud.Load("m_apicalBud", in);
     LoadList("m_lateralBuds", m_lateralBuds, in);
     m_fromApicalBud = in["m_fromApicalBud"].as<bool>();
@@ -179,7 +172,6 @@ void Internode::OnDestroy() {
     m_lateralBuds.clear();
     m_fromApicalBud = true;
     m_currentRoot.Clear();
-    m_foliage.Clear();
     m_resource.reset();
 }
 
