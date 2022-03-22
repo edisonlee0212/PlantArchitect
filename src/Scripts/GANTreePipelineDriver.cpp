@@ -14,17 +14,17 @@ void GANTreePipelineDriver::OnInspect() {
     ImGui::DragInt("Amount per specie", &m_instancePerSpecie, 1, 0, 99999);
     if (m_parameterFilePaths.empty()) {
         if (ImGui::Button("Start")) {
-            m_parameterFilePaths.push_back(m_folderPath / "Oak.gtparams");
-            m_parameterFilePaths.push_back(m_folderPath / "Birch.gtparams");
-            m_parameterFilePaths.push_back(m_folderPath / "Cabbage.gtparams");
-            m_parameterFilePaths.push_back(m_folderPath / "Corkscrew.gtparams");
+            //m_parameterFilePaths.push_back(m_folderPath / "Oak.gtparams");
+            //m_parameterFilePaths.push_back(m_folderPath / "Birch.gtparams");
+            //m_parameterFilePaths.push_back(m_folderPath / "Cabbage.gtparams");
+            //m_parameterFilePaths.push_back(m_folderPath / "Corkscrew.gtparams");
             m_parameterFilePaths.push_back(m_folderPath / "Elm.gtparams");
-            m_parameterFilePaths.push_back(m_folderPath / "Hazel.gtparams");
-            m_parameterFilePaths.push_back(m_folderPath / "Maple.gtparams");
-            m_parameterFilePaths.push_back(m_folderPath / "Oak.gtparams");
-            m_parameterFilePaths.push_back(m_folderPath / "Pine.gtparams");
-            m_parameterFilePaths.push_back(m_folderPath / "Tulip.gtparams");
-            m_parameterFilePaths.push_back(m_folderPath / "Walnut.gtparams");
+            //m_parameterFilePaths.push_back(m_folderPath / "Hazel.gtparams");
+            //m_parameterFilePaths.push_back(m_folderPath / "Maple.gtparams");
+            //m_parameterFilePaths.push_back(m_folderPath / "Oak.gtparams");
+            //m_parameterFilePaths.push_back(m_folderPath / "Pine.gtparams");
+            //m_parameterFilePaths.push_back(m_folderPath / "Tulip.gtparams");
+            //m_parameterFilePaths.push_back(m_folderPath / "Walnut.gtparams");
             /*
             if (std::filesystem::exists(m_folderPath) && std::filesystem::is_directory(m_folderPath)) {
                 for (const auto &entry: std::filesystem::directory_iterator(m_folderPath)) {

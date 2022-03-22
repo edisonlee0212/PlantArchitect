@@ -14,7 +14,6 @@ void Root::Serialize(YAML::Emitter &out) {
 
 void Root::Deserialize(const YAML::Node &in) {
     if (in["m_center"]) m_center = in["m_center"].as<glm::vec3>();
-
 }
 
 void Root::OnCreate() {
