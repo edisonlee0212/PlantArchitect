@@ -4,18 +4,22 @@
 
 #include "Root.hpp"
 #include "IInternodePhyllotaxis.hpp"
+
 using namespace PlantArchitect;
+
 void Root::OnInspect() {
     ImGui::InputFloat3("Center", &m_center.x, "%.3f", ImGuiInputTextFlags_ReadOnly);
 
-    Editor::DragAndDropButton(m_foliagePhyllotaxis, "Phyllotaxis", {"EmptyInternodePhyllotaxis", "DefaultInternodePhyllotaxis"}, true);
-    Editor::DragAndDropButton<Texture2D>(m_foliageTexture, "Texture2D", true);
-    if(!m_foliageTexture.Get<Texture2D>()){
-        ImGui::DragFloat3("Foliage color", &m_foliageColor.x);
-    }
+    Editor::DragAndDropButton(m_foliagePhyllotaxis, "Phyllotaxis",
+                              {"EmptyInternodePhyllotaxis", "DefaultInternodePhyllotaxis"}, true);
+    Editor::DragAndDropButton<Texture2D>(m_foliageTexture, "Foliage texture", true);
+    Editor::DragAndDropButton<Texture2D>(m_branchTexture, "Branch texture", true);
+    ImGui::DragFloat3("Foliage color", &m_foliageColor.x);
+    ImGui::DragFloat3("Branch color", &m_branchColor.x);
+
     auto phyllotaxis = m_foliagePhyllotaxis.Get<IInternodePhyllotaxis>();
-    if(phyllotaxis){
-        if(ImGui::TreeNodeEx("Phyllotaxis", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (phyllotaxis) {
+        if (ImGui::TreeNodeEx("Phyllotaxis", ImGuiTreeNodeFlags_DefaultOpen)) {
             phyllotaxis->OnInspect();
             ImGui::TreePop();
         }
@@ -27,7 +31,9 @@ void Root::Serialize(YAML::Emitter &out) {
 
     m_foliagePhyllotaxis.Save("m_foliagePhyllotaxis", out);
     m_foliageTexture.Save("m_foliageTexture", out);
+    m_branchTexture.Save("m_branchTexture", out);
     out << YAML::Key << "m_foliageColor" << YAML::Value << m_foliageColor;
+    out << YAML::Key << "m_branchColor" << YAML::Value << m_branchColor;
 }
 
 void Root::Deserialize(const YAML::Node &in) {
@@ -35,7 +41,10 @@ void Root::Deserialize(const YAML::Node &in) {
 
     m_foliagePhyllotaxis.Load("m_foliagePhyllotaxis", in);
     m_foliageTexture.Load("m_foliageTexture", in);
-    if(in["m_foliageColor"]) m_foliageColor = in["m_foliageColor"].as<glm::vec3>();
+    if (in["m_foliageColor"]) m_foliageColor = in["m_foliageColor"].as<glm::vec3>();
+
+    m_branchTexture.Load("m_branchTexture", in);
+    if (in["m_branchColor"]) m_branchColor = in["m_branchColor"].as<glm::vec3>();
 }
 
 void Root::OnCreate() {

@@ -259,7 +259,12 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
 #pragma region Branch mesh
             auto animator = branchMesh.GetOrSetPrivateComponent<Animator>().lock();
             auto skinnedMeshRenderer = branchMesh.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
+            auto material = skinnedMeshRenderer->m_material.Get<Material>();
             skinnedMeshRenderer->SetEnabled(true);
+            auto root = rootEntity.GetOrSetPrivateComponent<Root>().lock();
+            if (root->m_branchTexture.Get<Texture2D>())
+                material->m_albedoTexture = root->m_branchTexture.Get<Texture2D>();
+            material->m_albedoColor = root->m_branchColor;
             auto internode = rootInternode.GetOrSetPrivateComponent<Internode>().lock();
             const auto plantGlobalTransform =
                     rootEntity.GetDataComponent<GlobalTransform>();
