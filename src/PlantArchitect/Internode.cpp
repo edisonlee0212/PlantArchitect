@@ -93,15 +93,21 @@ void Internode::ExportLSystemCommandsHelper(int &index, const Entity &target, st
     internodeStatstics.m_lSystemStringIndex = index;
     target.SetDataComponent(internodeInfo);
     index++;
+    auto children = target.GetChildren();
+    if(children.size() == 1){
+        if (!children[0].IsValid() || !children[0].HasDataComponent<InternodeInfo>()) return;
+        ExportLSystemCommandsHelper(index, children[0], commands);
+    }else{
+        for(const auto& child : children){
+            if (!child.IsValid() || !child.HasDataComponent<InternodeInfo>()) return;
+            commands.push_back({LSystemCommandType::Push, 0.0f});
+            index++;
+            ExportLSystemCommandsHelper(index, child, commands);
+            commands.push_back({LSystemCommandType::Pop, 0.0f});
+            index++;
+        }
+    }
 
-    target.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
-        if (!child.IsValid() || !child.HasDataComponent<InternodeInfo>()) return;
-        commands.push_back({LSystemCommandType::Push, 0.0f});
-        index++;
-        ExportLSystemCommandsHelper(index, child, commands);
-        commands.push_back({LSystemCommandType::Pop, 0.0f});
-        index++;
-    });
 }
 
 void Internode::OnInspect() {

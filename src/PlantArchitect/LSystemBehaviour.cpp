@@ -212,6 +212,7 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
     });
 
     Application::GetLayer<PlantLayer>()->CalculateStatistics();
+    UpdateBranches();
     return root;
 }
 

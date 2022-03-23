@@ -106,7 +106,7 @@ void IPlantBehaviour::DestroyBranch(const Entity &branch) {
 void
 IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
                                        float resolution) {
-    //UpdateBranches();
+    UpdateBranches();
     std::vector<Entity> currentRoots;
     m_rootsQuery.ToEntityArray(Entities::GetCurrentScene(), currentRoots);
     int plantSize = currentRoots.size();
