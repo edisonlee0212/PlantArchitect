@@ -92,7 +92,7 @@ void EngineSetup() {
          * Add all internode behaviours for example.
          */
         auto internodesLayer = Application::GetLayer<PlantLayer>();
-        auto spaceColonizationBehaviour = internodesLayer->GetInternodeBehaviour<SpaceColonizationBehaviour>();
+        auto spaceColonizationBehaviour = internodesLayer->GetPlantBehaviour<SpaceColonizationBehaviour>();
         spaceColonizationBehaviour->m_volumes.clear();
         Entity cubeVolumeEntity = Entities::CreateEntity(Entities::GetCurrentScene(), "CubeVolume");
         Transform cubeVolumeTransform = cubeVolumeEntity.GetDataComponent<Transform>();

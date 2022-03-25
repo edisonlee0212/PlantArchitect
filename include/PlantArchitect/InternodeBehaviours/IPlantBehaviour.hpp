@@ -11,10 +11,11 @@ using namespace UniEngine;
 namespace PlantArchitect {
     struct SpaceColonizationParameters;
 
-    class PLANT_ARCHITECT_API IPlantBehaviour : public IAsset {
+    class PLANT_ARCHITECT_API IPlantBehaviour {
         friend class PlantLayer;
 
     protected:
+        std::string m_typeName;
 #pragma region InternodeFactory
         /**
          * The EntityQuery for filtering all target internodes, must be set when created.
@@ -96,6 +97,8 @@ namespace PlantArchitect {
         virtual bool InternalBranchCheck(const Entity &target) = 0;
         void UpdateBranchHelper(const Entity& currentBranch, const Entity& currentInternode);
     public:
+        virtual void OnInspect() = 0;
+        [[nodiscard]] std::string GetTypeName() const;
         void UpdateBranches();
         void ApplyTropism(const glm::vec3 &targetDir, float tropism, glm::vec3 &front, glm::vec3 &up);
 
@@ -236,29 +239,6 @@ namespace PlantArchitect {
 
     };
 
-    template<typename T>
-    void PlantLayer::PushInternodeBehaviour(const std::shared_ptr<T> &behaviour) {
-        if (!behaviour.get()) return;
-        bool search = false;
-        for (auto &i: m_internodeBehaviours) {
-            if (i.Get<IPlantBehaviour>()->GetTypeName() ==
-                std::dynamic_pointer_cast<IPlantBehaviour>(behaviour)->GetTypeName())
-                search = true;
-        }
-        if (!search) {
-            m_internodeBehaviours.emplace_back(std::dynamic_pointer_cast<IPlantBehaviour>(behaviour));
-        }
-    }
-
-    template<typename T>
-    std::shared_ptr<T> PlantLayer::GetInternodeBehaviour() {
-        for (auto &i: m_internodeBehaviours) {
-            if (i.Get<IPlantBehaviour>()->GetTypeName() == Serialization::GetSerializableTypeName<T>()) {
-                return i.Get<T>();
-            }
-        }
-        return nullptr;
-    }
 
     template<typename T>
     void IPlantBehaviour::CreateInternodeMenu(const std::string &menuTitle,
@@ -271,7 +251,7 @@ namespace PlantArchitect {
                                               const std::function<void(const T &params,
                                                                        const Transform &transform)> &internodeCreator
     ) {
-        if (ImGui::Button("Create...")) {
+        if (ImGui::Button("New plant...")) {
             ImGui::OpenPopup(menuTitle.c_str());
         }
         const ImVec2 center = ImGui::GetMainViewport()->GetCenter();

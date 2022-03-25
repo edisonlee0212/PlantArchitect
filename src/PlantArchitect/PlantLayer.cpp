@@ -75,9 +75,8 @@ void PlantLayer::Simulate(int iterations) {
                                                      }
                                                  });
                  }, true);
-        for (auto &i: m_internodeBehaviours) {
-            auto behaviour = i.Get<IPlantBehaviour>();
-            if (behaviour) behaviour->Grow(iteration);
+        for (auto &i: m_plantBehaviours) {
+            if (i) i->Grow(iteration);
         }
     }
     CalculateStatistics();
@@ -89,8 +88,7 @@ void PlantLayer::Simulate(int iterations) {
 void PlantLayer::PreparePhysics() {
     auto physicsLayer = Application::GetLayer<PhysicsLayer>();
     if (!physicsLayer) return;
-    for (auto &i: m_internodeBehaviours) {
-        auto behaviour = i.Get<IPlantBehaviour>();
+    for (auto &behaviour: m_plantBehaviours) {
         if (behaviour) {
             std::vector<Entity> roots;
             behaviour->m_rootsQuery.ToEntityArray(Entities::GetCurrentScene(), roots);
@@ -191,57 +189,12 @@ void PlantLayer::OnInspect() {
                                              glm::vec4(1, 1, 1, 0.2),
                                              m_voxelSpace.m_frozenVoxels, glm::mat4(1.0f), 1.0f);
         }
-        if (ImGui::TreeNodeEx("Internode Behaviour")) {
-            ImGui::Text("Add Internode Behaviour");
-            ImGui::SameLine();
-            static AssetRef temp;
-            Editor::DragAndDropButton(temp, "Here",
-                                      {"GeneralTreeBehaviour", "SpaceColonizationBehaviour", "LSystemBehaviour"},
-                                      false);
-            if (temp.Get<IPlantBehaviour>()) {
-                PushInternodeBehaviour(temp.Get<IPlantBehaviour>());
-                temp.Clear();
-            }
-            if (ImGui::TreeNodeEx("Internode Behaviours", ImGuiTreeNodeFlags_DefaultOpen)) {
-                int index = 0;
-                bool skip = false;
-                for (auto &i: m_internodeBehaviours) {
-                    auto ptr = i.Get<IPlantBehaviour>();
-                    ImGui::Button(("Slot " + std::to_string(index) + ": " + ptr->m_name).c_str());
-                    if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
-                        Editor::GetInstance().m_inspectingAsset = ptr;
-                    }
-                    const std::string tag = "##" + ptr->GetTypeName() + std::to_string(ptr->GetHandle());
-                    if (ImGui::BeginPopupContextItem(tag.c_str())) {
-                        if (ImGui::BeginMenu(("Rename" + tag).c_str())) {
-                            static char newName[256];
-                            ImGui::InputText(("New name" + tag).c_str(), newName, 256);
-                            if (ImGui::Button(("Confirm" + tag).c_str()))
-                                ptr->m_name = std::string(newName);
-                            ImGui::EndMenu();
-                        }
-                        if (ImGui::Button(("Remove" + tag).c_str())) {
-                            i.Clear();
-                            skip = true;
-                        }
-                        ImGui::EndPopup();
-                    }
-                    if (skip) {
-                        break;
-                    }
-                    index++;
+        if (ImGui::TreeNodeEx("Plant Behaviour")) {
+            for(const auto& behaviour : m_plantBehaviours){
+                if(ImGui::TreeNodeEx(behaviour->GetTypeName().c_str())) {
+                    behaviour->OnInspect();
+                    ImGui::TreePop();
                 }
-                if (skip) {
-                    int index2 = 0;
-                    for (auto &i: m_internodeBehaviours) {
-                        if (!i.Get<IPlantBehaviour>()) {
-                            m_internodeBehaviours.erase(m_internodeBehaviours.begin() + index2);
-                            break;
-                        }
-                        index2++;
-                    }
-                }
-                ImGui::TreePop();
             }
             ImGui::TreePop();
         }
@@ -510,17 +463,14 @@ void PlantLayer::OnCreate() {
     ClassRegistry::RegisterDataComponent<InternodeWater>("InternodeWater");
     ClassRegistry::RegisterDataComponent<InternodeIllumination>("InternodeIllumination");
     ClassRegistry::RegisterPrivateComponent<InternodeWaterFeeder>("InternodeWaterFeeder");
-    ClassRegistry::RegisterAsset<GeneralTreeBehaviour>("GeneralTreeBehaviour", ".gtbehaviour");
 
     ClassRegistry::RegisterDataComponent<SpaceColonizationTag>("SpaceColonizationTag");
     ClassRegistry::RegisterDataComponent<SpaceColonizationParameters>("SpaceColonizationParameters");
     ClassRegistry::RegisterDataComponent<SpaceColonizationIncentive>("SpaceColonizationIncentive");
-    ClassRegistry::RegisterAsset<SpaceColonizationBehaviour>("SpaceColonizationBehaviour", ".scbehaviour");
 
     ClassRegistry::RegisterAsset<LString>("LString", ".lstring");
     ClassRegistry::RegisterDataComponent<LSystemTag>("LSystemTag");
     ClassRegistry::RegisterDataComponent<LSystemParameters>("LSystemParameters");
-    ClassRegistry::RegisterAsset<LSystemBehaviour>("LSystemBehaviour", ".lsbehaviour");
 
     ClassRegistry::RegisterSerializable<EmptyInternodeResource>("EmptyInternodeResource");
     ClassRegistry::RegisterSerializable<DefaultInternodeResource>("DefaultInternodeResource");
@@ -604,13 +554,9 @@ void PlantLayer::OnCreate() {
                 return false;
             });
 
-    auto spaceColonizationBehaviour = AssetManager::CreateAsset<SpaceColonizationBehaviour>();
-    auto lSystemBehaviour = AssetManager::CreateAsset<LSystemBehaviour>();
-    auto generalTreeBehaviour = AssetManager::CreateAsset<GeneralTreeBehaviour>();
-    PushInternodeBehaviour(
-            std::dynamic_pointer_cast<IPlantBehaviour>(spaceColonizationBehaviour));
-    PushInternodeBehaviour(std::dynamic_pointer_cast<IPlantBehaviour>(lSystemBehaviour));
-    PushInternodeBehaviour(std::dynamic_pointer_cast<IPlantBehaviour>(generalTreeBehaviour));
+    m_plantBehaviours.push_back(std::make_shared<GeneralTreeBehaviour>());
+    m_plantBehaviours.push_back(std::make_shared<SpaceColonizationBehaviour>());
+    m_plantBehaviours.push_back(std::make_shared<LSystemBehaviour>());
 
     m_randomColors.resize(8192);
     for (int i = 0; i < 8192; i++) {
@@ -1046,8 +992,7 @@ void PlantLayer::DrawColorModeSelectionMenu() {
 
 void PlantLayer::CalculateStatistics() {
     auto scene = Entities::GetCurrentScene();
-    for (auto &i: m_internodeBehaviours) {
-        auto behaviour = i.Get<IPlantBehaviour>();
+    for (auto &behaviour: m_plantBehaviours) {
         if (behaviour) {
             std::vector<Entity> currentRoots;
             behaviour->m_rootsQuery.ToEntityArray(Entities::GetCurrentScene(), currentRoots);
@@ -1161,6 +1106,12 @@ void PlantLayer::RenderBranchCylinders() {
                 *reinterpret_cast<std::vector<glm::vec4> *>(&branchColors),
                 *reinterpret_cast<std::vector<glm::mat4> *>(&branchCylinders),
                 glm::mat4(1.0f), 1.0f);
+}
+
+std::shared_ptr<IPlantBehaviour> PlantLayer::GetPlantBehaviour(const std::string &typeName) {
+    for(const auto& i : m_plantBehaviours){
+        if(i->GetTypeName() == typeName) return i;
+    }
 }
 
 

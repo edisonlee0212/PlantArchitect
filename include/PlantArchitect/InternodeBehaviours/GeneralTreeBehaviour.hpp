@@ -171,7 +171,7 @@ namespace PlantArchitect {
 
         void OnInspect() override;
 
-        void OnCreate() override;
+        GeneralTreeBehaviour();
 
         void Grow(int iteration) override;
 

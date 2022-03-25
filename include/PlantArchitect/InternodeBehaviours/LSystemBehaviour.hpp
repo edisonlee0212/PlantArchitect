@@ -92,7 +92,7 @@ namespace PlantArchitect {
 
         void OnInspect() override;
 
-        void OnCreate() override;
+        LSystemBehaviour();
 
         Entity CreateRoot(Entity& rootInternode, Entity& rootBranch) override;
         Entity CreateBranch(const Entity &parent, const Entity &internode) override;

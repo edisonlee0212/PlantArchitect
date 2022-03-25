@@ -141,8 +141,8 @@ void AutoTreeGenerationPipeline::DropBehaviourButton() {
         }
     } else {
         Editor::DragAndDropButton(m_pipelineBehaviour, "Pipeline behaviour",
-                                         {"SpaceColonizationTreeToLString", "MultipleAngleCapture",
-                                          "GeneralTreeToString"}, false);
+                                  {"SpaceColonizationTreeToLString", "MultipleAngleCapture",
+                                   "GeneralTreeToString"}, false);
     }
 }
 
@@ -162,15 +162,15 @@ void AutoTreeGenerationPipeline::UpdateInternodeBehaviour() {
     switch (m_behaviourType) {
         case BehaviourType::GeneralTree:
             m_currentInternodeBehaviour = std::dynamic_pointer_cast<IPlantBehaviour>(
-                    Application::GetLayer<PlantLayer>()->GetInternodeBehaviour<GeneralTreeBehaviour>());
+                    Application::GetLayer<PlantLayer>()->GetPlantBehaviour("GeneralTreeBehaviour"));
             break;
         case BehaviourType::LSystem:
-            m_currentInternodeBehaviour = std::dynamic_pointer_cast<IPlantBehaviour>(
-                    Application::GetLayer<PlantLayer>()->GetInternodeBehaviour<LSystemBehaviour>());
+            m_currentInternodeBehaviour =
+                    Application::GetLayer<PlantLayer>()->GetPlantBehaviour("LSystemBehaviour");
             break;
         case BehaviourType::SpaceColonization:
-            m_currentInternodeBehaviour = std::dynamic_pointer_cast<IPlantBehaviour>(
-                    Application::GetLayer<PlantLayer>()->GetInternodeBehaviour<SpaceColonizationBehaviour>());
+            m_currentInternodeBehaviour =
+                    Application::GetLayer<PlantLayer>()->GetPlantBehaviour("SpaceColonizationBehaviour");
             break;
     }
 }

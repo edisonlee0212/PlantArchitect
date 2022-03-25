@@ -319,7 +319,8 @@ void GeneralTreeBehaviour::CalculateChainDistance(const Entity &target, float pr
     }
 }
 
-void GeneralTreeBehaviour::OnCreate() {
+GeneralTreeBehaviour::GeneralTreeBehaviour() {
+    m_typeName = "GeneralTreeBehaviour";
     m_internodeArchetype =
             Entities::CreateEntityArchetype("General Tree Internode", InternodeInfo(), InternodeStatistics(),
                                             GeneralTreeTag(),

@@ -70,10 +70,7 @@ namespace PlantArchitect {
 
         std::shared_ptr<Camera> m_visualizationCamera;
 
-        template<typename T>
-        void PushInternodeBehaviour(const std::shared_ptr<T>& behaviour);
-        template<typename T>
-        std::shared_ptr<T> GetInternodeBehaviour();
+        std::shared_ptr<IPlantBehaviour> GetPlantBehaviour(const std::string& typeName);
         /**
          * Check if the entity is valid internode.
          * @param target Target for check.
@@ -96,7 +93,7 @@ namespace PlantArchitect {
 
         friend class Internode;
 
-        std::vector<AssetRef> m_internodeBehaviours;
+        std::vector<std::shared_ptr<IPlantBehaviour>> m_plantBehaviours;
 
 
 #pragma region Internode debugging camera

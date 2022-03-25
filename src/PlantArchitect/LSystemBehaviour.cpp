@@ -20,7 +20,8 @@ void LSystemBehaviour::OnInspect() {
 
 }
 
-void LSystemBehaviour::OnCreate() {
+LSystemBehaviour::LSystemBehaviour() {
+    m_typeName = "LSystemBehaviour";
     m_internodeArchetype =
             Entities::CreateEntityArchetype("L-System Internode", InternodeInfo(), InternodeStatistics(),
                                             LSystemTag(),
@@ -391,7 +392,8 @@ void LString::ParseLString(const std::string &string) {
 void LString::OnInspect() {
     if (ImGui::Button("Instantiate")) {
         auto parameters = LSystemParameters();
-        Application::GetLayer<PlantLayer>()->GetInternodeBehaviour<LSystemBehaviour>()->FormPlant(
+        std::dynamic_pointer_cast<LSystemBehaviour>(
+                Application::GetLayer<PlantLayer>()->GetPlantBehaviour("LSystemBehaviour"))->FormPlant(
                 AssetManager::Get<LString>(GetHandle()), parameters);
     }
 }

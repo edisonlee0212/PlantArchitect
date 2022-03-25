@@ -919,3 +919,7 @@ void IPlantBehaviour::ApplyTropism(const glm::vec3 &targetDir, float tropism, gl
         // left));
     }
 }
+
+std::string IPlantBehaviour::GetTypeName() const {
+    return m_typeName;
+}

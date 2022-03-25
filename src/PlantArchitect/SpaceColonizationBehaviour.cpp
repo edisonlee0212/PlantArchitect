@@ -11,7 +11,8 @@
 
 using namespace PlantArchitect;
 
-void SpaceColonizationBehaviour::OnCreate() {
+SpaceColonizationBehaviour::SpaceColonizationBehaviour() {
+    m_typeName = "SpaceColonizationBehaviour";
     m_internodeArchetype =
             Entities::CreateEntityArchetype("Space Colonization Internode", InternodeInfo(), InternodeStatistics(),
                                             SpaceColonizationTag(), SpaceColonizationIncentive(),
@@ -380,13 +381,6 @@ Entity SpaceColonizationBehaviour::NewPlant(const SpaceColonizationParameters &p
     rootInternode.SetDataComponent(newInfo);
     root.SetDataComponent(params);
     return root;
-}
-
-void SpaceColonizationBehaviour::Serialize(YAML::Emitter &out) {
-
-}
-
-void SpaceColonizationBehaviour::Deserialize(const YAML::Node &in) {
 }
 
 bool SpaceColonizationBehaviour::InternalRootCheck(const Entity &target) {
