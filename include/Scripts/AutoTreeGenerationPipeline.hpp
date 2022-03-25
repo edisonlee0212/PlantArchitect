@@ -26,10 +26,7 @@ namespace Scripts {
         BehaviourType m_behaviourType = BehaviourType::GeneralTree;
     public:
         void UpdateInternodeBehaviour();
-        std::string m_parameterFileName;
-        GeneralTreeParameters m_generalTreeParameters;
-        SpaceColonizationParameters m_spaceColonizationParameters;
-        LSystemParameters m_lSystemParameters;
+        AssetRef m_plantDescriptor;
         AssetRef m_lString;
         AutoTreeGenerationPipelineStatus m_status = AutoTreeGenerationPipelineStatus::Idle;
         AssetRef m_pipelineBehaviour;

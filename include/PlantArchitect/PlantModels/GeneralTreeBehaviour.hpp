@@ -1,18 +1,20 @@
 #pragma once
 
 #include <plant_architect_export.h>
-#include <IPlantBehaviour.hpp>
-
+#include "IPlantBehaviour.hpp"
+#include "IPlantDescriptor.hpp"
 using namespace UniEngine;
 namespace PlantArchitect {
 #pragma region Data Components
     struct PLANT_ARCHITECT_API GeneralTreeTag : public IDataComponent {
 
     };
-    struct PLANT_ARCHITECT_API GeneralTreeParameters : public IDataComponent {
-        void Save(const std::filesystem::path &path) const;
+    class PLANT_ARCHITECT_API GeneralTreeParameters : public IPlantDescriptor {
+    public:
+        Entity InstantiateTree() override;
 
-        void Load(const std::filesystem::path &path);
+        void Serialize(YAML::Emitter &out) override;
+        void Deserialize(const YAML::Node &in) override;
 
         int m_lateralBudCount;
         /**
@@ -70,9 +72,9 @@ namespace PlantArchitect {
 
         int m_matureAge = 0;
 
-        void OnInspect();
+        void OnInspect() override;
 
-        GeneralTreeParameters();
+        void OnCreate() override;
     };
 
 /*
@@ -158,7 +160,7 @@ namespace PlantArchitect {
     };
 
     class PLANT_ARCHITECT_API GeneralTreeBehaviour : public IPlantBehaviour {
-        Entity ImportGraphTree(const std::filesystem::path &path, const GeneralTreeParameters &parameters);
+        Entity ImportGraphTree(const std::filesystem::path &path, AssetRef descriptor);
     protected:
         bool InternalInternodeCheck(const Entity &target) override;
         bool InternalRootCheck(const Entity &target) override;
@@ -175,10 +177,10 @@ namespace PlantArchitect {
 
         void Grow(int iteration) override;
 
-        Entity CreateRoot(Entity& rootInternode, Entity& rootBranch) override;
+        Entity CreateRoot(AssetRef descriptor, Entity& rootInternode, Entity& rootBranch) override;
         Entity CreateBranch(const Entity &parent, const Entity &internode) override;
         Entity CreateInternode(const Entity &parent) override;
 
-        Entity NewPlant(const GeneralTreeParameters &params, const Transform &transform);
+        Entity NewPlant(AssetRef descriptor, const Transform &transform);
     };
 }

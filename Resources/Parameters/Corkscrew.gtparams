@@ -1,3 +1,4 @@
+m_name: Corkscrew
 m_lateralBudCount: 2
 m_branchingAngleMeanVariance: [45, 3]
 m_rollAngleMeanVariance: [120, 3]

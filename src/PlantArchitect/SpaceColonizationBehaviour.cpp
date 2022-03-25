@@ -23,8 +23,7 @@ SpaceColonizationBehaviour::SpaceColonizationBehaviour() {
 
     m_rootArchetype =
             Entities::CreateEntityArchetype("Space Colonization Root", RootInfo(),
-                                            SpaceColonizationTag(),
-                                            SpaceColonizationParameters());
+                                            SpaceColonizationTag());
     m_rootsQuery = Entities::CreateEntityQuery();
     m_rootsQuery.SetAllFilters(RootInfo(), SpaceColonizationTag());
 
@@ -50,7 +49,7 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
                  auto rootEntity = internode->m_currentRoot.Get();
                  if (!RootCheck(rootEntity)) return;
-                 auto spaceColonizationParameters = rootEntity.GetDataComponent<SpaceColonizationParameters>();
+                 auto spaceColonizationParameters = rootEntity.GetOrSetPrivateComponent<Root>().lock()->m_plantDescriptor.Get<SpaceColonizationParameters>();
                  glm::vec3 position = globalTransform.GetPosition() +
                                       internodeInfo.m_length *
                                       (globalTransform.GetRotation() * glm::vec3(0, 0, -1));
@@ -59,8 +58,8 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
                      const glm::vec3 diff = position - point;
                      const float distance2 = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
                      if (distance2 <
-                         spaceColonizationParameters.m_removeDistance *
-                         spaceColonizationParameters.m_removeDistance) {
+                         spaceColonizationParameters->m_removeDistance *
+                         spaceColonizationParameters->m_removeDistance) {
                          removeMarks[index] = 1;
                      }
                      index++;
@@ -95,7 +94,7 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
                  auto rootEntity = internode->m_currentRoot.Get();
                  if (!RootCheck(rootEntity)) return;
-                 auto spaceColonizationParameters = rootEntity.GetDataComponent<SpaceColonizationParameters>();
+                 auto spaceColonizationParameters = rootEntity.GetOrSetPrivateComponent<Root>().lock()->m_plantDescriptor.Get<SpaceColonizationParameters>();;
                  glm::vec3 position = globalTransform.GetPosition() +
                                       internodeInfo.m_length *
                                       (globalTransform.GetRotation() * glm::vec3(0, 0, -1));
@@ -107,8 +106,8 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
                      const glm::vec3 diff = point - position;
                      if (glm::dot(diff, front) <= 0) continue;
                      const float distance2 = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
-                     if (distance2 < spaceColonizationParameters.m_attractDistance *
-                                     spaceColonizationParameters.m_attractDistance) {
+                     if (distance2 < spaceColonizationParameters->m_attractDistance *
+                                     spaceColonizationParameters->m_attractDistance) {
                          std::lock_guard<std::mutex> lock(distanceMutex);
                          if (distance2 < minDistance[index].second) {
                              minDistance[index].first = entity;
@@ -174,10 +173,10 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
                 glm::scale(glm::vec3(1.0f));
         newNode.SetDataComponent(newNodeGlobalTransform);
         auto newInternode = newNode.GetOrSetPrivateComponent<Internode>().lock();
-        auto parameter = newInternode->m_currentRoot.Get().GetDataComponent<SpaceColonizationParameters>();
+        auto parameter = newInternode->m_currentRoot.Get().GetOrSetPrivateComponent<Root>().lock()->m_plantDescriptor.Get<SpaceColonizationParameters>();
         InternodeInfo newInfo;
-        newInfo.m_length = glm::gaussRand(parameter.m_internodeLengthMean, parameter.m_internodeLengthVariance);
-        newInfo.m_thickness = parameter.m_endNodeThickness;
+        newInfo.m_length = glm::gaussRand(parameter->m_internodeLengthMean, parameter->m_internodeLengthVariance);
+        newInfo.m_thickness = parameter->m_endNodeThickness;
         newNode.SetDataComponent(newInfo);
     }
     std::vector<Entity> currentRoots;
@@ -207,7 +206,7 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
     Entities::ForEach<GlobalTransform>(Entities::GetCurrentScene(), Jobs::Workers(), m_rootsQuery,
                                        [&](int i, Entity entity, GlobalTransform &globalTransform) {
                                            if (!RootCheck(entity)) return;
-                                           auto spaceColonizationParameters = entity.GetDataComponent<SpaceColonizationParameters>();
+                                           auto spaceColonizationParameters = entity.GetOrSetPrivateComponent<Root>().lock()->m_plantDescriptor.Get<SpaceColonizationParameters>();
                                            entity.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
                                                if (!InternodeCheck(child)) return;
                                                InternodeGraphWalkerEndToRoot(child, [&](Entity parent) {
@@ -220,14 +219,14 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
                                                                thicknessCollection += glm::pow(
                                                                        childInternodeInfo.m_thickness,
                                                                        1.0f /
-                                                                       spaceColonizationParameters.m_thicknessFactor);
+                                                                       spaceColonizationParameters->m_thicknessFactor);
                                                            });
                                                    parentInternodeInfo.m_thickness = glm::pow(thicknessCollection,
-                                                                                              spaceColonizationParameters.m_thicknessFactor);
+                                                                                              spaceColonizationParameters->m_thicknessFactor);
                                                    parent.SetDataComponent(parentInternodeInfo);
                                                }, [&](Entity endNode) {
                                                    auto internodeInfo = endNode.GetDataComponent<InternodeInfo>();
-                                                   internodeInfo.m_thickness = spaceColonizationParameters.m_endNodeThickness;
+                                                   internodeInfo.m_thickness = spaceColonizationParameters->m_endNodeThickness;
                                                    endNode.SetDataComponent(internodeInfo);
                                                });
                                            });
@@ -237,34 +236,6 @@ void SpaceColonizationBehaviour::Grow(int iteration) {
 }
 
 void SpaceColonizationBehaviour::OnInspect() {
-    CreateInternodeMenu<SpaceColonizationParameters>
-            ("New Space Colonization Plant Wizard",
-             ".scparams",
-             [](SpaceColonizationParameters &params) {
-                 params.OnInspect();
-             },
-             [](SpaceColonizationParameters &params,
-                const std::filesystem::path &path) {
-
-             },
-             [](const SpaceColonizationParameters &params,
-                const std::filesystem::path &path) {
-
-             },
-             [&](const SpaceColonizationParameters &params,
-                 const Transform &transform) {
-                 return NewPlant(params, transform);
-             }
-            );
-
-    static float resolution = 0.02;
-    static float subdivision = 4.0;
-    ImGui::DragFloat("Resolution", &resolution, 0.001f);
-    ImGui::DragFloat("Subdivision", &subdivision, 0.001f);
-    if (ImGui::Button("Generate meshes")) {
-        GenerateSkinnedMeshes(subdivision, resolution);
-    }
-
     if (ImGui::TreeNodeEx("Attraction Points", ImGuiTreeNodeFlags_DefaultOpen)) {
         if (ImGui::Button("Clear")) {
             m_attractionPoints.clear();
@@ -362,9 +333,9 @@ Entity SpaceColonizationBehaviour::CreateInternode(const Entity &parent) {
     return CreateInternodeHelper<EmptyInternodeResource>(parent);
 }
 
-Entity SpaceColonizationBehaviour::NewPlant(const SpaceColonizationParameters &params, const Transform &transform) {
+Entity SpaceColonizationBehaviour::NewPlant(AssetRef descriptor, const Transform &transform) {
     Entity rootInternode, rootBranch;
-    auto root = CreateRoot(rootInternode, rootBranch);
+    auto root = CreateRoot(descriptor, rootInternode, rootBranch);
     Transform internodeTransform;
     internodeTransform.m_value =
             glm::translate(glm::vec3(0.0f)) *
@@ -376,10 +347,10 @@ Entity SpaceColonizationBehaviour::NewPlant(const SpaceColonizationParameters &p
     tag.m_truck = true;
     rootInternode.SetDataComponent(tag);
     InternodeInfo newInfo;
-    newInfo.m_length = glm::gaussRand(params.m_internodeLengthMean, params.m_internodeLengthVariance);
-    newInfo.m_thickness = params.m_endNodeThickness;
+    auto params = descriptor.Get<SpaceColonizationParameters>();
+    newInfo.m_length = glm::gaussRand(params->m_internodeLengthMean, params->m_internodeLengthVariance);
+    newInfo.m_thickness = params->m_endNodeThickness;
     rootInternode.SetDataComponent(newInfo);
-    root.SetDataComponent(params);
     return root;
 }
 
@@ -391,8 +362,8 @@ bool SpaceColonizationBehaviour::InternalBranchCheck(const Entity &target) {
     return target.HasDataComponent<SpaceColonizationTag>();
 }
 
-Entity SpaceColonizationBehaviour::CreateRoot(Entity &rootInternode, Entity &rootBranch) {
-    return CreateRootHelper<EmptyInternodeResource>(rootInternode, rootBranch);
+Entity SpaceColonizationBehaviour::CreateRoot(AssetRef descriptor, Entity &rootInternode, Entity &rootBranch) {
+    return CreateRootHelper<EmptyInternodeResource>(descriptor, rootInternode, rootBranch);
 }
 
 Entity SpaceColonizationBehaviour::CreateBranch(const Entity &parent, const Entity &internode) {
@@ -400,6 +371,7 @@ Entity SpaceColonizationBehaviour::CreateBranch(const Entity &parent, const Enti
 }
 
 void SpaceColonizationParameters::OnInspect() {
+    IPlantDescriptor::OnInspect();
     ImGui::DragFloat("Remove Distance", &m_removeDistance);
     ImGui::DragFloat("Attract Distance", &m_attractDistance);
     ImGui::DragFloat2("Internode Length Mean/Var", &m_internodeLengthMean);
@@ -407,10 +379,14 @@ void SpaceColonizationParameters::OnInspect() {
     ImGui::DragFloat("End node thickness", &m_endNodeThickness);
 }
 
-void SpaceColonizationParameters::Save(const std::filesystem::path &path) const {
-
+void SpaceColonizationParameters::Serialize(YAML::Emitter &out) {
+    ISerializable::Serialize(out);
 }
 
-void SpaceColonizationParameters::Load(const std::filesystem::path &path) {
+void SpaceColonizationParameters::Deserialize(const YAML::Node &in) {
+    ISerializable::Deserialize(in);
+}
 
+Entity SpaceColonizationParameters::InstantiateTree() {
+    return std::dynamic_pointer_cast<SpaceColonizationBehaviour>(Application::GetLayer<PlantLayer>()->GetPlantBehaviour("SpaceColonizationBehaviour"))->NewPlant(AssetManager::Get(GetHandle()), Transform());
 }

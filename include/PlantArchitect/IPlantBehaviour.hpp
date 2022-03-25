@@ -1,10 +1,10 @@
 #pragma once
 
-#include <plant_architect_export.h>
+#include "plant_architect_export.h"
 #include "Internode.hpp"
 #include "Root.hpp"
 #include "Branch.hpp"
-#include <Serialization.hpp>
+#include "Engine/Core/Serialization.hpp"
 #include "PlantLayer.hpp"
 
 using namespace UniEngine;
@@ -67,7 +67,7 @@ namespace PlantArchitect {
          * @return An entity represent the root internode.
          */
         template<typename T>
-        Entity CreateRootHelper(Entity &rootInternode, Entity &rootBranch);
+        Entity CreateRootHelper(AssetRef descriptor, Entity &rootInternode, Entity &rootBranch);
 
 #pragma endregion
 #pragma region Helpers
@@ -95,14 +95,19 @@ namespace PlantArchitect {
         virtual bool InternalRootCheck(const Entity &target) = 0;
 
         virtual bool InternalBranchCheck(const Entity &target) = 0;
-        void UpdateBranchHelper(const Entity& currentBranch, const Entity& currentInternode);
+
+        void UpdateBranchHelper(const Entity &currentBranch, const Entity &currentInternode);
+
     public:
         virtual void OnInspect() = 0;
+
         [[nodiscard]] std::string GetTypeName() const;
+
         void UpdateBranches();
+
         void ApplyTropism(const glm::vec3 &targetDir, float tropism, glm::vec3 &front, glm::vec3 &up);
 
-        virtual Entity CreateRoot(Entity &rootInternode, Entity &rootBranch) = 0;
+        virtual Entity CreateRoot(AssetRef descriptor, Entity &rootInternode, Entity &rootBranch) = 0;
 
         virtual Entity CreateBranch(const Entity &parent, const Entity &internode) = 0;
 
@@ -226,14 +231,8 @@ namespace PlantArchitect {
          * @param internodeCreator User-configurable internode creation function with parameters given.
          */
         template<typename T>
-        void CreateInternodeMenu(const std::string &menuTitle,
-                                 const std::string &parameterExtension,
-                                 const std::function<void(T &params)> &parameterInspector,
-                                 const std::function<void(T &params,
-                                                          const std::filesystem::path &path)> &parameterDeserializer,
-                                 const std::function<void(const T &params,
-                                                          const std::filesystem::path &path)> &parameterSerializer,
-                                 const std::function<void(const T &params,
+        void CreateInternodeMenu(bool &open, const std::string &menuTitle,
+                                 const std::function<void(AssetRef descriptor,
                                                           const Transform &transform)> &internodeCreator
         );
 
@@ -241,24 +240,12 @@ namespace PlantArchitect {
 
 
     template<typename T>
-    void IPlantBehaviour::CreateInternodeMenu(const std::string &menuTitle,
-                                              const std::string &parameterExtension,
-                                              const std::function<void(T &params)> &parameterInspector,
-                                              const std::function<void(T &params,
-                                                                       const std::filesystem::path &path)> &parameterDeserializer,
-                                              const std::function<void(const T &params,
-                                                                       const std::filesystem::path &path)> &parameterSerializer,
-                                              const std::function<void(const T &params,
+    void IPlantBehaviour::CreateInternodeMenu(bool &open, const std::string &menuTitle,
+                                              const std::function<void(AssetRef descriptor,
                                                                        const Transform &transform)> &internodeCreator
     ) {
-        if (ImGui::Button("New plant...")) {
-            ImGui::OpenPopup(menuTitle.c_str());
-        }
-        const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-        if (ImGui::BeginPopupModal(menuTitle.c_str(), nullptr,
-                                   ImGuiWindowFlags_AlwaysAutoResize)) {
-            static std::vector<T> newPlantParameters;
+        if (ImGui::Begin(menuTitle.c_str(), &open)) {
+            static std::vector<AssetRef> newPlantParameters;
             static std::vector<glm::vec3> newTreePositions;
             static std::vector<glm::vec3> newTreeRotations;
             static int newTreeAmount = 1;
@@ -310,12 +297,10 @@ namespace PlantArchitect {
                     ImGui::InputInt("Amount", &newTreeAmount);
                     if (newTreeAmount < 1)
                         newTreeAmount = 1;
-                    FileUtils::OpenFile("Import parameters for all", "Parameters", {parameterExtension},
-                                        [&](const std::filesystem::path &path) {
-                                            parameterDeserializer(newPlantParameters[0], path);
-                                            for (int i = 1; i < newPlantParameters.size(); i++)
-                                                newPlantParameters[i] = newPlantParameters[0];
-                                        }, false);
+                    if (Editor::DragAndDropButton<T>(newPlantParameters[0], "Descriptors for all", false)) {
+                        for (int i = 1; i < newPlantParameters.size(); i++)
+                            newPlantParameters[i] = newPlantParameters[0];
+                    }
                     ImGui::EndMenu();
                 }
                 ImGui::EndMenuBar();
@@ -324,7 +309,8 @@ namespace PlantArchitect {
             if (newTreePositions.size() < newTreeAmount) {
                 if (newPlantParameters.empty()) {
                     newPlantParameters.resize(1);
-                    newPlantParameters[0] = T();
+                    AssetRef descriptor = AssetManager::CreateAsset<T>();
+                    newPlantParameters[0] = descriptor;
                 }
                 const auto currentSize = newTreePositions.size();
                 newPlantParameters.resize(newTreeAmount);
@@ -363,24 +349,15 @@ namespace PlantArchitect {
                               ImGuiWindowFlags_None | ImGuiWindowFlags_MenuBar);
             if (ImGui::BeginMenuBar()) {
                 if (ImGui::BeginMenu("Parameters")) {
-                    FileUtils::OpenFile(
-                            "Import parameters", "Parameters", {parameterExtension},
-                            [&](const std::filesystem::path &path) {
-                                parameterDeserializer(newPlantParameters[currentFocusedNewTreeIndex], path);
-                            }, false);
-
-                    FileUtils::SaveFile(
-                            "Export parameters", "Parameters", {parameterExtension},
-                            [&](const std::filesystem::path &path) {
-                                parameterSerializer(newPlantParameters[currentFocusedNewTreeIndex], path);
-                            }, false);
+                    Editor::DragAndDropButton<T>(newPlantParameters[currentFocusedNewTreeIndex], "Descriptor",
+                                                 false);
                     ImGui::EndMenu();
                 }
                 ImGui::EndMenuBar();
             }
             ImGui::Columns(1);
             ImGui::PushItemWidth(200);
-            parameterInspector(newPlantParameters[currentFocusedNewTreeIndex]);
+            newPlantParameters[currentFocusedNewTreeIndex].Get<IPlantDescriptor>()->OnInspect();
             ImGui::PopItemWidth();
             ImGui::EndChild();
             ImGui::PopStyleVar();
@@ -393,16 +370,8 @@ namespace PlantArchitect {
                     treeTransform.SetEulerRotation(glm::radians(newTreeRotations[i]));
                     internodeCreator(newPlantParameters[i], treeTransform);
                 }
-                ImGui::CloseCurrentPopup();
             }
-            ImGui::SetItemDefaultFocus();
-            ImGui::SameLine();
-            if (ImGui::Button("Cancel", ImVec2(120, 0))) {
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::EndPopup();
         }
-
     }
 
     template<typename T>
@@ -421,13 +390,18 @@ namespace PlantArchitect {
     }
 
     template<typename T>
-    Entity IPlantBehaviour::CreateRootHelper(Entity &rootInternode, Entity &rootBranch) {
+    Entity IPlantBehaviour::CreateRootHelper(AssetRef descriptor, Entity &rootInternode, Entity &rootBranch) {
+        if (!descriptor.Get<IPlantDescriptor>()) {
+            UNIENGINE_ERROR("Descriptor invalid!");
+            return {};
+        }
         std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
         Entity rootEntity;
         rootEntity = Entities::CreateEntity(Entities::GetCurrentScene(), m_rootArchetype, "Root");
         RootInfo rootInfo;
         rootEntity.SetDataComponent(rootInfo);
         auto root = rootEntity.GetOrSetPrivateComponent<Root>().lock();
+        root->m_plantDescriptor = descriptor;
         rootInternode = Entities::CreateEntity(Entities::GetCurrentScene(), m_internodeArchetype, "Internode");
         rootInternode.SetParent(rootEntity);
 
@@ -447,8 +421,6 @@ namespace PlantArchitect {
         branch->m_currentInternode = rootInternode;
         return rootEntity;
     }
-
-
 
 
 }

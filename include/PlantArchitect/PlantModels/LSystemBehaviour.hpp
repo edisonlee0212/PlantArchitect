@@ -1,19 +1,22 @@
 #pragma once
 
 #include <plant_architect_export.h>
-#include <IPlantBehaviour.hpp>
-
+#include "IPlantBehaviour.hpp"
+#include "IPlantDescriptor.hpp"
 using namespace UniEngine;
 namespace PlantArchitect {
     struct PLANT_ARCHITECT_API LSystemTag : public IDataComponent {
     };
 
-    struct PLANT_ARCHITECT_API LSystemParameters : public IDataComponent {
+    class PLANT_ARCHITECT_API LSystemParameters : public IPlantDescriptor {
+    public:
+        Entity InstantiateTree() override;
+        AssetRef m_lString;
         float m_internodeLength = 1.0f;
         float m_thicknessFactor = 0.5f;
         float m_endNodeThickness = 0.02f;
 
-        void OnInspect();
+        void OnInspect() override;
     };
 
     enum class PLANT_ARCHITECT_API LSystemCommandType {
@@ -88,13 +91,13 @@ namespace PlantArchitect {
         bool InternalBranchCheck(const Entity &target) override;
 
     public:
-        Entity FormPlant(const std::shared_ptr<LString> &lString, const LSystemParameters &parameters);
+        Entity FormPlant(const std::shared_ptr<LString> &lString, AssetRef descriptor);
 
         void OnInspect() override;
 
         LSystemBehaviour();
 
-        Entity CreateRoot(Entity& rootInternode, Entity& rootBranch) override;
+        Entity CreateRoot(AssetRef descriptor,Entity& rootInternode, Entity& rootBranch) override;
         Entity CreateBranch(const Entity &parent, const Entity &internode) override;
         Entity CreateInternode(const Entity &parent) override;
     };

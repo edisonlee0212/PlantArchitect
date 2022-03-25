@@ -127,10 +127,10 @@ void PlantLayer::PreparePhysics() {
                         joint->SetDrive(DriveType::Swing,
                                         glm::pow(childBranchInfo.m_thickness,
                                                  m_branchPhysicsParameters.m_jointDriveStiffnessThicknessFactor) *
-                                                m_branchPhysicsParameters.m_jointDriveStiffnessFactor,
+                                        m_branchPhysicsParameters.m_jointDriveStiffnessFactor,
                                         glm::pow(childBranchInfo.m_thickness,
                                                  m_branchPhysicsParameters.m_jointDriveDampingThicknessFactor) *
-                                                m_branchPhysicsParameters.m_jointDriveDampingFactor,
+                                        m_branchPhysicsParameters.m_jointDriveDampingFactor,
                                         m_branchPhysicsParameters.m_enableAccelerationForDrive);
 
                         behaviour->BranchGraphWalkerRootToEnd(child, [&](Entity parent, Entity child) {
@@ -189,9 +189,22 @@ void PlantLayer::OnInspect() {
                                              glm::vec4(1, 1, 1, 0.2),
                                              m_voxelSpace.m_frozenVoxels, glm::mat4(1.0f), 1.0f);
         }
-        if (ImGui::TreeNodeEx("Plant Behaviour")) {
-            for(const auto& behaviour : m_plantBehaviours){
-                if(ImGui::TreeNodeEx(behaviour->GetTypeName().c_str())) {
+
+        if (ImGui::TreeNodeEx("Plant Behaviour", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::TreeNodeEx("Meshes", ImGuiTreeNodeFlags_DefaultOpen)) {
+                static float resolution = 0.02f;
+                static float subdivision = 4.0f;
+                ImGui::DragFloat("Resolution", &resolution, 0.001f);
+                ImGui::DragFloat("Subdivision", &subdivision, 0.001f);
+                if (ImGui::Button("Generate branch mesh for all trees")) {
+                    for (const auto &behaviour: m_plantBehaviours) {
+                        behaviour->GenerateSkinnedMeshes(subdivision, resolution);
+                    }
+                }
+                ImGui::TreePop();
+            }
+            for (const auto &behaviour: m_plantBehaviours) {
+                if (ImGui::TreeNodeEx(behaviour->GetTypeName().c_str())) {
                     behaviour->OnInspect();
                     ImGui::TreePop();
                 }
@@ -457,7 +470,7 @@ void PlantLayer::OnCreate() {
 
 
     ClassRegistry::RegisterDataComponent<GeneralTreeTag>("GeneralTreeTag");
-    ClassRegistry::RegisterDataComponent<GeneralTreeParameters>("GeneralTreeParameters");
+    ClassRegistry::RegisterAsset<GeneralTreeParameters>("GeneralTreeParameters", ".gtparams");
     ClassRegistry::RegisterDataComponent<InternodeStatus>("InternodeStatus");
     ClassRegistry::RegisterDataComponent<InternodeWaterPressure>("InternodeWaterPressure");
     ClassRegistry::RegisterDataComponent<InternodeWater>("InternodeWater");
@@ -465,12 +478,12 @@ void PlantLayer::OnCreate() {
     ClassRegistry::RegisterPrivateComponent<InternodeWaterFeeder>("InternodeWaterFeeder");
 
     ClassRegistry::RegisterDataComponent<SpaceColonizationTag>("SpaceColonizationTag");
-    ClassRegistry::RegisterDataComponent<SpaceColonizationParameters>("SpaceColonizationParameters");
+    ClassRegistry::RegisterAsset<SpaceColonizationParameters>("SpaceColonizationParameters", "scparams");
     ClassRegistry::RegisterDataComponent<SpaceColonizationIncentive>("SpaceColonizationIncentive");
 
     ClassRegistry::RegisterAsset<LString>("LString", ".lstring");
     ClassRegistry::RegisterDataComponent<LSystemTag>("LSystemTag");
-    ClassRegistry::RegisterDataComponent<LSystemParameters>("LSystemParameters");
+    ClassRegistry::RegisterAsset<LSystemParameters>("LSystemParameters", ".lparams");
 
     ClassRegistry::RegisterSerializable<EmptyInternodeResource>("EmptyInternodeResource");
     ClassRegistry::RegisterSerializable<DefaultInternodeResource>("DefaultInternodeResource");
@@ -1109,8 +1122,8 @@ void PlantLayer::RenderBranchCylinders() {
 }
 
 std::shared_ptr<IPlantBehaviour> PlantLayer::GetPlantBehaviour(const std::string &typeName) {
-    for(const auto& i : m_plantBehaviours){
-        if(i->GetTypeName() == typeName) return i;
+    for (const auto &i: m_plantBehaviours) {
+        if (i->GetTypeName() == typeName) return i;
     }
 }
 

@@ -26,7 +26,7 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
                  auto rootEntity = internode->m_currentRoot.Get();
                  if (!RootCheck(rootEntity)) return;
-                 auto generalTreeParameters = rootEntity.GetDataComponent<GeneralTreeParameters>();
+                 auto generalTreeParameters = rootEntity.GetOrSetPrivateComponent<Root>().lock()->m_plantDescriptor.Get<GeneralTreeParameters>();
                  internodeStatus.m_age++;
                  //0. Apply sagging here.
                  auto parent = entity.GetParent();
@@ -45,14 +45,14 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                  //1. Internode elongation.
                  switch (internode->m_apicalBud.m_status) {
                      case BudStatus::Sleeping: {
-                         if (generalTreeParameters.m_budKillProbabilityApicalLateral.x >
+                         if (generalTreeParameters->m_budKillProbabilityApicalLateral.x >
                              glm::linearRand(0.0f, 1.0f)) {
                              internode->m_apicalBud.m_status = BudStatus::Died;
                              break;
                          }
                          if (internodeWater.m_value == 0) return;
-                         float desiredLength = glm::gaussRand(generalTreeParameters.m_internodeLengthMeanVariance.x,
-                                                              generalTreeParameters.m_internodeLengthMeanVariance.y);
+                         float desiredLength = glm::gaussRand(generalTreeParameters->m_internodeLengthMeanVariance.x,
+                                                              generalTreeParameters->m_internodeLengthMeanVariance.y);
                          internodeStatus.m_branchLength -= internodeInfo.m_length;
                          internodeInfo.m_length += internodeWater.m_value;
                          internodeWater.m_value = 0;
@@ -62,21 +62,21 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                              internodeInfo.m_length = desiredLength;
                              internode->m_apicalBud.m_newInternodeInfo = InternodeInfo();
                              internode->m_apicalBud.m_newInternodeInfo.m_layer = internodeInfo.m_layer + 1;
-                             internode->m_apicalBud.m_newInternodeInfo.m_thickness = generalTreeParameters.m_endNodeThicknessAndControl.x;
+                             internode->m_apicalBud.m_newInternodeInfo.m_thickness = generalTreeParameters->m_endNodeThicknessAndControl.x;
                              glm::quat desiredGlobalRotation = globalTransform.GetRotation();
                              glm::vec3 desiredGlobalFront = desiredGlobalRotation * glm::vec3(0, 0, -1);
                              glm::vec3 desiredGlobalUp = desiredGlobalRotation * glm::vec3(0, 1, 0);
                              desiredGlobalUp = glm::rotate(desiredGlobalUp, glm::radians(
-                                                                   glm::gaussRand(generalTreeParameters.m_rollAngleMeanVariance.x,
-                                                                                  generalTreeParameters.m_rollAngleMeanVariance.y)),
+                                                                   glm::gaussRand(generalTreeParameters->m_rollAngleMeanVariance.x,
+                                                                                  generalTreeParameters->m_rollAngleMeanVariance.y)),
                                                            desiredGlobalFront);
                              desiredGlobalFront = glm::rotate(desiredGlobalFront, glm::radians(
-                                                                      glm::gaussRand(generalTreeParameters.m_apicalAngleMeanVariance.x,
-                                                                                     generalTreeParameters.m_apicalAngleMeanVariance.y)),
+                                                                      glm::gaussRand(generalTreeParameters->m_apicalAngleMeanVariance.x,
+                                                                                     generalTreeParameters->m_apicalAngleMeanVariance.y)),
                                                               desiredGlobalUp);
-                             ApplyTropism(glm::vec3(0, -1, 0), generalTreeParameters.m_gravitropism,
+                             ApplyTropism(glm::vec3(0, -1, 0), generalTreeParameters->m_gravitropism,
                                           desiredGlobalFront, desiredGlobalUp);
-                             ApplyTropism(internodeIllumination.m_direction, generalTreeParameters.m_phototropism,
+                             ApplyTropism(internodeIllumination.m_direction, generalTreeParameters->m_phototropism,
                                           desiredGlobalFront, desiredGlobalUp);
 
                              desiredGlobalRotation = glm::quatLookAt(desiredGlobalFront, desiredGlobalUp);
@@ -84,14 +84,14 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                                      glm::inverse(globalTransform.GetRotation()) * desiredGlobalRotation;
                              internode->m_apicalBud.m_status = BudStatus::Flushing;
                              //Form lateral buds here.
-                             float turnAngle = glm::radians(360.0f / generalTreeParameters.m_lateralBudCount);
+                             float turnAngle = glm::radians(360.0f / generalTreeParameters->m_lateralBudCount);
                              for (int lateralBudIndex = 0;
-                                  lateralBudIndex < generalTreeParameters.m_lateralBudCount; lateralBudIndex++) {
+                                  lateralBudIndex < generalTreeParameters->m_lateralBudCount; lateralBudIndex++) {
                                  Bud newLateralBud;
                                  newLateralBud.m_status = BudStatus::Sleeping;
                                  newLateralBud.m_newInternodeInfo.m_localRotation = glm::vec3(glm::radians(
-                                                                                                      glm::gaussRand(generalTreeParameters.m_branchingAngleMeanVariance.x,
-                                                                                                                     generalTreeParameters.m_branchingAngleMeanVariance.y)),
+                                                                                                      glm::gaussRand(generalTreeParameters->m_branchingAngleMeanVariance.x,
+                                                                                                                     generalTreeParameters->m_branchingAngleMeanVariance.y)),
 
                                                                                               0.0f,
                                                                                               lateralBudIndex *
@@ -105,29 +105,29 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                      case BudStatus::Flushed: {
                          for (auto &lateralBud: internode->m_lateralBuds) {
                              if (lateralBud.m_status != BudStatus::Sleeping) continue;
-                             if (generalTreeParameters.m_budKillProbabilityApicalLateral.y >
+                             if (generalTreeParameters->m_budKillProbabilityApicalLateral.y >
                                  glm::linearRand(0.0f, 1.0f)) {
                                  lateralBud.m_status = BudStatus::Died;
                                  continue;
                              }
 
                              bool flush = false;
-                             float flushProbability = generalTreeParameters.m_lateralBudFlushingProbability * (
+                             float flushProbability = generalTreeParameters->m_lateralBudFlushingProbability * (
                                      internodeIllumination.m_intensity *
-                                     generalTreeParameters.m_lateralBudFlushingLightingFactor +
+                                     generalTreeParameters->m_lateralBudFlushingLightingFactor +
                                      (1.0f - internodeStatus.m_inhibitor)
                              )
-                                                      / (generalTreeParameters.m_lateralBudFlushingLightingFactor +
+                                                      / (generalTreeParameters->m_lateralBudFlushingLightingFactor +
                                                          1.0f);
                              if ((internodeInfo.m_neighborsProximity *
-                                  generalTreeParameters.m_internodeLengthMeanVariance.x) >
-                                 generalTreeParameters.m_neighborAvoidance.z) {
+                                  generalTreeParameters->m_internodeLengthMeanVariance.x) >
+                                 generalTreeParameters->m_neighborAvoidance.z) {
                                  flushProbability = 0;
                              } else {
-                                 float avoidance = generalTreeParameters.m_neighborAvoidance.x * glm::pow(
+                                 float avoidance = generalTreeParameters->m_neighborAvoidance.x * glm::pow(
                                          (internodeInfo.m_neighborsProximity *
-                                          generalTreeParameters.m_internodeLengthMeanVariance.x),
-                                         generalTreeParameters.m_neighborAvoidance.y);
+                                          generalTreeParameters->m_internodeLengthMeanVariance.x),
+                                         generalTreeParameters->m_neighborAvoidance.y);
                                  flushProbability /= avoidance;
                              }
                              if (flushProbability > glm::linearRand(0.0f, 1.0f)) {
@@ -140,24 +140,24 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                                  glm::vec3 desiredGlobalFront = desiredGlobalRotation * glm::vec3(0, 0, -1);
                                  glm::vec3 desiredGlobalUp = desiredGlobalRotation * glm::vec3(0, 1, 0);
                                  desiredGlobalUp = glm::rotate(desiredGlobalUp, glm::radians(
-                                                                       glm::gaussRand(generalTreeParameters.m_rollAngleMeanVariance.x,
-                                                                                      generalTreeParameters.m_rollAngleMeanVariance.y)),
+                                                                       glm::gaussRand(generalTreeParameters->m_rollAngleMeanVariance.x,
+                                                                                      generalTreeParameters->m_rollAngleMeanVariance.y)),
                                                                desiredGlobalFront);
                                  desiredGlobalFront = glm::rotate(desiredGlobalFront, glm::radians(
-                                                                          glm::gaussRand(generalTreeParameters.m_apicalAngleMeanVariance.x,
-                                                                                         generalTreeParameters.m_apicalAngleMeanVariance.y)),
+                                                                          glm::gaussRand(generalTreeParameters->m_apicalAngleMeanVariance.x,
+                                                                                         generalTreeParameters->m_apicalAngleMeanVariance.y)),
                                                                   desiredGlobalUp);
-                                 ApplyTropism(glm::vec3(0, -1, 0), generalTreeParameters.m_gravitropism,
+                                 ApplyTropism(glm::vec3(0, -1, 0), generalTreeParameters->m_gravitropism,
                                               desiredGlobalFront, desiredGlobalUp);
                                  ApplyTropism(internodeIllumination.m_direction,
-                                              generalTreeParameters.m_phototropism, desiredGlobalFront,
+                                              generalTreeParameters->m_phototropism, desiredGlobalFront,
                                               desiredGlobalUp);
                                  lateralBud.m_flushProbability = flushProbability;
                                  lateralBud.m_newInternodeInfo = InternodeInfo();
                                  lateralBud.m_newInternodeInfo.m_layer = internodeInfo.m_layer + 1;
                                  lateralBud.m_newInternodeInfo.m_localRotation =
                                          glm::inverse(globalTransform.GetRotation()) * desiredGlobalRotation;
-                                 lateralBud.m_newInternodeInfo.m_thickness = generalTreeParameters.m_endNodeThicknessAndControl.x;
+                                 lateralBud.m_newInternodeInfo.m_thickness = generalTreeParameters->m_endNodeThicknessAndControl.x;
                                  lateralBud.m_status = BudStatus::Flushing;
                              }
                          }
@@ -248,18 +248,18 @@ void GeneralTreeBehaviour::Grow(int iteration) {
 #pragma endregion
 #pragma region PostProcess
 #pragma region Transform
-    Entities::ForEach<Transform, GlobalTransform, GeneralTreeParameters>(Entities::GetCurrentScene(), Jobs::Workers(),
+    Entities::ForEach<Transform, GlobalTransform>(Entities::GetCurrentScene(), Jobs::Workers(),
                                                                          m_rootsQuery,
                                                                          [&](int i, Entity entity,
                                                                              Transform &transform,
-                                                                             GlobalTransform &globalTransform,
-                                                                             GeneralTreeParameters &generalTreeParameters) {
+                                                                             GlobalTransform &globalTransform) {
                                                                              entity.ForEachChild(
                                                                                      [&](const std::shared_ptr<Scene> &currentScene,
                                                                                          Entity child) {
                                                                                          if (!InternodeCheck(
                                                                                                  child))
                                                                                              return;
+                                                                                         auto generalTreeParameters = entity.GetOrSetPrivateComponent<Root>().lock()->m_plantDescriptor.Get<GeneralTreeParameters>();
                                                                                          InternodeGraphWalkerEndToRoot(
                                                                                                  child,
                                                                                                  [&](Entity parent) {
@@ -275,11 +275,11 @@ void GeneralTreeBehaviour::Grow(int iteration) {
                                                                                                                  thicknessCollection += glm::pow(
                                                                                                                          childInternodeInfo.m_thickness,
                                                                                                                          1.0f /
-                                                                                                                         generalTreeParameters.m_endNodeThicknessAndControl.y);
+                                                                                                                         generalTreeParameters->m_endNodeThicknessAndControl.y);
                                                                                                              });
                                                                                                      parentInternodeInfo.m_thickness = glm::pow(
                                                                                                              thicknessCollection,
-                                                                                                             generalTreeParameters.m_endNodeThicknessAndControl.y);
+                                                                                                             generalTreeParameters->m_endNodeThicknessAndControl.y);
                                                                                                      parent.SetDataComponent(
                                                                                                              parentInternodeInfo);
                                                                                                  },
@@ -333,8 +333,7 @@ GeneralTreeBehaviour::GeneralTreeBehaviour() {
 
     m_rootArchetype =
             Entities::CreateEntityArchetype("General Tree Root", RootInfo(),
-                                            GeneralTreeTag(),
-                                            GeneralTreeParameters());
+                                            GeneralTreeTag());
     m_rootsQuery = Entities::CreateEntityQuery();
     m_rootsQuery.SetAllFilters(RootInfo(), GeneralTreeTag());
 
@@ -347,36 +346,8 @@ GeneralTreeBehaviour::GeneralTreeBehaviour() {
 }
 
 void GeneralTreeBehaviour::OnInspect() {
-    CreateInternodeMenu<GeneralTreeParameters>
-            ("New General Tree Wizard",
-             ".gtparams",
-             [](GeneralTreeParameters &params) {
-                 params.OnInspect();
-             },
-             [](GeneralTreeParameters &params,
-                const std::filesystem::path &path) {
-                 params.Load(path);
-             },
-             [](const GeneralTreeParameters &params,
-                const std::filesystem::path &path) {
-                 params.Save(path);
-             },
-             [&](const GeneralTreeParameters &params,
-                 const Transform &transform) {
-                 NewPlant(params, transform);
-             }
-            );
-
-    static float resolution = 0.02f;
-    static float subdivision = 4.0f;
-    ImGui::DragFloat("Resolution", &resolution, 0.001f);
-    ImGui::DragFloat("Subdivision", &subdivision, 0.001f);
-    if (ImGui::Button("Generate branch mesh")) {
-        GenerateSkinnedMeshes(subdivision, resolution);
-    }
-
     FileUtils::OpenFile("Import Graph", "YAML", {".yml"}, [&](const std::filesystem::path &path) {
-        GeneralTreeParameters parameters = GeneralTreeParameters();
+        auto parameters = AssetManager::CreateAsset<GeneralTreeParameters>();
         ImportGraphTree(path, parameters);
     }, false);
 }
@@ -393,8 +364,8 @@ bool GeneralTreeBehaviour::InternalBranchCheck(const Entity &target) {
     return target.HasDataComponent<GeneralTreeTag>();
 }
 
-Entity GeneralTreeBehaviour::CreateRoot(Entity &rootInternode, Entity &rootBranch) {
-    auto root = CreateRootHelper<DefaultInternodeResource>(rootInternode, rootBranch);
+Entity GeneralTreeBehaviour::CreateRoot(AssetRef descriptor, Entity &rootInternode, Entity &rootBranch) {
+    auto root = CreateRootHelper<DefaultInternodeResource>(descriptor, rootInternode, rootBranch);
     rootInternode.SetDataComponent(InternodeWater());
     rootInternode.SetDataComponent(InternodeIllumination());
     rootInternode.SetDataComponent(InternodeStatus());
@@ -410,9 +381,9 @@ Entity GeneralTreeBehaviour::CreateInternode(const Entity &parent) {
 }
 
 
-Entity GeneralTreeBehaviour::NewPlant(const GeneralTreeParameters &params, const Transform &transform) {
+Entity GeneralTreeBehaviour::NewPlant(AssetRef descriptor, const Transform &transform) {
     Entity rootInternode, rootBranch;
-    auto rootEntity = CreateRoot(rootInternode, rootBranch);
+    auto rootEntity = CreateRoot(descriptor, rootInternode, rootBranch);
     auto root = rootEntity.GetOrSetPrivateComponent<Root>().lock();
     root->m_foliagePhyllotaxis = AssetManager::CreateAsset<DefaultInternodePhyllotaxis>();
 
@@ -428,9 +399,8 @@ Entity GeneralTreeBehaviour::NewPlant(const GeneralTreeParameters &params, const
     InternodeInfo newInfo;
     newInfo.m_length = 0;
     newInfo.m_layer = 0;
-    newInfo.m_thickness = params.m_endNodeThicknessAndControl.x;
+    newInfo.m_thickness = descriptor.Get<GeneralTreeParameters>()->m_endNodeThicknessAndControl.x;
     rootInternode.SetDataComponent(newInfo);
-    rootEntity.SetDataComponent(params);
 
     auto internode = rootInternode.GetOrSetPrivateComponent<Internode>().lock();
     internode->m_fromApicalBud = true;
@@ -443,7 +413,7 @@ Entity GeneralTreeBehaviour::NewPlant(const GeneralTreeParameters &params, const
 }
 
 Entity
-GeneralTreeBehaviour::ImportGraphTree(const std::filesystem::path &path, const GeneralTreeParameters &parameters) {
+GeneralTreeBehaviour::ImportGraphTree(const std::filesystem::path &path, AssetRef descriptor) {
     Entity root = Entity();
     if (!std::filesystem::exists(path)) {
         UNIENGINE_ERROR("Not exist!");
@@ -459,7 +429,7 @@ GeneralTreeBehaviour::ImportGraphTree(const std::filesystem::path &path, const G
         auto layers = in["layers"];
         auto rootLayer = layers["0"];
         Entity rootInternode, rootBranch;
-        auto root = CreateRoot(rootInternode, rootBranch);
+        auto root = CreateRoot(descriptor, rootInternode, rootBranch);
         root.SetName(name);
         std::vector<GanNode> previousNodes;
         previousNodes.resize(10000);
@@ -477,7 +447,6 @@ GeneralTreeBehaviour::ImportGraphTree(const std::filesystem::path &path, const G
         rootGlobalTransform.SetPosition(rootNode.m_start);
         rootInternode.SetDataComponent(rootGlobalTransform);
         rootInternode.SetDataComponent(rootInternodeInfo);
-        rootInternode.SetDataComponent(parameters);
         previousNodes[0] = rootNode;
         for (int layerIndex = 0; layerIndex < layerSize; layerIndex++) {
             auto layer = layers[std::to_string(layerIndex)];
@@ -524,7 +493,6 @@ GeneralTreeBehaviour::ImportGraphTree(const std::filesystem::path &path, const G
                 internodeInfo.m_thickness = node["thickness"].as<float>();
                 internodeInfo.m_length = ganNode.m_length;
                 ganNode.m_internode.SetDataComponent(internodeInfo);
-                ganNode.m_internode.SetDataComponent(parameters);
                 previousNodes[id] = ganNode;
             }
         }
@@ -561,13 +529,14 @@ void GeneralTreeBehaviour::Preprocess(std::vector<Entity> &currentRoots) {
     auto plantSize = currentRoots.size();
 #pragma region PreProcess
 #pragma region InternodeStatus
-    Entities::ForEach<Transform, GeneralTreeParameters>
+    Entities::ForEach<Transform>
             (Entities::GetCurrentScene(),
              Jobs::Workers(), m_rootsQuery,
-             [&](int i, Entity entity, Transform &transform, GeneralTreeParameters &generalTreeParameters
+             [&](int i, Entity entity, Transform &transform
              ) {
                  if (!RootCheck(entity)) return;
                  auto root = entity.GetOrSetPrivateComponent<Root>().lock();
+                 auto generalTreeParameters = root->m_plantDescriptor.Get<GeneralTreeParameters>();
                  int amount = 1;
                  auto center = glm::vec3(0);
                  entity.ForEachChild(
@@ -598,7 +567,7 @@ void GeneralTreeBehaviour::Preprocess(std::vector<Entity> &currentRoots) {
                                                       if (childInternodeStatus.m_order != 0) {
                                                           if (childInternodeStatus.m_rootDistance /
                                                               internodeStatus.m_maxDistanceToAnyBranchEnd <
-                                                              generalTreeParameters.m_lowBranchPruning) {
+                                                              generalTreeParameters->m_lowBranchPruning) {
                                                               DestroyInternode(child);
                                                               return;
                                                           }
@@ -643,26 +612,26 @@ void GeneralTreeBehaviour::Preprocess(std::vector<Entity> &currentRoots) {
                                                                   if (childInternodeInfo.m_endNode) {
                                                                       auto endNodeInternode = child.GetOrSetPrivateComponent<Internode>().lock();
                                                                       float randomFactor = glm::min(
-                                                                              generalTreeParameters.m_randomPruningBaseAgeMax.z,
-                                                                              generalTreeParameters.m_randomPruningBaseAgeMax.x +
-                                                                              generalTreeParameters.m_randomPruningBaseAgeMax.y *
+                                                                              generalTreeParameters->m_randomPruningBaseAgeMax.z,
+                                                                              generalTreeParameters->m_randomPruningBaseAgeMax.x +
+                                                                              generalTreeParameters->m_randomPruningBaseAgeMax.y *
                                                                               childInternodeStatus.m_age);
                                                                       if (childInternodeStatus.m_order >
-                                                                          generalTreeParameters.m_randomPruningOrderProtection &&
+                                                                          generalTreeParameters->m_randomPruningOrderProtection &&
                                                                           randomFactor > glm::linearRand(0.0f, 1.0f)) {
                                                                           DestroyInternode(child);
                                                                           return;
                                                                       }
                                                                       parentInternodeStatus.m_inhibitor +=
-                                                                              generalTreeParameters.m_apicalDominanceBaseAgeDist.x *
+                                                                              generalTreeParameters->m_apicalDominanceBaseAgeDist.x *
                                                                               glm::pow(
-                                                                                      generalTreeParameters.m_apicalDominanceBaseAgeDist.y,
+                                                                                      generalTreeParameters->m_apicalDominanceBaseAgeDist.y,
                                                                                       childInternodeStatus.m_age);
                                                                   } else {
                                                                       parentInternodeStatus.m_inhibitor +=
                                                                               childInternodeStatus.m_inhibitor *
                                                                               glm::pow(
-                                                                                      generalTreeParameters.m_apicalDominanceBaseAgeDist.z,
+                                                                                      generalTreeParameters->m_apicalDominanceBaseAgeDist.z,
                                                                                       parentInternodeInfo.m_length);
                                                                   }
 
@@ -707,12 +676,12 @@ void GeneralTreeBehaviour::Preprocess(std::vector<Entity> &currentRoots) {
                                                       parentInternodeStatus.m_maxDistanceToAnyBranchEnd = maxDistanceToAnyBranchEnd;
                                                       parentInternodeStatus.m_sagging =
                                                               glm::min(
-                                                                      generalTreeParameters.m_saggingFactorThicknessReductionMax.z,
-                                                                      generalTreeParameters.m_saggingFactorThicknessReductionMax.x *
+                                                                      generalTreeParameters->m_saggingFactorThicknessReductionMax.z,
+                                                                      generalTreeParameters->m_saggingFactorThicknessReductionMax.x *
                                                                       parentInternodeStatus.m_childTotalBiomass /
                                                                       glm::pow(parentInternodeInfo.m_thickness /
-                                                                               generalTreeParameters.m_endNodeThicknessAndControl.x,
-                                                                               generalTreeParameters.m_saggingFactorThicknessReductionMax.y));
+                                                                               generalTreeParameters->m_endNodeThicknessAndControl.x,
+                                                                               generalTreeParameters->m_saggingFactorThicknessReductionMax.y));
                                                       parent.SetDataComponent(parentInternodeStatus);
                                                       parent.SetDataComponent(parentInternodeInfo);
                                                   },
@@ -803,11 +772,11 @@ void GeneralTreeBehaviour::Preprocess(std::vector<Entity> &currentRoots) {
                  auto internode = entity.GetOrSetPrivateComponent<Internode>().lock();
                  auto rootEntity = internode->m_currentRoot.Get();
                  if (!RootCheck(rootEntity)) return;
-                 auto generalTreeParameters = rootEntity.GetDataComponent<GeneralTreeParameters>();
+                 auto generalTreeParameters = rootEntity.GetOrSetPrivateComponent<Root>().lock()->m_plantDescriptor.Get<GeneralTreeParameters>();
                  int plantIndex = 0;
                  for (const auto &plant: currentRoots) {
                      if (rootEntity == plant) {
-                         internodeStatus.CalculateApicalControl(generalTreeParameters.m_apicalControl);
+                         internodeStatus.CalculateApicalControl(generalTreeParameters->m_apicalControl);
                          totalRequestCollector[i % workerSize][plantIndex] +=
                                  internodeStatus.m_apicalControl *
                                  internodeWaterPressure.m_value *
@@ -903,6 +872,7 @@ void InternodeWaterFeeder::OnInspect() {
 
 
 void GeneralTreeParameters::OnInspect() {
+    IPlantDescriptor::OnInspect();
     if(ImGui::TreeNodeEx("Structure", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::DragInt("Lateral bud per node", &m_lateralBudCount);
         ImGui::DragFloat2("Branching Angle mean/var", &m_branchingAngleMeanVariance.x, 0.01f);
@@ -942,7 +912,7 @@ void GeneralTreeParameters::OnInspect() {
 
 }
 
-GeneralTreeParameters::GeneralTreeParameters() {
+void GeneralTreeParameters::OnCreate() {
     m_lateralBudCount = 2;
     m_branchingAngleMeanVariance = glm::vec2(30, 3);
     m_rollAngleMeanVariance = glm::vec2(120, 2);
@@ -964,12 +934,7 @@ GeneralTreeParameters::GeneralTreeParameters() {
     m_matureAge = 30;
 }
 
-void GeneralTreeParameters::Save(const std::filesystem::path &path) const {
-    auto directory = path;
-    directory.remove_filename();
-    std::filesystem::create_directories(directory);
-    YAML::Emitter out;
-    out << YAML::BeginMap;
+void GeneralTreeParameters::Serialize(YAML::Emitter &out) {
     out << YAML::Key << "m_lateralBudCount" << YAML::Value << m_lateralBudCount;
     out << YAML::Key << "m_branchingAngleMeanVariance" << YAML::Value << m_branchingAngleMeanVariance;
     out << YAML::Key << "m_rollAngleMeanVariance" << YAML::Value << m_rollAngleMeanVariance;
@@ -989,19 +954,9 @@ void GeneralTreeParameters::Save(const std::filesystem::path &path) const {
     out << YAML::Key << "m_lowBranchPruning" << YAML::Value << m_lowBranchPruning;
     out << YAML::Key << "m_saggingFactorThicknessReductionMax" << YAML::Value << m_saggingFactorThicknessReductionMax;
     out << YAML::Key << "m_matureAge" << YAML::Value << m_matureAge;
-
-
-    out << YAML::EndMap;
-    std::ofstream fout(path.string());
-    fout << out.c_str();
-    fout.flush();
 }
 
-void GeneralTreeParameters::Load(const std::filesystem::path &path) {
-    std::ifstream stream(path.string());
-    std::stringstream stringStream;
-    stringStream << stream.rdbuf();
-    YAML::Node in = YAML::Load(stringStream.str());
+void GeneralTreeParameters::Deserialize(const YAML::Node &in) {
     if(in["m_lateralBudCount"]) m_lateralBudCount = in["m_lateralBudCount"].as<int>();
     if(in["m_branchingAngleMeanVariance"]) m_branchingAngleMeanVariance = in["m_branchingAngleMeanVariance"].as<glm::vec2>();
     if(in["m_rollAngleMeanVariance"]) m_rollAngleMeanVariance = in["m_rollAngleMeanVariance"].as<glm::vec2>();
@@ -1021,8 +976,10 @@ void GeneralTreeParameters::Load(const std::filesystem::path &path) {
     if(in["m_lowBranchPruning"]) m_lowBranchPruning = in["m_lowBranchPruning"].as<float>();
     if(in["m_saggingFactorThicknessReductionMax"]) m_saggingFactorThicknessReductionMax = in["m_saggingFactorThicknessReductionMax"].as<glm::vec3>();
     if(in["m_matureAge"]) m_matureAge = in["m_matureAge"].as<int>();
+}
 
-
+Entity GeneralTreeParameters::InstantiateTree() {
+    return std::dynamic_pointer_cast<GeneralTreeBehaviour>(Application::GetLayer<PlantLayer>()->GetPlantBehaviour("GeneralTreeBehaviour"))->NewPlant(AssetManager::Get(GetHandle()), Transform());
 }
 
 void InternodeStatus::OnInspect() {

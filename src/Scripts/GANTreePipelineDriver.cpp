@@ -10,69 +10,27 @@ using namespace Scripts;
 
 void GANTreePipelineDriver::OnInspect() {
     Editor::DragAndDropButton<AutoTreeGenerationPipeline>(m_pipeline, "DatasetPipeline");
-
+    FileUtils::OpenFolder("Select folder...", [&](const std::filesystem::path& path){
+       m_folderPath = path;
+    });
+    ImGui::Text(("Folder path: " + m_folderPath.string()).c_str());
     ImGui::DragInt("Amount per specie", &m_instancePerSpecie, 1, 0, 99999);
-    if (m_parameterFilePaths.empty()) {
+    if (m_descriptors.empty()) {
         if (ImGui::Button("Start")) {
-            //m_parameterFilePaths.push_back(m_folderPath / "Oak.gtparams");
-            //m_parameterFilePaths.push_back(m_folderPath / "Birch.gtparams");
-            //m_parameterFilePaths.push_back(m_folderPath / "Cabbage.gtparams");
-            //m_parameterFilePaths.push_back(m_folderPath / "Corkscrew.gtparams");
-            m_parameterFilePaths.push_back(m_folderPath / "Elm.gtparams");
-            //m_parameterFilePaths.push_back(m_folderPath / "Hazel.gtparams");
-            //m_parameterFilePaths.push_back(m_folderPath / "Maple.gtparams");
-            //m_parameterFilePaths.push_back(m_folderPath / "Oak.gtparams");
-            //m_parameterFilePaths.push_back(m_folderPath / "Pine.gtparams");
-            //m_parameterFilePaths.push_back(m_folderPath / "Tulip.gtparams");
-            //m_parameterFilePaths.push_back(m_folderPath / "Walnut.gtparams");
-            /*
             if (std::filesystem::exists(m_folderPath) && std::filesystem::is_directory(m_folderPath)) {
                 for (const auto &entry: std::filesystem::directory_iterator(m_folderPath)) {
                     if (!std::filesystem::is_directory(entry.path())) {
-                        if (entry.path().filename().string() == "Elm.gtparams") {
-                            m_parameterFilePaths.push_back(m_folderPath / "Elm.gtparams");
+                        if (entry.path().extension() == ".gtparams") {
+                            auto descriptor = AssetManager::CreateAsset<GeneralTreeParameters>();
+                            descriptor->SetPathAndLoad(entry.path());
+                            m_descriptors.emplace_back(descriptor);
                             break;
                         }
                     }
-                    if (!std::filesystem::is_directory(entry.path())) {
-                        if (entry.path().filename().string() == "Oak.gtparams") {
-                            m_parameterFilePaths.push_back(entry.path());
-                            break;
-                        }
-                    }
-                    if (!std::filesystem::is_directory(entry.path())) {
-                        if (entry.path().filename().string() == "Maple.gtparams") {
-                            m_parameterFilePaths.push_back(entry.path());
-                            break;
-                        }
-                    }
-                    if (!std::filesystem::is_directory(entry.path())) {
-                        if (entry.path().filename().string() == "Hazel.gtparams") {
-                            m_parameterFilePaths.push_back(entry.path());
-                            break;
-                        }
-                    }
-                    if (!std::filesystem::is_directory(entry.path())) {
-                        if (entry.path().filename().string() == "Corkscrew.gtparams") {
-                            m_parameterFilePaths.push_back(entry.path());
-                            break;
-                        }
-                    }
-                    if (!std::filesystem::is_directory(entry.path())) {
-                        if (entry.path().filename().string() == "Cabbage.gtparams") {
-                            m_parameterFilePaths.push_back(entry.path());
-                            break;
-                        }
-                    }
-                    if (!std::filesystem::is_directory(entry.path())) {
-                        if (entry.path().filename().string() == "Birch.gtparams") {
-                            m_parameterFilePaths.push_back(entry.path());
-                            break;
-                        }
-                    }
+
                 }
 
-            }*/
+            }
         }
     } else {
         ImGui::Text("Busy...");
@@ -80,7 +38,7 @@ void GANTreePipelineDriver::OnInspect() {
 }
 
 void GANTreePipelineDriver::LateUpdate() {
-    if (m_parameterFilePaths.empty()) return;
+    if (m_descriptors.empty()) return;
 
     auto pipeline = m_pipeline.Get<AutoTreeGenerationPipeline>();
     if (!pipeline) return;
@@ -94,13 +52,12 @@ void GANTreePipelineDriver::LateUpdate() {
     auto generalTreeBehaviour = std::dynamic_pointer_cast<GeneralTreeBehaviour>(pipeline->GetBehaviour());
     if (!generalTreeBehaviour) return;
 
-    auto path = std::filesystem::path(m_parameterFilePaths.back());
-    pipeline->m_generalTreeParameters.Load(path);
-    pipeline->m_parameterFileName = path.stem().string();
-    pipelineBehaviour->m_perTreeGrowthIteration = pipeline->m_generalTreeParameters.m_matureAge;
+    auto descriptor = m_descriptors.back().Get<GeneralTreeParameters>();
+    pipeline->m_plantDescriptor = descriptor;
+    pipelineBehaviour->m_perTreeGrowthIteration = descriptor->m_matureAge;
     pipelineBehaviour->m_generationAmount = m_instancePerSpecie;
     pipelineBehaviour->Start();
-    m_parameterFilePaths.pop_back();
+    m_descriptors.pop_back();
 
 }
 

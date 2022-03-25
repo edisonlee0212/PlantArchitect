@@ -64,7 +64,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
     std::string prefix;
     switch (behaviourType) {
         case BehaviourType::GeneralTree:
-            prefix = "GeneralTree_" + pipeline.m_parameterFileName + "_";
+            prefix = "GeneralTree_" + pipeline.m_plantDescriptor.Get<IPlantDescriptor>()->GetName() + "_";
             break;
         case BehaviourType::LSystem:
             prefix = "LSystem_";
@@ -154,9 +154,9 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
             }
             if (m_exportCSV) {
                 std::filesystem::create_directories(
-                        ProjectManager::GetProjectPath().parent_path().parent_path() / csvFolder / pipeline.m_parameterFileName);
+                        ProjectManager::GetProjectPath().parent_path().parent_path() / csvFolder / pipeline.m_plantDescriptor.Get<IPlantDescriptor>()->GetName());
                 auto exportPath = std::filesystem::absolute(
-                        ProjectManager::GetProjectPath().parent_path().parent_path() / csvFolder / pipeline.m_parameterFileName /
+                        ProjectManager::GetProjectPath().parent_path().parent_path() / csvFolder / pipeline.m_plantDescriptor.Get<IPlantDescriptor>()->GetName() /
                         (prefix + ".csv"));
                 ExportCSV(behaviour, exportPath);
             }

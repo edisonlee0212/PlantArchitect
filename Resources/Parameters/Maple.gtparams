@@ -1,3 +1,4 @@
+m_name: Maple
 m_lateralBudCount: 2
 m_branchingAngleMeanVariance: [50, 1]
 m_rollAngleMeanVariance: [120, 3]

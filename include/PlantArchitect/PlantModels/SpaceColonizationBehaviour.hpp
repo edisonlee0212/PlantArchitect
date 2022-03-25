@@ -1,7 +1,7 @@
 #pragma once
 
 #include <plant_architect_export.h>
-#include <IPlantBehaviour.hpp>
+#include "IPlantBehaviour.hpp"
 
 using namespace UniEngine;
 namespace PlantArchitect {
@@ -13,19 +13,19 @@ namespace PlantArchitect {
         int m_pointAmount;
     };
 
-    struct PLANT_ARCHITECT_API SpaceColonizationParameters : public IDataComponent {
+    class PLANT_ARCHITECT_API SpaceColonizationParameters : public IPlantDescriptor {
+    public:
+        Entity InstantiateTree() override;
+
         float m_removeDistance = 0.8f;
         float m_attractDistance = 3.0f;
         float m_internodeLengthMean = 0.5f;
         float m_internodeLengthVariance = 0.1f;
-
-
         float m_thicknessFactor = 0.5f;
         float m_endNodeThickness = 0.02f;
-
-        void OnInspect();
-        void Save(const std::filesystem::path &path) const;
-        void Load(const std::filesystem::path &path);
+        void Serialize(YAML::Emitter &out) override;
+        void Deserialize(const YAML::Node &in) override;
+        void OnInspect() override;
     };
 
     class IVolume;
@@ -51,11 +51,11 @@ namespace PlantArchitect {
 
         void PushVolume(const std::shared_ptr<IVolume> &volume);
 
-        Entity CreateRoot(Entity& rootInternode, Entity& rootBranch) override;
+        Entity CreateRoot(AssetRef descriptor, Entity& rootInternode, Entity& rootBranch) override;
         Entity CreateBranch(const Entity &parent, const Entity &internode) override;
         Entity CreateInternode(const Entity &parent) override;
 
-        Entity NewPlant(const SpaceColonizationParameters &params,
+        Entity NewPlant(AssetRef descriptor,
                         const Transform &transform);
     };
 }

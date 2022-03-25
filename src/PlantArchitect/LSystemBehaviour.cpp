@@ -10,14 +10,6 @@
 using namespace PlantArchitect;
 
 void LSystemBehaviour::OnInspect() {
-    static float resolution = 0.02;
-    static float subdivision = 4.0;
-    ImGui::DragFloat("Resolution", &resolution, 0.001f);
-    ImGui::DragFloat("Subdivision", &subdivision, 0.001f);
-    if (ImGui::Button("Generate meshes")) {
-        GenerateSkinnedMeshes(subdivision, resolution);
-    }
-
 }
 
 LSystemBehaviour::LSystemBehaviour() {
@@ -31,7 +23,7 @@ LSystemBehaviour::LSystemBehaviour() {
     m_internodesQuery.SetAllFilters(InternodeInfo(), LSystemTag());
 
     m_rootArchetype =
-            Entities::CreateEntityArchetype("L-System Root", RootInfo(), LSystemTag(), LSystemParameters());
+            Entities::CreateEntityArchetype("L-System Root", RootInfo(), LSystemTag());
     m_rootsQuery = Entities::CreateEntityQuery();
     m_rootsQuery.SetAllFilters(RootInfo(), LSystemTag());
 
@@ -44,7 +36,7 @@ LSystemBehaviour::LSystemBehaviour() {
 }
 
 
-Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, const LSystemParameters &parameters) {
+Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, AssetRef descriptor) {
     auto &commands = lString->commands;
     if (commands.empty()) return {};
     LSystemState currentState;
@@ -71,17 +63,13 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
                         newInfo.m_localRotation = glm::quat(currentState.m_eulerRotation);
                         //We need to create a child node with this function. Here CreateInternode(Entity) will instantiate a new internode for you and set it as a child of current internode.
                         internode = CreateInternode(internode);
-                        //Apply the parameter to this internode, this is necessary everytime you create a new internode.
-                        internode.SetDataComponent(parameters);
                     } else {
                         //Calculate the local rotation as quaternion from euler angles.
                         newInfo.m_localRotation = glm::quat(currentState.m_eulerRotation);
                         //If this is the first push in the string, we create the root internode.
                         //The node creation is handled by the CreateInternode() function. The internode creation is performed in a factory pattern.
-                        root = CreateRoot(rootInternode, rootBranch);
+                        root = CreateRoot(descriptor, rootInternode, rootBranch);
                         internode = rootInternode;
-                        //Apply the parameter to this internode, this is necessary everytime you create a new internode.
-                        root.SetDataComponent(parameters);
                         rootExists = true;
                     }
                 } else {
@@ -193,7 +181,7 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
     //After you setup the local transformation matrix, you call this function to calculate the world(global) transformation matrix from the root of the plant.
     Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(Entities::GetCurrentScene(),
                                                                                    root);
-
+    auto params = descriptor.Get<LSystemParameters>();
     //Calculate other properties like thickness after the structure of the tree is ready.
     InternodeGraphWalkerEndToRoot(rootInternode, [&](Entity parent) {
         float thicknessCollection = 0.0f;
@@ -202,13 +190,13 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, cons
             if (!InternodeCheck(child)) return;
             auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
             thicknessCollection += glm::pow(childInternodeInfo.m_thickness,
-                                            1.0f / parameters.m_thicknessFactor);
+                                            1.0f / params->m_thicknessFactor);
         });
-        parentInternodeInfo.m_thickness = glm::pow(thicknessCollection, parameters.m_thicknessFactor);
+        parentInternodeInfo.m_thickness = glm::pow(thicknessCollection, params->m_thicknessFactor);
         parent.SetDataComponent(parentInternodeInfo);
     }, [&](Entity endNode) {
         auto internodeInfo = endNode.GetDataComponent<InternodeInfo>();
-        internodeInfo.m_thickness = parameters.m_endNodeThickness;
+        internodeInfo.m_thickness = params->m_endNodeThickness;
         endNode.SetDataComponent(internodeInfo);
     });
 
@@ -233,8 +221,8 @@ bool LSystemBehaviour::InternalBranchCheck(const Entity &target) {
     return target.HasDataComponent<LSystemTag>();
 }
 
-Entity LSystemBehaviour::CreateRoot(Entity &rootInternode, Entity &rootBranch) {
-    return CreateRootHelper<EmptyInternodeResource>(rootInternode, rootBranch);
+Entity LSystemBehaviour::CreateRoot(AssetRef descriptor, Entity &rootInternode, Entity &rootBranch) {
+    return CreateRootHelper<EmptyInternodeResource>(descriptor, rootInternode, rootBranch);
 }
 
 Entity LSystemBehaviour::CreateBranch(const Entity &parent, const Entity &internode) {
@@ -243,9 +231,14 @@ Entity LSystemBehaviour::CreateBranch(const Entity &parent, const Entity &intern
 
 
 void LSystemParameters::OnInspect() {
+    IPlantDescriptor::OnInspect();
     ImGui::DragFloat("Internode Length", &m_internodeLength);
     ImGui::DragFloat("Thickness Factor", &m_thicknessFactor);
     ImGui::DragFloat("End node thickness", &m_endNodeThickness);
+}
+
+Entity LSystemParameters::InstantiateTree() {
+    return Entity();
 }
 
 bool LString::LoadInternal(const std::filesystem::path &path) {
@@ -391,7 +384,7 @@ void LString::ParseLString(const std::string &string) {
 
 void LString::OnInspect() {
     if (ImGui::Button("Instantiate")) {
-        auto parameters = LSystemParameters();
+        auto parameters = AssetManager::CreateAsset<LSystemParameters>();
         std::dynamic_pointer_cast<LSystemBehaviour>(
                 Application::GetLayer<PlantLayer>()->GetPlantBehaviour("LSystemBehaviour"))->FormPlant(
                 AssetManager::Get<LString>(GetHandle()), parameters);
