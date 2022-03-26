@@ -36,8 +36,9 @@ LSystemBehaviour::LSystemBehaviour() {
 }
 
 
-Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, AssetRef descriptor) {
-    auto &commands = lString->commands;
+Entity LSystemBehaviour::NewPlant(AssetRef descriptor, const Transform &transform) {
+    auto lString = descriptor.Get<LSystemString>();
+    auto &commands = lString->m_commands;
     if (commands.empty()) return {};
     LSystemState currentState;
     //The stack that records current state when a push happens and restore previous state when pop.
@@ -181,7 +182,7 @@ Entity LSystemBehaviour::FormPlant(const std::shared_ptr<LString> &lString, Asse
     //After you setup the local transformation matrix, you call this function to calculate the world(global) transformation matrix from the root of the plant.
     Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(Entities::GetCurrentScene(),
                                                                                    root);
-    auto params = descriptor.Get<LSystemParameters>();
+    auto params = descriptor.Get<LSystemString>();
     //Calculate other properties like thickness after the structure of the tree is ready.
     InternodeGraphWalkerEndToRoot(rootInternode, [&](Entity parent) {
         float thicknessCollection = 0.0f;
@@ -229,19 +230,7 @@ Entity LSystemBehaviour::CreateBranch(const Entity &parent, const Entity &intern
     return CreateBranchHelper(parent, internode);
 }
 
-
-void LSystemParameters::OnInspect() {
-    IPlantDescriptor::OnInspect();
-    ImGui::DragFloat("Internode Length", &m_internodeLength);
-    ImGui::DragFloat("Thickness Factor", &m_thicknessFactor);
-    ImGui::DragFloat("End node thickness", &m_endNodeThickness);
-}
-
-Entity LSystemParameters::InstantiateTree() {
-    return Entity();
-}
-
-bool LString::LoadInternal(const std::filesystem::path &path) {
+bool LSystemString::LoadInternal(const std::filesystem::path &path) {
     if (path.extension().string() == ".lstring") {
         auto string = FileUtils::LoadFileAsString(path);
         ParseLString(string);
@@ -250,14 +239,14 @@ bool LString::LoadInternal(const std::filesystem::path &path) {
     return false;
 }
 
-bool LString::SaveInternal(const std::filesystem::path &path) {
+bool LSystemString::SaveInternal(const std::filesystem::path &path) {
     if (path.extension().string() == ".lstring") {
         std::ofstream of;
         of.open(path.c_str(),
                 std::ofstream::out | std::ofstream::trunc);
         if (of.is_open()) {
             std::string output;
-            for (const auto &command: commands) {
+            for (const auto &command: m_commands) {
                 switch (command.m_type) {
                     case LSystemCommandType::Forward: {
                         output += "F(";
@@ -320,7 +309,7 @@ bool LString::SaveInternal(const std::filesystem::path &path) {
     return false;
 }
 
-void LString::ParseLString(const std::string &string) {
+void LSystemString::ParseLString(const std::string &string) {
     std::istringstream iss(string);
     std::string line;
     int stackCheck = 0;
@@ -374,19 +363,23 @@ void LString::ParseLString(const std::string &string) {
                 command.m_value = 3.0f;
             }
         }
-        commands.push_back(command);
+        m_commands.push_back(command);
     }
     if (stackCheck != 0) {
         UNIENGINE_ERROR("Stack check failed! Something wrong with the string!");
-        commands.clear();
+        m_commands.clear();
     }
 }
 
-void LString::OnInspect() {
-    if (ImGui::Button("Instantiate")) {
-        auto parameters = AssetManager::CreateAsset<LSystemParameters>();
-        std::dynamic_pointer_cast<LSystemBehaviour>(
-                Application::GetLayer<PlantLayer>()->GetPlantBehaviour("LSystemBehaviour"))->FormPlant(
-                AssetManager::Get<LString>(GetHandle()), parameters);
-    }
+void LSystemString::OnInspect() {
+    IPlantDescriptor::OnInspect();
+    ImGui::Text(("Command Size: " + std::to_string(m_commands.size())).c_str());
+    ImGui::DragFloat("Internode Length", &m_internodeLength);
+    ImGui::DragFloat("Thickness Factor", &m_thicknessFactor);
+    ImGui::DragFloat("End node thickness", &m_endNodeThickness);
+}
+
+Entity LSystemString::InstantiateTree() {
+    return Application::GetLayer<PlantLayer>()->GetPlantBehaviour<LSystemBehaviour>()->NewPlant(
+            AssetManager::Get<LSystemString>(GetHandle()), Transform());
 }

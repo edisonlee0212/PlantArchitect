@@ -388,5 +388,5 @@ void SpaceColonizationParameters::Deserialize(const YAML::Node &in) {
 }
 
 Entity SpaceColonizationParameters::InstantiateTree() {
-    return std::dynamic_pointer_cast<SpaceColonizationBehaviour>(Application::GetLayer<PlantLayer>()->GetPlantBehaviour("SpaceColonizationBehaviour"))->NewPlant(AssetManager::Get(GetHandle()), Transform());
+    return Application::GetLayer<PlantLayer>()->GetPlantBehaviour<SpaceColonizationBehaviour>()->NewPlant(AssetManager::Get(GetHandle()), Transform());
 }

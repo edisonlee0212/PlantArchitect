@@ -1,10 +1,12 @@
 #pragma once
+
 #include "Application.hpp"
 #include "plant_architect_export.h"
 #include <VoxelSpace.hpp>
 #include "PlantDataComponents.hpp"
 #include "ILayer.hpp"
 #include "FBM.hpp"
+
 using namespace UniEngine;
 namespace PlantArchitect {
     struct PLANT_ARCHITECT_API BranchPhysicsParameters {
@@ -28,7 +30,7 @@ namespace PlantArchitect {
         void OnInspect();
     };
 
-    enum class BranchColorMode{
+    enum class BranchColorMode {
         None,
         Order,
         Level,
@@ -42,24 +44,33 @@ namespace PlantArchitect {
         StrahlerNumber,
         ChildCount
     };
+
     class IPlantBehaviour;
+
     class PLANT_ARCHITECT_API PlantLayer : public ILayer {
-        void PreparePhysics(const Entity& entity, const Entity& child, const BranchPhysicsParameters& branchPhysicsParameters);
+        void PreparePhysics(const Entity &entity, const Entity &child,
+                            const BranchPhysicsParameters &branchPhysicsParameters);
 
     public:
         BranchPhysicsParameters m_branchPhysicsParameters;
         FBM m_fBMField;
         float m_forceFactor = 1.0f;
         bool m_applyFBMField = false;
+
         void DrawColorModeSelectionMenu();
+
         void PreparePhysics();
+
         void CalculateStatistics();
+
         /**
          * The EntityQuery for filtering all internodes.
          */
         EntityQuery m_internodesQuery;
         EntityQuery m_branchesQuery;
+
         void FixedUpdate() override;
+
         void LateUpdate() override;
 
         void Simulate(int iterations);
@@ -70,24 +81,32 @@ namespace PlantArchitect {
 
         std::shared_ptr<Camera> m_visualizationCamera;
 
-        std::shared_ptr<IPlantBehaviour> GetPlantBehaviour(const std::string& typeName);
+        template<class T = IPlantBehaviour>
+        std::shared_ptr<T> GetPlantBehaviour();
+
         /**
          * Check if the entity is valid internode.
          * @param target Target for check.
          * @return True if the entity is valid and contains [InternodeInfo] and [Internode], false otherwise.
          */
-        static bool InternodeCheck(const Entity& target);
+        static bool InternodeCheck(const Entity &target);
 
         BranchColorMode m_branchColorMode = BranchColorMode::None;
         int m_indexDivider = 512;
         int m_indexRangeMin = 128;
         int m_indexRangeMax = 512;
+
         void UpdateInternodeColors();
+
         void UpdateInternodeCylinder();
+
         void UpdateBranchColors();
+
         void UpdateBranchCylinder();
+
         void UpdateInternodePointer(const float &length,
                                     const float &width = 0.01f);
+
     private:
         VoxelSpace m_voxelSpace;
 
@@ -132,14 +151,27 @@ namespace PlantArchitect {
         std::vector<Entity> m_entitiesWithRenderer;
         OpenGLUtils::GLVBO m_internodeColorBuffer;
 
-        glm::vec4 m_childCountColors[4] = {glm::vec4(1, 1, 1, 0.5), glm::vec4(0, 0, 1, 1), glm::vec4(0, 1, 0, 1), glm::vec4(1, 0, 0, 1)};
+        glm::vec4 m_childCountColors[4] = {glm::vec4(1, 1, 1, 0.5), glm::vec4(0, 0, 1, 1), glm::vec4(0, 1, 0, 1),
+                                           glm::vec4(1, 0, 0, 1)};
 
         void UpdateInternodeCamera();
+
         void RenderInternodeCylinders();
+
         void RenderInternodePointers();
+
         void RenderBranchCylinders();
+
 #pragma endregion
 #pragma endregion
     };
 
+    template<class T>
+    std::shared_ptr<T> PlantLayer::GetPlantBehaviour() {
+        for (const auto &i: m_plantBehaviours) {
+            auto converted = std::dynamic_pointer_cast<T>(i);
+            if (converted) return converted;
+        }
+        return nullptr;
+    }
 }

@@ -20,17 +20,19 @@ namespace Scripts {
     };
 
     class AutoTreeGenerationPipeline : public IPrivateComponent {
-        void DropBehaviourButton();
-
         std::shared_ptr<IPlantBehaviour> m_currentInternodeBehaviour;
-        BehaviourType m_behaviourType = BehaviourType::GeneralTree;
+
     public:
+        BehaviourType m_behaviourType = BehaviourType::GeneralTree;
+        AssetRef m_currentUsingDescriptor;
+        bool m_busy = false;
+        int m_remainingInstanceAmount = 0;
+        int m_generationAmount = 1;
+        int m_iterations = 0;
         void UpdateInternodeBehaviour();
-        AssetRef m_plantDescriptor;
-        AssetRef m_lString;
+        std::vector<AssetRef> m_descriptors;
         AutoTreeGenerationPipelineStatus m_status = AutoTreeGenerationPipelineStatus::Idle;
         AssetRef m_pipelineBehaviour;
-
         void Update() override;
         void OnInspect() override;
         void Start() override;
@@ -45,8 +47,7 @@ namespace Scripts {
         friend class AutoTreeGenerationPipeline;
     public:
         Entity m_currentGrowingTree;
-        int m_perTreeGrowthIteration = 1;
-        virtual void OnIdle(AutoTreeGenerationPipeline& pipeline);
+        virtual void Start(AutoTreeGenerationPipeline& pipeline);
         virtual void OnBeforeGrowth(AutoTreeGenerationPipeline& pipeline);
         virtual void OnAfterGrowth(AutoTreeGenerationPipeline& pipeline);
     };

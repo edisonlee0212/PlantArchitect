@@ -9,20 +9,18 @@
 #include "AssetManager.hpp"
 #include "LSystemBehaviour.hpp"
 #include "IVolume.hpp"
+#include "RayTracerCamera.hpp"
+#include "RayTracerLayer.hpp"
+#include "TransformLayer.hpp"
 
+using namespace RayTracerFacility;
 using namespace Scripts;
 
 void MultipleAngleCapture::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) {
-    if (!SetUpCamera()) {
-        pipeline.m_status = AutoTreeGenerationPipelineStatus::Idle;
-        return;
-    }
-    auto camera = m_cameraEntity.Get().GetOrSetPrivateComponent<Camera>().lock();
-    camera->SetRequireRendering(true);
     Entity rootInternode;
     auto children = m_currentGrowingTree.GetChildren();
-    for(const auto& i : children){
-        if(i.HasPrivateComponent<Internode>()) rootInternode = i;
+    for (const auto &i: children) {
+        if (i.HasPrivateComponent<Internode>()) rootInternode = i;
     }
     auto internode = rootInternode.GetOrSetPrivateComponent<Internode>().lock();
     m_currentGrowingTree.GetOrSetPrivateComponent<Root>().lock()->m_foliagePhyllotaxis = m_foliagePhyllotaxis;
@@ -30,7 +28,6 @@ void MultipleAngleCapture::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) 
     auto behaviourType = pipeline.GetBehaviourType();
     switch (behaviourType) {
         case BehaviourType::GeneralTree:
-
             break;
         case BehaviourType::LSystem:
             break;
@@ -42,32 +39,24 @@ void MultipleAngleCapture::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) 
         }
             break;
     }
-
-    m_captureStatus = MultipleAngleCaptureStatus::Info;
+    if (m_exportImage || m_exportDepth || m_exportBranchCapture) {
+        SetUpCamera(pipeline);
+    }
     pipeline.m_status = AutoTreeGenerationPipelineStatus::Growth;
-    m_rendering = true;
 }
 
 void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
     auto behaviour = pipeline.GetBehaviour();
-    auto camera = m_cameraEntity.Get().GetOrSetPrivateComponent<Camera>().lock();
-    if (m_exportOBJ || m_exportImage || m_exportDepth || m_exportBranchCapture) {
-        camera->SetRequireRendering(true);
-        if (m_rendering) {
-            behaviour->GenerateSkinnedMeshes();
-            m_rendering = false;
-            return;
-        }
-    }
+    auto camera = pipeline.GetOwner().GetOrSetPrivateComponent<RayTracerCamera>().lock();
     auto internodeLayer = Application::GetLayer<PlantLayer>();
     auto behaviourType = pipeline.GetBehaviourType();
     std::string prefix;
     switch (behaviourType) {
         case BehaviourType::GeneralTree:
-            prefix = "GeneralTree_" + pipeline.m_plantDescriptor.Get<IPlantDescriptor>()->GetName() + "_";
+            prefix = "GeneralTree_" + pipeline.m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetName() + "_";
             break;
         case BehaviourType::LSystem:
-            prefix = "LSystem_";
+            prefix = "LSystemString_" + pipeline.m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetName() + "_";
             break;
         case BehaviourType::SpaceColonization:
             prefix = "SpaceColonization_";
@@ -77,159 +66,215 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
     }
     Entity rootInternode;
     auto children = m_currentGrowingTree.GetChildren();
-    for(const auto& i : children){
-        if(i.HasPrivateComponent<Internode>()) rootInternode = i;
+    for (const auto &i: children) {
+        if (i.HasPrivateComponent<Internode>()) rootInternode = i;
     }
-    prefix += std::to_string(m_generationAmount - m_remainingInstanceAmount + m_startIndex);
-    switch (m_captureStatus) {
-        case MultipleAngleCaptureStatus::Info: {
-            auto imagesFolder = m_currentExportFolder / "Image";
-            auto objFolder = m_currentExportFolder / "Mesh";
-            auto depthFolder = m_currentExportFolder / "Depth";
-            auto branchFolder = m_currentExportFolder / "Branch";
-            auto graphFolder = m_currentExportFolder / "Graph";
-            auto csvFolder = m_currentExportFolder / "CSV";
-            auto lStringFolder = m_currentExportFolder / "LString";
-            if (m_exportImage)
-                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path().parent_path() / imagesFolder);
-            if (m_exportOBJ)
-                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path().parent_path() / objFolder);
-            if (m_exportDepth)
-                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path().parent_path() / depthFolder);
-            if (m_exportBranchCapture)
-                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path().parent_path() / branchFolder);
-            if (m_exportGraph)
-                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path().parent_path() / graphFolder);
-            if (m_exportCSV)
-                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path().parent_path() / csvFolder);
-            if (m_exportLString)
-                std::filesystem::create_directories(ProjectManager::GetProjectPath().parent_path().parent_path() / lStringFolder);
+    prefix += std::to_string(pipeline.m_generationAmount - pipeline.m_remainingInstanceAmount + m_startIndex);
+    auto imagesFolder = m_currentExportFolder / "Image";
+    auto objFolder = m_currentExportFolder / "Mesh";
+    auto depthFolder = m_currentExportFolder / "Depth";
+    auto branchFolder = m_currentExportFolder / "Branch";
+    auto graphFolder = m_currentExportFolder / "Graph";
+    auto csvFolder = m_currentExportFolder / "CSV";
+    auto lStringFolder = m_currentExportFolder / "LSystemString";
+    if (m_exportLString) {
+        std::filesystem::create_directories(
+                ProjectManager::GetProjectPath().parent_path().parent_path() / lStringFolder);
+        auto lString = AssetManager::CreateAsset<LSystemString>();
 
-            if (m_exportLString) {
-                auto lString = AssetManager::CreateAsset<LString>();
+        rootInternode.GetOrSetPrivateComponent<Internode>().lock()->ExportLString(lString);
+        //path here
+        lString->SetPathAndSave(
+                lStringFolder /
+                (std::to_string(pipeline.m_generationAmount - pipeline.m_remainingInstanceAmount) +
+                 ".lstring"));
+    }
+    if (pipeline.m_behaviourType == BehaviourType::GeneralTree && m_exportGraph) {
+        std::filesystem::create_directories(
+                ProjectManager::GetProjectPath().parent_path().parent_path() / graphFolder);
+        auto exportPath = std::filesystem::absolute(
+                ProjectManager::GetProjectPath().parent_path().parent_path() / graphFolder /
+                (prefix + ".yml"));
+        ExportGraph(behaviour, exportPath);
+    }
+    if (pipeline.m_behaviourType == BehaviourType::GeneralTree && m_exportCSV) {
+        std::filesystem::create_directories(
+                ProjectManager::GetProjectPath().parent_path().parent_path() / csvFolder);
 
-                rootInternode.GetOrSetPrivateComponent<Internode>().lock()->ExportLString(lString);
-                //path here
-                lString->SetPathAndSave(
-                        lStringFolder / (std::to_string(m_generationAmount - m_remainingInstanceAmount) + ".lstring"));
-            }
+        std::filesystem::create_directories(
+                ProjectManager::GetProjectPath().parent_path().parent_path() / csvFolder /
+                pipeline.m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetName());
+        auto exportPath = std::filesystem::absolute(
+                ProjectManager::GetProjectPath().parent_path().parent_path() / csvFolder /
+                pipeline.m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetName() /
+                (prefix + ".csv"));
+        ExportCSV(behaviour, exportPath);
+    }
 
-            if (m_exportOBJ || m_exportImage || m_exportDepth || m_exportBranchCapture) {
-                behaviour->GenerateSkinnedMeshes();
-                internodeLayer->UpdateInternodeColors();
-            }
-            if (m_exportOBJ) {
-                Entity foliage, branch;
-                m_currentGrowingTree.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
-                    if (child.GetName() == "Foliage") foliage = child;
-                    else if (child.GetName() == "Branch") branch = child;
-                });
-                if (foliage.IsValid() && foliage.HasPrivateComponent<SkinnedMeshRenderer>()) {
-                    auto smr = foliage.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
-                    if (smr->m_skinnedMesh.Get<SkinnedMesh>() &&
-                        !smr->m_skinnedMesh.Get<SkinnedMesh>()->UnsafeGetSkinnedVertices().empty()) {
-                        auto exportPath = std::filesystem::absolute(
-                                ProjectManager::GetProjectPath().parent_path().parent_path() / objFolder /
-                                (prefix + "_foliage.obj"));
-                        UNIENGINE_LOG(exportPath.string());
-                        smr->m_skinnedMesh.Get<SkinnedMesh>()->Export(exportPath);
-                    }
-                }
-                if (branch.IsValid() && branch.HasPrivateComponent<SkinnedMeshRenderer>()) {
-                    auto smr = branch.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
-                    if (smr->m_skinnedMesh.Get<SkinnedMesh>() &&
-                        !smr->m_skinnedMesh.Get<SkinnedMesh>()->UnsafeGetSkinnedVertices().empty()) {
-                        auto exportPath = std::filesystem::absolute(
-                                ProjectManager::GetProjectPath().parent_path().parent_path() / objFolder /
-                                (prefix + "_branch.obj"));
-                        smr->m_skinnedMesh.Get<SkinnedMesh>()->Export(exportPath);
-                    }
-                }
-            }
-            if (m_exportGraph) {
+    if (m_exportOBJ || m_exportImage || m_exportDepth || m_exportBranchCapture) {
+        behaviour->GenerateSkinnedMeshes();
+        internodeLayer->UpdateInternodeColors();
+    }
+    if (m_exportOBJ) {
+        std::filesystem::create_directories(
+                ProjectManager::GetProjectPath().parent_path().parent_path() / objFolder);
+        Entity foliage, branch;
+        m_currentGrowingTree.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
+            if (child.GetName() == "Foliage") foliage = child;
+            else if (child.GetName() == "Branch") branch = child;
+        });
+        if (foliage.IsValid() && foliage.HasPrivateComponent<SkinnedMeshRenderer>()) {
+            auto smr = foliage.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
+            if (smr->m_skinnedMesh.Get<SkinnedMesh>() &&
+                !smr->m_skinnedMesh.Get<SkinnedMesh>()->UnsafeGetSkinnedVertices().empty()) {
                 auto exportPath = std::filesystem::absolute(
-                        ProjectManager::GetProjectPath().parent_path().parent_path() / graphFolder /
-                        (prefix + ".yml"));
-                ExportGraph(behaviour, exportPath);
+                        ProjectManager::GetProjectPath().parent_path().parent_path() / objFolder /
+                        (prefix + "_foliage.obj"));
+                UNIENGINE_LOG(exportPath.string());
+                smr->m_skinnedMesh.Get<SkinnedMesh>()->Export(exportPath);
             }
-            if (m_exportCSV) {
-                std::filesystem::create_directories(
-                        ProjectManager::GetProjectPath().parent_path().parent_path() / csvFolder / pipeline.m_plantDescriptor.Get<IPlantDescriptor>()->GetName());
-                auto exportPath = std::filesystem::absolute(
-                        ProjectManager::GetProjectPath().parent_path().parent_path() / csvFolder / pipeline.m_plantDescriptor.Get<IPlantDescriptor>()->GetName() /
-                        (prefix + ".csv"));
-                ExportCSV(behaviour, exportPath);
-            }
-            if (m_exportBranchCapture) RenderBranchCapture();
-            m_captureStatus = MultipleAngleCaptureStatus::Image;
         }
-            break;
-        case MultipleAngleCaptureStatus::Image: {
-            auto anglePrefix = std::to_string(m_pitchAngle) + "_" +
-                               std::to_string(m_turnAngle);
-            auto imagesFolder = m_currentExportFolder / "Image";
-            auto depthFolder = m_currentExportFolder / "Depth";
-            auto branchFolder = m_currentExportFolder / "Branch";
-            if (m_exportImage) {
-                camera->GetTexture()->SetPathAndSave(imagesFolder / (prefix + "_" + anglePrefix + "_rgb.png"));
+        if (branch.IsValid() && branch.HasPrivateComponent<SkinnedMeshRenderer>()) {
+            auto smr = branch.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
+            if (smr->m_skinnedMesh.Get<SkinnedMesh>() &&
+                !smr->m_skinnedMesh.Get<SkinnedMesh>()->UnsafeGetSkinnedVertices().empty()) {
+                auto exportPath = std::filesystem::absolute(
+                        ProjectManager::GetProjectPath().parent_path().parent_path() / objFolder /
+                        (prefix + "_branch.obj"));
+                smr->m_skinnedMesh.Get<SkinnedMesh>()->Export(exportPath);
             }
-            if (m_exportDepth) {
-                auto depthCamera = m_cameraEntity.Get().GetOrSetPrivateComponent<DepthCamera>().lock();
+        }
+    }
+
+    if (m_exportImage) {
+        std::filesystem::create_directories(
+                ProjectManager::GetProjectPath().parent_path().parent_path() / imagesFolder);
+        auto cameraEntity = pipeline.GetOwner();
+        auto rayTracerCamera = cameraEntity.GetOrSetPrivateComponent<RayTracerCamera>().lock();
+        assert(cameraEntity.IsValid());
+        Application::GetLayer<RayTracerLayer>()->UpdateScene();
+        for (float turnAngle = m_turnAngleStart; turnAngle < m_turnAngleEnd; turnAngle += m_turnAngleStep) {
+            for (float pitchAngle = m_pitchAngleStart; pitchAngle < m_pitchAngleEnd; pitchAngle += m_pitchAngleStep) {
+                auto anglePrefix = std::to_string(pitchAngle) + "_" +
+                                   std::to_string(turnAngle);
+                auto height = m_distance * glm::sin(glm::radians((float) pitchAngle));
+                auto groundDistance =
+                        m_distance * glm::cos(glm::radians((float) pitchAngle));
+                glm::vec3 cameraPosition =
+                        glm::vec3(glm::sin(glm::radians((float) turnAngle)) * groundDistance,
+                                  height,
+                                  glm::cos(glm::radians((float) turnAngle)) * groundDistance);
+                m_cameraPosition = cameraPosition + m_focusPoint;
+                m_cameraRotation = glm::quatLookAt(glm::normalize(-cameraPosition), glm::vec3(0, 1, 0));
+
+                GlobalTransform cameraGlobalTransform;
+                cameraGlobalTransform.SetPosition(m_cameraPosition);
+                cameraGlobalTransform.SetRotation(m_cameraRotation);
+                cameraEntity.SetDataComponent(cameraGlobalTransform);
+                Application::GetLayer<TransformLayer>()->CalculateTransformGraphs(
+                        Entities::GetCurrentScene());
+
+                rayTracerCamera->Render(m_rayProperties);
+                rayTracerCamera->m_colorTexture->Export(
+                        ProjectManager::GetProjectPath().parent_path().parent_path() /
+                        imagesFolder / (prefix + "_" + anglePrefix + "_rgb.png"));
+            }
+        }
+    }
+    if (m_exportDepth) {
+        std::filesystem::create_directories(
+                ProjectManager::GetProjectPath().parent_path().parent_path() / depthFolder);
+        auto cameraEntity = pipeline.GetOwner();
+        for (float turnAngle = m_turnAngleStart; turnAngle < m_turnAngleEnd; turnAngle += m_turnAngleStep) {
+            for (float pitchAngle = m_pitchAngleStart;
+                 pitchAngle < m_pitchAngleEnd; pitchAngle += m_pitchAngleStep) {
+                auto anglePrefix = std::to_string(pitchAngle) + "_" +
+                                   std::to_string(turnAngle);
+                auto height = m_distance * glm::sin(glm::radians((float) pitchAngle));
+                auto groundDistance =
+                        m_distance * glm::cos(glm::radians((float) pitchAngle));
+                glm::vec3 cameraPosition =
+                        glm::vec3(glm::sin(glm::radians((float) turnAngle)) * groundDistance,
+                                  height,
+                                  glm::cos(glm::radians((float) turnAngle)) * groundDistance);
+                m_cameraPosition = cameraPosition + m_focusPoint;
+                m_cameraRotation = glm::quatLookAt(glm::normalize(-cameraPosition), glm::vec3(0, 1, 0));
+
+                GlobalTransform cameraGlobalTransform;
+                cameraGlobalTransform.SetPosition(m_cameraPosition);
+                cameraGlobalTransform.SetRotation(m_cameraRotation);
+                cameraEntity.SetDataComponent(cameraGlobalTransform);
+                Application::GetLayer<TransformLayer>()->CalculateTransformGraphs(
+                        Entities::GetCurrentScene());
+                auto depthCamera = pipeline.GetOwner().GetOrSetPrivateComponent<DepthCamera>().lock();
                 depthCamera->Render();
                 depthCamera->m_colorTexture->SetPathAndSave(depthFolder / (prefix + "_" + anglePrefix + "_depth.png"));
             }
-            if (m_exportBranchCapture) {
-                m_branchCaptureCamera->GetTexture()->SetPathAndSave(
-                        branchFolder / (prefix + "_" + anglePrefix + "_branch.png"));
-            }
-            m_cameraModels.push_back(m_cameraEntity.Get().GetDataComponent<GlobalTransform>().m_value);
-            m_treeModels.push_back(m_currentGrowingTree.GetDataComponent<GlobalTransform>().m_value);
-            m_projections.push_back(Camera::m_cameraInfoBlock.m_projection);
-            m_views.push_back(Camera::m_cameraInfoBlock.m_view);
-            m_names.push_back(prefix + "_" + anglePrefix);
-            if (m_pitchAngle + m_pitchAngleStep < m_pitchAngleEnd) {
-                m_pitchAngle += m_pitchAngleStep;
-                SetUpCamera();
-            } else if (m_turnAngle + m_turnAngleStep < 360.0f) {
-                m_turnAngle += m_turnAngleStep;
-                m_pitchAngle = m_pitchAngleStart;
-                SetUpCamera();
-            } else {
-                m_remainingInstanceAmount--;
-                //pipeline.m_generalTreeParameters.m_gravitropism = (m_generationAmount - m_remainingInstanceAmount) % 5 * 0.05f - 0.1f;
-                m_pitchAngle = m_pitchAngleStart;
-                m_turnAngle = 0;
-                if (m_remainingInstanceAmount == 0) {
-                    if (m_exportMatrices) {
-                        ExportMatrices(ProjectManager::GetProjectPath().parent_path().parent_path() / m_currentExportFolder /
-                                       (prefix + "_camera_matrices.yml"));
-                    }
-                    ProjectManager::ScanProjectFolder(true);
-                    pipeline.m_status = AutoTreeGenerationPipelineStatus::Idle;
-                } else {
-                    pipeline.m_status = AutoTreeGenerationPipelineStatus::BeforeGrowth;
-                }
+        }
+    }
+    if (m_exportBranchCapture) {
+        auto cameraEntity = pipeline.GetOwner();
+        auto rayTracerCamera = cameraEntity.GetOrSetPrivateComponent<RayTracerCamera>().lock();
+        assert(cameraEntity.IsValid());
+        for (float turnAngle = m_turnAngleStart; turnAngle < m_turnAngleEnd; turnAngle += m_turnAngleStep) {
+            for (float pitchAngle = m_pitchAngleStart;
+                 pitchAngle < m_pitchAngleEnd; pitchAngle += m_pitchAngleStep) {
+                auto anglePrefix = std::to_string(pitchAngle) + "_" +
+                                   std::to_string(turnAngle);
+                auto height = m_distance * glm::sin(glm::radians((float) pitchAngle));
+                auto groundDistance =
+                        m_distance * glm::cos(glm::radians((float) pitchAngle));
+                glm::vec3 cameraPosition =
+                        glm::vec3(glm::sin(glm::radians((float) turnAngle)) * groundDistance,
+                                  height,
+                                  glm::cos(glm::radians((float) turnAngle)) * groundDistance);
+                m_cameraPosition = cameraPosition + m_focusPoint;
+                m_cameraRotation = glm::quatLookAt(glm::normalize(-cameraPosition), glm::vec3(0, 1, 0));
+
+                GlobalTransform cameraGlobalTransform;
+                cameraGlobalTransform.SetPosition(m_cameraPosition);
+                cameraGlobalTransform.SetRotation(m_cameraRotation);
+                cameraEntity.SetDataComponent(cameraGlobalTransform);
+                Application::GetLayer<TransformLayer>()->CalculateTransformGraphs(
+                        Entities::GetCurrentScene());
+
+                rayTracerCamera->Render(m_rayProperties);
+                rayTracerCamera->m_colorTexture->Export(
+                        ProjectManager::GetProjectPath().parent_path().parent_path() /
+                                branchFolder / (prefix + "_" + anglePrefix + "_branch.png"));
             }
         }
-            break;
     }
+    pipeline.m_status = AutoTreeGenerationPipelineStatus::Idle;
+    /*
+    m_cameraModels.push_back(pipeline.GetOwner().GetDataComponent<GlobalTransform>().m_value);
+    m_treeModels.push_back(m_currentGrowingTree.GetDataComponent<GlobalTransform>().m_value);
+    m_projections.push_back(Camera::m_cameraInfoBlock.m_projection);
+    m_views.push_back(Camera::m_cameraInfoBlock.m_view);
+    m_names.push_back(prefix + "_" + anglePrefix);
+    */
 }
 
 void MultipleAngleCapture::OnInspect() {
-    Editor::DragAndDropButton(m_volume, "Volume", {"CubeVolume","RadialBoundingVolume"}, false);
+    if (ImGui::Button("Instantiate Pipeline")) {
+        auto multipleAngleCapturePipelineEntity = Entities::CreateEntity(Entities::GetCurrentScene(),
+                                                                         "GANTree Dataset Pipeline");
+        auto multipleAngleCapturePipeline = multipleAngleCapturePipelineEntity.GetOrSetPrivateComponent<AutoTreeGenerationPipeline>().lock();
+        multipleAngleCapturePipeline->m_pipelineBehaviour = AssetManager::Get<MultipleAngleCapture>(GetHandle());
+    }
+
+    Editor::DragAndDropButton(m_volume, "Volume", {"CubeVolume", "RadialBoundingVolume"}, false);
     Editor::DragAndDropButton(m_foliagePhyllotaxis, "Phyllotaxis",
-                              {"EmptyInternodePhyllotaxis","DefaultInternodePhyllotaxis"}, true);
+                              {"EmptyInternodePhyllotaxis", "DefaultInternodePhyllotaxis"}, true);
     ImGui::Checkbox("Auto adjust camera", &m_autoAdjustCamera);
     if (ImGui::TreeNodeEx("Pipeline Settings")) {
         ImGui::DragFloat("Branch width", &m_branchWidth, 0.01f);
-        ImGui::DragInt("Generation Amount", &m_generationAmount);
-        ImGui::DragInt("Growth iteration", &m_perTreeGrowthIteration);
         ImGui::DragInt("Start Index", &m_startIndex);
         ImGui::Text("Data export:");
         ImGui::Checkbox("Export OBJ", &m_exportOBJ);
         ImGui::Checkbox("Export Graph", &m_exportGraph);
         ImGui::Checkbox("Export CSV", &m_exportCSV);
-        ImGui::Checkbox("Export LString", &m_exportLString);
+        ImGui::Checkbox("Export LSystemString", &m_exportLString);
         Application::GetLayer<PlantLayer>()->DrawColorModeSelectionMenu();
 
         ImGui::Text("Rendering export:");
@@ -240,7 +285,6 @@ void MultipleAngleCapture::OnInspect() {
         ImGui::TreePop();
     }
     if (ImGui::TreeNodeEx("Camera")) {
-        Editor::DragAndDropButton(m_cameraEntity, "Attached Camera Entity");
         if (!m_autoAdjustCamera) {
             ImGui::Text("Position:");
             ImGui::DragFloat3("Focus point", &m_focusPoint.x, 0.1f);
@@ -259,165 +303,45 @@ void MultipleAngleCapture::OnInspect() {
 
         ImGui::TreePop();
     }
-    if (m_remainingInstanceAmount == 0) {
-        if (Application::IsPlaying()) {
-            if (ImGui::Button("Start")) {
-                Start();
-            }
-        } else {
-            ImGui::Text("Start Engine first!");
-        }
-    } else {
-        ImGui::Text("Task dispatched...");
-        ImGui::Text(("Total: " + std::to_string(m_generationAmount) + ", Remaining: " +
-                     std::to_string(m_remainingInstanceAmount)).c_str());
-        if (ImGui::Button("Force stop")) {
-            m_remainingInstanceAmount = 1;
-        }
-    }
+
 }
 
-void MultipleAngleCapture::OnIdle(AutoTreeGenerationPipeline &pipeline) {
-    if (m_cameraEntity.Get().IsNull()) {
-        m_pitchAngle = m_pitchAngleStart;
-        m_turnAngle = -1;
-        m_generationAmount = 0;
-        return;
-    }
-    if (m_pitchAngle == m_pitchAngleStart && m_turnAngle == 0 && m_remainingInstanceAmount > 0) {
-        pipeline.m_status = AutoTreeGenerationPipelineStatus::BeforeGrowth;
-    }
-}
-
-bool MultipleAngleCapture::SetUpCamera() {
+void MultipleAngleCapture::SetUpCamera(AutoTreeGenerationPipeline &pipeline) {
     if (m_autoAdjustCamera) {
-        m_focusPoint = glm::vec3(0.0f, m_perTreeGrowthIteration / 4.0, 0.0f);
-        m_distance = m_perTreeGrowthIteration * 2.0f;
+        switch (pipeline.m_behaviourType) {
+            case BehaviourType::GeneralTree:
+                m_focusPoint = glm::vec3(0.0f, pipeline.m_iterations / 4.0, 0.0f);
+                m_distance = pipeline.m_iterations * 2.0f;
+                break;
+            case BehaviourType::LSystem:
+                m_focusPoint = glm::vec3(0.0f, 40, 0.0f);
+                m_distance = 80.0f * 2.0f;
+                break;
+            case BehaviourType::SpaceColonization:
+                break;
+        }
     }
-    auto cameraEntity = m_cameraEntity.Get();
-    if (cameraEntity.IsNull()) {
-        m_pitchAngle = m_pitchAngleStart;
-        m_turnAngle = m_remainingInstanceAmount = 0;
-        UNIENGINE_ERROR("Camera entity missing!");
-        return false;
-    }
+    auto cameraEntity = pipeline.GetOwner();
+    assert(cameraEntity.IsValid());
 
-    auto height = m_distance * glm::sin(glm::radians((float) m_pitchAngle));
-    auto groundDistance =
-            m_distance * glm::cos(glm::radians((float) m_pitchAngle));
-    glm::vec3 cameraPosition =
-            glm::vec3(glm::sin(glm::radians((float) m_turnAngle)) * groundDistance,
-                      height,
-                      glm::cos(glm::radians((float) m_turnAngle)) * groundDistance);
-    m_cameraPosition = cameraPosition + m_focusPoint;
-    m_cameraRotation = glm::quatLookAt(glm::normalize(-cameraPosition), glm::vec3(0, 1, 0));
-
-    GlobalTransform cameraGlobalTransform;
-    cameraGlobalTransform.SetPosition(m_cameraPosition);
-    cameraGlobalTransform.SetRotation(m_cameraRotation);
-    cameraEntity.SetDataComponent(cameraGlobalTransform);
-
-    auto camera = cameraEntity.GetOrSetPrivateComponent<Camera>().lock();
-    camera->m_fov = m_fov;
+    auto camera = cameraEntity.GetOrSetPrivateComponent<RayTracerCamera>().lock();
+    camera->SetFov(m_fov);
     camera->m_allowAutoResize = false;
-    camera->m_farDistance = m_cameraMax;
-    camera->m_nearDistance = m_cameraMin;
-    camera->ResizeResolution(m_resolution.x, m_resolution.y);
-    camera->m_clearColor = m_backgroundColor;
-    camera->m_useClearColor = m_useClearColor;
+    camera->m_frameSize = m_resolution;
+    //camera->m_clearColor = m_backgroundColor;
+    //camera->m_useClearColor = m_useClearColor;
 
     auto depthCamera = cameraEntity.GetOrSetPrivateComponent<DepthCamera>().lock();
-    depthCamera->m_useCameraResolution = true;
-
-    m_branchCaptureCamera->m_fov = m_fov;
-    m_branchCaptureCamera->m_allowAutoResize = false;
-    m_branchCaptureCamera->m_farDistance = m_cameraMax;
-    m_branchCaptureCamera->m_nearDistance = m_cameraMin;
-    m_branchCaptureCamera->ResizeResolution(m_resolution.x, m_resolution.y);
-    m_branchCaptureCamera->m_clearColor = m_backgroundColor;
-    m_branchCaptureCamera->m_useClearColor = m_useClearColor;
+    depthCamera->m_resX = m_resolution.x;
+    depthCamera->m_resY = m_resolution.y;
 
     if (cameraEntity.HasPrivateComponent<PostProcessing>()) {
         auto postProcessing = cameraEntity.GetOrSetPrivateComponent<PostProcessing>().lock();
         postProcessing->SetEnabled(false);
     }
-    return true;
-}
-
-void MultipleAngleCapture::RenderBranchCapture() {
-    auto internodeQuery = Application::GetLayer<PlantLayer>()->m_internodesQuery;
-    /*
-    Entities::ForEach<InternodeColor, InternodeInfo>(
-            Entities::GetCurrentScene(), JobManager::PrimaryWorkers(),
-            internodeQuery,
-            [=](int i, Entity entity, InternodeColor &internodeRenderColor,
-                InternodeInfo &internodeInfo) {
-                internodeRenderColor.m_value = glm::vec4(((entity.GetIndex() / 4096) % 64) / 64.0f,
-                                                         ((entity.GetIndex() / 64) % 64) / 64.0f,
-                                                         (entity.GetIndex() % 64) / 64.0f, 1.0f);
-            },
-            true);
-    */
-    Entities::ForEach<GlobalTransform, InternodeCylinder, InternodeInfo>(
-            Entities::GetCurrentScene(), Jobs::Workers(),
-            internodeQuery,
-            [=](int i, Entity entity, GlobalTransform &ltw, InternodeCylinder &c,
-                InternodeInfo &internodeInfo) {
-                glm::vec3 scale;
-                glm::quat rotation;
-                glm::vec3 translation;
-                glm::vec3 skew;
-                glm::vec4 perspective;
-                glm::decompose(ltw.m_value, scale, rotation, translation, skew,
-                               perspective);
-                const auto direction = glm::normalize(rotation * glm::vec3(0, 0, -1));
-                const glm::vec3 position2 =
-                        translation + internodeInfo.m_length * direction;
-                rotation = glm::quatLookAt(
-                        direction, glm::vec3(direction.y, direction.z, direction.x));
-                rotation *= glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f));
-                const glm::mat4 rotationTransform = glm::mat4_cast(rotation);
-                c.m_value =
-                        glm::translate((translation + position2) / 2.0f) *
-                        rotationTransform *
-                        glm::scale(glm::vec3(
-                                m_branchWidth,
-                                glm::distance(translation, position2) / 2.0f,
-                                m_branchWidth));
-
-            },
-            true);
-
-    m_branchCaptureCamera->Clear();
-    std::vector<InternodeCylinder> branchCylinders;
-    internodeQuery.ToComponentDataArray<InternodeCylinder>(Entities::GetCurrentScene(),
-                                                           branchCylinders);
-    std::vector<InternodeColor> branchColors;
-    internodeQuery.ToComponentDataArray<InternodeColor>(Entities::GetCurrentScene(),
-                                                        branchColors);
-    std::vector<GlobalTransform> branchGlobalTransforms;
-    internodeQuery.ToComponentDataArray<GlobalTransform>(Entities::GetCurrentScene(),
-                                                         branchGlobalTransforms);
-    Graphics::DrawGizmoMeshInstancedColored(
-            DefaultResources::Primitives::Cylinder, m_branchCaptureCamera,
-            m_cameraPosition,
-            m_cameraRotation,
-            *reinterpret_cast<std::vector<glm::vec4> *>(&branchColors),
-            *reinterpret_cast<std::vector<glm::mat4> *>(&branchCylinders),
-            glm::mat4(1.0f), 1.0f);
-
-    Graphics::DrawGizmoMeshInstanced(
-            DefaultResources::Primitives::Sphere, m_branchCaptureCamera,
-            m_cameraPosition,
-            m_cameraRotation,
-            glm::vec4(1.0f),
-            *reinterpret_cast<std::vector<glm::mat4> *>(&branchGlobalTransforms),
-            glm::mat4(1.0f), m_nodeSize);
 }
 
 void MultipleAngleCapture::OnCreate() {
-    m_branchCaptureCamera = Serialization::ProduceSerializable<Camera>();
-    m_branchCaptureCamera->OnCreate();
 }
 
 void MultipleAngleCapture::ExportGraph(const std::shared_ptr<IPlantBehaviour> &behaviour,
@@ -431,8 +355,8 @@ void MultipleAngleCapture::ExportGraph(const std::shared_ptr<IPlantBehaviour> &b
         std::vector<std::vector<std::pair<int, Entity>>> internodes;
         internodes.resize(128);
         internodes[0].emplace_back(-1, m_currentGrowingTree);
-        m_currentGrowingTree.ForEachChild([&](const std::shared_ptr<Scene>& scene, Entity child){
-            if(!behaviour->InternodeCheck(child)) return;
+        m_currentGrowingTree.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
+            if (!behaviour->InternodeCheck(child)) return;
             behaviour->InternodeGraphWalkerRootToEnd(child,
                                                      [&](Entity parent, Entity child) {
                                                          auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
@@ -549,8 +473,8 @@ void MultipleAngleCapture::ExportCSV(const std::shared_ptr<IPlantBehaviour> &beh
         std::string output;
         std::vector<std::vector<std::pair<int, Entity>>> internodes;
         internodes.resize(128);
-        m_currentGrowingTree.ForEachChild([&](const std::shared_ptr<Scene>& scene, Entity child){
-            if(!behaviour->InternodeCheck(child)) return;
+        m_currentGrowingTree.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
+            if (!behaviour->InternodeCheck(child)) return;
             internodes[0].emplace_back(-1, child);
             behaviour->InternodeGraphWalkerRootToEnd(child,
                                                      [&](Entity parent, Entity child) {
@@ -561,10 +485,10 @@ void MultipleAngleCapture::ExportCSV(const std::shared_ptr<IPlantBehaviour> &beh
                                                                  child);
                                                      });
         });
-        output +="in_id,in_pos_x,in_pos_y,in_pos_z,in_front_x,in_front_y,in_front_z,in_up_x,in_up_y,in_up_z,in_thickness,in_length,in_root_distance,in_chain_distance,in_distance_to_branch_start,in_level,in_flush_age,in_proximity,in_node_count,in_quat_x,in_quat_y,in_quat_z,in_quat_w,";
-        output +="out0_id,out0_pos_x,out0_pos_y,out0_pos_z,out0_front_x,out0_front_y,out0_front_z,out0_up_x,out0_up_y,out0_up_z,out0_thickness,out0_length,out0_root_distance,out0_chain_distance,out0_distance_to_branch_start,out0_level,out0_flush_age,out0_proximity,out0_node_count,out0_quat_x,out0_quat_y,out0_quat_z,out0_quat_w,";
-        output +="out1_id,out1_pos_x,out1_pos_y,out1_pos_z,out1_front_x,out1_front_y,out1_front_z,out1_up_x,out1_up_y,out1_up_z,out1_thickness,out1_length,out1_root_distance,out1_chain_distance,out1_distance_to_branch_start,out1_level,out1_flush_age,out1_proximity,out1_node_count,out1_quat_x,out1_quat_y,out1_quat_z,out1_quat_w,";
-        output +="out2_id,out2_pos_x,out2_pos_y,out2_pos_z,out2_front_x,out2_front_y,out2_front_z,out2_up_x,out2_up_y,out2_up_z,out2_thickness,out2_length,out2_root_distance,out2_chain_distance,out2_distance_to_branch_start,out2_level,out2_flush_age,out2_proximity,out2_node_count,out2_quat_x,out2_quat_y,out2_quat_z,out2_quat_w\n";
+        output += "in_id,in_pos_x,in_pos_y,in_pos_z,in_front_x,in_front_y,in_front_z,in_up_x,in_up_y,in_up_z,in_thickness,in_length,in_root_distance,in_chain_distance,in_distance_to_branch_start,in_level,in_flush_age,in_proximity,in_node_count,in_quat_x,in_quat_y,in_quat_z,in_quat_w,";
+        output += "out0_id,out0_pos_x,out0_pos_y,out0_pos_z,out0_front_x,out0_front_y,out0_front_z,out0_up_x,out0_up_y,out0_up_z,out0_thickness,out0_length,out0_root_distance,out0_chain_distance,out0_distance_to_branch_start,out0_level,out0_flush_age,out0_proximity,out0_node_count,out0_quat_x,out0_quat_y,out0_quat_z,out0_quat_w,";
+        output += "out1_id,out1_pos_x,out1_pos_y,out1_pos_z,out1_front_x,out1_front_y,out1_front_z,out1_up_x,out1_up_y,out1_up_z,out1_thickness,out1_length,out1_root_distance,out1_chain_distance,out1_distance_to_branch_start,out1_level,out1_flush_age,out1_proximity,out1_node_count,out1_quat_x,out1_quat_y,out1_quat_z,out1_quat_w,";
+        output += "out2_id,out2_pos_x,out2_pos_y,out2_pos_z,out2_front_x,out2_front_y,out2_front_z,out2_up_x,out2_up_y,out2_up_z,out2_thickness,out2_length,out2_root_distance,out2_chain_distance,out2_distance_to_branch_start,out2_level,out2_flush_age,out2_proximity,out2_node_count,out2_quat_x,out2_quat_y,out2_quat_z,out2_quat_w\n";
         int layerIndex = 0;
         for (const auto &layer: internodes) {
             if (layer.empty()) break;
@@ -689,22 +613,12 @@ void MultipleAngleCapture::ExportCSV(const std::shared_ptr<IPlantBehaviour> &beh
     }
 }
 
-void MultipleAngleCapture::Start() {
-    if (!m_cameraEntity.Get().IsNull()) {
-        m_cameraEntity.Get().GetOrSetPrivateComponent<DepthCamera>();
-        m_projections.clear();
-        m_views.clear();
-        m_names.clear();
-        m_cameraModels.clear();
-        m_treeModels.clear();
-        m_pitchAngle = m_pitchAngleStart;
-        m_turnAngle = 0;
-        m_remainingInstanceAmount = m_generationAmount;
-    }
-}
-
-bool MultipleAngleCapture::Busy() const {
-    return m_remainingInstanceAmount != 0;
+void MultipleAngleCapture::Start(AutoTreeGenerationPipeline &pipeline) {
+    m_projections.clear();
+    m_views.clear();
+    m_names.clear();
+    m_cameraModels.clear();
+    m_treeModels.clear();
 }
 
 void MultipleAngleCapture::DisableAllExport() {

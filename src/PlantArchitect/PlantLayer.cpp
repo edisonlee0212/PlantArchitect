@@ -481,9 +481,8 @@ void PlantLayer::OnCreate() {
     ClassRegistry::RegisterAsset<SpaceColonizationParameters>("SpaceColonizationParameters", "scparams");
     ClassRegistry::RegisterDataComponent<SpaceColonizationIncentive>("SpaceColonizationIncentive");
 
-    ClassRegistry::RegisterAsset<LString>("LString", ".lstring");
+    ClassRegistry::RegisterAsset<LSystemString>("LSystemString", ".lstring");
     ClassRegistry::RegisterDataComponent<LSystemTag>("LSystemTag");
-    ClassRegistry::RegisterAsset<LSystemParameters>("LSystemParameters", ".lparams");
 
     ClassRegistry::RegisterSerializable<EmptyInternodeResource>("EmptyInternodeResource");
     ClassRegistry::RegisterSerializable<DefaultInternodeResource>("DefaultInternodeResource");
@@ -1121,11 +1120,6 @@ void PlantLayer::RenderBranchCylinders() {
                 glm::mat4(1.0f), 1.0f);
 }
 
-std::shared_ptr<IPlantBehaviour> PlantLayer::GetPlantBehaviour(const std::string &typeName) {
-    for (const auto &i: m_plantBehaviours) {
-        if (i->GetTypeName() == typeName) return i;
-    }
-}
 
 
 #pragma endregion

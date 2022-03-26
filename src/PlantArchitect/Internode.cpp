@@ -57,9 +57,9 @@ void Internode::CollectInternodes(std::vector<Entity> &results) {
     CollectInternodesHelper(GetOwner(), results);
 }
 
-void Internode::ExportLString(const std::shared_ptr<LString> &lString) {
+void Internode::ExportLString(const std::shared_ptr<LSystemString> &lString) {
     int index = 0;
-    ExportLSystemCommandsHelper(index, GetOwner(), lString->commands);
+    ExportLSystemCommandsHelper(index, GetOwner(), lString->m_commands);
 }
 
 void Internode::ExportLSystemCommandsHelper(int &index, const Entity &target, std::vector<LSystemCommand> &commands) {
@@ -112,12 +112,12 @@ void Internode::ExportLSystemCommandsHelper(int &index, const Entity &target, st
 
 void Internode::OnInspect() {
     if (ImGui::Button("Generate L-String")) {
-        auto lString = AssetManager::CreateAsset<LString>();
+        auto lString = AssetManager::CreateAsset<LSystemString>();
         AssetManager::Share(lString);
         ExportLString(lString);
     }
     FileUtils::SaveFile("Export L-String", "L-System string", {".lstring"}, [&](const std::filesystem::path &path) {
-        auto lString = AssetManager::CreateAsset<LString>();
+        auto lString = AssetManager::CreateAsset<LSystemString>();
         ExportLString(lString);
         lString->Export(path);
     }, false);

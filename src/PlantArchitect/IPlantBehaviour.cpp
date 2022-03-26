@@ -300,6 +300,7 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
                 skinnedMesh
                         ->m_boneAnimatorIndices = boneIndicesLists[plantIndex];
                 skinnedMeshRenderer->m_skinnedMesh.Set<SkinnedMesh>(skinnedMesh);
+                skinnedMeshRenderer->GetBoneMatrices();
             }
 #pragma endregion
         }
@@ -348,6 +349,7 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
                 skinnedMesh
                         ->m_boneAnimatorIndices = boneIndicesLists[plantIndex];
                 skinnedMeshRenderer->m_skinnedMesh.Set<SkinnedMesh>(skinnedMesh);
+                skinnedMeshRenderer->GetBoneMatrices();
             }
 #pragma endregion
         }

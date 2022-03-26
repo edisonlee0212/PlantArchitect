@@ -145,7 +145,7 @@ endif ()
 # Example program
 # ------------------------------------------------------------------
 add_executable(Application
-        "src/app/PlantArchitect.cpp")
+        "src/app/Application.cpp")
 target_precompile_headers(Application
         PRIVATE
         ${PLANT_ARCHITECT_PCH_LOCAL}
@@ -166,55 +166,6 @@ if (BUILD_RAY_TRACER_FACILITY)
             )
 else ()
     target_link_libraries(Application
-            PlantArchitect
-            Scripts
-            )
-endif ()
-add_executable(TreeDataCapturePipeline
-        "src/app/TreeDataCapturePipeline.cpp"
-        )
-target_precompile_headers(TreeDataCapturePipeline
-        PRIVATE
-        ${PLANT_ARCHITECT_PCH_LOCAL}
-        )
-if (BUILD_RAY_TRACER_FACILITY)
-    target_link_libraries(TreeDataCapturePipeline
-            RayTracerFacility
-            PlantArchitect
-            Scripts
-            )
-    target_compile_definitions(TreeDataCapturePipeline
-            PRIVATE
-            RAYTRACERFACILITY
-            )
-else ()
-    target_link_libraries(TreeDataCapturePipeline
-            uniengine
-            PlantArchitect
-            Scripts
-            )
-endif ()
-
-add_executable(GANTree
-        "src/app/GANTree.cpp"
-        )
-target_precompile_headers(GANTree
-        PRIVATE
-        ${PLANT_ARCHITECT_PCH_LOCAL}
-        )
-if (BUILD_RAY_TRACER_FACILITY)
-    target_link_libraries(GANTree
-            RayTracerFacility
-            PlantArchitect
-            Scripts
-            )
-    target_compile_definitions(GANTree
-            PRIVATE
-            RAYTRACERFACILITY
-            )
-else ()
-    target_link_libraries(GANTree
-            uniengine
             PlantArchitect
             Scripts
             )

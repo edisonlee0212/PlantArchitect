@@ -979,7 +979,7 @@ void GeneralTreeParameters::Deserialize(const YAML::Node &in) {
 }
 
 Entity GeneralTreeParameters::InstantiateTree() {
-    return std::dynamic_pointer_cast<GeneralTreeBehaviour>(Application::GetLayer<PlantLayer>()->GetPlantBehaviour("GeneralTreeBehaviour"))->NewPlant(AssetManager::Get(GetHandle()), Transform());
+    return Application::GetLayer<PlantLayer>()->GetPlantBehaviour<GeneralTreeBehaviour>()->NewPlant(AssetManager::Get(GetHandle()), Transform());
 }
 
 void InternodeStatus::OnInspect() {

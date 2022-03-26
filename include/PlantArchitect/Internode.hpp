@@ -7,7 +7,7 @@
 
 using namespace UniEngine;
 namespace PlantArchitect {
-    struct LString;
+    struct LSystemString;
     enum class PLANT_ARCHITECT_API BudStatus {
         Sleeping,
         Flushing,
@@ -113,7 +113,7 @@ namespace PlantArchitect {
         /*
          * Parse the structure of the internodes and set up commands.
          */
-        void ExportLString(const std::shared_ptr<LString> &lString);
+        void ExportLString(const std::shared_ptr<LSystemString> &lString);
 
         void OnInspect() override;
 

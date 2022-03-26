@@ -8,17 +8,6 @@ namespace PlantArchitect {
     struct PLANT_ARCHITECT_API LSystemTag : public IDataComponent {
     };
 
-    class PLANT_ARCHITECT_API LSystemParameters : public IPlantDescriptor {
-    public:
-        Entity InstantiateTree() override;
-        AssetRef m_lString;
-        float m_internodeLength = 1.0f;
-        float m_thicknessFactor = 0.5f;
-        float m_endNodeThickness = 0.02f;
-
-        void OnInspect() override;
-    };
-
     enum class PLANT_ARCHITECT_API LSystemCommandType {
         Unknown,
         /**
@@ -64,18 +53,24 @@ namespace PlantArchitect {
         float m_value = 0.0f;
     };
 
-    class PLANT_ARCHITECT_API LString : public IAsset {
+    class PLANT_ARCHITECT_API LSystemString : public IPlantDescriptor {
     protected:
         bool SaveInternal(const std::filesystem::path &path) override;
 
         bool LoadInternal(const std::filesystem::path &path) override;
 
     public:
+        float m_internodeLength = 1.0f;
+        float m_thicknessFactor = 0.5f;
+        float m_endNodeThickness = 0.02f;
+
         void ParseLString(const std::string &string);
 
         void OnInspect() override;
 
-        std::vector<LSystemCommand> commands;
+        Entity InstantiateTree() override;
+
+        std::vector<LSystemCommand> m_commands;
 
     };
 
@@ -91,7 +86,7 @@ namespace PlantArchitect {
         bool InternalBranchCheck(const Entity &target) override;
 
     public:
-        Entity FormPlant(const std::shared_ptr<LString> &lString, AssetRef descriptor);
+        Entity NewPlant(AssetRef descriptor, const Transform &transform);
 
         void OnInspect() override;
 
