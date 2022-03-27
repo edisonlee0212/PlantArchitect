@@ -478,7 +478,7 @@ void PlantLayer::OnCreate() {
     ClassRegistry::RegisterPrivateComponent<InternodeWaterFeeder>("InternodeWaterFeeder");
 
     ClassRegistry::RegisterDataComponent<SpaceColonizationTag>("SpaceColonizationTag");
-    ClassRegistry::RegisterAsset<SpaceColonizationParameters>("SpaceColonizationParameters", "scparams");
+    ClassRegistry::RegisterAsset<SpaceColonizationParameters>("SpaceColonizationParameters", ".scparams");
     ClassRegistry::RegisterDataComponent<SpaceColonizationIncentive>("SpaceColonizationIncentive");
 
     ClassRegistry::RegisterAsset<LSystemString>("LSystemString", ".lstring");

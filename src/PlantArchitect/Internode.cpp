@@ -181,6 +181,24 @@ void Internode::OnDestroy() {
     m_resource.reset();
 }
 
+Bound Internode::CalculateChildrenBound() {
+    std::vector<Entity> internodes;
+    CollectInternodes(internodes);
+    Bound retVal;
+    retVal.m_max = glm::vec3(-99999.0f);
+    retVal.m_min = glm::vec3(99999.0f);
+    for(const auto& i : internodes){
+        auto position = i.GetDataComponent<GlobalTransform>().GetPosition();
+        retVal.m_min.x = glm::min(retVal.m_min.x, position.x);
+        retVal.m_min.y = glm::min(retVal.m_min.y, position.y);
+        retVal.m_min.z = glm::min(retVal.m_min.z, position.z);
+        retVal.m_max.x = glm::max(retVal.m_max.x, position.x);
+        retVal.m_max.y = glm::max(retVal.m_max.y, position.y);
+        retVal.m_max.z = glm::max(retVal.m_max.z, position.z);
+    }
+    return retVal;
+}
+
 void Bud::OnInspect() {
     ImGui::Text("Flush prob: %.3f", m_flushProbability);
     switch (m_status) {

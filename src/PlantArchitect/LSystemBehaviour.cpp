@@ -6,6 +6,7 @@
 #include "PlantLayer.hpp"
 #include "EmptyInternodeResource.hpp"
 #include "TransformLayer.hpp"
+#include "DefaultInternodePhyllotaxis.hpp"
 
 using namespace PlantArchitect;
 
@@ -70,6 +71,7 @@ Entity LSystemBehaviour::NewPlant(AssetRef descriptor, const Transform &transfor
                         //If this is the first push in the string, we create the root internode.
                         //The node creation is handled by the CreateInternode() function. The internode creation is performed in a factory pattern.
                         root = CreateRoot(descriptor, rootInternode, rootBranch);
+                        root.GetOrSetPrivateComponent<Root>().lock()->m_foliagePhyllotaxis = AssetManager::CreateAsset<DefaultInternodePhyllotaxis>();
                         internode = rootInternode;
                         rootExists = true;
                     }

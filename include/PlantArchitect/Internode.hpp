@@ -124,6 +124,8 @@ namespace PlantArchitect {
 
         void Serialize(YAML::Emitter &out) override;
 
+        [[nodiscard]] Bound CalculateChildrenBound();
+
         void Deserialize(const YAML::Node &in) override;
     };
 

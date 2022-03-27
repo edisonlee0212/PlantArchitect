@@ -21,8 +21,10 @@ namespace Scripts {
 
     class AutoTreeGenerationPipeline : public IPrivateComponent {
         std::shared_ptr<IPlantBehaviour> m_currentInternodeBehaviour;
-
     public:
+        int m_startIndex = 0;
+        std::string m_prefix;
+        Entity m_currentGrowingTree;
         BehaviourType m_behaviourType = BehaviourType::GeneralTree;
         AssetRef m_currentUsingDescriptor;
         bool m_busy = false;
@@ -46,9 +48,9 @@ namespace Scripts {
     class IAutoTreeGenerationPipelineBehaviour : public IAsset{
         friend class AutoTreeGenerationPipeline;
     public:
-        Entity m_currentGrowingTree;
-        virtual void Start(AutoTreeGenerationPipeline& pipeline);
+        virtual void OnStart(AutoTreeGenerationPipeline& pipeline);
         virtual void OnBeforeGrowth(AutoTreeGenerationPipeline& pipeline);
         virtual void OnAfterGrowth(AutoTreeGenerationPipeline& pipeline);
+        virtual void OnEnd(AutoTreeGenerationPipeline& pipeline);
     };
 }
