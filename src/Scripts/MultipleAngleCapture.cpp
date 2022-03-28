@@ -9,11 +9,14 @@
 #include "AssetManager.hpp"
 #include "LSystemBehaviour.hpp"
 #include "IVolume.hpp"
+#ifdef RAYTRACERFACILITY
 #include "RayTracerCamera.hpp"
 #include "RayTracerLayer.hpp"
+using namespace RayTracerFacility;
+#endif
 #include "TransformLayer.hpp"
 
-using namespace RayTracerFacility;
+
 using namespace Scripts;
 
 void MultipleAngleCapture::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) {
@@ -37,7 +40,9 @@ void MultipleAngleCapture::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) 
 
 void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
     auto behaviour = pipeline.GetBehaviour();
+#ifdef RAYTRACERFACILITY
     auto camera = pipeline.GetOwner().GetOrSetPrivateComponent<RayTracerCamera>().lock();
+#endif
     auto internodeLayer = Application::GetLayer<PlantLayer>();
     auto behaviourType = pipeline.GetBehaviourType();
     Entity rootInternode;
@@ -132,6 +137,26 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
             }
         }
     }
+    if (m_exportDepth) {
+        std::filesystem::create_directories(depthFolder);
+        auto cameraEntity = pipeline.GetOwner();
+        for (int turnAngle = m_turnAngleStart; turnAngle < m_turnAngleEnd; turnAngle += m_turnAngleStep) {
+            for (int pitchAngle = m_pitchAngleStart;
+                 pitchAngle < m_pitchAngleEnd; pitchAngle += m_pitchAngleStep) {
+                auto anglePrefix = std::to_string(pitchAngle) + "_" +
+                                   std::to_string(turnAngle);
+                auto cameraGlobalTransform = TransformCamera(plantBound, turnAngle, pitchAngle);
+                cameraEntity.SetDataComponent(cameraGlobalTransform);
+                Application::GetLayer<TransformLayer>()->CalculateTransformGraphs(
+                        Entities::GetCurrentScene());
+                auto depthCamera = pipeline.GetOwner().GetOrSetPrivateComponent<DepthCamera>().lock();
+                depthCamera->Render();
+                depthCamera->m_colorTexture->SetPathAndSave(
+                        depthFolder / (pipeline.m_prefix + "_" + anglePrefix + "_depth.png"));
+            }
+        }
+    }
+#ifdef RAYTRACERFACILITY
     if (m_exportImage) {
         std::filesystem::create_directories(imagesFolder);
         auto cameraEntity = pipeline.GetOwner();
@@ -151,25 +176,6 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
                 rayTracerCamera->Render(m_rayProperties);
                 rayTracerCamera->m_colorTexture->Export(
                         imagesFolder / (pipeline.m_prefix + "_" + anglePrefix + "_rgb.png"));
-            }
-        }
-    }
-    if (m_exportDepth) {
-        std::filesystem::create_directories(depthFolder);
-        auto cameraEntity = pipeline.GetOwner();
-        for (int turnAngle = m_turnAngleStart; turnAngle < m_turnAngleEnd; turnAngle += m_turnAngleStep) {
-            for (int pitchAngle = m_pitchAngleStart;
-                 pitchAngle < m_pitchAngleEnd; pitchAngle += m_pitchAngleStep) {
-                auto anglePrefix = std::to_string(pitchAngle) + "_" +
-                                   std::to_string(turnAngle);
-                auto cameraGlobalTransform = TransformCamera(plantBound, turnAngle, pitchAngle);
-                cameraEntity.SetDataComponent(cameraGlobalTransform);
-                Application::GetLayer<TransformLayer>()->CalculateTransformGraphs(
-                        Entities::GetCurrentScene());
-                auto depthCamera = pipeline.GetOwner().GetOrSetPrivateComponent<DepthCamera>().lock();
-                depthCamera->Render();
-                depthCamera->m_colorTexture->SetPathAndSave(
-                        depthFolder / (pipeline.m_prefix + "_" + anglePrefix + "_depth.png"));
             }
         }
     }
@@ -194,6 +200,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
             }
         }
     }
+#endif
 #pragma endregion
     pipeline.m_status = AutoTreeGenerationPipelineStatus::Idle;
 }
@@ -274,12 +281,12 @@ void MultipleAngleCapture::OnInspect() {
 void MultipleAngleCapture::SetUpCamera(AutoTreeGenerationPipeline &pipeline) {
     auto cameraEntity = pipeline.GetOwner();
     assert(cameraEntity.IsValid());
-
+#ifdef RAYTRACERFACILITY
     auto camera = cameraEntity.GetOrSetPrivateComponent<RayTracerCamera>().lock();
     camera->SetFov(m_fov);
     camera->m_allowAutoResize = false;
     camera->m_frameSize = m_resolution;
-
+#endif
     auto depthCamera = cameraEntity.GetOrSetPrivateComponent<DepthCamera>().lock();
     depthCamera->m_resX = m_resolution.x;
     depthCamera->m_resY = m_resolution.y;
@@ -566,13 +573,14 @@ MultipleAngleCapture::ExportCSV(AutoTreeGenerationPipeline &pipeline, const std:
 }
 
 void MultipleAngleCapture::OnStart(AutoTreeGenerationPipeline &pipeline) {
+#ifdef RAYTRACERFACILITY
     auto &environment = Application::GetLayer<RayTracerLayer>()->m_environmentProperties;
     environment.m_environmentalLightingType = EnvironmentalLightingType::SingleLightSource;
     environment.m_sunDirection = glm::quat(glm::radians(glm::vec3(60, 160, 0))) * glm::vec3(0, 0, -1);
     environment.m_lightSize = m_lightSize;
     environment.m_ambientLightIntensity = m_ambientLightIntensity;
     Entities::GetCurrentScene()->m_environmentSettings.m_ambientLightIntensity = m_envLightIntensity;
-
+#endif
 
     m_projections.clear();
     m_views.clear();
@@ -642,8 +650,10 @@ void MultipleAngleCapture::Serialize(YAML::Emitter &out) {
     m_foliagePhyllotaxis.Save("m_foliagePhyllotaxis", out);
 
     out << YAML::Key << "m_defaultBehaviourType" << YAML::Value << (unsigned)m_defaultBehaviourType;
+#ifdef RAYTRACERFACILITY
     out << YAML::Key << "m_rayProperties.m_samples" << YAML::Value << m_rayProperties.m_samples;
     out << YAML::Key << "m_rayProperties.m_bounces" << YAML::Value << m_rayProperties.m_bounces;
+#endif
     out << YAML::Key << "m_autoAdjustCamera" << YAML::Value << m_autoAdjustCamera;
     out << YAML::Key << "m_applyPhyllotaxis" << YAML::Value << m_applyPhyllotaxis;
     out << YAML::Key << "m_autoAdjustCamera" << YAML::Value << m_autoAdjustCamera;
@@ -683,9 +693,10 @@ void MultipleAngleCapture::Deserialize(const YAML::Node &in) {
 
 
     if(in["m_defaultBehaviourType"]) m_defaultBehaviourType = (BehaviourType)in["m_defaultBehaviourType"].as<unsigned>();
+#ifdef RAYTRACERFACILITY
     if(in["m_rayProperties.m_samples"]) m_rayProperties.m_samples = in["m_rayProperties.m_samples"].as<float>();
     if(in["m_rayProperties.m_bounces"]) m_rayProperties.m_bounces = in["m_applyPhyllotaxis.m_bounces"].as<float>();
-
+#endif
     if(in["m_autoAdjustCamera"]) m_autoAdjustCamera = in["m_autoAdjustCamera"].as<bool>();
     if(in["m_applyPhyllotaxis"]) m_applyPhyllotaxis = in["m_applyPhyllotaxis"].as<bool>();
     if(in["m_branchWidth"]) m_branchWidth = in["m_branchWidth"].as<float>();

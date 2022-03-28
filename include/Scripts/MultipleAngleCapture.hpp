@@ -1,10 +1,11 @@
 #pragma once
 #include <PlantLayer.hpp>
 #include <AutoTreeGenerationPipeline.hpp>
-
+#ifdef RAYTRACERFACILITY
 #include "RayTracerCamera.hpp"
 #include "RayTracerLayer.hpp"
 using namespace RayTracerFacility;
+#endif
 using namespace PlantArchitect;
 namespace Scripts {
     class MultipleAngleCapture : public IAutoTreeGenerationPipelineBehaviour {
@@ -23,7 +24,9 @@ namespace Scripts {
         AssetRef m_foliageTexture;
         AssetRef m_branchTexture;
         BehaviourType m_defaultBehaviourType = BehaviourType::GeneralTree;
+#ifdef RAYTRACERFACILITY
         RayProperties m_rayProperties = {1, 128};
+#endif
         AssetRef m_foliagePhyllotaxis;
         bool m_autoAdjustCamera = true;
         bool m_applyPhyllotaxis = false;
