@@ -92,8 +92,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
         rootInternode.GetOrSetPrivateComponent<Internode>().lock()->ExportLString(lString);
         //path here
         lString->Export(
-                lStringFolder /
-                (std::to_string(pipeline.m_generationAmount - pipeline.m_remainingInstanceAmount) +
+                lStringFolder / (pipeline.m_prefix + "_" + std::to_string(pipeline.m_generationAmount - pipeline.m_remainingInstanceAmount) +
                  ".lstring"));
     }
     if (m_exportMatrices) {
