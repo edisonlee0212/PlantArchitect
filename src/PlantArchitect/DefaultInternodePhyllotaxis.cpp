@@ -35,10 +35,16 @@ void DefaultInternodePhyllotaxis::OnInspect() {
     ImGui::DragFloat2("Leaf size", &m_leafSize.x, 0.01f);
 }
 void DefaultInternodePhyllotaxis::Serialize(YAML::Emitter &out) {
-
+    out << YAML::Key << "m_positionVariance" << YAML::Value << m_positionVariance;
+    out << YAML::Key << "m_randomRotation" << YAML::Value << m_randomRotation;
+    out << YAML::Key << "m_leafSize" << YAML::Value << m_leafSize;
+    out << YAML::Key << "m_leafCount" << YAML::Value << m_leafCount;
 }
 
 void DefaultInternodePhyllotaxis::Deserialize(const YAML::Node &in) {
-
+    if(in["m_positionVariance"]) m_positionVariance = in["m_positionVariance"].as<float>();
+    if(in["m_randomRotation"]) m_randomRotation = in["m_randomRotation"].as<float>();
+    if(in["m_leafSize"]) m_leafSize = in["m_leafSize"].as<glm::vec2>();
+    if(in["m_leafCount"]) m_leafCount = in["m_leafCount"].as<int>();
 }
 

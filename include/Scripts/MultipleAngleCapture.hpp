@@ -41,6 +41,7 @@ namespace Scripts {
         float m_fov = 60;
         float m_lightSize = 0.02f;
         float m_ambientLightIntensity = 0.1f;
+        float m_envLightIntensity = 1.0f;
         glm::ivec2 m_resolution = glm::ivec2(1024, 1024);
 
         //Options.

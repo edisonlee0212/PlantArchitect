@@ -197,6 +197,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
 #pragma endregion
     pipeline.m_status = AutoTreeGenerationPipelineStatus::Idle;
 }
+static const char *DefaultBehaviourTypes[]{"GeneralTree", "LSystem", "SpaceColonization"};
 
 void MultipleAngleCapture::OnInspect() {
     if (ImGui::Button("Instantiate Pipeline")) {
@@ -204,6 +205,15 @@ void MultipleAngleCapture::OnInspect() {
                                                                          "GANTree Dataset Pipeline");
         auto multipleAngleCapturePipeline = multipleAngleCapturePipelineEntity.GetOrSetPrivateComponent<AutoTreeGenerationPipeline>().lock();
         multipleAngleCapturePipeline->m_pipelineBehaviour = AssetManager::Get<MultipleAngleCapture>(GetHandle());
+        multipleAngleCapturePipeline->SetBehaviourType(m_defaultBehaviourType);
+    }
+    int behaviourType = (int) m_defaultBehaviourType;
+    if (ImGui::Combo(
+            "Plant behaviour type",
+            &behaviourType,
+            DefaultBehaviourTypes,
+            IM_ARRAYSIZE(DefaultBehaviourTypes))) {
+        m_defaultBehaviourType = (BehaviourType)behaviourType;
     }
     ImGui::Text("Current output folder: %s", m_currentExportFolder.string().c_str());
     FileUtils::OpenFolder("Choose output folder...", [&](const std::filesystem::path &path) {
@@ -254,6 +264,7 @@ void MultipleAngleCapture::OnInspect() {
             ImGui::ColorEdit3("Camera Clear Color", &m_backgroundColor.x);
             ImGui::DragFloat("Light Size", &m_lightSize, 0.001f);
             ImGui::DragFloat("Ambient light intensity", &m_ambientLightIntensity, 0.01f);
+            ImGui::DragFloat("Environment light intensity", &m_envLightIntensity, 0.01f);
             ImGui::TreePop();
         }
         if (m_exportBranchCapture) Application::GetLayer<PlantLayer>()->DrawColorModeSelectionMenu();
@@ -560,6 +571,7 @@ void MultipleAngleCapture::OnStart(AutoTreeGenerationPipeline &pipeline) {
     environment.m_sunDirection = glm::quat(glm::radians(glm::vec3(60, 160, 0))) * glm::vec3(0, 0, -1);
     environment.m_lightSize = m_lightSize;
     environment.m_ambientLightIntensity = m_ambientLightIntensity;
+    Entities::GetCurrentScene()->m_environmentSettings.m_ambientLightIntensity = m_envLightIntensity;
 
 
     m_projections.clear();
@@ -648,6 +660,7 @@ void MultipleAngleCapture::Serialize(YAML::Emitter &out) {
     out << YAML::Key << "m_fov" << YAML::Value << m_fov;
     out << YAML::Key << "m_lightSize" << YAML::Value << m_lightSize;
     out << YAML::Key << "m_ambientLightIntensity" << YAML::Value << m_ambientLightIntensity;
+    out << YAML::Key << "m_envLightIntensity" << YAML::Value << m_envLightIntensity;
     out << YAML::Key << "m_resolution" << YAML::Value << m_resolution;
     out << YAML::Key << "m_exportOBJ" << YAML::Value << m_exportOBJ;
     out << YAML::Key << "m_exportCSV" << YAML::Value << m_exportCSV;
@@ -663,11 +676,11 @@ void MultipleAngleCapture::Serialize(YAML::Emitter &out) {
     out << YAML::Key << "m_cameraMax" << YAML::Value << m_cameraMax;
 }
 
-
 void MultipleAngleCapture::Deserialize(const YAML::Node &in) {
     m_foliageTexture.Load("m_foliageTexture", in);
     m_branchTexture.Load("m_branchTexture", in);
     m_foliagePhyllotaxis.Load("m_foliagePhyllotaxis", in);
+
 
     if(in["m_defaultBehaviourType"]) m_defaultBehaviourType = (BehaviourType)in["m_defaultBehaviourType"].as<unsigned>();
     if(in["m_rayProperties.m_samples"]) m_rayProperties.m_samples = in["m_rayProperties.m_samples"].as<float>();
@@ -688,6 +701,7 @@ void MultipleAngleCapture::Deserialize(const YAML::Node &in) {
     if(in["m_fov"]) m_fov = in["m_fov"].as<float>();
     if(in["m_lightSize"]) m_lightSize = in["m_lightSize"].as<float>();
     if(in["m_ambientLightIntensity"]) m_ambientLightIntensity = in["m_ambientLightIntensity"].as<float>();
+    if(in["m_envLightIntensity"]) m_envLightIntensity = in["m_envLightIntensity"].as<float>();
     if(in["m_resolution"]) m_resolution = in["m_resolution"].as<glm::ivec2>();
     if(in["m_exportOBJ"]) m_exportOBJ = in["m_exportOBJ"].as<bool>();
     if(in["m_exportCSV"]) m_exportCSV = in["m_exportCSV"].as<bool>();
