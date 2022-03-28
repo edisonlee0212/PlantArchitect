@@ -91,7 +91,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
 
         rootInternode.GetOrSetPrivateComponent<Internode>().lock()->ExportLString(lString);
         //path here
-        lString->SetPathAndSave(
+        lString->Export(
                 lStringFolder /
                 (std::to_string(pipeline.m_generationAmount - pipeline.m_remainingInstanceAmount) +
                  ".lstring"));
@@ -151,7 +151,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
                         Entities::GetCurrentScene());
                 auto depthCamera = pipeline.GetOwner().GetOrSetPrivateComponent<DepthCamera>().lock();
                 depthCamera->Render();
-                depthCamera->m_colorTexture->SetPathAndSave(
+                depthCamera->m_colorTexture->Export(
                         depthFolder / (pipeline.m_prefix + "_" + anglePrefix + "_depth.png"));
             }
         }

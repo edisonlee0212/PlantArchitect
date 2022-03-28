@@ -95,7 +95,7 @@ void IAutoTreeGenerationPipelineBehaviour::OnStart(AutoTreeGenerationPipeline &p
 
 void AutoTreeGenerationPipeline::OnInspect() {
     ImGui::DragInt("Start Index", &m_startIndex);
-
+    ImGui::DragInt("Amount per descriptor", &m_generationAmount);
     auto behaviour = m_pipelineBehaviour.Get<IAutoTreeGenerationPipelineBehaviour>();
     if (!behaviour) {
         ImGui::Text("Behaviour missing!");
