@@ -41,6 +41,7 @@ namespace Scripts {
         void Serialize(YAML::Emitter &out) override;
         void Deserialize(const YAML::Node &in) override;
         BehaviourType GetBehaviourType();
+        void SetBehaviourType(BehaviourType type);
         std::shared_ptr<IPlantBehaviour> GetBehaviour();
         void CollectAssetRef(std::vector<AssetRef> &list) override;
     };

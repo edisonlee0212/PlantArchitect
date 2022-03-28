@@ -116,10 +116,7 @@ void AutoTreeGenerationPipeline::OnInspect() {
                 &behaviourType,
                 BehaviourTypes,
                 IM_ARRAYSIZE(BehaviourTypes))) {
-            m_behaviourType = (BehaviourType) behaviourType;
-            UpdateInternodeBehaviour();
-            m_currentUsingDescriptor.Clear();
-            m_descriptors.clear();
+            SetBehaviourType((BehaviourType)behaviourType);
         }
         ImGui::Text(("Loaded descriptors: " + std::to_string(m_descriptors.size())).c_str());
         FileUtils::OpenFolder("Collect descriptors", [&](const std::filesystem::path &path) {
@@ -209,6 +206,13 @@ void AutoTreeGenerationPipeline::Start() {
 
 BehaviourType AutoTreeGenerationPipeline::GetBehaviourType() {
     return m_behaviourType;
+}
+
+void AutoTreeGenerationPipeline::SetBehaviourType(BehaviourType type) {
+    m_behaviourType = type;
+    UpdateInternodeBehaviour();
+    m_currentUsingDescriptor.Clear();
+    m_descriptors.clear();
 }
 
 void IAutoTreeGenerationPipelineBehaviour::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) {

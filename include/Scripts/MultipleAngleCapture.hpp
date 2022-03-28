@@ -20,11 +20,13 @@ namespace Scripts {
         void ExportGraph(AutoTreeGenerationPipeline& pipeline, const std::shared_ptr<IPlantBehaviour>& behaviour, const std::filesystem::path& path);
         void ExportCSV(AutoTreeGenerationPipeline& pipeline, const std::shared_ptr<IPlantBehaviour>& behaviour, const std::filesystem::path& path);
     public:
+        AssetRef m_foliageTexture;
+        AssetRef m_branchTexture;
+        BehaviourType m_defaultBehaviourType = BehaviourType::GeneralTree;
         RayProperties m_rayProperties = {1, 128};
         AssetRef m_foliagePhyllotaxis;
         bool m_autoAdjustCamera = true;
         bool m_applyPhyllotaxis = false;
-        PrivateComponentRef m_volume;
         std::filesystem::path m_currentExportFolder = "Datasets/";
         float m_branchWidth = 0.04f;
         float m_nodeSize = 0.05f;
@@ -62,6 +64,12 @@ namespace Scripts {
         void OnBeforeGrowth(AutoTreeGenerationPipeline& pipeline) override;
         void OnAfterGrowth(AutoTreeGenerationPipeline& pipeline) override;
         void OnInspect() override;
+
+        void CollectAssetRef(std::vector<AssetRef> &list) override;
+
+        void Serialize(YAML::Emitter &out) override;
+
+        void Deserialize(const YAML::Node &in) override;
 
         void DisableAllExport();
     };
