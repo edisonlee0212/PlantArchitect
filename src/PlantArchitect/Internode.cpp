@@ -121,7 +121,9 @@ void Internode::OnInspect() {
         ExportLString(lString);
         lString->Export(path);
     }, false);
-
+    FileUtils::SaveFile("Export TreeIO file", "TreeIO format", {".tree"}, [&](const std::filesystem::path &path) {
+        ExportTreeIOTree(path);
+    }, false);
     if (ImGui::Button("Calculate L-String Indices")) {
         int index = 0;
         std::vector<LSystemCommand> commands;
@@ -197,6 +199,40 @@ Bound Internode::CalculateChildrenBound() {
         retVal.m_max.z = glm::max(retVal.m_max.z, position.z);
     }
     return retVal;
+}
+
+void Internode::ExportTreeIOTree(const std::filesystem::path &path) {
+    ArrayTree tree;
+    TreeNodeData rootNodeData;
+    auto gt = GetOwner().GetDataComponent<GlobalTransform>();
+    auto internodeInfo = GetOwner().GetDataComponent<InternodeInfo>();
+    rootNodeData.direction = gt.GetRotation() * glm::vec3(0, 0, -1);
+    rootNodeData.thickness = internodeInfo.m_thickness;
+    rootNodeData.pos = gt.GetPosition();
+
+    auto rootId = tree.addRoot(rootNodeData);
+    auto children = GetOwner().GetChildren();
+    for(const auto& child : children) {
+        ExportTreeIOTreeHelper(tree, child, rootId);
+    }
+    tree.saveTree(path.string());
+}
+
+void Internode::ExportTreeIOTreeHelper(ArrayTree& tree, const Entity &target, ArrayTreeT<TreeNodeData, TreeMetaData>::NodeIdT id) {
+    TreeNodeData nodeData;
+    auto gt = target.GetDataComponent<GlobalTransform>();
+    auto internodeInfo = target.GetDataComponent<InternodeInfo>();
+    nodeData.direction = gt.GetRotation() * glm::vec3(0, 0, -1);
+    nodeData.thickness = internodeInfo.m_thickness;
+    nodeData.pos = gt.GetPosition();
+
+
+
+    auto currentId = tree.addNodeChild(id, nodeData);
+    auto children = target.GetChildren();
+    for(const auto& child : children){
+        ExportTreeIOTreeHelper(tree, child, currentId);
+    }
 }
 
 void Bud::OnInspect() {

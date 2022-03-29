@@ -72,8 +72,10 @@ if (BUILD_RAY_TRACER_FACILITY)
             )
     set(PLANT_ARCHITECT_INCLUDES_LOCAL
             ${RAY_TRACER_FACILITY_INCLUDES}
+            ${TREEIO_INCLUDES}
             ${CMAKE_CURRENT_BINARY_DIR}
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/TreeIO
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/PlantModels
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeResources
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodePhyllotaxis
@@ -84,6 +86,9 @@ if (BUILD_RAY_TRACER_FACILITY)
             )
     target_link_libraries(PlantArchitect
             RayTracerFacility
+            csvpp
+            JSON
+            Base64
             )
 else ()
     target_compile_definitions(PlantArchitect
@@ -93,6 +98,7 @@ else ()
             )
     set(PLANT_ARCHITECT_INCLUDES_LOCAL
             ${UNIENGINE_INCLUDES}
+            ${TREEIO_INCLUDES}
             ${CMAKE_CURRENT_BINARY_DIR}
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/PlantModels
@@ -105,6 +111,9 @@ else ()
             )
     target_link_libraries(PlantArchitect
             uniengine
+            csvpp
+            JSON
+            Base64
             )
 endif ()
 target_include_directories(PlantArchitect
@@ -141,6 +150,10 @@ else ()
             PlantArchitect
             )
 endif ()
+target_compile_definitions(Scripts
+        PRIVATE
+        NOMINMAX
+        )
 # ------------------------------------------------------------------
 # Example program
 # ------------------------------------------------------------------
@@ -163,11 +176,16 @@ if (BUILD_RAY_TRACER_FACILITY)
     target_compile_definitions(Application
             PRIVATE
             RAYTRACERFACILITY
+            NOMINMAX
             )
 else ()
     target_link_libraries(Application
             PlantArchitect
             Scripts
+            )
+    target_compile_definitions(Application
+            PRIVATE
+            NOMINMAX
             )
 endif ()
 

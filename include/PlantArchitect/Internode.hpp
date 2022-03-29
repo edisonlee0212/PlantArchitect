@@ -4,7 +4,8 @@
 #include <plant_architect_export.h>
 #include <IInternodeResource.hpp>
 #include <PlantDataComponents.hpp>
-
+#include "TreeIO.hpp"
+using namespace treeio;
 using namespace UniEngine;
 namespace PlantArchitect {
     struct LSystemString;
@@ -39,6 +40,8 @@ namespace PlantArchitect {
         void ExportLSystemCommandsHelper(int &index, const Entity &target, std::vector<LSystemCommand> &commands);
 
         void CollectInternodesHelper(const Entity &target, std::vector<Entity> &results);
+
+        void ExportTreeIOTreeHelper(ArrayTree& tree, const Entity &target, ArrayTreeT<TreeNodeData, TreeMetaData>::NodeIdT id);
 
         friend class IPlantBehaviour;
         /**
@@ -114,6 +117,11 @@ namespace PlantArchitect {
          * Parse the structure of the internodes and set up commands.
          */
         void ExportLString(const std::shared_ptr<LSystemString> &lString);
+
+        /*
+         * Parse the structure of the internodes and set up commands.
+         */
+        void ExportTreeIOTree(const std::filesystem::path &path);
 
         void OnInspect() override;
 
