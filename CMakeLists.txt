@@ -6,7 +6,7 @@ project(
 )
 
 option(BUILD_RAY_TRACER_FACILITY "Build Ray Tracer Facility" ON)
-set(BUILD_RAY_TRACER_FACILITY ON)
+set(BUILD_RAY_TRACER_FACILITY OFF)
 include(GenerateExportHeader)
 
 # Set a default build type if none was specified
@@ -101,6 +101,7 @@ else ()
             ${TREEIO_INCLUDES}
             ${CMAKE_CURRENT_BINARY_DIR}
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/TreeIO
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/PlantModels
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeResources
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodePhyllotaxis
