@@ -8,8 +8,6 @@
 #include "PlantLayer.hpp"
 #include "AssetManager.hpp"
 #include "LSystemBehaviour.hpp"
-#include "IVolume.hpp"
-
 #ifdef RAYTRACERFACILITY
 #include "RayTracerCamera.hpp"
 #include "RayTracerLayer.hpp"

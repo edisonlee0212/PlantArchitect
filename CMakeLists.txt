@@ -146,15 +146,21 @@ if (BUILD_RAY_TRACER_FACILITY)
             RayTracerFacility
             PlantArchitect
             )
+    target_compile_definitions(Scripts
+            PRIVATE
+            NOMINMAX
+            RAYTRACERFACILITY
+            )
 else ()
     target_link_libraries(Scripts
             PlantArchitect
             )
+    target_compile_definitions(Scripts
+            PRIVATE
+            NOMINMAX
+            )
 endif ()
-target_compile_definitions(Scripts
-        PRIVATE
-        NOMINMAX
-        )
+
 # ------------------------------------------------------------------
 # Example program
 # ------------------------------------------------------------------
