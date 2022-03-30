@@ -30,7 +30,7 @@ namespace Scripts {
         AssetRef m_foliagePhyllotaxis;
         bool m_autoAdjustCamera = true;
         bool m_applyPhyllotaxis = false;
-        std::filesystem::path m_currentExportFolder = "Datasets/";
+        std::filesystem::path m_currentExportFolder;
         float m_branchWidth = 0.04f;
         float m_nodeSize = 0.05f;
         glm::vec3 m_focusPoint = glm::vec3(0, 3, 0);
@@ -48,7 +48,7 @@ namespace Scripts {
         glm::ivec2 m_resolution = glm::ivec2(1024, 1024);
 
         //Options.
-
+        bool m_exportTreeIOTrees = false;
         bool m_exportOBJ = false;
         bool m_exportCSV = true;
         bool m_exportGraph = false;
@@ -76,5 +76,6 @@ namespace Scripts {
         void Deserialize(const YAML::Node &in) override;
 
         void DisableAllExport();
+        ~MultipleAngleCapture();
     };
 }

@@ -9,12 +9,15 @@
 #include "AssetManager.hpp"
 #include "LSystemBehaviour.hpp"
 #include "IVolume.hpp"
+
 #ifdef RAYTRACERFACILITY
 #include "RayTracerCamera.hpp"
 #include "RayTracerLayer.hpp"
 using namespace RayTracerFacility;
 #endif
+
 #include "TransformLayer.hpp"
+#include "DefaultInternodePhyllotaxis.hpp"
 
 
 using namespace Scripts;
@@ -50,6 +53,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
     for (const auto &i: children) {
         if (i.HasPrivateComponent<Internode>()) rootInternode = i;
     }
+    auto treeIOFolder = m_currentExportFolder / "TreeIO";
     auto imagesFolder = m_currentExportFolder / "Image";
     auto objFolder = m_currentExportFolder / "Mesh";
     auto depthFolder = m_currentExportFolder / "Depth";
@@ -72,17 +76,17 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
     if (pipeline.m_behaviourType == BehaviourType::GeneralTree && m_exportGraph) {
         std::filesystem::create_directories(graphFolder);
         auto exportPath = graphFolder /
-                (pipeline.m_prefix + ".yml");
+                          (pipeline.m_prefix + ".yml");
         ExportGraph(pipeline, behaviour, exportPath);
     }
     if (pipeline.m_behaviourType == BehaviourType::GeneralTree && m_exportCSV) {
         std::filesystem::create_directories(csvFolder);
 
         std::filesystem::create_directories(csvFolder /
-                pipeline.m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetName());
+                                            pipeline.m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetName());
         auto exportPath = std::filesystem::absolute(csvFolder /
-                pipeline.m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetName() /
-                (pipeline.m_prefix + ".csv"));
+                                                    pipeline.m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetName() /
+                                                    (pipeline.m_prefix + ".csv"));
         ExportCSV(pipeline, behaviour, exportPath);
     }
     if (m_exportLString) {
@@ -92,8 +96,16 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
         rootInternode.GetOrSetPrivateComponent<Internode>().lock()->ExportLString(lString);
         //path here
         lString->Export(
-                lStringFolder / (pipeline.m_prefix + "_" + std::to_string(pipeline.m_generationAmount - pipeline.m_remainingInstanceAmount) +
-                 ".lstring"));
+                lStringFolder / (pipeline.m_prefix + "_" +
+                                 std::to_string(pipeline.m_generationAmount - pipeline.m_remainingInstanceAmount) +
+                                 ".lstring"));
+    }
+    if (m_exportTreeIOTrees) {
+        std::filesystem::create_directories(lStringFolder);
+        rootInternode.GetOrSetPrivateComponent<Internode>().lock()->ExportTreeIOTree(
+                treeIOFolder / (pipeline.m_prefix + "_" +
+                                std::to_string(pipeline.m_generationAmount - pipeline.m_remainingInstanceAmount) +
+                                ".tree"));
     }
     if (m_exportMatrices) {
         for (float turnAngle = m_turnAngleStart; turnAngle < m_turnAngleEnd; turnAngle += m_turnAngleStep) {
@@ -121,7 +133,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
             if (smr->m_skinnedMesh.Get<SkinnedMesh>() &&
                 !smr->m_skinnedMesh.Get<SkinnedMesh>()->UnsafeGetSkinnedVertices().empty()) {
                 auto exportPath = objFolder /
-                        (pipeline.m_prefix + "_foliage.obj");
+                                  (pipeline.m_prefix + "_foliage.obj");
                 UNIENGINE_LOG(exportPath.string());
                 smr->m_skinnedMesh.Get<SkinnedMesh>()->Export(exportPath);
             }
@@ -130,8 +142,8 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
             auto smr = branch.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
             if (smr->m_skinnedMesh.Get<SkinnedMesh>() &&
                 !smr->m_skinnedMesh.Get<SkinnedMesh>()->UnsafeGetSkinnedVertices().empty()) {
-                auto exportPath =  objFolder /
-                        (pipeline.m_prefix + "_branch.obj");
+                auto exportPath = objFolder /
+                                  (pipeline.m_prefix + "_branch.obj");
                 smr->m_skinnedMesh.Get<SkinnedMesh>()->Export(exportPath);
             }
         }
@@ -203,6 +215,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
 #pragma endregion
     pipeline.m_status = AutoTreeGenerationPipelineStatus::Idle;
 }
+
 static const char *DefaultBehaviourTypes[]{"GeneralTree", "LSystem", "SpaceColonization"};
 
 void MultipleAngleCapture::OnInspect() {
@@ -219,24 +232,23 @@ void MultipleAngleCapture::OnInspect() {
             &behaviourType,
             DefaultBehaviourTypes,
             IM_ARRAYSIZE(DefaultBehaviourTypes))) {
-        m_defaultBehaviourType = (BehaviourType)behaviourType;
+        m_defaultBehaviourType = (BehaviourType) behaviourType;
     }
     ImGui::Text("Current output folder: %s", m_currentExportFolder.string().c_str());
     FileUtils::OpenFolder("Choose output folder...", [&](const std::filesystem::path &path) {
         m_currentExportFolder = std::filesystem::absolute(path);
     }, false);
-    //Editor::DragAndDropButton(m_volume, "Volume", {"CubeVolume", "RadialBoundingVolume"}, false);
     if (ImGui::TreeNodeEx("Pipeline Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::DragFloat("Branch width", &m_branchWidth, 0.01f);
 
         ImGui::Checkbox("Override phyllotaxis", &m_applyPhyllotaxis);
         if (m_applyPhyllotaxis) {
-            Editor::DragAndDropButton(m_foliagePhyllotaxis, "Phyllotaxis",
-                                      {"EmptyInternodePhyllotaxis", "DefaultInternodePhyllotaxis"}, true);
+            Editor::DragAndDropButton<DefaultInternodePhyllotaxis>(m_foliagePhyllotaxis, "Phyllotaxis", true);
             Editor::DragAndDropButton<Texture2D>(m_foliageTexture, "Foliage texture", true);
             Editor::DragAndDropButton<Texture2D>(m_branchTexture, "Branch texture", true);
         }
         ImGui::Text("Data export:");
+        ImGui::Checkbox("Export TreeIO", &m_exportTreeIOTrees);
         ImGui::Checkbox("Export OBJ", &m_exportOBJ);
         ImGui::Checkbox("Export Graph", &m_exportGraph);
         ImGui::Checkbox("Export CSV", &m_exportCSV);
@@ -297,7 +309,6 @@ void MultipleAngleCapture::SetUpCamera(AutoTreeGenerationPipeline &pipeline) {
 }
 
 void MultipleAngleCapture::OnCreate() {
-    m_currentExportFolder = std::filesystem::absolute(ProjectManager::GetProjectPath().parent_path().parent_path() / "Datasets");
 }
 
 void MultipleAngleCapture::ExportGraph(AutoTreeGenerationPipeline &pipeline,
@@ -648,7 +659,7 @@ void MultipleAngleCapture::Serialize(YAML::Emitter &out) {
     m_branchTexture.Save("m_branchTexture", out);
     m_foliagePhyllotaxis.Save("m_foliagePhyllotaxis", out);
 
-    out << YAML::Key << "m_defaultBehaviourType" << YAML::Value << (unsigned)m_defaultBehaviourType;
+    out << YAML::Key << "m_defaultBehaviourType" << YAML::Value << (unsigned) m_defaultBehaviourType;
 #ifdef RAYTRACERFACILITY
     out << YAML::Key << "m_rayProperties.m_samples" << YAML::Value << m_rayProperties.m_samples;
     out << YAML::Key << "m_rayProperties.m_bounces" << YAML::Value << m_rayProperties.m_bounces;
@@ -671,6 +682,7 @@ void MultipleAngleCapture::Serialize(YAML::Emitter &out) {
     out << YAML::Key << "m_ambientLightIntensity" << YAML::Value << m_ambientLightIntensity;
     out << YAML::Key << "m_envLightIntensity" << YAML::Value << m_envLightIntensity;
     out << YAML::Key << "m_resolution" << YAML::Value << m_resolution;
+    out << YAML::Key << "m_exportTreeIOTrees" << YAML::Value << m_exportTreeIOTrees;
     out << YAML::Key << "m_exportOBJ" << YAML::Value << m_exportOBJ;
     out << YAML::Key << "m_exportCSV" << YAML::Value << m_exportCSV;
     out << YAML::Key << "m_exportGraph" << YAML::Value << m_exportGraph;
@@ -688,44 +700,52 @@ void MultipleAngleCapture::Serialize(YAML::Emitter &out) {
 void MultipleAngleCapture::Deserialize(const YAML::Node &in) {
     m_foliageTexture.Load("m_foliageTexture", in);
     m_branchTexture.Load("m_branchTexture", in);
+    m_foliagePhyllotaxis.Clear();
     m_foliagePhyllotaxis.Load("m_foliagePhyllotaxis", in);
 
 
-    if(in["m_defaultBehaviourType"]) m_defaultBehaviourType = (BehaviourType)in["m_defaultBehaviourType"].as<unsigned>();
+    if (in["m_defaultBehaviourType"]) m_defaultBehaviourType = (BehaviourType) in["m_defaultBehaviourType"].as<unsigned>();
 #ifdef RAYTRACERFACILITY
     if(in["m_rayProperties.m_samples"]) m_rayProperties.m_samples = in["m_rayProperties.m_samples"].as<float>();
     if(in["m_rayProperties.m_bounces"]) m_rayProperties.m_bounces = in["m_applyPhyllotaxis.m_bounces"].as<float>();
 #endif
-    if(in["m_autoAdjustCamera"]) m_autoAdjustCamera = in["m_autoAdjustCamera"].as<bool>();
-    if(in["m_applyPhyllotaxis"]) m_applyPhyllotaxis = in["m_applyPhyllotaxis"].as<bool>();
-    if(in["m_branchWidth"]) m_branchWidth = in["m_branchWidth"].as<float>();
-    if(in["m_nodeSize"]) m_nodeSize = in["m_nodeSize"].as<float>();
-    if(in["m_focusPoint"]) m_focusPoint = in["m_focusPoint"].as<glm::vec3>();
-    if(in["m_pitchAngleStart"]) m_pitchAngleStart = in["m_pitchAngleStart"].as<int>();
-    if(in["m_pitchAngleStep"]) m_pitchAngleStep = in["m_pitchAngleStep"].as<int>();
-    if(in["m_pitchAngleEnd"]) m_pitchAngleEnd = in["m_pitchAngleEnd"].as<int>();
-    if(in["m_turnAngleStart"]) m_turnAngleStart = in["m_turnAngleStart"].as<int>();
-    if(in["m_turnAngleStep"]) m_turnAngleStep = in["m_turnAngleStep"].as<int>();
-    if(in["m_turnAngleEnd"]) m_turnAngleEnd = in["m_turnAngleEnd"].as<int>();
-    if(in["m_distance"]) m_distance = in["m_distance"].as<float>();
-    if(in["m_fov"]) m_fov = in["m_fov"].as<float>();
-    if(in["m_lightSize"]) m_lightSize = in["m_lightSize"].as<float>();
-    if(in["m_ambientLightIntensity"]) m_ambientLightIntensity = in["m_ambientLightIntensity"].as<float>();
-    if(in["m_envLightIntensity"]) m_envLightIntensity = in["m_envLightIntensity"].as<float>();
-    if(in["m_resolution"]) m_resolution = in["m_resolution"].as<glm::ivec2>();
-    if(in["m_exportOBJ"]) m_exportOBJ = in["m_exportOBJ"].as<bool>();
-    if(in["m_exportCSV"]) m_exportCSV = in["m_exportCSV"].as<bool>();
-    if(in["m_exportGraph"]) m_exportGraph = in["m_exportGraph"].as<bool>();
-    if(in["m_exportImage"]) m_exportImage = in["m_exportImage"].as<bool>();
-    if(in["m_exportDepth"]) m_exportDepth = in["m_exportDepth"].as<bool>();
-    if(in["m_exportMatrices"]) m_exportMatrices = in["m_exportMatrices"].as<bool>();
-    if(in["m_exportBranchCapture"]) m_exportBranchCapture = in["m_exportBranchCapture"].as<bool>();
-    if(in["m_exportLString"]) m_exportLString = in["m_exportLString"].as<bool>();
-    if(in["m_useClearColor"]) m_useClearColor = in["m_useClearColor"].as<bool>();
-    if(in["m_backgroundColor"]) m_backgroundColor = in["m_backgroundColor"].as<glm::vec3>();
-    if(in["m_cameraMin"]) m_cameraMin = in["m_cameraMin"].as<float>();
-    if(in["m_cameraMax"]) m_cameraMax = in["m_cameraMax"].as<float>();
+    if (in["m_autoAdjustCamera"]) m_autoAdjustCamera = in["m_autoAdjustCamera"].as<bool>();
+    if (in["m_applyPhyllotaxis"]) m_applyPhyllotaxis = in["m_applyPhyllotaxis"].as<bool>();
+    if (in["m_branchWidth"]) m_branchWidth = in["m_branchWidth"].as<float>();
+    if (in["m_nodeSize"]) m_nodeSize = in["m_nodeSize"].as<float>();
+    if (in["m_focusPoint"]) m_focusPoint = in["m_focusPoint"].as<glm::vec3>();
+    if (in["m_pitchAngleStart"]) m_pitchAngleStart = in["m_pitchAngleStart"].as<int>();
+    if (in["m_pitchAngleStep"]) m_pitchAngleStep = in["m_pitchAngleStep"].as<int>();
+    if (in["m_pitchAngleEnd"]) m_pitchAngleEnd = in["m_pitchAngleEnd"].as<int>();
+    if (in["m_turnAngleStart"]) m_turnAngleStart = in["m_turnAngleStart"].as<int>();
+    if (in["m_turnAngleStep"]) m_turnAngleStep = in["m_turnAngleStep"].as<int>();
+    if (in["m_turnAngleEnd"]) m_turnAngleEnd = in["m_turnAngleEnd"].as<int>();
+    if (in["m_distance"]) m_distance = in["m_distance"].as<float>();
+    if (in["m_fov"]) m_fov = in["m_fov"].as<float>();
+    if (in["m_lightSize"]) m_lightSize = in["m_lightSize"].as<float>();
+    if (in["m_ambientLightIntensity"]) m_ambientLightIntensity = in["m_ambientLightIntensity"].as<float>();
+    if (in["m_envLightIntensity"]) m_envLightIntensity = in["m_envLightIntensity"].as<float>();
+    if (in["m_resolution"]) m_resolution = in["m_resolution"].as<glm::ivec2>();
+    if (in["m_exportTreeIOTrees"]) m_exportTreeIOTrees = in["m_exportTreeIOTrees"].as<bool>();
+    if (in["m_exportOBJ"]) m_exportOBJ = in["m_exportOBJ"].as<bool>();
+    if (in["m_exportCSV"]) m_exportCSV = in["m_exportCSV"].as<bool>();
+    if (in["m_exportGraph"]) m_exportGraph = in["m_exportGraph"].as<bool>();
+    if (in["m_exportImage"]) m_exportImage = in["m_exportImage"].as<bool>();
+    if (in["m_exportDepth"]) m_exportDepth = in["m_exportDepth"].as<bool>();
+    if (in["m_exportMatrices"]) m_exportMatrices = in["m_exportMatrices"].as<bool>();
+    if (in["m_exportBranchCapture"]) m_exportBranchCapture = in["m_exportBranchCapture"].as<bool>();
+    if (in["m_exportLString"]) m_exportLString = in["m_exportLString"].as<bool>();
+    if (in["m_useClearColor"]) m_useClearColor = in["m_useClearColor"].as<bool>();
+    if (in["m_backgroundColor"]) m_backgroundColor = in["m_backgroundColor"].as<glm::vec3>();
+    if (in["m_cameraMin"]) m_cameraMin = in["m_cameraMin"].as<float>();
+    if (in["m_cameraMax"]) m_cameraMax = in["m_cameraMax"].as<float>();
 
+}
+
+MultipleAngleCapture::~MultipleAngleCapture() {
+    m_foliagePhyllotaxis.Clear();
+    m_foliageTexture.Clear();
+    m_branchTexture.Clear();
 }
 
 
