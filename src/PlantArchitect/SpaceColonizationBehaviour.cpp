@@ -333,7 +333,7 @@ Entity SpaceColonizationBehaviour::CreateInternode(const Entity &parent) {
     return CreateInternodeHelper<EmptyInternodeResource>(parent);
 }
 
-Entity SpaceColonizationBehaviour::NewPlant(AssetRef descriptor, const Transform &transform) {
+Entity SpaceColonizationBehaviour::NewPlant(const std::shared_ptr<SpaceColonizationParameters> &descriptor, const Transform &transform) {
     Entity rootInternode, rootBranch;
     auto root = CreateRoot(descriptor, rootInternode, rootBranch);
     Transform internodeTransform;
@@ -347,9 +347,8 @@ Entity SpaceColonizationBehaviour::NewPlant(AssetRef descriptor, const Transform
     tag.m_truck = true;
     rootInternode.SetDataComponent(tag);
     InternodeInfo newInfo;
-    auto params = descriptor.Get<SpaceColonizationParameters>();
-    newInfo.m_length = glm::gaussRand(params->m_internodeLengthMean, params->m_internodeLengthVariance);
-    newInfo.m_thickness = params->m_endNodeThickness;
+    newInfo.m_length = glm::gaussRand(descriptor->m_internodeLengthMean, descriptor->m_internodeLengthVariance);
+    newInfo.m_thickness = descriptor->m_endNodeThickness;
     rootInternode.SetDataComponent(newInfo);
     return root;
 }
@@ -388,5 +387,5 @@ void SpaceColonizationParameters::Deserialize(const YAML::Node &in) {
 }
 
 Entity SpaceColonizationParameters::InstantiateTree() {
-    return Application::GetLayer<PlantLayer>()->GetPlantBehaviour<SpaceColonizationBehaviour>()->NewPlant(AssetManager::Get(GetHandle()), Transform());
+    return Application::GetLayer<PlantLayer>()->GetPlantBehaviour<SpaceColonizationBehaviour>()->NewPlant(std::dynamic_pointer_cast<SpaceColonizationParameters>(m_self.lock()), Transform());
 }

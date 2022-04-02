@@ -45,7 +45,7 @@ int main() {
     ClassRegistry::RegisterPrivateComponent<ObjectRotator>("ObjectRotator");
     ClassRegistry::RegisterPrivateComponent<DepthCamera>("DepthCamera");
     ClassRegistry::RegisterPrivateComponent<AutoTreeGenerationPipeline>("AutoTreeGenerationPipeline");
-    ClassRegistry::RegisterAsset<MultipleAngleCapture>("MultipleAngleCapture", ".mulanglecap");
+    ClassRegistry::RegisterAsset<MultipleAngleCapture>("MultipleAngleCapture", {".mulanglecap"});
 
 
     EngineSetup();

@@ -86,7 +86,7 @@ namespace PlantArchitect {
         bool InternalBranchCheck(const Entity &target) override;
 
     public:
-        Entity NewPlant(AssetRef descriptor, const Transform &transform);
+        Entity NewPlant(const std::shared_ptr<LSystemString>& descriptor, const Transform &transform);
 
         void OnInspect() override;
 

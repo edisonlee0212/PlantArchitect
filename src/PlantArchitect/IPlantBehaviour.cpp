@@ -48,7 +48,8 @@ void IPlantBehaviour::UpdateBranches() {
             auto branchStartPosition = branchStartInternodeGT.GetPosition();
             GlobalTransform branchGT;
             branchInfo.m_length = glm::length(branchStartPosition - branchEndPosition);
-            if (branchInfo.m_length > 0) branchGT.m_value = glm::translate(branchEndPosition) * glm::mat4_cast(
+            if (branchInfo.m_length > 0)
+                branchGT.m_value = glm::translate(branchEndPosition) * glm::mat4_cast(
                         glm::quatLookAt(glm::normalize(branchEndPosition - branchStartPosition),
                                         rotation * glm::vec3(0, 1, 0))) * glm::scale(glm::vec3(1.0f));
             else branchGT.SetPosition(branchEndPosition);
@@ -75,7 +76,8 @@ void IPlantBehaviour::UpdateBranches() {
             auto branchStartPosition = branchStartInternodeGT.GetPosition();
             GlobalTransform branchGT;
             branchInfo.m_length = glm::length(branchStartPosition - branchEndPosition);
-            if (branchInfo.m_length > 0) branchGT.m_value = glm::translate(branchEndPosition) * glm::mat4_cast(
+            if (branchInfo.m_length > 0)
+                branchGT.m_value = glm::translate(branchEndPosition) * glm::mat4_cast(
                         glm::quatLookAt(glm::normalize(branchEndPosition - branchStartPosition),
                                         rotation * glm::vec3(0, 1, 0))) * glm::scale(glm::vec3(1.0f));
             else branchGT.SetPosition(branchEndPosition);
@@ -242,7 +244,7 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
                  auto foliagePhyllotaxis = root->m_foliagePhyllotaxis.Get<IInternodePhyllotaxis>();
                  if (foliagePhyllotaxis)
                      foliagePhyllotaxis->GenerateFoliage(internode, internodeInfo,
-                                       relativeGlobalTransform, relativeParentGlobalTransform);
+                                                         relativeGlobalTransform, relativeParentGlobalTransform);
              });
 #pragma endregion
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
@@ -294,7 +296,7 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
                                        parentIndicesLists[plantIndex],
                                        skinnedVertices, skinnedIndices);
             if (!skinnedVertices.empty()) {
-                auto skinnedMesh = AssetManager::CreateAsset<SkinnedMesh>();
+                auto skinnedMesh = ProjectManager::CreateTemporaryAsset<SkinnedMesh>();
                 skinnedMesh->SetVertices(
                         17, skinnedVertices, skinnedIndices);
                 skinnedMesh
@@ -343,7 +345,7 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
                                         parentIndicesLists[plantIndex],
                                         skinnedVertices, skinnedIndices);
             if (!skinnedVertices.empty()) {
-                auto skinnedMesh = AssetManager::CreateAsset<SkinnedMesh>();
+                auto skinnedMesh = ProjectManager::CreateTemporaryAsset<SkinnedMesh>();
                 skinnedMesh->SetVertices(
                         17, skinnedVertices, skinnedIndices);
                 skinnedMesh
@@ -614,9 +616,9 @@ IPlantBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, Enti
         auto animator = branchMesh.GetOrSetPrivateComponent<Animator>().lock();
         auto skinnedMeshRenderer =
                 branchMesh.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
-        skinnedMeshRenderer->m_skinnedMesh = AssetManager::CreateAsset<SkinnedMesh>();
-        auto skinnedMat = AssetManager::LoadMaterial(
-                DefaultResources::GLPrograms::StandardSkinnedProgram);
+        skinnedMeshRenderer->m_skinnedMesh = ProjectManager::CreateTemporaryAsset<SkinnedMesh>();
+        auto skinnedMat = ProjectManager::CreateTemporaryAsset<Material>();
+        skinnedMat->SetProgram(DefaultResources::GLPrograms::StandardSkinnedProgram);
         skinnedMeshRenderer->m_material = skinnedMat;
         skinnedMat->m_albedoColor = glm::vec3(40.0f / 255, 15.0f / 255, 0.0f);
         skinnedMat->m_roughness = 1.0f;
@@ -628,9 +630,9 @@ IPlantBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, Enti
         auto animator = foliageMesh.GetOrSetPrivateComponent<Animator>().lock();
         auto skinnedMeshRenderer =
                 foliageMesh.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
-        skinnedMeshRenderer->m_skinnedMesh = AssetManager::CreateAsset<SkinnedMesh>();
-        auto skinnedMat = AssetManager::LoadMaterial(
-                DefaultResources::GLPrograms::StandardSkinnedProgram);
+        skinnedMeshRenderer->m_skinnedMesh = ProjectManager::CreateTemporaryAsset<SkinnedMesh>();
+        auto skinnedMat = ProjectManager::CreateTemporaryAsset<Material>();
+        skinnedMat->SetProgram(DefaultResources::GLPrograms::StandardSkinnedProgram);
         skinnedMeshRenderer->m_material = skinnedMat;
         skinnedMat->m_albedoColor = glm::vec3(0.0f, 1.0f, 0.0f);
         skinnedMat->m_roughness = 1.0f;

@@ -347,7 +347,7 @@ GeneralTreeBehaviour::GeneralTreeBehaviour() {
 
 void GeneralTreeBehaviour::OnInspect() {
     FileUtils::OpenFile("Import Graph", "YAML", {".yml"}, [&](const std::filesystem::path &path) {
-        auto parameters = AssetManager::CreateAsset<GeneralTreeParameters>();
+        auto parameters = ProjectManager::CreateTemporaryAsset<GeneralTreeParameters>();
         ImportGraphTree(path, parameters);
     }, false);
 }
@@ -381,11 +381,11 @@ Entity GeneralTreeBehaviour::CreateInternode(const Entity &parent) {
 }
 
 
-Entity GeneralTreeBehaviour::NewPlant(AssetRef descriptor, const Transform &transform) {
+Entity GeneralTreeBehaviour::NewPlant(const std::shared_ptr<GeneralTreeParameters> &descriptor, const Transform &transform) {
     Entity rootInternode, rootBranch;
     auto rootEntity = CreateRoot(descriptor, rootInternode, rootBranch);
     auto root = rootEntity.GetOrSetPrivateComponent<Root>().lock();
-    root->m_foliagePhyllotaxis = AssetManager::CreateAsset<DefaultInternodePhyllotaxis>();
+    root->m_foliagePhyllotaxis = ProjectManager::CreateTemporaryAsset<DefaultInternodePhyllotaxis>();
 
     Transform internodeTransform;
     internodeTransform.m_value =
@@ -399,7 +399,7 @@ Entity GeneralTreeBehaviour::NewPlant(AssetRef descriptor, const Transform &tran
     InternodeInfo newInfo;
     newInfo.m_length = 0;
     newInfo.m_layer = 0;
-    newInfo.m_thickness = descriptor.Get<GeneralTreeParameters>()->m_endNodeThicknessAndControl.x;
+    newInfo.m_thickness = descriptor->m_endNodeThicknessAndControl.x;
     rootInternode.SetDataComponent(newInfo);
 
     auto internode = rootInternode.GetOrSetPrivateComponent<Internode>().lock();
@@ -979,7 +979,7 @@ void GeneralTreeParameters::Deserialize(const YAML::Node &in) {
 }
 
 Entity GeneralTreeParameters::InstantiateTree() {
-    return Application::GetLayer<PlantLayer>()->GetPlantBehaviour<GeneralTreeBehaviour>()->NewPlant(AssetManager::Get(GetHandle()), Transform());
+    return Application::GetLayer<PlantLayer>()->GetPlantBehaviour<GeneralTreeBehaviour>()->NewPlant(std::dynamic_pointer_cast<GeneralTreeParameters>(m_self.lock()), Transform());
 }
 
 void InternodeStatus::OnInspect() {

@@ -6,7 +6,7 @@
 #include "DepthCamera.hpp"
 #include "Entities.hpp"
 #include "PlantLayer.hpp"
-#include "AssetManager.hpp"
+#include "ProjectManager.hpp"
 #include "LSystemBehaviour.hpp"
 #ifdef RAYTRACERFACILITY
 #include "RayTracerCamera.hpp"
@@ -81,15 +81,15 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
         std::filesystem::create_directories(csvFolder);
 
         std::filesystem::create_directories(csvFolder /
-                                            pipeline.m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetName());
+                                            pipeline.m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName());
         auto exportPath = std::filesystem::absolute(csvFolder /
-                                                    pipeline.m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetName() /
+                                                    pipeline.m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName() /
                                                     (pipeline.m_prefix + ".csv"));
         ExportCSV(pipeline, behaviour, exportPath);
     }
     if (m_exportLString) {
         std::filesystem::create_directories(lStringFolder);
-        auto lString = AssetManager::CreateAsset<LSystemString>();
+        auto lString = ProjectManager::CreateTemporaryAsset<LSystemString>();
 
         rootInternode.GetOrSetPrivateComponent<Internode>().lock()->ExportLString(lString);
         //path here
@@ -221,7 +221,7 @@ void MultipleAngleCapture::OnInspect() {
         auto multipleAngleCapturePipelineEntity = Entities::CreateEntity(Entities::GetCurrentScene(),
                                                                          "GANTree Dataset Pipeline");
         auto multipleAngleCapturePipeline = multipleAngleCapturePipelineEntity.GetOrSetPrivateComponent<AutoTreeGenerationPipeline>().lock();
-        multipleAngleCapturePipeline->m_pipelineBehaviour = AssetManager::Get<MultipleAngleCapture>(GetHandle());
+        multipleAngleCapturePipeline->m_pipelineBehaviour = m_self.lock();
         multipleAngleCapturePipeline->SetBehaviourType(m_defaultBehaviourType);
     }
     int behaviourType = (int) m_defaultBehaviourType;
@@ -658,13 +658,9 @@ void MultipleAngleCapture::Serialize(YAML::Emitter &out) {
     m_foliagePhyllotaxis.Save("m_foliagePhyllotaxis", out);
 
     out << YAML::Key << "m_defaultBehaviourType" << YAML::Value << (unsigned) m_defaultBehaviourType;
-#ifdef RAYTRACERFACILITY
-    out << YAML::Key << "m_rayProperties.m_samples" << YAML::Value << m_rayProperties.m_samples;
-    out << YAML::Key << "m_rayProperties.m_bounces" << YAML::Value << m_rayProperties.m_bounces;
-#endif
     out << YAML::Key << "m_autoAdjustCamera" << YAML::Value << m_autoAdjustCamera;
     out << YAML::Key << "m_applyPhyllotaxis" << YAML::Value << m_applyPhyllotaxis;
-    out << YAML::Key << "m_autoAdjustCamera" << YAML::Value << m_autoAdjustCamera;
+    out << YAML::Key << "m_currentExportFolder" << YAML::Value << m_currentExportFolder.string();
     out << YAML::Key << "m_branchWidth" << YAML::Value << m_branchWidth;
     out << YAML::Key << "m_nodeSize" << YAML::Value << m_nodeSize;
     out << YAML::Key << "m_focusPoint" << YAML::Value << m_focusPoint;
@@ -698,17 +694,13 @@ void MultipleAngleCapture::Serialize(YAML::Emitter &out) {
 void MultipleAngleCapture::Deserialize(const YAML::Node &in) {
     m_foliageTexture.Load("m_foliageTexture", in);
     m_branchTexture.Load("m_branchTexture", in);
-    m_foliagePhyllotaxis.Clear();
     m_foliagePhyllotaxis.Load("m_foliagePhyllotaxis", in);
 
 
     if (in["m_defaultBehaviourType"]) m_defaultBehaviourType = (BehaviourType) in["m_defaultBehaviourType"].as<unsigned>();
-#ifdef RAYTRACERFACILITY
-    if(in["m_rayProperties.m_samples"]) m_rayProperties.m_samples = in["m_rayProperties.m_samples"].as<float>();
-    if(in["m_rayProperties.m_bounces"]) m_rayProperties.m_bounces = in["m_applyPhyllotaxis.m_bounces"].as<float>();
-#endif
     if (in["m_autoAdjustCamera"]) m_autoAdjustCamera = in["m_autoAdjustCamera"].as<bool>();
     if (in["m_applyPhyllotaxis"]) m_applyPhyllotaxis = in["m_applyPhyllotaxis"].as<bool>();
+    if (in["m_currentExportFolder"]) m_currentExportFolder = in["m_currentExportFolder"].as<std::string>();
     if (in["m_branchWidth"]) m_branchWidth = in["m_branchWidth"].as<float>();
     if (in["m_nodeSize"]) m_nodeSize = in["m_nodeSize"].as<float>();
     if (in["m_focusPoint"]) m_focusPoint = in["m_focusPoint"].as<glm::vec3>();

@@ -2,6 +2,7 @@
 #include <PlantDataComponents.hpp>
 #include <RadialBoundingVolume.hpp>
 #include <Internode.hpp>
+
 using namespace PlantArchitect;
 using namespace UniEngine;
 
@@ -71,7 +72,7 @@ void RadialBoundingVolume::GenerateMesh() {
     if (m_layers.empty())
         return;
     for (int tierIndex = 0; tierIndex < m_layerAmount; tierIndex++) {
-        auto mesh = AssetManager::CreateAsset<Mesh>();
+        auto mesh = ProjectManager::CreateTemporaryAsset<Mesh>();
         std::vector<Vertex> vertices;
         std::vector<unsigned> indices;
 
@@ -270,8 +271,9 @@ void RadialBoundingVolume::FormEntity() {
     for (auto i = 0; i < m_boundMeshes.size(); i++) {
         auto slice = Entities::CreateEntity(Entities::GetCurrentScene(), "RBV_" + std::to_string(i));
         auto mmc = slice.GetOrSetPrivateComponent<MeshRenderer>().lock();
-        mmc->m_material = AssetManager::LoadMaterial(
-                DefaultResources::GLPrograms::StandardProgram);
+        auto mat = ProjectManager::CreateTemporaryAsset<Material>();
+        mmc->m_material = mat;
+        mat->SetProgram(DefaultResources::GLPrograms::StandardProgram);
         mmc->m_forwardRendering = false;
         mmc->m_mesh = m_boundMeshes[i];
 
@@ -499,15 +501,15 @@ void RadialBoundingVolume::OnInspect() {
     }
 
     bool displayLayer = false;
-    if(m_meshGenerated) {
+    if (m_meshGenerated) {
         if (ImGui::TreeNodeEx("Transformations")) {
             ImGui::DragFloat("Max height", &m_maxHeight, 0.01f);
             static float augmentation = 1.0f;
             ImGui::DragFloat("Augmentation radius", &augmentation, 0.01f);
-            if(ImGui::Button("Process")){
+            if (ImGui::Button("Process")) {
                 Augmentation(augmentation);
             }
-            if(ImGui::Button("Generate mesh")){
+            if (ImGui::Button("Generate mesh")) {
                 GenerateMesh();
             }
             ImGui::TreePop();

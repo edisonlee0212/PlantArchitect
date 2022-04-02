@@ -470,7 +470,7 @@ void PlantLayer::OnCreate() {
 
 
     ClassRegistry::RegisterDataComponent<GeneralTreeTag>("GeneralTreeTag");
-    ClassRegistry::RegisterAsset<GeneralTreeParameters>("GeneralTreeParameters", ".gtparams");
+    ClassRegistry::RegisterAsset<GeneralTreeParameters>("GeneralTreeParameters", {".gtparams"});
     ClassRegistry::RegisterDataComponent<InternodeStatus>("InternodeStatus");
     ClassRegistry::RegisterDataComponent<InternodeWaterPressure>("InternodeWaterPressure");
     ClassRegistry::RegisterDataComponent<InternodeWater>("InternodeWater");
@@ -478,10 +478,10 @@ void PlantLayer::OnCreate() {
     ClassRegistry::RegisterPrivateComponent<InternodeWaterFeeder>("InternodeWaterFeeder");
 
     ClassRegistry::RegisterDataComponent<SpaceColonizationTag>("SpaceColonizationTag");
-    ClassRegistry::RegisterAsset<SpaceColonizationParameters>("SpaceColonizationParameters", ".scparams");
+    ClassRegistry::RegisterAsset<SpaceColonizationParameters>("SpaceColonizationParameters", {".scparams"});
     ClassRegistry::RegisterDataComponent<SpaceColonizationIncentive>("SpaceColonizationIncentive");
 
-    ClassRegistry::RegisterAsset<LSystemString>("LSystemString", ".lstring");
+    ClassRegistry::RegisterAsset<LSystemString>("LSystemString", {".lstring"});
     ClassRegistry::RegisterDataComponent<LSystemTag>("LSystemTag");
 
     ClassRegistry::RegisterSerializable<EmptyInternodeResource>("EmptyInternodeResource");
@@ -496,7 +496,7 @@ void PlantLayer::OnCreate() {
     ClassRegistry::RegisterDataComponent<BranchInfo>("BranchInfo");
     ClassRegistry::RegisterDataComponent<InternodeStatistics>("InternodeStatistics");
 
-    ClassRegistry::RegisterAsset<DefaultInternodePhyllotaxis>("DefaultInternodePhyllotaxis", ".defaultip");
+    ClassRegistry::RegisterAsset<DefaultInternodePhyllotaxis>("DefaultInternodePhyllotaxis", {".defaultip"});
 
     Editor::RegisterComponentDataInspector<InternodeInfo>([](Entity entity, IDataComponent *data, bool isRoot) {
         auto *ltw = reinterpret_cast<InternodeInfo *>(data);

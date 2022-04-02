@@ -28,8 +28,8 @@ void DepthCamera::OnInspect() {
         ImGui::TreePop();
     }
 
-    FileUtils::SaveFile("Screenshot", "Texture2D", {".png", ".jpg"}, [this](const std::filesystem::path &filePath) {
-        m_colorTexture->SetPathAndSave(ProjectManager::GetRelativePath(filePath));
+    FileUtils::SaveFile("Export...", "Texture2D", {".png", ".jpg"}, [this](const std::filesystem::path &filePath) {
+        m_colorTexture->Export(filePath);
     });
 }
 void DepthCamera::Update() {
@@ -41,10 +41,10 @@ void DepthCamera::OnCreate() {
                 std::string("#version 450 core\n") +
                 FileUtils::LoadFileAsString(std::filesystem::path("./PlantArchitectResources") /
                                             "Shaders/Fragment/DepthCopy.frag");
-        auto fragShader = AssetManager::CreateAsset<OpenGLUtils::GLShader>();
+        auto fragShader = ProjectManager::CreateTemporaryAsset<OpenGLUtils::GLShader>();
         fragShader->Set(OpenGLUtils::ShaderType::Fragment, fragShaderCode);
         m_depthTransferProgram =
-                AssetManager::CreateAsset<OpenGLUtils::GLProgram>();
+                ProjectManager::CreateTemporaryAsset<OpenGLUtils::GLProgram>();
         m_depthTransferProgram->Link(
                 DefaultResources::GLShaders::TexturePassThrough, fragShader);
     }
@@ -68,8 +68,7 @@ void DepthCamera::OnCreate() {
     m_resolutionX = 1;
     m_resolutionY = 1;
 
-    m_colorTexture = AssetManager::CreateAsset<Texture2D>();
-    m_colorTexture->SetName("CameraTexture");
+    m_colorTexture = ProjectManager::CreateTemporaryAsset<Texture2D>();
     m_colorTexture->UnsafeGetGLTexture() = std::make_shared<OpenGLUtils::GLTexture2D>(
             0, GL_RGB32F, m_resolutionX, m_resolutionY, false);
     m_colorTexture->UnsafeGetGLTexture()->SetData(0, GL_RGB32F, GL_RGB, GL_FLOAT, 0);

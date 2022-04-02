@@ -5,7 +5,7 @@
 #include "Internode.hpp"
 #include "PlantLayer.hpp"
 #include "LSystemBehaviour.hpp"
-#include "AssetManager.hpp"
+#include "ProjectManager.hpp"
 
 using namespace PlantArchitect;
 
@@ -111,13 +111,8 @@ void Internode::ExportLSystemCommandsHelper(int &index, const Entity &target, st
 }
 
 void Internode::OnInspect() {
-    if (ImGui::Button("Generate L-String")) {
-        auto lString = AssetManager::CreateAsset<LSystemString>();
-        AssetManager::Share(lString);
-        ExportLString(lString);
-    }
     FileUtils::SaveFile("Export L-String", "L-System string", {".lstring"}, [&](const std::filesystem::path &path) {
-        auto lString = AssetManager::CreateAsset<LSystemString>();
+        auto lString = ProjectManager::CreateTemporaryAsset<LSystemString>();
         ExportLString(lString);
         lString->Export(path);
     }, false);

@@ -38,28 +38,28 @@ void AutoTreeGenerationPipeline::Update() {
                 switch (m_behaviourType) {
                     case BehaviourType::GeneralTree:
                         m_iterations = m_currentUsingDescriptor.Get<GeneralTreeParameters>()->m_matureAge;
-                        m_prefix = "GeneralTree_" + m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetName() + "_";
+                        m_prefix = "GeneralTree_" + m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName() + "_";
                         break;
                     case BehaviourType::LSystem:
-                        m_prefix = "LSystemString_" + m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetName() + "_";
+                        m_prefix = "LSystemString_" + m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName() + "_";
                         break;
                     case BehaviourType::SpaceColonization:
-                        m_prefix = "SpaceColonization_" + m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetName() + "_";
+                        m_prefix = "SpaceColonization_" + m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName() + "_";
                         break;
                 }
                 m_prefix += std::to_string(m_generationAmount - m_remainingInstanceAmount + m_startIndex);
                 switch (m_behaviourType) {
                     case BehaviourType::GeneralTree:
                         m_currentGrowingTree = std::dynamic_pointer_cast<GeneralTreeBehaviour>(
-                                m_currentInternodeBehaviour)->NewPlant(m_currentUsingDescriptor, Transform());
+                                m_currentInternodeBehaviour)->NewPlant(m_currentUsingDescriptor.Get<GeneralTreeParameters>(), Transform());
                         break;
                     case BehaviourType::LSystem:
                         m_currentGrowingTree = std::dynamic_pointer_cast<LSystemBehaviour>(
-                                m_currentInternodeBehaviour)->NewPlant(m_currentUsingDescriptor, Transform());
+                                m_currentInternodeBehaviour)->NewPlant(m_currentUsingDescriptor.Get<LSystemString>(), Transform());
                         break;
                     case BehaviourType::SpaceColonization:
                         m_currentGrowingTree = std::dynamic_pointer_cast<SpaceColonizationBehaviour>(
-                                m_currentInternodeBehaviour)->NewPlant(m_currentUsingDescriptor, Transform());
+                                m_currentInternodeBehaviour)->NewPlant(m_currentUsingDescriptor.Get<SpaceColonizationParameters>(), Transform());
                         break;
                 }
                 pipelineBehaviour->OnBeforeGrowth(*this);
@@ -120,30 +120,29 @@ void AutoTreeGenerationPipeline::OnInspect() {
         }
         ImGui::Text(("Loaded descriptors: " + std::to_string(m_descriptors.size())).c_str());
         FileUtils::OpenFolder("Collect descriptors", [&](const std::filesystem::path &path) {
+            auto& projectManager = ProjectManager::GetInstance();
             if (std::filesystem::exists(path) && std::filesystem::is_directory(path)) {
                 for (const auto &entry: std::filesystem::recursive_directory_iterator(path)) {
                     if (!std::filesystem::is_directory(entry.path())) {
+                        auto relativePath = ProjectManager::GetPathRelativeToProject(entry.path());
                          switch (m_behaviourType) {
                             case BehaviourType::GeneralTree:
                                 if (entry.path().extension() == ".gtparams") {
-                                    auto descriptor = AssetManager::CreateAsset<GeneralTreeParameters>();
-                                    descriptor->SetPathAndLoad(entry.path());
+                                    auto descriptor = std::dynamic_pointer_cast<GeneralTreeParameters>(ProjectManager::GetOrCreateAsset(relativePath));
                                     m_descriptors.emplace_back(descriptor);
                                     break;
                                 }
                                 break;
                             case BehaviourType::LSystem:
                                 if (entry.path().extension() == ".lstring") {
-                                    auto descriptor = AssetManager::CreateAsset<LSystemString>();
-                                    descriptor->SetPathAndLoad(entry.path());
+                                    auto descriptor = std::dynamic_pointer_cast<LSystemString>(ProjectManager::GetOrCreateAsset(relativePath));
                                     m_descriptors.emplace_back(descriptor);
                                     break;
                                 }
                                 break;
                             case BehaviourType::SpaceColonization:
                                 if (entry.path().extension() == ".scparams") {
-                                    auto descriptor = AssetManager::CreateAsset<SpaceColonizationParameters>();
-                                    descriptor->SetPathAndLoad(entry.path());
+                                    auto descriptor = std::dynamic_pointer_cast<SpaceColonizationParameters>(ProjectManager::GetOrCreateAsset(relativePath));
                                     m_descriptors.emplace_back(descriptor);
                                     break;
                                 }

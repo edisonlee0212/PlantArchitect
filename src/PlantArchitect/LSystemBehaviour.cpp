@@ -37,9 +37,8 @@ LSystemBehaviour::LSystemBehaviour() {
 }
 
 
-Entity LSystemBehaviour::NewPlant(AssetRef descriptor, const Transform &transform) {
-    auto lString = descriptor.Get<LSystemString>();
-    auto &commands = lString->m_commands;
+Entity LSystemBehaviour::NewPlant(const std::shared_ptr<LSystemString>& descriptor, const Transform &transform) {
+    auto &commands = descriptor->m_commands;
     if (commands.empty()) return {};
     LSystemState currentState;
     //The stack that records current state when a push happens and restore previous state when pop.
@@ -71,7 +70,7 @@ Entity LSystemBehaviour::NewPlant(AssetRef descriptor, const Transform &transfor
                         //If this is the first push in the string, we create the root internode.
                         //The node creation is handled by the CreateInternode() function. The internode creation is performed in a factory pattern.
                         root = CreateRoot(descriptor, rootInternode, rootBranch);
-                        root.GetOrSetPrivateComponent<Root>().lock()->m_foliagePhyllotaxis = AssetManager::CreateAsset<DefaultInternodePhyllotaxis>();
+                        root.GetOrSetPrivateComponent<Root>().lock()->m_foliagePhyllotaxis = ProjectManager::CreateTemporaryAsset<DefaultInternodePhyllotaxis>();
                         internode = rootInternode;
                         rootExists = true;
                     }
@@ -184,7 +183,6 @@ Entity LSystemBehaviour::NewPlant(AssetRef descriptor, const Transform &transfor
     //After you setup the local transformation matrix, you call this function to calculate the world(global) transformation matrix from the root of the plant.
     Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(Entities::GetCurrentScene(),
                                                                                    root);
-    auto params = descriptor.Get<LSystemString>();
     //Calculate other properties like thickness after the structure of the tree is ready.
     InternodeGraphWalkerEndToRoot(rootInternode, [&](Entity parent) {
         float thicknessCollection = 0.0f;
@@ -193,13 +191,13 @@ Entity LSystemBehaviour::NewPlant(AssetRef descriptor, const Transform &transfor
             if (!InternodeCheck(child)) return;
             auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
             thicknessCollection += glm::pow(childInternodeInfo.m_thickness,
-                                            1.0f / params->m_thicknessFactor);
+                                            1.0f / descriptor->m_thicknessFactor);
         });
-        parentInternodeInfo.m_thickness = glm::pow(thicknessCollection, params->m_thicknessFactor);
+        parentInternodeInfo.m_thickness = glm::pow(thicknessCollection, descriptor->m_thicknessFactor);
         parent.SetDataComponent(parentInternodeInfo);
     }, [&](Entity endNode) {
         auto internodeInfo = endNode.GetDataComponent<InternodeInfo>();
-        internodeInfo.m_thickness = params->m_endNodeThickness;
+        internodeInfo.m_thickness = descriptor->m_endNodeThickness;
         endNode.SetDataComponent(internodeInfo);
     });
 
@@ -382,6 +380,5 @@ void LSystemString::OnInspect() {
 }
 
 Entity LSystemString::InstantiateTree() {
-    return Application::GetLayer<PlantLayer>()->GetPlantBehaviour<LSystemBehaviour>()->NewPlant(
-            AssetManager::Get<LSystemString>(GetHandle()), Transform());
+    return Application::GetLayer<PlantLayer>()->GetPlantBehaviour<LSystemBehaviour>()->NewPlant(std::dynamic_pointer_cast<LSystemString>(m_self.lock()), Transform());
 }
