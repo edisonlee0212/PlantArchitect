@@ -51,6 +51,7 @@ int main() {
     EngineSetup();
 
     ApplicationConfigs applicationConfigs;
+    applicationConfigs.m_applicationName = "Plant Architect";
     Application::Create(applicationConfigs);
 #ifdef RAYTRACERFACILITY
     Application::PushLayer<RayTracerLayer>();
