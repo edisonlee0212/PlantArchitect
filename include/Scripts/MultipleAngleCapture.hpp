@@ -60,8 +60,7 @@ namespace Scripts {
 
         bool m_useClearColor = true;
         glm::vec3 m_backgroundColor = glm::vec3(1.0f);
-        float m_cameraMin = 1;
-        float m_cameraMax = 300;
+        float m_cameraMax = 200;
         void OnStart(AutoTreeGenerationPipeline& pipeline) override;
         void OnEnd(AutoTreeGenerationPipeline& pipeline) override;
         void OnCreate() override;

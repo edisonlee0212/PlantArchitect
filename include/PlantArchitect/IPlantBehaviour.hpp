@@ -309,7 +309,7 @@ namespace PlantArchitect {
             if (newTreePositions.size() < newTreeAmount) {
                 if (newPlantParameters.empty()) {
                     newPlantParameters.resize(1);
-                    AssetRef descriptor = AssetManager::CreateAsset<T>();
+                    AssetRef descriptor = ProjectManager::CreateTemporaryAsset<T>();
                     newPlantParameters[0] = descriptor;
                 }
                 const auto currentSize = newTreePositions.size();

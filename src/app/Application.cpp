@@ -28,7 +28,6 @@
 #include "AutoTreeGenerationPipeline.hpp"
 #include "DefaultInternodePhyllotaxis.hpp"
 #include "RadialBoundingVolume.hpp"
-#include "DepthCamera.hpp"
 #include "MultipleAngleCapture.hpp"
 #include "PlantLayer.hpp"
 
@@ -43,7 +42,6 @@ void EngineSetup();
 
 int main() {
     ClassRegistry::RegisterPrivateComponent<ObjectRotator>("ObjectRotator");
-    ClassRegistry::RegisterPrivateComponent<DepthCamera>("DepthCamera");
     ClassRegistry::RegisterPrivateComponent<AutoTreeGenerationPipeline>("AutoTreeGenerationPipeline");
     ClassRegistry::RegisterAsset<MultipleAngleCapture>("MultipleAngleCapture", {".mulanglecap"});
 

@@ -603,13 +603,12 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(std::vector<Entity> &entities, 
 
 void
 IPlantBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, Entity &branchMesh, Entity &foliageMesh) {
-    entity.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
-        if (child.GetName() == "BranchMesh") {
-            branchMesh = child;
-        } else if (child.GetName() == "FoliageMesh") {
-            foliageMesh = child;
+    auto children = entity.GetChildren();
+    for(const auto& child : children){
+        if (child.GetName() == "BranchMesh" || child.GetName() == "FoliageMesh") {
+            Entities::DeleteEntity(Entities::GetCurrentScene(), child);
         }
-    });
+    }
 
     {
         if (branchMesh.IsNull()) branchMesh = Entities::CreateEntity(Entities::GetCurrentScene(), "BranchMesh");

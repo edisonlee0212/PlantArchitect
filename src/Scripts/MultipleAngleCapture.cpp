@@ -3,7 +3,6 @@
 //
 
 #include "MultipleAngleCapture.hpp"
-#include "DepthCamera.hpp"
 #include "Entities.hpp"
 #include "PlantLayer.hpp"
 #include "ProjectManager.hpp"
@@ -146,30 +145,13 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
             }
         }
     }
-    if (m_exportDepth) {
-        std::filesystem::create_directories(depthFolder);
-        auto cameraEntity = pipeline.GetOwner();
-        for (int turnAngle = m_turnAngleStart; turnAngle < m_turnAngleEnd; turnAngle += m_turnAngleStep) {
-            for (int pitchAngle = m_pitchAngleStart;
-                 pitchAngle < m_pitchAngleEnd; pitchAngle += m_pitchAngleStep) {
-                auto anglePrefix = std::to_string(pitchAngle) + "_" +
-                                   std::to_string(turnAngle);
-                auto cameraGlobalTransform = TransformCamera(plantBound, turnAngle, pitchAngle);
-                cameraEntity.SetDataComponent(cameraGlobalTransform);
-                Application::GetLayer<TransformLayer>()->CalculateTransformGraphs(
-                        Entities::GetCurrentScene());
-                auto depthCamera = pipeline.GetOwner().GetOrSetPrivateComponent<DepthCamera>().lock();
-                depthCamera->Render();
-                depthCamera->m_colorTexture->Export(
-                        depthFolder / (pipeline.m_prefix + "_" + anglePrefix + "_depth.png"));
-            }
-        }
-    }
+
 #ifdef RAYTRACERFACILITY
     if (m_exportImage) {
         std::filesystem::create_directories(imagesFolder);
         auto cameraEntity = pipeline.GetOwner();
         auto rayTracerCamera = cameraEntity.GetOrSetPrivateComponent<RayTracerCamera>().lock();
+        rayTracerCamera->SetOutputType(OutputType::Color);
         assert(cameraEntity.IsValid());
         Application::GetLayer<RayTracerLayer>()->UpdateScene();
         for (int turnAngle = m_turnAngleStart; turnAngle < m_turnAngleEnd; turnAngle += m_turnAngleStep) {
@@ -185,6 +167,27 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
                 rayTracerCamera->Render(m_rayProperties);
                 rayTracerCamera->m_colorTexture->Export(
                         imagesFolder / (pipeline.m_prefix + "_" + anglePrefix + "_rgb.png"));
+            }
+        }
+    }
+    if (m_exportDepth) {
+        std::filesystem::create_directories(depthFolder);
+        auto cameraEntity = pipeline.GetOwner();
+        auto rayTracerCamera = cameraEntity.GetOrSetPrivateComponent<RayTracerCamera>().lock();
+        rayTracerCamera->SetOutputType(OutputType::Depth);
+        rayTracerCamera->SetMaxDistance(m_cameraMax);
+        for (int turnAngle = m_turnAngleStart; turnAngle < m_turnAngleEnd; turnAngle += m_turnAngleStep) {
+            for (int pitchAngle = m_pitchAngleStart;
+                 pitchAngle < m_pitchAngleEnd; pitchAngle += m_pitchAngleStep) {
+                auto anglePrefix = std::to_string(pitchAngle) + "_" +
+                                   std::to_string(turnAngle);
+                auto cameraGlobalTransform = TransformCamera(plantBound, turnAngle, pitchAngle);
+                cameraEntity.SetDataComponent(cameraGlobalTransform);
+                Application::GetLayer<TransformLayer>()->CalculateTransformGraphs(
+                        Entities::GetCurrentScene());
+                rayTracerCamera->Render(m_rayProperties);
+                rayTracerCamera->m_colorTexture->Export(
+                        depthFolder / (pipeline.m_prefix + "_" + anglePrefix + "_depth.hdr"));
             }
         }
     }
@@ -275,7 +278,7 @@ void MultipleAngleCapture::OnInspect() {
             ImGui::Text("Camera Settings:");
             ImGui::DragFloat("Camera FOV", &m_fov);
             ImGui::DragInt2("Camera Resolution", &m_resolution.x);
-            ImGui::DragFloat2("Camera near/far", &m_cameraMin);
+            ImGui::DragFloat("Camera max distance", &m_cameraMax);
             ImGui::Checkbox("Use clear color", &m_useClearColor);
             ImGui::ColorEdit3("Camera Clear Color", &m_backgroundColor.x);
             ImGui::DragFloat("Light Size", &m_lightSize, 0.001f);
@@ -296,10 +299,6 @@ void MultipleAngleCapture::SetUpCamera(AutoTreeGenerationPipeline &pipeline) {
     camera->m_allowAutoResize = false;
     camera->m_frameSize = m_resolution;
 #endif
-    auto depthCamera = cameraEntity.GetOrSetPrivateComponent<DepthCamera>().lock();
-    depthCamera->m_resX = m_resolution.x;
-    depthCamera->m_resY = m_resolution.y;
-
     if (cameraEntity.HasPrivateComponent<PostProcessing>()) {
         auto postProcessing = cameraEntity.GetOrSetPrivateComponent<PostProcessing>().lock();
         postProcessing->SetEnabled(false);
@@ -687,7 +686,6 @@ void MultipleAngleCapture::Serialize(YAML::Emitter &out) {
     out << YAML::Key << "m_exportLString" << YAML::Value << m_exportLString;
     out << YAML::Key << "m_useClearColor" << YAML::Value << m_useClearColor;
     out << YAML::Key << "m_backgroundColor" << YAML::Value << m_backgroundColor;
-    out << YAML::Key << "m_cameraMin" << YAML::Value << m_cameraMin;
     out << YAML::Key << "m_cameraMax" << YAML::Value << m_cameraMax;
 }
 
@@ -727,9 +725,7 @@ void MultipleAngleCapture::Deserialize(const YAML::Node &in) {
     if (in["m_exportLString"]) m_exportLString = in["m_exportLString"].as<bool>();
     if (in["m_useClearColor"]) m_useClearColor = in["m_useClearColor"].as<bool>();
     if (in["m_backgroundColor"]) m_backgroundColor = in["m_backgroundColor"].as<glm::vec3>();
-    if (in["m_cameraMin"]) m_cameraMin = in["m_cameraMin"].as<float>();
     if (in["m_cameraMax"]) m_cameraMax = in["m_cameraMax"].as<float>();
-
 }
 
 MultipleAngleCapture::~MultipleAngleCapture() {
