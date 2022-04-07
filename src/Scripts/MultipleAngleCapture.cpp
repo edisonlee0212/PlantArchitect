@@ -518,7 +518,7 @@ MultipleAngleCapture::ExportCSV(AutoTreeGenerationPipeline &pipeline, const std:
                 for (int i = 0; i < 3; i++) {
                     auto child = children[i];
                     if (child.IsNull() || child.GetDataComponent<InternodeInfo>().m_endNode) {
-                        row += "N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A";
+                        row += "N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A";
                     } else {
                         auto globalTransformChild = child.GetDataComponent<GlobalTransform>();
                         auto transformChild = child.GetDataComponent<Transform>();
