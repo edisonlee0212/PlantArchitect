@@ -103,7 +103,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
     if (m_exportTreeIOTrees) {
         std::filesystem::create_directories(treeIOFolder);
         rootInternode.GetOrSetPrivateComponent<Internode>().lock()->ExportTreeIOTree(
-                treeIOFolder / ("tree" + std::to_string(pipeline.m_generationAmount - pipeline.m_remainingInstanceAmount + pipeline.m_startIndex) + ".tree"));
+                treeIOFolder / ("tree" + std::to_string(pipeline.GetSeed()) + ".tree"));
     }
     if (m_exportMatrices) {
         for (float turnAngle = m_turnAngleStart; turnAngle < m_turnAngleEnd; turnAngle += m_turnAngleStep) {
@@ -222,7 +222,7 @@ static const char *DefaultBehaviourTypes[]{"GeneralTree", "LSystem", "SpaceColon
 void MultipleAngleCapture::OnInspect() {
     if (ImGui::Button("Instantiate Pipeline")) {
         auto multipleAngleCapturePipelineEntity = Entities::CreateEntity(Entities::GetCurrentScene(),
-                                                                         "GANTree Dataset Pipeline");
+                                                                         m_self.lock()->GetAssetRecord().lock()->GetAssetFileName());
         auto multipleAngleCapturePipeline = multipleAngleCapturePipelineEntity.GetOrSetPrivateComponent<AutoTreeGenerationPipeline>().lock();
         multipleAngleCapturePipeline->m_pipelineBehaviour = m_self.lock();
         multipleAngleCapturePipeline->SetBehaviourType(m_defaultBehaviourType);

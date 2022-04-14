@@ -38,16 +38,16 @@ void AutoTreeGenerationPipeline::Update() {
                 switch (m_behaviourType) {
                     case BehaviourType::GeneralTree:
                         m_iterations = m_currentUsingDescriptor.Get<GeneralTreeParameters>()->m_matureAge;
-                        m_prefix = "GeneralTree_" + m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName() + "_";
+                        m_prefix = m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName() + "_";
                         break;
                     case BehaviourType::LSystem:
-                        m_prefix = "LSystemString_" + m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName() + "_";
+                        m_prefix = m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName() + "_";
                         break;
                     case BehaviourType::SpaceColonization:
-                        m_prefix = "SpaceColonization_" + m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName() + "_";
+                        m_prefix = m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName() + "_";
                         break;
                 }
-                m_prefix += std::to_string(m_generationAmount - m_remainingInstanceAmount + m_startIndex);
+                m_prefix += std::to_string(GetSeed());
                 switch (m_behaviourType) {
                     case BehaviourType::GeneralTree:
                         m_currentGrowingTree = std::dynamic_pointer_cast<GeneralTreeBehaviour>(
@@ -212,6 +212,10 @@ void AutoTreeGenerationPipeline::SetBehaviourType(BehaviourType type) {
     UpdateInternodeBehaviour();
     m_currentUsingDescriptor.Clear();
     m_descriptors.clear();
+}
+
+int AutoTreeGenerationPipeline::GetSeed() const {
+    return m_generationAmount - m_remainingInstanceAmount + m_startIndex - 1;
 }
 
 void IAutoTreeGenerationPipelineBehaviour::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) {

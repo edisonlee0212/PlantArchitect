@@ -94,20 +94,19 @@ void Internode::ExportLSystemCommandsHelper(int &index, const Entity &target, st
     target.SetDataComponent(internodeInfo);
     index++;
     auto children = target.GetChildren();
-    /*if(children.size() == 1){
+    for(int i = 1; i < children.size(); i++){
+        auto& child = children[i];
+        if (!child.IsValid() || !child.HasDataComponent<InternodeInfo>()) continue;
+        commands.push_back({LSystemCommandType::Push, 0.0f});
+        index++;
+        ExportLSystemCommandsHelper(index, child, commands);
+        commands.push_back({LSystemCommandType::Pop, 0.0f});
+        index++;
+    }
+    if(!children.empty()){
         if (!children[0].IsValid() || !children[0].HasDataComponent<InternodeInfo>()) return;
         ExportLSystemCommandsHelper(index, children[0], commands);
-    }else*/{
-        for(const auto& child : children){
-            if (!child.IsValid() || !child.HasDataComponent<InternodeInfo>()) return;
-            commands.push_back({LSystemCommandType::Push, 0.0f});
-            index++;
-            ExportLSystemCommandsHelper(index, child, commands);
-            commands.push_back({LSystemCommandType::Pop, 0.0f});
-            index++;
-        }
     }
-
 }
 
 void Internode::OnInspect() {

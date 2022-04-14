@@ -37,7 +37,7 @@ LSystemBehaviour::LSystemBehaviour() {
 }
 
 
-Entity LSystemBehaviour::NewPlant(const std::shared_ptr<LSystemString>& descriptor, const Transform &transform) {
+Entity LSystemBehaviour::NewPlant(const std::shared_ptr<LSystemString> &descriptor, const Transform &transform) {
     auto &commands = descriptor->m_commands;
     if (commands.empty()) return {};
     LSystemState currentState;
@@ -53,39 +53,6 @@ Entity LSystemBehaviour::NewPlant(const std::shared_ptr<LSystemString>& descript
     bool rootExists = false;
     for (const auto &command: commands) {
         switch (command.m_type) {
-            case LSystemCommandType::Forward: {
-                InternodeInfo newInfo;
-                InternodeStatistics newStat;
-                newStat.m_lSystemStringIndex = index;
-                if (internode.IsNull()) {
-                    if (rootExists) {
-                        UNIENGINE_WARNING("Root exists!");
-                        //Calculate the local rotation as quaternion from euler angles.
-                        newInfo.m_localRotation = glm::quat(currentState.m_eulerRotation);
-                        //We need to create a child node with this function. Here CreateInternode(Entity) will instantiate a new internode for you and set it as a child of current internode.
-                        internode = CreateInternode(internode);
-                    } else {
-                        //Calculate the local rotation as quaternion from euler angles.
-                        newInfo.m_localRotation = glm::quat(currentState.m_eulerRotation);
-                        //If this is the first push in the string, we create the root internode.
-                        //The node creation is handled by the CreateInternode() function. The internode creation is performed in a factory pattern.
-                        root = CreateRoot(descriptor, rootInternode, rootBranch);
-                        root.GetOrSetPrivateComponent<Root>().lock()->m_foliagePhyllotaxis = ProjectManager::CreateTemporaryAsset<DefaultInternodePhyllotaxis>();
-                        internode = rootInternode;
-                        rootExists = true;
-                    }
-                } else {
-                    //Calculate the local rotation as quaternion from euler angles.
-                    newInfo.m_localRotation = glm::quat(currentState.m_eulerRotation);
-                    //We need to create a child node with this function. Here CreateInternode(Entity) will instantiate a new internode for you and set it as a child of current internode.
-                    internode = CreateInternode(internode);
-                }
-                newInfo.m_length = command.m_value;
-                newInfo.m_thickness = 0.2f;
-                internode.SetDataComponent(newInfo);
-                internode.SetDataComponent(newStat);
-            }
-                break;
             case LSystemCommandType::PitchUp: {
                 //Update current state
                 currentState.m_eulerRotation.x += command.m_value;
@@ -131,6 +98,30 @@ Entity LSystemBehaviour::NewPlant(const std::shared_ptr<LSystemString>& descript
                 entityStack.pop_back();
                 break;
             }
+            case LSystemCommandType::Forward: {
+                InternodeInfo newInfo;
+                InternodeStatistics newStat;
+                newStat.m_lSystemStringIndex = index;
+                newInfo.m_localRotation = glm::quat(currentState.m_eulerRotation);
+                if (internode.IsNull() && !rootExists) {
+                    //If this is the first push in the string, we create the root internode.
+                    //The node creation is handled by the CreateInternode() function. The internode creation is performed in a factory pattern.
+                    root = CreateRoot(descriptor, rootInternode, rootBranch);
+                    root.GetOrSetPrivateComponent<Root>().lock()->m_foliagePhyllotaxis = ProjectManager::CreateTemporaryAsset<DefaultInternodePhyllotaxis>();
+                    internode = rootInternode;
+                    rootExists = true;
+                } else {
+                    //Calculate the local rotation as quaternion from euler angles.
+                    //We need to create a child node with this function. Here CreateInternode(Entity) will instantiate a new internode for you and set it as a child of current internode.
+                    internode = CreateInternode(internode);
+                }
+                newInfo.m_length = command.m_value;
+                newInfo.m_thickness = 0.2f;
+                internode.SetDataComponent(newInfo);
+                internode.SetDataComponent(newStat);
+                currentState.m_eulerRotation = glm::vec3(0.0f);
+            }
+                break;
         }
         index++;
     }
@@ -380,5 +371,6 @@ void LSystemString::OnInspect() {
 }
 
 Entity LSystemString::InstantiateTree() {
-    return Application::GetLayer<PlantLayer>()->GetPlantBehaviour<LSystemBehaviour>()->NewPlant(std::dynamic_pointer_cast<LSystemString>(m_self.lock()), Transform());
+    return Application::GetLayer<PlantLayer>()->GetPlantBehaviour<LSystemBehaviour>()->NewPlant(
+            std::dynamic_pointer_cast<LSystemString>(m_self.lock()), Transform());
 }
