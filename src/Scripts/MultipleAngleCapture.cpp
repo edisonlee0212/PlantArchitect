@@ -53,22 +53,14 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
     for (const auto &i: children) {
         if (i.HasPrivateComponent<Internode>()) rootInternode = i;
     }
-    auto treeIOFolder = m_currentExportFolder / "TreeIO" /
-                        pipeline.m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName();
-    auto imagesFolder = m_currentExportFolder / "Image" /
-                        pipeline.m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName();
-    auto objFolder = m_currentExportFolder / "Mesh" /
-                     pipeline.m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName();
-    auto depthFolder = m_currentExportFolder / "Depth" /
-                       pipeline.m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName();
-    auto branchFolder = m_currentExportFolder / "Branch" /
-                        pipeline.m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName();
-    auto graphFolder = m_currentExportFolder / "Graph" /
-                       pipeline.m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName();
-    auto csvFolder = m_currentExportFolder / "CSV" /
-                     pipeline.m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName();
-    auto lStringFolder = m_currentExportFolder / "LSystemString" /
-                         pipeline.m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName();
+    auto treeIOFolder = m_currentExportFolder / "TreeIO";
+    auto imagesFolder = m_currentExportFolder / "Image";
+    auto objFolder = m_currentExportFolder / "Mesh";
+    auto depthFolder = m_currentExportFolder / "Depth";
+    auto branchFolder = m_currentExportFolder / "Branch";
+    auto graphFolder = m_currentExportFolder / "Graph";
+    auto csvFolder = m_currentExportFolder / "CSV";
+    auto lStringFolder = m_currentExportFolder / "LSystemString";
     if (m_exportOBJ || m_exportImage || m_exportDepth || m_exportBranchCapture) {
         behaviour->GenerateSkinnedMeshes();
         internodeLayer->UpdateInternodeColors();
@@ -123,8 +115,8 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
         std::filesystem::create_directories(objFolder);
         Entity foliage, branch;
         pipeline.m_currentGrowingTree.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
-            if (child.GetName() == "Foliage") foliage = child;
-            else if (child.GetName() == "Branch") branch = child;
+            if (child.GetName() == "FoliageMesh") foliage = child;
+            else if (child.GetName() == "BranchMesh") branch = child;
         });
         if (foliage.IsValid() && foliage.HasPrivateComponent<SkinnedMeshRenderer>()) {
             auto smr = foliage.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
