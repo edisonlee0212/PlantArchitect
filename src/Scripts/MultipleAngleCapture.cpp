@@ -443,10 +443,10 @@ MultipleAngleCapture::ExportCSV(AutoTreeGenerationPipeline &pipeline, const std:
                                                                  child);
                                                      });
         });
-        output += "in_id,in_pos_x,in_pos_y,in_pos_z,in_front_x,in_front_y,in_front_z,in_up_x,in_up_y,in_up_z,in_thickness,in_length,in_root_distance,in_chain_distance,in_distance_to_branch_start,in_level,in_flush_age,in_proximity,in_node_count,in_quat_x,in_quat_y,in_quat_z,in_quat_w,";
-        output += "out0_id,out0_pos_x,out0_pos_y,out0_pos_z,out0_front_x,out0_front_y,out0_front_z,out0_up_x,out0_up_y,out0_up_z,out0_thickness,out0_length,out0_root_distance,out0_chain_distance,out0_distance_to_branch_start,out0_level,out0_flush_age,out0_proximity,out0_node_count,out0_quat_x,out0_quat_y,out0_quat_z,out0_quat_w,";
-        output += "out1_id,out1_pos_x,out1_pos_y,out1_pos_z,out1_front_x,out1_front_y,out1_front_z,out1_up_x,out1_up_y,out1_up_z,out1_thickness,out1_length,out1_root_distance,out1_chain_distance,out1_distance_to_branch_start,out1_level,out1_flush_age,out1_proximity,out1_node_count,out1_quat_x,out1_quat_y,out1_quat_z,out1_quat_w,";
-        output += "out2_id,out2_pos_x,out2_pos_y,out2_pos_z,out2_front_x,out2_front_y,out2_front_z,out2_up_x,out2_up_y,out2_up_z,out2_thickness,out2_length,out2_root_distance,out2_chain_distance,out2_distance_to_branch_start,out2_level,out2_flush_age,out2_proximity,out2_node_count,out2_quat_x,out2_quat_y,out2_quat_z,out2_quat_w\n";
+        output += "in_id,in_pos_x,in_pos_y,in_pos_z,in_front_x,in_front_y,in_front_z,in_up_x,in_up_y,in_up_z,in_thickness,in_length,in_root_distance,in_chain_distance,in_distance_to_branch_start,in_level,in_order,in_flush_age,in_proximity,in_node_count,in_quat_x,in_quat_y,in_quat_z,in_quat_w,";
+        output += "out0_id,out0_pos_x,out0_pos_y,out0_pos_z,out0_front_x,out0_front_y,out0_front_z,out0_up_x,out0_up_y,out0_up_z,out0_thickness,out0_length,out0_root_distance,out0_chain_distance,out0_distance_to_branch_start,out0_level,out0_order,out0_flush_age,out0_proximity,out0_node_count,out0_quat_x,out0_quat_y,out0_quat_z,out0_quat_w,";
+        output += "out1_id,out1_pos_x,out1_pos_y,out1_pos_z,out1_front_x,out1_front_y,out1_front_z,out1_up_x,out1_up_y,out1_up_z,out1_thickness,out1_length,out1_root_distance,out1_chain_distance,out1_distance_to_branch_start,out1_level,out1_order,out1_flush_age,out1_proximity,out1_node_count,out1_quat_x,out1_quat_y,out1_quat_z,out1_quat_w,";
+        output += "out2_id,out2_pos_x,out2_pos_y,out2_pos_z,out2_front_x,out2_front_y,out2_front_z,out2_up_x,out2_up_y,out2_up_z,out2_thickness,out2_length,out2_root_distance,out2_chain_distance,out2_distance_to_branch_start,out2_level,out2_order,out2_flush_age,out2_proximity,out2_node_count,out2_quat_x,out2_quat_y,out2_quat_z,out2_quat_w\n";
         int layerIndex = 0;
         for (const auto &layer: internodes) {
             if (layer.empty()) break;
@@ -496,6 +496,7 @@ MultipleAngleCapture::ExportCSV(AutoTreeGenerationPipeline &pipeline, const std:
                 row += std::to_string(internodeStatus.m_chainDistance) + ",";
                 row += std::to_string(internodeStatus.m_branchLength) + ",";
                 row += std::to_string(internodeStatus.m_level) + ",";
+                row += std::to_string(internodeStatus.m_order) + ",";
 
                 row += std::to_string(internodeStatus.m_age) + ",";
                 //row += std::to_string(internodeStatus.m_recordedProbability) + ",";
@@ -510,7 +511,7 @@ MultipleAngleCapture::ExportCSV(AutoTreeGenerationPipeline &pipeline, const std:
                 for (int i = 0; i < 3; i++) {
                     auto child = children[i];
                     if (child.IsNull() || child.GetDataComponent<InternodeInfo>().m_endNode) {
-                        row += "N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A";
+                        row += "N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A";
                     } else {
                         auto globalTransformChild = child.GetDataComponent<GlobalTransform>();
                         auto transformChild = child.GetDataComponent<Transform>();
@@ -544,6 +545,7 @@ MultipleAngleCapture::ExportCSV(AutoTreeGenerationPipeline &pipeline, const std:
                         row += std::to_string(internodeStatusChild.m_chainDistance) + ",";
                         row += std::to_string(internodeStatusChild.m_branchLength) + ",";
                         row += std::to_string(internodeStatusChild.m_level) + ",";
+                        row += std::to_string(internodeStatusChild.m_order) + ",";
 
                         row += std::to_string(internodeStatusChild.m_age) + ",";
                         //row += std::to_string(internodeStatusChild.m_recordedProbability) + ",";

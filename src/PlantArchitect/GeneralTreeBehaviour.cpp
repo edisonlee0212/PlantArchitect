@@ -431,8 +431,7 @@ GeneralTreeBehaviour::ImportGraphTree(const std::filesystem::path &path, AssetRe
         Entity rootInternode, rootBranch;
         auto root = CreateRoot(descriptor, rootInternode, rootBranch);
         root.SetName(name);
-        std::vector<GanNode> previousNodes;
-        previousNodes.resize(10000);
+        std::unordered_map<int, GanNode> previousNodes;
         GanNode rootNode;
         rootNode.m_start = glm::vec3(0, 0, 0);
         rootNode.m_globalRotation = glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f));
