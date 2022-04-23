@@ -34,9 +34,9 @@ namespace PlantArchitect {
         void VolumeSlotButton();
 
     protected:
-        bool InternalInternodeCheck(const Entity &target) override;
-        bool InternalRootCheck(const Entity &target) override;
-        bool InternalBranchCheck(const Entity &target) override;
+        bool InternalInternodeCheck(const std::shared_ptr<Scene> &scene, const Entity &target) override;
+        bool InternalRootCheck(const std::shared_ptr<Scene> &scene, const Entity &target) override;
+        bool InternalBranchCheck(const std::shared_ptr<Scene> &scene, const Entity &target) override;
 
     public:
         std::vector<PrivateComponentRef> m_volumes;
@@ -47,15 +47,15 @@ namespace PlantArchitect {
 
         SpaceColonizationBehaviour();
 
-        void Grow(int iterations) override;
+        void Grow(const std::shared_ptr<Scene> &scene, int iterations) override;
 
         void PushVolume(const std::shared_ptr<IVolume> &volume);
 
-        Entity CreateRoot(AssetRef descriptor, Entity& rootInternode, Entity& rootBranch) override;
-        Entity CreateBranch(const Entity &parent, const Entity &internode) override;
-        Entity CreateInternode(const Entity &parent) override;
+        Entity CreateRoot(const std::shared_ptr<Scene> &scene, AssetRef descriptor, Entity& rootInternode, Entity& rootBranch) override;
+        Entity CreateBranch(const std::shared_ptr<Scene> &scene, const Entity &parent, const Entity &internode) override;
+        Entity CreateInternode(const std::shared_ptr<Scene> &scene, const Entity &parent) override;
 
-        Entity NewPlant(const std::shared_ptr<SpaceColonizationParameters> &descriptor,
+        Entity NewPlant(const std::shared_ptr<Scene> &scene, const std::shared_ptr<SpaceColonizationParameters> &descriptor,
                         const Transform &transform);
     };
 }

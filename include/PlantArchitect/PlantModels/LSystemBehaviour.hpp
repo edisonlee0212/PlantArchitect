@@ -3,6 +3,7 @@
 #include <plant_architect_export.h>
 #include "IPlantBehaviour.hpp"
 #include "IPlantDescriptor.hpp"
+
 using namespace UniEngine;
 namespace PlantArchitect {
     struct PLANT_ARCHITECT_API LSystemTag : public IDataComponent {
@@ -81,19 +82,23 @@ namespace PlantArchitect {
 
     class PLANT_ARCHITECT_API LSystemBehaviour : public IPlantBehaviour {
     protected:
-        bool InternalInternodeCheck(const Entity &target) override;
-        bool InternalRootCheck(const Entity &target) override;
-        bool InternalBranchCheck(const Entity &target) override;
+        bool InternalInternodeCheck(const std::shared_ptr<Scene> &scene, const Entity &target) override;
+
+        bool InternalRootCheck(const std::shared_ptr<Scene> &scene, const Entity &target) override;
+
+        bool InternalBranchCheck(const std::shared_ptr<Scene> &scene, const Entity &target) override;
 
     public:
-        Entity NewPlant(const std::shared_ptr<LSystemString>& descriptor, const Transform &transform);
+        Entity NewPlant(const std::shared_ptr<Scene> &scene, const std::shared_ptr<LSystemString> &descriptor, const Transform &transform);
 
         void OnInspect() override;
 
         LSystemBehaviour();
 
-        Entity CreateRoot(AssetRef descriptor,Entity& rootInternode, Entity& rootBranch) override;
-        Entity CreateBranch(const Entity &parent, const Entity &internode) override;
-        Entity CreateInternode(const Entity &parent) override;
+        Entity CreateRoot(const std::shared_ptr<Scene> &scene, AssetRef descriptor, Entity &rootInternode, Entity &rootBranch) override;
+
+        Entity CreateBranch(const std::shared_ptr<Scene> &scene, const Entity &parent, const Entity &internode) override;
+
+        Entity CreateInternode(const std::shared_ptr<Scene> &scene, const Entity &parent) override;
     };
 }

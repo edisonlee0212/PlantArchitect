@@ -17,13 +17,15 @@
 #include "EmptyInternodeResource.hpp"
 #include "DefaultInternodePhyllotaxis.hpp"
 #include "FBM.hpp"
+#include "ClassRegistry.hpp"
 
 using namespace PlantArchitect;
 
 void PlantLayer::PreparePhysics(const Entity &entity, const Entity &child,
                                 const BranchPhysicsParameters &branchPhysicsParameters) {
-    auto childBranchInfo = child.GetDataComponent<BranchInfo>();
-    auto rigidBody = child.GetOrSetPrivateComponent<RigidBody>().lock();
+    auto scene = GetScene();
+    auto childBranchInfo = scene->GetDataComponent<BranchInfo>(child);
+    auto rigidBody = scene->GetOrSetPrivateComponent<RigidBody>(child).lock();
     rigidBody->SetEnableGravity(false);
     rigidBody->SetDensityAndMassCenter(branchPhysicsParameters.m_density *
                                        childBranchInfo.m_thickness *
@@ -35,7 +37,7 @@ void PlantLayer::PreparePhysics(const Entity &entity, const Entity &child,
     rigidBody->SetAngularVelocity(glm::vec3(0.0f));
     rigidBody->SetLinearVelocity(glm::vec3(0.0f));
 
-    auto joint = child.GetOrSetPrivateComponent<Joint>().lock();
+    auto joint = scene->GetOrSetPrivateComponent<Joint>(child).lock();
     joint->Link(entity);
     joint->SetType(JointType::D6);
     joint->SetMotion(MotionAxis::SwingY, MotionType::Free);
@@ -51,16 +53,18 @@ void PlantLayer::PreparePhysics(const Entity &entity, const Entity &child,
 }
 
 void PlantLayer::Simulate(int iterations) {
+    auto scene = GetScene();
+
     for (int iteration = 0; iteration < iterations; iteration++) {
         m_voxelSpace.Clear();
-        Entities::ForEach<InternodeInfo, GlobalTransform>
-                (Entities::GetCurrentScene(), Jobs::Workers(), m_internodesQuery,
+        scene->ForEach<InternodeInfo, GlobalTransform>
+                (Jobs::Workers(), m_internodesQuery,
                  [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &internodeGlobalTransform) {
                      const auto position = internodeGlobalTransform.GetPosition();
                      m_voxelSpace.Push(position, entity);
                  }, true);
-        Entities::ForEach<InternodeInfo, GlobalTransform>
-                (Entities::GetCurrentScene(), Jobs::Workers(), m_internodesQuery,
+        scene->ForEach<InternodeInfo, GlobalTransform>
+                (Jobs::Workers(), m_internodesQuery,
                  [&](int i, Entity entity, InternodeInfo &internodeInfo, GlobalTransform &internodeGlobalTransform) {
                      const auto position = internodeGlobalTransform.GetPosition();
                      internodeInfo.m_neighborsProximity = 0;
@@ -76,7 +80,7 @@ void PlantLayer::Simulate(int iterations) {
                                                  });
                  }, true);
         for (auto &i: m_plantBehaviours) {
-            if (i) i->Grow(iteration);
+            if (i) i->Grow(scene, iteration);
         }
     }
     CalculateStatistics();
@@ -88,15 +92,17 @@ void PlantLayer::Simulate(int iterations) {
 void PlantLayer::PreparePhysics() {
     auto physicsLayer = Application::GetLayer<PhysicsLayer>();
     if (!physicsLayer) return;
+
+    auto scene = GetScene();
     for (auto &behaviour: m_plantBehaviours) {
         if (behaviour) {
             std::vector<Entity> roots;
-            behaviour->m_rootsQuery.ToEntityArray(Entities::GetCurrentScene(), roots);
+            scene->GetEntityArray(behaviour->m_rootsQuery, roots);
             for (const auto &root: roots) {
-                auto children = root.GetChildren();
+                auto children = scene->GetChildren(root);
                 for (const auto &child: children) {
-                    if (child.HasPrivateComponent<Branch>()) {
-                        auto rootRigidBody = root.GetOrSetPrivateComponent<RigidBody>().lock();
+                    if (scene->HasPrivateComponent<Branch>(child)) {
+                        auto rootRigidBody = scene->GetOrSetPrivateComponent<RigidBody>(root).lock();
                         if (!rootRigidBody->IsKinematic()) rootRigidBody->SetKinematic(true);
                         rootRigidBody->SetEnableGravity(false);
                         rootRigidBody->SetLinearDamping(m_branchPhysicsParameters.m_linearDamping);
@@ -106,8 +112,8 @@ void PlantLayer::PreparePhysics() {
                         rootRigidBody->SetAngularVelocity(glm::vec3(0.0f));
                         rootRigidBody->SetLinearVelocity(glm::vec3(0.0f));
 
-                        auto childBranchInfo = child.GetDataComponent<BranchInfo>();
-                        auto rigidBody = child.GetOrSetPrivateComponent<RigidBody>().lock();
+                        auto childBranchInfo = scene->GetDataComponent<BranchInfo>(child);
+                        auto rigidBody = scene->GetOrSetPrivateComponent<RigidBody>(child).lock();
                         rigidBody->SetEnableGravity(false);
                         rigidBody->SetDensityAndMassCenter(m_branchPhysicsParameters.m_density *
                                                            childBranchInfo.m_thickness *
@@ -119,7 +125,7 @@ void PlantLayer::PreparePhysics() {
                         rigidBody->SetAngularVelocity(glm::vec3(0.0f));
                         rigidBody->SetLinearVelocity(glm::vec3(0.0f));
 
-                        auto joint = child.GetOrSetPrivateComponent<Joint>().lock();
+                        auto joint = scene->GetOrSetPrivateComponent<Joint>(child).lock();
                         joint->Link(root);
                         joint->SetType(JointType::D6);
                         joint->SetMotion(MotionAxis::SwingY, MotionType::Free);
@@ -133,7 +139,7 @@ void PlantLayer::PreparePhysics() {
                                         m_branchPhysicsParameters.m_jointDriveDampingFactor,
                                         m_branchPhysicsParameters.m_enableAccelerationForDrive);
 
-                        behaviour->BranchGraphWalkerRootToEnd(child, [&](Entity parent, Entity child) {
+                        behaviour->BranchGraphWalkerRootToEnd(scene, child, [&](Entity parent, Entity child) {
                             PreparePhysics(parent, child, m_branchPhysicsParameters);
                         });
                         break;
@@ -142,15 +148,15 @@ void PlantLayer::PreparePhysics() {
             }
         }
     }
-    auto activeScene = Entities::GetCurrentScene();
-    physicsLayer->UploadRigidBodyShapes(activeScene);
-    physicsLayer->UploadTransforms(activeScene, true);
-    physicsLayer->UploadJointLinks(activeScene);
+    physicsLayer->UploadRigidBodyShapes(scene);
+    physicsLayer->UploadTransforms(scene, true);
+    physicsLayer->UploadJointLinks(scene);
 }
 
 #pragma region Methods
 
 void PlantLayer::OnInspect() {
+    auto scene = GetScene();
     if (ImGui::Begin("Internode Manager")) {
         static int iterations = 1;
         ImGui::DragInt("Iterations", &iterations);
@@ -198,7 +204,7 @@ void PlantLayer::OnInspect() {
                 ImGui::DragFloat("Subdivision", &subdivision, 0.001f);
                 if (ImGui::Button("Generate branch mesh for all trees")) {
                     for (const auto &behaviour: m_plantBehaviours) {
-                        behaviour->GenerateSkinnedMeshes(subdivision, resolution);
+                        behaviour->GenerateSkinnedMeshes(scene, subdivision, resolution);
                     }
                 }
                 ImGui::TreePop();
@@ -231,7 +237,7 @@ void PlantLayer::OnInspect() {
                         if (ImGui::TreeNodeEx("Internode settings",
                                               ImGuiTreeNodeFlags_DefaultOpen)) {
                             ImGui::Text("Current Internode amount: %zu",
-                                        m_internodesQuery.GetEntityAmount(Entities::GetCurrentScene(), false));
+                                        scene->GetEntityAmount(m_internodesQuery, false));
                             ImGui::SliderFloat("Transparency", &m_internodeTransparency, 0, 1);
                             DrawColorModeSelectionMenu();
                             ImGui::TreePop();
@@ -242,7 +248,7 @@ void PlantLayer::OnInspect() {
                         if (ImGui::TreeNodeEx("Branch settings",
                                               ImGuiTreeNodeFlags_DefaultOpen)) {
                             ImGui::Text("Current Branch amount: %zu",
-                                        m_branchesQuery.GetEntityAmount(Entities::GetCurrentScene(), false));
+                                        scene->GetEntityAmount(m_branchesQuery, false));
 
                             ImGui::SliderFloat("Transparency", &m_branchTransparency, 0, 1);
                             ImGui::TreePop();
@@ -376,65 +382,78 @@ void PlantLayer::OnInspect() {
                                         editorLayer->m_sceneCameraRotation);
                         const Ray cameraRay = m_visualizationCamera->ScreenPointToRay(
                                 cameraLtw, mousePosition);
-                        Entities::ForEach<GlobalTransform, InternodeInfo>(
-                                Entities::GetCurrentScene(), Jobs::Workers(),
-                                m_internodesQuery,
-                                [&, cameraLtw, cameraRay](int i, Entity entity,
-                                                          GlobalTransform &ltw,
-                                                          InternodeInfo &internodeInfo) {
-                                    const glm::vec3 position = ltw.m_value[3];
-                                    const glm::vec3 position2 = position + internodeInfo.m_length * glm::normalize(
-                                            ltw.GetRotation() * glm::vec3(0, 0, -1));
-                                    const auto center = (position + position2) / 2.0f;
-                                    auto dir = cameraRay.m_direction;
-                                    auto pos = cameraRay.m_start;
-                                    const auto radius = internodeInfo.m_thickness;
-                                    const auto height = glm::distance(position2, position);
-                                    if (!cameraRay.Intersect(center, height / 2.0f))
-                                        return;
+                        scene->ForEach<GlobalTransform, InternodeInfo>(Jobs::Workers(),
+                                                                       m_internodesQuery,
+                                                                       [&, cameraLtw, cameraRay](int i, Entity entity,
+                                                                                                 GlobalTransform &ltw,
+                                                                                                 InternodeInfo &internodeInfo) {
+                                                                           const glm::vec3 position = ltw.m_value[3];
+                                                                           const glm::vec3 position2 = position +
+                                                                                                       internodeInfo.m_length *
+                                                                                                       glm::normalize(
+                                                                                                               ltw.GetRotation() *
+                                                                                                               glm::vec3(
+                                                                                                                       0,
+                                                                                                                       0,
+                                                                                                                       -1));
+                                                                           const auto center =
+                                                                                   (position + position2) / 2.0f;
+                                                                           auto dir = cameraRay.m_direction;
+                                                                           auto pos = cameraRay.m_start;
+                                                                           const auto radius = internodeInfo.m_thickness;
+                                                                           const auto height = glm::distance(position2,
+                                                                                                             position);
+                                                                           if (!cameraRay.Intersect(center,
+                                                                                                    height / 2.0f))
+                                                                               return;
 
 #pragma region Line Line intersection
-                                    /*
-                 * http://geomalgorithms.com/a07-_distance.html
-                 */
-                                    glm::vec3 u = pos - (pos + dir);
-                                    glm::vec3 v = position - position2;
-                                    glm::vec3 w = (pos + dir) - position2;
-                                    const auto a = dot(u,
-                                                       u); // always >= 0
-                                    const auto b = dot(u, v);
-                                    const auto c = dot(v,
-                                                       v); // always >= 0
-                                    const auto d = dot(u, w);
-                                    const auto e = dot(v, w);
-                                    const auto dotP = a * c - b * b; // always >= 0
-                                    float sc, tc;
-                                    // compute the line parameters of the two closest points
-                                    if (dotP < 0.001f) { // the lines are almost parallel
-                                        sc = 0.0f;
-                                        tc = (b > c ? d / b
-                                                    : e / c); // use the largest denominator
-                                    } else {
-                                        sc = (b * e - c * d) / dotP;
-                                        tc = (a * e - b * d) / dotP;
-                                    }
-                                    // get the difference of the two closest points
-                                    glm::vec3 dP = w + sc * u - tc * v; // =  L1(sc) - L2(tc)
-                                    if (glm::length(dP) > radius)
-                                        return;
+                                                                           /*
+                                                        * http://geomalgorithms.com/a07-_distance.html
+                                                        */
+                                                                           glm::vec3 u = pos - (pos + dir);
+                                                                           glm::vec3 v = position - position2;
+                                                                           glm::vec3 w = (pos + dir) - position2;
+                                                                           const auto a = dot(u,
+                                                                                              u); // always >= 0
+                                                                           const auto b = dot(u, v);
+                                                                           const auto c = dot(v,
+                                                                                              v); // always >= 0
+                                                                           const auto d = dot(u, w);
+                                                                           const auto e = dot(v, w);
+                                                                           const auto dotP =
+                                                                                   a * c - b * b; // always >= 0
+                                                                           float sc, tc;
+                                                                           // compute the line parameters of the two closest points
+                                                                           if (dotP <
+                                                                               0.001f) { // the lines are almost parallel
+                                                                               sc = 0.0f;
+                                                                               tc = (b > c ? d / b
+                                                                                           : e /
+                                                                                             c); // use the largest denominator
+                                                                           } else {
+                                                                               sc = (b * e - c * d) / dotP;
+                                                                               tc = (a * e - b * d) / dotP;
+                                                                           }
+                                                                           // get the difference of the two closest points
+                                                                           glm::vec3 dP = w + sc * u -
+                                                                                          tc * v; // =  L1(sc) - L2(tc)
+                                                                           if (glm::length(dP) > radius)
+                                                                               return;
 #pragma endregion
 
-                                    const auto distance = glm::distance(
-                                            glm::vec3(cameraLtw.m_value[3]), glm::vec3(center));
-                                    std::lock_guard<std::mutex> lock(writeMutex);
-                                    if (distance < minDistance) {
-                                        minDistance = distance;
-                                        m_currentFocusingInternode = entity;
-                                    }
-                                });
+                                                                           const auto distance = glm::distance(
+                                                                                   glm::vec3(cameraLtw.m_value[3]),
+                                                                                   glm::vec3(center));
+                                                                           std::lock_guard<std::mutex> lock(writeMutex);
+                                                                           if (distance < minDistance) {
+                                                                               minDistance = distance;
+                                                                               m_currentFocusingInternode = entity;
+                                                                           }
+                                                                       });
                         if (Inputs::GetMouseInternal(GLFW_MOUSE_BUTTON_LEFT,
                                                      Windows::GetWindow())) {
-                            if (!m_currentFocusingInternode.Get().IsNull()) {
+                            if (m_currentFocusingInternode.Get().GetIndex() != 0) {
                                 editorLayer->SetSelectedEntity(
                                         m_currentFocusingInternode.Get());
                             }
@@ -601,15 +620,16 @@ void PlantLayer::UpdateInternodeColors() {
     if (!editorLayer) return;
     auto focusingInternode = Entity();
     auto selectedEntity = Entity();
-    if (m_currentFocusingInternode.Get().IsValid()) {
+    auto scene = GetScene();
+    if (scene->IsEntityValid(m_currentFocusingInternode.Get())) {
         focusingInternode = m_currentFocusingInternode.Get();
     }
-    if (editorLayer->m_selectedEntity.IsValid()) {
+    if (scene->IsEntityValid(editorLayer->m_selectedEntity)) {
         selectedEntity = editorLayer->m_selectedEntity;
     }
 
-    Entities::ForEach<InternodeColor, InternodeInfo>(
-            Entities::GetCurrentScene(), Jobs::Workers(),
+    scene->ForEach<InternodeColor, InternodeInfo>(
+            Jobs::Workers(),
             m_internodesQuery,
             [=](int i, Entity entity, InternodeColor &internodeRenderColor,
                 InternodeInfo &internodeInfo) {
@@ -619,40 +639,39 @@ void PlantLayer::UpdateInternodeColors() {
 
     switch (m_branchColorMode) {
         case BranchColorMode::Order:
-            Entities::ForEach<InternodeColor, InternodeStatus>(Entities::GetCurrentScene(),
-                                                               Jobs::Workers(),
-                                                               m_internodesQuery,
-                                                               [=](int i, Entity entity,
-                                                                   InternodeColor &internodeRenderColor,
-                                                                   InternodeStatus &internodeStatus) {
-                                                                   internodeRenderColor.m_value = glm::vec4(
-                                                                           glm::vec3(m_internodeColorValueMultiplier *
-                                                                                     glm::pow(
-                                                                                             (float) internodeStatus.m_order,
-                                                                                             m_internodeColorValueCompressFactor)),
-                                                                           m_internodeTransparency);
-                                                               },
-                                                               true);
+            scene->ForEach<InternodeColor, InternodeStatus>(
+                    Jobs::Workers(),
+                    m_internodesQuery,
+                    [=](int i, Entity entity,
+                        InternodeColor &internodeRenderColor,
+                        InternodeStatus &internodeStatus) {
+                        internodeRenderColor.m_value = glm::vec4(
+                                glm::vec3(m_internodeColorValueMultiplier *
+                                          glm::pow(
+                                                  (float) internodeStatus.m_order,
+                                                  m_internodeColorValueCompressFactor)),
+                                m_internodeTransparency);
+                    },
+                    true);
             break;
         case BranchColorMode::Level:
-            Entities::ForEach<InternodeColor, InternodeStatus>(Entities::GetCurrentScene(),
-                                                               Jobs::Workers(),
-                                                               m_internodesQuery,
-                                                               [=](int i, Entity entity,
-                                                                   InternodeColor &internodeRenderColor,
-                                                                   InternodeStatus &internodeStatus) {
-                                                                   internodeRenderColor.m_value = glm::vec4(
-                                                                           glm::vec3(m_internodeColorValueMultiplier *
-                                                                                     glm::pow(
-                                                                                             (float) internodeStatus.m_level,
-                                                                                             m_internodeColorValueCompressFactor)),
-                                                                           m_internodeTransparency);
-                                                               },
-                                                               true);
+            scene->ForEach<InternodeColor, InternodeStatus>(
+                    Jobs::Workers(),
+                    m_internodesQuery,
+                    [=](int i, Entity entity,
+                        InternodeColor &internodeRenderColor,
+                        InternodeStatus &internodeStatus) {
+                        internodeRenderColor.m_value = glm::vec4(
+                                glm::vec3(m_internodeColorValueMultiplier *
+                                          glm::pow(
+                                                  (float) internodeStatus.m_level,
+                                                  m_internodeColorValueCompressFactor)),
+                                m_internodeTransparency);
+                    },
+                    true);
             break;
         case BranchColorMode::ApicalControl:
-            Entities::ForEach<InternodeColor, InternodeStatus, InternodeInfo, GeneralTreeParameters>(
-                    Entities::GetCurrentScene(),
+            scene->ForEach<InternodeColor, InternodeStatus, InternodeInfo, GeneralTreeParameters>(
                     Jobs::Workers(),
                     m_internodesQuery,
                     [=](int i, Entity entity, InternodeColor &internodeRenderColor,
@@ -666,129 +685,129 @@ void PlantLayer::UpdateInternodeColors() {
                     true);
             break;
         case BranchColorMode::Water:
-            Entities::ForEach<InternodeColor, InternodeWater>(Entities::GetCurrentScene(),
-                                                              Jobs::Workers(),
-                                                              m_internodesQuery,
-                                                              [=](int i, Entity entity,
-                                                                  InternodeColor &internodeRenderColor,
-                                                                  InternodeWater &internodeWater) {
-                                                                  internodeRenderColor.m_value = glm::vec4(
-                                                                          glm::vec3(m_internodeColorValueMultiplier *
-                                                                                    glm::pow(internodeWater.m_value,
-                                                                                             m_internodeColorValueCompressFactor)),
-                                                                          m_internodeTransparency);
-                                                              },
-                                                              true);
+            scene->ForEach<InternodeColor, InternodeWater>(
+                    Jobs::Workers(),
+                    m_internodesQuery,
+                    [=](int i, Entity entity,
+                        InternodeColor &internodeRenderColor,
+                        InternodeWater &internodeWater) {
+                        internodeRenderColor.m_value = glm::vec4(
+                                glm::vec3(m_internodeColorValueMultiplier *
+                                          glm::pow(internodeWater.m_value,
+                                                   m_internodeColorValueCompressFactor)),
+                                m_internodeTransparency);
+                    },
+                    true);
             break;
         case BranchColorMode::WaterPressure:
-            Entities::ForEach<InternodeColor, InternodeWaterPressure>(Entities::GetCurrentScene(),
-                                                                      Jobs::Workers(),
-                                                                      m_internodesQuery,
-                                                                      [=](int i, Entity entity,
-                                                                          InternodeColor &internodeRenderColor,
-                                                                          InternodeWaterPressure &internodeWaterPressure) {
-                                                                          internodeRenderColor.m_value = glm::vec4(
-                                                                                  glm::vec3(
-                                                                                          m_internodeColorValueMultiplier *
-                                                                                          glm::pow(
-                                                                                                  internodeWaterPressure.m_value,
-                                                                                                  m_internodeColorValueCompressFactor)),
-                                                                                  m_internodeTransparency);
-                                                                      },
-                                                                      true);
+            scene->ForEach<InternodeColor, InternodeWaterPressure>(
+                    Jobs::Workers(),
+                    m_internodesQuery,
+                    [=](int i, Entity entity,
+                        InternodeColor &internodeRenderColor,
+                        InternodeWaterPressure &internodeWaterPressure) {
+                        internodeRenderColor.m_value = glm::vec4(
+                                glm::vec3(
+                                        m_internodeColorValueMultiplier *
+                                        glm::pow(
+                                                internodeWaterPressure.m_value,
+                                                m_internodeColorValueCompressFactor)),
+                                m_internodeTransparency);
+                    },
+                    true);
             break;
         case BranchColorMode::Proximity:
-            Entities::ForEach<InternodeColor, InternodeInfo>(Entities::GetCurrentScene(),
-                                                             Jobs::Workers(),
-                                                             m_internodesQuery,
-                                                             [=](int i, Entity entity,
-                                                                 InternodeColor &internodeRenderColor,
-                                                                 InternodeInfo &internodeInfo) {
-                                                                 internodeRenderColor.m_value = glm::vec4(
-                                                                         glm::vec3(m_internodeColorValueMultiplier *
-                                                                                   glm::pow(
-                                                                                           internodeInfo.m_neighborsProximity,
-                                                                                           m_internodeColorValueCompressFactor)),
-                                                                         m_internodeTransparency);
-                                                             },
-                                                             true);
+            scene->ForEach<InternodeColor, InternodeInfo>(
+                    Jobs::Workers(),
+                    m_internodesQuery,
+                    [=](int i, Entity entity,
+                        InternodeColor &internodeRenderColor,
+                        InternodeInfo &internodeInfo) {
+                        internodeRenderColor.m_value = glm::vec4(
+                                glm::vec3(m_internodeColorValueMultiplier *
+                                          glm::pow(
+                                                  internodeInfo.m_neighborsProximity,
+                                                  m_internodeColorValueCompressFactor)),
+                                m_internodeTransparency);
+                    },
+                    true);
             break;
         case BranchColorMode::Inhibitor:
-            Entities::ForEach<InternodeColor, InternodeStatus>(Entities::GetCurrentScene(),
-                                                               Jobs::Workers(),
-                                                               m_internodesQuery,
-                                                               [=](int i, Entity entity,
-                                                                   InternodeColor &internodeRenderColor,
-                                                                   InternodeStatus &internodeStatus) {
-                                                                   internodeRenderColor.m_value = glm::vec4(
-                                                                           glm::vec3(m_internodeColorValueMultiplier *
-                                                                                     glm::pow(
-                                                                                             internodeStatus.m_inhibitor,
-                                                                                             m_internodeColorValueCompressFactor)),
-                                                                           m_internodeTransparency);
-                                                               },
-                                                               true);
+            scene->ForEach<InternodeColor, InternodeStatus>(
+                    Jobs::Workers(),
+                    m_internodesQuery,
+                    [=](int i, Entity entity,
+                        InternodeColor &internodeRenderColor,
+                        InternodeStatus &internodeStatus) {
+                        internodeRenderColor.m_value = glm::vec4(
+                                glm::vec3(m_internodeColorValueMultiplier *
+                                          glm::pow(
+                                                  internodeStatus.m_inhibitor,
+                                                  m_internodeColorValueCompressFactor)),
+                                m_internodeTransparency);
+                    },
+                    true);
             break;
         case BranchColorMode::IndexDivider:
-            Entities::ForEach<InternodeColor, InternodeStatistics>(Entities::GetCurrentScene(),
-                                                                   Jobs::Workers(),
-                                                                   m_internodesQuery,
-                                                                   [=](int i, Entity entity,
-                                                                       InternodeColor &internodeRenderColor,
-                                                                       InternodeStatistics &internodeStatistics) {
-                                                                       internodeRenderColor.m_value = glm::vec4(
-                                                                               glm::vec3(
-                                                                                       m_randomColors[
-                                                                                               internodeStatistics.m_lSystemStringIndex /
-                                                                                               m_indexDivider]),
-                                                                               1.0f);
-                                                                   },
-                                                                   true);
+            scene->ForEach<InternodeColor, InternodeStatistics>(
+                    Jobs::Workers(),
+                    m_internodesQuery,
+                    [=](int i, Entity entity,
+                        InternodeColor &internodeRenderColor,
+                        InternodeStatistics &internodeStatistics) {
+                        internodeRenderColor.m_value = glm::vec4(
+                                glm::vec3(
+                                        m_randomColors[
+                                                internodeStatistics.m_lSystemStringIndex /
+                                                m_indexDivider]),
+                                1.0f);
+                    },
+                    true);
             break;
         case BranchColorMode::IndexRange:
-            Entities::ForEach<InternodeColor, InternodeStatistics>(Entities::GetCurrentScene(),
-                                                                   Jobs::Workers(),
-                                                                   m_internodesQuery,
-                                                                   [=](int i, Entity entity,
-                                                                       InternodeColor &internodeRenderColor,
-                                                                       InternodeStatistics &internodeStatistics) {
-                                                                       glm::vec3 color = glm::vec3(1.0f);
-                                                                       if (internodeStatistics.m_lSystemStringIndex >
-                                                                           m_indexRangeMin &&
-                                                                           internodeStatistics.m_lSystemStringIndex <
-                                                                           m_indexRangeMax) {
-                                                                           color = glm::vec3(0.0f, 0.0f, 1.0f);
-                                                                       }
-                                                                       internodeRenderColor.m_value = glm::vec4(color,
-                                                                                                                1.0f);
-                                                                   },
-                                                                   true);
+            scene->ForEach<InternodeColor, InternodeStatistics>(
+                    Jobs::Workers(),
+                    m_internodesQuery,
+                    [=](int i, Entity entity,
+                        InternodeColor &internodeRenderColor,
+                        InternodeStatistics &internodeStatistics) {
+                        glm::vec3 color = glm::vec3(1.0f);
+                        if (internodeStatistics.m_lSystemStringIndex >
+                            m_indexRangeMin &&
+                            internodeStatistics.m_lSystemStringIndex <
+                            m_indexRangeMax) {
+                            color = glm::vec3(0.0f, 0.0f, 1.0f);
+                        }
+                        internodeRenderColor.m_value = glm::vec4(color,
+                                                                 1.0f);
+                    },
+                    true);
             break;
         case BranchColorMode::StrahlerNumber:
-            Entities::ForEach<InternodeColor, InternodeStatistics>(Entities::GetCurrentScene(),
-                                                                   Jobs::Workers(),
-                                                                   m_internodesQuery,
-                                                                   [=](int i, Entity entity,
-                                                                       InternodeColor &internodeRenderColor,
-                                                                       InternodeStatistics &internodeStatistics) {
-                                                                       internodeRenderColor.m_value = glm::vec4(
-                                                                               glm::vec3(
-                                                                                       m_randomColors[
-                                                                                               internodeStatistics.m_strahlerOrder]),
-                                                                               1.0f);
-                                                                   },
-                                                                   true);
+            scene->ForEach<InternodeColor, InternodeStatistics>(
+                    Jobs::Workers(),
+                    m_internodesQuery,
+                    [=](int i, Entity entity,
+                        InternodeColor &internodeRenderColor,
+                        InternodeStatistics &internodeStatistics) {
+                        internodeRenderColor.m_value = glm::vec4(
+                                glm::vec3(
+                                        m_randomColors[
+                                                internodeStatistics.m_strahlerOrder]),
+                                1.0f);
+                    },
+                    true);
             break;
         case BranchColorMode::ChildCount:
-            Entities::ForEach<InternodeColor, InternodeStatistics>(Entities::GetCurrentScene(),
-                                                                   Jobs::Workers(),
-                                                                   m_internodesQuery,
-                                                                   [=](int i, Entity entity,
-                                                                       InternodeColor &internodeRenderColor,
-                                                                       InternodeStatistics &internodeStatistics) {
-                                                                       internodeRenderColor.m_value = m_childCountColors[internodeStatistics.m_childCount];
-                                                                   },
-                                                                   true);
+            scene->ForEach<InternodeColor, InternodeStatistics>(
+                    Jobs::Workers(),
+                    m_internodesQuery,
+                    [=](int i, Entity entity,
+                        InternodeColor &internodeRenderColor,
+                        InternodeStatistics &internodeStatistics) {
+                        internodeRenderColor.m_value = m_childCountColors[internodeStatistics.m_childCount];
+                    },
+                    true);
             break;
         default:
             break;
@@ -797,16 +816,16 @@ void PlantLayer::UpdateInternodeColors() {
 
     InternodeColor color;
     color.m_value = glm::vec4(1, 1, 1, 1);
-    if (focusingInternode.IsValid() && focusingInternode.HasDataComponent<InternodeColor>())
-        focusingInternode.SetDataComponent(color);
+    if (scene->IsEntityValid(focusingInternode) && scene->HasDataComponent<InternodeColor>(focusingInternode))
+        scene->SetDataComponent(focusingInternode, color);
     color.m_value = glm::vec4(1, 0, 0, 1);
-    if (selectedEntity.IsValid() && selectedEntity.HasDataComponent<InternodeColor>())
-        selectedEntity.SetDataComponent(color);
+    if (scene->IsEntityValid(selectedEntity) && scene->HasDataComponent<InternodeColor>(selectedEntity))
+        scene->SetDataComponent(selectedEntity, color);
 }
 
 void PlantLayer::UpdateInternodeCylinder() {
-    Entities::ForEach<GlobalTransform, InternodeCylinder, InternodeCylinderWidth, InternodeInfo>(
-            Entities::GetCurrentScene(),
+    auto scene = GetScene();
+    scene->ForEach<GlobalTransform, InternodeCylinder, InternodeCylinderWidth, InternodeInfo>(
             Jobs::Workers(),
             m_internodesQuery,
             [](int i, Entity entity, GlobalTransform &ltw, InternodeCylinder &c,
@@ -839,8 +858,8 @@ void PlantLayer::UpdateInternodeCylinder() {
 }
 
 void PlantLayer::UpdateBranchCylinder() {
-    Entities::ForEach<GlobalTransform, BranchCylinder, BranchCylinderWidth, BranchInfo>(
-            Entities::GetCurrentScene(),
+    auto scene = GetScene();
+    scene->ForEach<GlobalTransform, BranchCylinder, BranchCylinderWidth, BranchInfo>(
             Jobs::Workers(),
             m_branchesQuery,
             [](int i, Entity entity, GlobalTransform &ltw, BranchCylinder &c,
@@ -881,10 +900,10 @@ void PlantLayer::RenderInternodeCylinders() {
     auto editorLayer = Application::GetLayer<EditorLayer>();
     if (!editorLayer) return;
     std::vector<InternodeCylinder> branchCylinders;
-    m_internodesQuery.ToComponentDataArray<InternodeCylinder>(Entities::GetCurrentScene(),
-                                                              branchCylinders);
+    auto scene = GetScene();
+    scene->GetComponentDataArray<InternodeCylinder>(m_internodesQuery, branchCylinders);
     std::vector<InternodeColor> branchColors;
-    m_internodesQuery.ToComponentDataArray<InternodeColor>(Entities::GetCurrentScene(),
+    scene->GetComponentDataArray<InternodeColor>(m_internodesQuery,
                                                            branchColors);
     if (!branchCylinders.empty())
         Graphics::DrawGizmoMeshInstancedColored(
@@ -900,7 +919,8 @@ void PlantLayer::RenderInternodePointers() {
     auto editorLayer = Application::GetLayer<EditorLayer>();
     if (!editorLayer) return;
     std::vector<InternodePointer> branchPointers;
-    m_internodesQuery.ToComponentDataArray<InternodePointer>(Entities::GetCurrentScene(),
+    auto scene = GetScene();
+    scene->GetComponentDataArray<InternodePointer>(m_internodesQuery,
                                                              branchPointers);
     if (!branchPointers.empty())
         Graphics::DrawGizmoMeshInstanced(
@@ -909,11 +929,6 @@ void PlantLayer::RenderInternodePointers() {
                 editorLayer->m_sceneCameraRotation, m_pointerColor,
                 *reinterpret_cast<std::vector<glm::mat4> *>(&branchPointers),
                 glm::mat4(1.0f), 1.0f);
-}
-
-
-bool PlantLayer::InternodeCheck(const Entity &target) {
-    return target.IsValid() && target.HasDataComponent<InternodeInfo>() && target.HasPrivateComponent<Internode>();
 }
 
 
@@ -1003,27 +1018,27 @@ void PlantLayer::DrawColorModeSelectionMenu() {
 }
 
 void PlantLayer::CalculateStatistics() {
-    auto scene = Entities::GetCurrentScene();
+    auto scene = Application::GetActiveScene();
     for (auto &behaviour: m_plantBehaviours) {
         if (behaviour) {
             std::vector<Entity> currentRoots;
-            behaviour->m_rootsQuery.ToEntityArray(Entities::GetCurrentScene(), currentRoots);
+            scene->GetEntityArray(behaviour->m_rootsQuery, currentRoots);
             for (auto root: currentRoots) {
-                root.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
-                    if (!behaviour->InternodeCheck(child)) return;
-                    behaviour->InternodeGraphWalker(child,
+                scene->ForEachChild(root, [&](Entity child) {
+                    if (!behaviour->InternodeCheck(scene, child)) return;
+                    behaviour->InternodeGraphWalker(scene, child,
                                                     [](Entity parent, Entity child) {
 
                                                     },
                                                     [&](Entity parent) {
-                                                        auto parentStat = parent.GetDataComponent<InternodeStatistics>();
+                                                        auto parentStat = scene->GetDataComponent<InternodeStatistics>(parent);
                                                         std::vector<int> indices;
                                                         parentStat.m_childCount = 0;
-                                                        parent.ForEachChild(
-                                                                [&](const std::shared_ptr<Scene> &scene, Entity child) {
-                                                                    if (behaviour->InternodeCheck(child)) {
+                                                        scene->ForEachChild(parent,
+                                                                [&](Entity child) {
+                                                                    if (behaviour->InternodeCheck(scene, child)) {
                                                                         indices.push_back(
-                                                                                child.GetDataComponent<InternodeStatistics>().m_strahlerOrder);
+                                                                                scene->GetDataComponent<InternodeStatistics>(child).m_strahlerOrder);
                                                                         parentStat.m_childCount++;
                                                                     }
                                                                 });
@@ -1046,13 +1061,13 @@ void PlantLayer::CalculateStatistics() {
                                                             }
                                                         }
 
-                                                        parent.SetDataComponent(parentStat);
+                                                        scene->SetDataComponent(parent, parentStat);
                                                     },
-                                                    [](Entity endNode) {
-                                                        auto endNodeStat = endNode.GetDataComponent<InternodeStatistics>();
+                                                    [&](Entity endNode) {
+                                                        auto endNodeStat = scene->GetDataComponent<InternodeStatistics>(endNode);
                                                         endNodeStat.m_strahlerOrder = 1;
                                                         endNodeStat.m_childCount = 0;
-                                                        endNode.SetDataComponent(endNodeStat);
+                                                        scene->SetDataComponent(endNode, endNodeStat);
                                                     }
                     );
                 });
@@ -1069,21 +1084,22 @@ void PlantLayer::FixedUpdate() {
             std::vector<Entity> branches;
             std::vector<glm::vec3> forces;
             branches.clear();
-            m_branchesQuery.ToEntityArray(Entities::GetCurrentScene(), branches, false);
+            auto scene = GetScene();
+            scene->GetEntityArray(m_branchesQuery, branches, false);
             forces.resize(branches.size());
-            Entities::ForEach<GlobalTransform>(Entities::GetCurrentScene(), Jobs::Workers(), m_branchesQuery,
-                                               [&](int i, Entity entity, GlobalTransform &globalTransform) {
-                                                   const auto position = entity.GetDataComponent<GlobalTransform>().GetPosition();
-                                                   forces[i] = m_fBMField.GetT(position,
-                                                                               Application::Time().CurrentTime(),
-                                                                               10.0f, 0.02f, 6) *
-                                                               m_forceFactor;
-                                               }, false);
+            scene->ForEach<GlobalTransform>(Jobs::Workers(), m_branchesQuery,
+                                            [&](int i, Entity entity, GlobalTransform &globalTransform) {
+                                                const auto position = scene->GetDataComponent<GlobalTransform>(entity).GetPosition();
+                                                forces[i] = m_fBMField.GetT(position,
+                                                                            Application::Time().CurrentTime(),
+                                                                            10.0f, 0.02f, 6) *
+                                                            m_forceFactor;
+                                            }, false);
 
             for (int i = 0; i < branches.size(); i++) {
                 auto &branch = branches[i];
-                if (branch.IsEnabled() && branch.HasPrivateComponent<RigidBody>()) {
-                    auto rigidBody = branch.GetOrSetPrivateComponent<RigidBody>().lock();
+                if (scene->IsEntityEnabled(branch) && scene->HasPrivateComponent<RigidBody>(branch)) {
+                    auto rigidBody = scene->GetOrSetPrivateComponent<RigidBody>(branch).lock();
                     if (rigidBody->Registered()) rigidBody->AddForce(forces[i]);
                 }
             }
@@ -1092,8 +1108,8 @@ void PlantLayer::FixedUpdate() {
 }
 
 void PlantLayer::UpdateBranchColors() {
-    Entities::ForEach<BranchColor>(
-            Entities::GetCurrentScene(), Jobs::Workers(),
+    auto scene = GetScene();
+    scene->ForEach<BranchColor>(Jobs::Workers(),
             m_branchesQuery,
             [=](int i, Entity entity, BranchColor &branchRenderColor) {
                 branchRenderColor.m_value = glm::vec4(m_branchColor, m_branchTransparency);
@@ -1105,10 +1121,11 @@ void PlantLayer::RenderBranchCylinders() {
     auto editorLayer = Application::GetLayer<EditorLayer>();
     if (!editorLayer) return;
     std::vector<BranchCylinder> branchCylinders;
-    m_branchesQuery.ToComponentDataArray<BranchCylinder>(Entities::GetCurrentScene(),
+    auto scene = GetScene();
+    scene->GetComponentDataArray<BranchCylinder>(m_branchesQuery,
                                                          branchCylinders);
     std::vector<BranchColor> branchColors;
-    m_branchesQuery.ToComponentDataArray<BranchColor>(Entities::GetCurrentScene(),
+    scene->GetComponentDataArray<BranchColor>(m_branchesQuery,
                                                       branchColors);
     if (!branchCylinders.empty())
         Graphics::DrawGizmoMeshInstancedColored(
@@ -1119,7 +1136,6 @@ void PlantLayer::RenderBranchCylinders() {
                 *reinterpret_cast<std::vector<glm::mat4> *>(&branchCylinders),
                 glm::mat4(1.0f), 1.0f);
 }
-
 
 
 #pragma endregion

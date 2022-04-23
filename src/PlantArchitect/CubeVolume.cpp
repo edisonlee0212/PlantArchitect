@@ -1,10 +1,12 @@
 #include <CubeVolume.hpp>
+#include "Graphics.hpp"
+#include "DefaultResources.hpp"
 
 using namespace PlantArchitect;
 
 void CubeVolume::ApplyMeshRendererBounds() {
     auto meshRenderer =
-            GetOwner().GetOrSetPrivateComponent<MeshRenderer>().lock();
+            GetScene()->GetOrSetPrivateComponent<MeshRenderer>(GetOwner()).lock();
     m_minMaxBound = meshRenderer->m_mesh.Get<Mesh>()->GetBound();
 }
 
@@ -20,14 +22,14 @@ void CubeVolume::OnInspect() {
     ImGui::DragFloat3("Max", &m_minMaxBound.m_max.x, 0.1);
     ImGui::Checkbox("Display bounds", &m_displayBounds);
     if (m_displayBounds) {
-        const auto globalTransform = GetOwner().GetDataComponent<GlobalTransform>();
+        const auto globalTransform = GetScene()->GetDataComponent<GlobalTransform>(GetOwner());
         Graphics::DrawGizmoMesh(
                 DefaultResources::Primitives::Cube, glm::vec4(0, 1, 0, 0.2),
                 globalTransform.m_value * glm::translate(m_minMaxBound.Center()) *
                 glm::scale(m_minMaxBound.Size()),
                 1);
     }
-    if (GetOwner().HasPrivateComponent<MeshRenderer>()) {
+    if (GetScene()->HasPrivateComponent<MeshRenderer>(GetOwner())) {
         if (ImGui::Button("Apply mesh bound")) {
             ApplyMeshRendererBounds();
         }
@@ -35,15 +37,16 @@ void CubeVolume::OnInspect() {
 }
 
 bool CubeVolume::InVolume(const glm::vec3 &position) {
-    const auto globalTransform = GetOwner().GetDataComponent<GlobalTransform>();
+    const auto globalTransform = GetScene()->GetDataComponent<GlobalTransform>(GetOwner());
     const auto &finalPos = glm::vec3(
             (glm::inverse(globalTransform.m_value) * glm::translate(position))[3]);
     return m_minMaxBound.InBound(finalPos);
 }
 
 glm::vec3 CubeVolume::GetRandomPoint() {
-    const auto globalTransform = GetOwner().GetDataComponent<GlobalTransform>();
-    return glm::linearRand(globalTransform.m_value * glm::vec4(m_minMaxBound.m_min, 1.0f), globalTransform.m_value * glm::vec4(m_minMaxBound.m_max, 1.0f));
+    const auto globalTransform = GetScene()->GetDataComponent<GlobalTransform>(GetOwner());
+    return glm::linearRand(globalTransform.m_value * glm::vec4(m_minMaxBound.m_min, 1.0f),
+                           globalTransform.m_value * glm::vec4(m_minMaxBound.m_max, 1.0f));
 }
 
 bool CubeVolume::InVolume(const GlobalTransform &globalTransform,

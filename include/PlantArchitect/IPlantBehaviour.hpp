@@ -4,8 +4,8 @@
 #include "Internode.hpp"
 #include "Root.hpp"
 #include "Branch.hpp"
-#include "Engine/Core/Serialization.hpp"
-
+#include "Serialization.hpp"
+#include "Graphics.hpp"
 
 using namespace UniEngine;
 namespace PlantArchitect {
@@ -52,14 +52,14 @@ namespace PlantArchitect {
          * @return An entity represent the internode.
          */
         template<typename T>
-        Entity CreateInternodeHelper(const Entity &parent);
+        Entity CreateInternodeHelper(const std::shared_ptr<Scene>& scene, const Entity &parent);
 
         /**
          * Get or create an branch.
          * @param parent The parent of the branch.
          * @return An entity represent the branch.
          */
-        Entity CreateBranchHelper(const Entity &parent, const Entity &internode);
+        Entity CreateBranchHelper(const std::shared_ptr<Scene>& scene, const Entity &parent, const Entity &internode);
 
         /**
          * Get or create a root.
@@ -67,75 +67,75 @@ namespace PlantArchitect {
          * @return An entity represent the root internode.
          */
         template<typename T>
-        Entity CreateRootHelper(AssetRef descriptor, Entity &rootInternode, Entity &rootBranch);
+        Entity CreateRootHelper(const std::shared_ptr<Scene>& scene, AssetRef descriptor, Entity &rootInternode, Entity &rootBranch);
 
 #pragma endregion
 #pragma region Helpers
 
-        void BranchCollector(std::vector<Entity> &boundEntities,
+        void BranchCollector(const std::shared_ptr<Scene>& scene, std::vector<Entity> &boundEntities,
                              std::vector<int> &parentIndices,
                              const int &parentIndex, const Entity &node);
 
-        void BranchSkinnedMeshGenerator(std::vector<Entity> &entities,
+        void BranchSkinnedMeshGenerator(const std::shared_ptr<Scene>& scene, std::vector<Entity> &entities,
                                         std::vector<int> &parentIndices,
                                         std::vector<SkinnedVertex> &vertices,
                                         std::vector<unsigned> &indices);
 
-        void FoliageSkinnedMeshGenerator(std::vector<Entity> &entities,
+        void FoliageSkinnedMeshGenerator(const std::shared_ptr<Scene>& scene, std::vector<Entity> &entities,
                                          std::vector<int> &parentIndices,
                                          std::vector<SkinnedVertex> &vertices,
                                          std::vector<unsigned> &indices);
 
-        void PrepareInternodeForSkeletalAnimation(const Entity &entity, Entity &branchMesh, Entity &foliageMesh);
+        void PrepareInternodeForSkeletalAnimation(const std::shared_ptr<Scene>& scene, const Entity &entity, Entity &branchMesh, Entity &foliageMesh);
 
 #pragma endregion
 
-        virtual bool InternalInternodeCheck(const Entity &target) = 0;
+        virtual bool InternalInternodeCheck(const std::shared_ptr<Scene>& scene, const Entity &target) = 0;
 
-        virtual bool InternalRootCheck(const Entity &target) = 0;
+        virtual bool InternalRootCheck(const std::shared_ptr<Scene>& scene, const Entity &target) = 0;
 
-        virtual bool InternalBranchCheck(const Entity &target) = 0;
+        virtual bool InternalBranchCheck(const std::shared_ptr<Scene>& scene, const Entity &target) = 0;
 
-        void UpdateBranchHelper(const Entity &currentBranch, const Entity &currentInternode);
+        void UpdateBranchHelper(const std::shared_ptr<Scene>& scene, const Entity &currentBranch, const Entity &currentInternode);
 
     public:
         virtual void OnInspect() = 0;
 
         [[nodiscard]] std::string GetTypeName() const;
 
-        void UpdateBranches();
+        void UpdateBranches(const std::shared_ptr<Scene>& scene);
 
         void ApplyTropism(const glm::vec3 &targetDir, float tropism, glm::vec3 &front, glm::vec3 &up);
 
-        virtual Entity CreateRoot(AssetRef descriptor, Entity &rootInternode, Entity &rootBranch) = 0;
+        virtual Entity CreateRoot(const std::shared_ptr<Scene>& scene, AssetRef descriptor, Entity &rootInternode, Entity &rootBranch) = 0;
 
-        virtual Entity CreateBranch(const Entity &parent, const Entity &internode) = 0;
+        virtual Entity CreateBranch(const std::shared_ptr<Scene>& scene, const Entity &parent, const Entity &internode) = 0;
 
-        virtual Entity CreateInternode(const Entity &parent) = 0;
+        virtual Entity CreateInternode(const std::shared_ptr<Scene>& scene, const Entity &parent) = 0;
 
         /**
          * Remove the internode and all its descendents.
          * @param internode target internode to be removed
          */
-        void DestroyInternode(const Entity &internode);
+        void DestroyInternode(const std::shared_ptr<Scene>& scene, const Entity &internode);
 
         /**
          * Remove the branch and all its descendents. The linked internodes will also be deleted.
          * @param branch target branch to be removed
          */
-        void DestroyBranch(const Entity &branch);
+        void DestroyBranch(const std::shared_ptr<Scene>& scene, const Entity &branch);
 
         /**
          * Handle main growth here.
          */
-        virtual void Grow(int iteration) {};
+        virtual void Grow(const std::shared_ptr<Scene>& scene, int iteration) {};
 
         /**
          * Generate skinned mesh for internodes.
          * @param entities
          */
         void
-        GenerateSkinnedMeshes(float subdivision = 4.0f, float resolution = 0.02f);
+        GenerateSkinnedMeshes(const std::shared_ptr<Scene>& scene, float subdivision = 4.0f, float resolution = 0.02f);
 
 
         /**
@@ -145,7 +145,7 @@ namespace PlantArchitect {
          * @param endToRootAction The action to take during traversal from end to root. You must not delete the parent during the action.
          * @param endNodeAction The action to take for end nodes. You must not delete the end node during the action.
          */
-        void InternodeGraphWalker(const Entity &startInternode,
+        void InternodeGraphWalker(const std::shared_ptr<Scene>& scene, const Entity &startInternode,
                                   const std::function<void(Entity parent, Entity child)> &rootToEndAction,
                                   const std::function<void(Entity parent)> &endToRootAction,
                                   const std::function<void(Entity endNode)> &endNodeAction);
@@ -155,7 +155,7 @@ namespace PlantArchitect {
          * @param node Start node.
          * @param rootToEndAction The action to take during traversal from root to end.
          */
-        void InternodeGraphWalkerRootToEnd(const Entity &startInternode,
+        void InternodeGraphWalkerRootToEnd(const std::shared_ptr<Scene>& scene, const Entity &startInternode,
                                            const std::function<void(Entity parent, Entity child)> &rootToEndAction);
 
         /**
@@ -164,7 +164,7 @@ namespace PlantArchitect {
          * @param endToRootAction The action to take during traversal from end to root. You must not delete the parent during the action.
          * @param endNodeAction The action to take for end nodes. You must not delete the end node during the action.
          */
-        void InternodeGraphWalkerEndToRoot(const Entity &startInternode,
+        void InternodeGraphWalkerEndToRoot(const std::shared_ptr<Scene>& scene, const Entity &startInternode,
                                            const std::function<void(Entity parent)> &endToRootAction,
                                            const std::function<void(Entity endNode)> &endNodeAction);
 
@@ -175,7 +175,7 @@ namespace PlantArchitect {
          * @param endToRootAction The action to take during traversal from end to root. You must not delete the parent during the action.
          * @param endNodeAction The action to take for end. You must not delete the end node during the action.
          */
-        void BranchGraphWalker(const Entity &startBranch,
+        void BranchGraphWalker(const std::shared_ptr<Scene>& scene, const Entity &startBranch,
                                const std::function<void(Entity parent, Entity child)> &rootToEndAction,
                                const std::function<void(Entity parent)> &endToRootAction,
                                const std::function<void(Entity endNode)> &endNodeAction);
@@ -185,7 +185,7 @@ namespace PlantArchitect {
          * @param node Start node.
          * @param rootToEndAction The action to take during traversal from root to end.
          */
-        void BranchGraphWalkerRootToEnd(const Entity &startBranch,
+        void BranchGraphWalkerRootToEnd(const std::shared_ptr<Scene>& scene, const Entity &startBranch,
                                         const std::function<void(Entity parent, Entity child)> &rootToEndAction);
 
         /**
@@ -194,7 +194,7 @@ namespace PlantArchitect {
          * @param endToRootAction The action to take during traversal from end to root. You must not delete the parent during the action.
          * @param endNodeAction The action to take for end nodes. You must not delete the end node during the action.
          */
-        void BranchGraphWalkerEndToRoot(const Entity &startBranch,
+        void BranchGraphWalkerEndToRoot(const std::shared_ptr<Scene>& scene, const Entity &startBranch,
                                         const std::function<void(Entity parent)> &endToRootAction,
                                         const std::function<void(Entity endNode)> &endNodeAction);
 
@@ -204,21 +204,21 @@ namespace PlantArchitect {
          * @param target Target for check.
          * @return True if the entity is valid and contains [InternodeInfo] and [Internode], false otherwise.
          */
-        bool InternodeCheck(const Entity &target);
+        bool InternodeCheck(const std::shared_ptr<Scene>& scene, const Entity &target);
 
 /**
          * Check if the entity is valid root.
          * @param target Target for check.
          * @return True if the entity is valid and contains [RootInfo] and [Root], false otherwise.
          */
-        bool RootCheck(const Entity &target);
+        bool RootCheck(const std::shared_ptr<Scene>& scene, const Entity &target);
 
         /**
          * Check if the entity is valid branch.
          * @param target Target for check.
          * @return True if the entity is valid and contains [BranchInfo] and [Branch], false otherwise.
          */
-        bool BranchCheck(const Entity &target);
+        bool BranchCheck(const std::shared_ptr<Scene>& scene, const Entity &target);
 
         /**
          * The GUI menu template for creating an specific kind of internode.
@@ -375,48 +375,48 @@ namespace PlantArchitect {
     }
 
     template<typename T>
-    Entity IPlantBehaviour::CreateInternodeHelper(const Entity &parent) {
+    Entity IPlantBehaviour::CreateInternodeHelper(const std::shared_ptr<Scene>& scene, const Entity &parent) {
         Entity retVal;
         std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
-        retVal = Entities::CreateEntity(Entities::GetCurrentScene(), m_internodeArchetype, "Internode");
-        retVal.SetParent(parent);
+        retVal = scene->CreateEntity(m_internodeArchetype, "Internode");
+        scene->SetParent(retVal, parent);
         InternodeInfo internodeInfo;
-        retVal.SetDataComponent(internodeInfo);
-        auto parentInternode = parent.GetOrSetPrivateComponent<Internode>().lock();
-        auto internode = retVal.GetOrSetPrivateComponent<Internode>().lock();
+        scene->SetDataComponent(retVal, internodeInfo);
+        auto parentInternode = scene->GetOrSetPrivateComponent<Internode>(parent).lock();
+        auto internode = scene->GetOrSetPrivateComponent<Internode>(retVal).lock();
         internode->m_resource = std::make_unique<T>();
         internode->m_currentRoot = parentInternode->m_currentRoot;
         return retVal;
     }
 
     template<typename T>
-    Entity IPlantBehaviour::CreateRootHelper(AssetRef descriptor, Entity &rootInternode, Entity &rootBranch) {
+    Entity IPlantBehaviour::CreateRootHelper(const std::shared_ptr<Scene>& scene, AssetRef descriptor, Entity &rootInternode, Entity &rootBranch) {
         if (!descriptor.Get<IPlantDescriptor>()) {
             UNIENGINE_ERROR("Descriptor invalid!");
             return {};
         }
         std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
         Entity rootEntity;
-        rootEntity = Entities::CreateEntity(Entities::GetCurrentScene(), m_rootArchetype, "Root");
+        rootEntity = scene->CreateEntity(m_rootArchetype, "Root");
         RootInfo rootInfo;
-        rootEntity.SetDataComponent(rootInfo);
-        auto root = rootEntity.GetOrSetPrivateComponent<Root>().lock();
+        scene->SetDataComponent(rootEntity, rootInfo);
+        auto root = scene->GetOrSetPrivateComponent<Root>(rootEntity).lock();
         root->m_plantDescriptor = descriptor;
-        rootInternode = Entities::CreateEntity(Entities::GetCurrentScene(), m_internodeArchetype, "Internode");
-        rootInternode.SetParent(rootEntity);
+        rootInternode = scene->CreateEntity(m_internodeArchetype, "Internode");
+        scene->SetParent(rootInternode, rootEntity);
 
-        rootBranch = Entities::CreateEntity(Entities::GetCurrentScene(), m_branchArchetype, "Branch");
-        rootBranch.SetParent(rootEntity);
+        rootBranch = scene->CreateEntity(m_branchArchetype, "Branch");
+        scene->SetParent(rootBranch, rootEntity);
 
         InternodeInfo internodeInfo;
-        rootInternode.SetDataComponent(internodeInfo);
-        auto internode = rootInternode.GetOrSetPrivateComponent<Internode>().lock();
+        scene->SetDataComponent(rootInternode, internodeInfo);
+        auto internode = scene->GetOrSetPrivateComponent<Internode>(rootInternode).lock();
         internode->m_resource = Serialization::ProduceSerializable<T>();
         internode->m_currentRoot = rootEntity;
         BranchInfo branchInfo;
         branchInfo.m_endNode = true;
-        rootBranch.SetDataComponent(branchInfo);
-        auto branch = rootBranch.GetOrSetPrivateComponent<Branch>().lock();
+        scene->SetDataComponent(rootBranch, branchInfo);
+        auto branch = scene->GetOrSetPrivateComponent<Branch>(rootBranch).lock();
         branch->m_currentRoot = rootEntity;
         branch->m_currentInternode = rootInternode;
         return rootEntity;

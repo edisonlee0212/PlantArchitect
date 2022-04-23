@@ -2,6 +2,8 @@
 #include <PlantDataComponents.hpp>
 #include <RadialBoundingVolume.hpp>
 #include <Internode.hpp>
+#include "Graphics.hpp"
+#include "DefaultResources.hpp"
 
 using namespace PlantArchitect;
 using namespace UniEngine;
@@ -41,7 +43,7 @@ glm::vec3 RadialBoundingVolume::GetRandomPoint() {
     float height = heightLevel * layerIndex + glm::linearRand(0.0f, heightLevel);
     float angle = sliceAngle * sectorIndex + glm::linearRand(0.0f, sliceAngle);
     float distance = m_layers[layerIndex][sectorIndex].m_maxDistance * glm::length(glm::diskRand(1.0f));
-    const auto globalTransform = GetOwner().GetDataComponent<GlobalTransform>();
+    const auto globalTransform = GetScene()->GetDataComponent<GlobalTransform>(GetOwner());
     return globalTransform.m_value *
            glm::vec4(distance * glm::sin(glm::radians(angle)), height, distance * glm::cos(glm::radians(angle)), 1.0f);
 }
@@ -263,21 +265,22 @@ void RadialBoundingVolume::FormEntity() {
         CalculateVolume();
     if (!m_meshGenerated)
         return;
-    auto children = GetOwner().GetChildren();
+    auto scene = GetScene();
+    auto children = scene->GetChildren(GetOwner());
     for (auto &child: children) {
-        Entities::DeleteEntity(Entities::GetCurrentScene(), child);
+        scene->DeleteEntity(child);
     }
     children.clear();
     for (auto i = 0; i < m_boundMeshes.size(); i++) {
-        auto slice = Entities::CreateEntity(Entities::GetCurrentScene(), "RBV_" + std::to_string(i));
-        auto mmc = slice.GetOrSetPrivateComponent<MeshRenderer>().lock();
+        auto slice = scene->CreateEntity("RBV_" + std::to_string(i));
+        auto mmc = scene->GetOrSetPrivateComponent<MeshRenderer>(slice).lock();
         auto mat = ProjectManager::CreateTemporaryAsset<Material>();
         mmc->m_material = mat;
         mat->SetProgram(DefaultResources::GLPrograms::StandardProgram);
         mmc->m_forwardRendering = false;
         mmc->m_mesh = m_boundMeshes[i];
 
-        slice.SetParent(GetOwner(), false);
+        scene->SetParent(slice, GetOwner(), false);
     }
 }
 
@@ -385,11 +388,12 @@ void RadialBoundingVolume::CalculateVolume() {
     internode->CollectInternodes(internodes);
     m_maxHeight = 0;
     m_maxRadius = 0;
+    auto scene = GetScene();
     const auto rootPosition =
-            internode->GetOwner().GetDataComponent<GlobalTransform>().GetPosition();
+            scene->GetDataComponent<GlobalTransform>(internode->GetOwner()).GetPosition();
     std::vector<glm::vec3> positions;
     for (auto &i: internodes) {
-        const glm::vec3 position = i.GetDataComponent<GlobalTransform>().GetPosition() - rootPosition;
+        const glm::vec3 position = scene->GetDataComponent<GlobalTransform>(i).GetPosition() - rootPosition;
         positions.push_back(position);
         if (position.y > m_maxHeight)
             m_maxHeight = position.y;
@@ -400,7 +404,7 @@ void RadialBoundingVolume::CalculateVolume() {
 
     auto positionIndex = 0;
     for (auto &internode: internodes) {
-        const auto internodeGrowth = internode.GetDataComponent<InternodeInfo>();
+        const auto internodeGrowth = scene->GetDataComponent<InternodeInfo>(internode);
         const glm::vec3 position = positions[positionIndex];
         const auto sliceIndex = SelectSlice(position);
         const float currentDistance =
@@ -423,20 +427,21 @@ void RadialBoundingVolume::CalculateVolume() {
 void RadialBoundingVolume::CalculateVolume(float maxHeight) {
     auto owner = GetOwner();
     ResizeVolumes();
-    if (!owner.HasPrivateComponent<Internode>()) {
+    auto scene = GetScene();
+    if (!scene->HasPrivateComponent<Internode>(owner)) {
         UNIENGINE_WARNING("Entity is not an internode!");
         return;
     }
     std::vector<Entity> internodes;
-    auto internode = owner.GetOrSetPrivateComponent<Internode>().lock();
+    auto internode = scene->GetOrSetPrivateComponent<Internode>(owner).lock();
     internode->CollectInternodes(internodes);
     m_maxHeight = maxHeight;
     m_maxRadius = 0;
     const auto rootPosition =
-            internode->GetOwner().GetDataComponent<GlobalTransform>().GetPosition();
+            scene->GetDataComponent<GlobalTransform>(internode->GetOwner()).GetPosition();
     std::vector<glm::vec3> positions;
     for (auto &i: internodes) {
-        const glm::vec3 position = i.GetDataComponent<GlobalTransform>().GetPosition() - rootPosition;
+        const glm::vec3 position = scene->GetDataComponent<GlobalTransform>(i).GetPosition() - rootPosition;
         positions.push_back(position);
         if (position.y > m_maxHeight)
             m_maxHeight = position.y;
@@ -459,7 +464,7 @@ void RadialBoundingVolume::CalculateVolume(float maxHeight) {
     }
     auto positionIndex = 0;
     for (auto &internode: internodes) {
-        const auto internodeGrowth = internode.GetDataComponent<InternodeInfo>();
+        const auto internodeGrowth = scene->GetDataComponent<InternodeInfo>(internode);
         const int segments = 3;
         for (int i = 0; i < segments; i++) {
             const glm::vec3 position = positions[positionIndex];
@@ -484,7 +489,7 @@ void RadialBoundingVolume::CalculateVolume(float maxHeight) {
 
 void RadialBoundingVolume::OnInspect() {
     Editor::DragAndDropButton<Internode>(m_rootInternode, "Root");
-
+    auto scene = GetScene();
     ImGui::Checkbox("Prune Buds", &m_pruneBuds);
     ImGui::Checkbox("Display bounds", &m_display);
     ImGui::ColorEdit4("Display Color", &m_displayColor.x);
@@ -528,7 +533,7 @@ void RadialBoundingVolume::OnInspect() {
 
                     Graphics::DrawGizmoMesh(
                             m_boundMeshes[i], m_displayColor,
-                            GetOwner().GetDataComponent<GlobalTransform>().m_value);
+                            scene->GetDataComponent<GlobalTransform>(GetOwner()).m_value);
                     displayLayer = true;
                     ImGui::TreePop();
                 }
@@ -557,7 +562,7 @@ void RadialBoundingVolume::OnInspect() {
         for (auto &i: m_boundMeshes) {
             Graphics::DrawGizmoMesh(
                     i, m_displayColor,
-                    GetOwner().GetDataComponent<GlobalTransform>().m_value);
+                    scene->GetDataComponent<GlobalTransform>(GetOwner()).m_value);
         }
     }
 }

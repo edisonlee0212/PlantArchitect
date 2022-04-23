@@ -17,6 +17,7 @@ std::shared_ptr<IPlantBehaviour> AutoTreeGenerationPipeline::GetBehaviour() {
 void AutoTreeGenerationPipeline::Update() {
     auto pipelineBehaviour = m_pipelineBehaviour.Get<IAutoTreeGenerationPipelineBehaviour>();
     if (pipelineBehaviour && m_currentInternodeBehaviour) {
+        auto scene = GetScene();
         switch (m_status) {
             case AutoTreeGenerationPipelineStatus::Idle:
                 if (!m_busy) {
@@ -51,21 +52,21 @@ void AutoTreeGenerationPipeline::Update() {
                 switch (m_behaviourType) {
                     case BehaviourType::GeneralTree:
                         m_currentGrowingTree = std::dynamic_pointer_cast<GeneralTreeBehaviour>(
-                                m_currentInternodeBehaviour)->NewPlant(m_currentUsingDescriptor.Get<GeneralTreeParameters>(), Transform());
+                                m_currentInternodeBehaviour)->NewPlant(scene, m_currentUsingDescriptor.Get<GeneralTreeParameters>(), Transform());
                         break;
                     case BehaviourType::LSystem:
                         m_currentGrowingTree = std::dynamic_pointer_cast<LSystemBehaviour>(
-                                m_currentInternodeBehaviour)->NewPlant(m_currentUsingDescriptor.Get<LSystemString>(), Transform());
+                                m_currentInternodeBehaviour)->NewPlant(scene, m_currentUsingDescriptor.Get<LSystemString>(), Transform());
                         break;
                     case BehaviourType::SpaceColonization:
                         m_currentGrowingTree = std::dynamic_pointer_cast<SpaceColonizationBehaviour>(
-                                m_currentInternodeBehaviour)->NewPlant(m_currentUsingDescriptor.Get<SpaceColonizationParameters>(), Transform());
+                                m_currentInternodeBehaviour)->NewPlant(scene, m_currentUsingDescriptor.Get<SpaceColonizationParameters>(), Transform());
                         break;
                 }
                 pipelineBehaviour->OnBeforeGrowth(*this);
                 if (m_status != AutoTreeGenerationPipelineStatus::BeforeGrowth) {
-                    if (!m_currentGrowingTree.IsValid() ||
-                        !m_currentInternodeBehaviour->RootCheck(m_currentGrowingTree)) {
+                    if (!scene->IsEntityValid(m_currentGrowingTree) ||
+                        !m_currentInternodeBehaviour->RootCheck(scene, m_currentGrowingTree)) {
                         UNIENGINE_ERROR("No tree created or wrongly created!");
                         m_status = AutoTreeGenerationPipelineStatus::BeforeGrowth;
                     }
@@ -79,8 +80,8 @@ void AutoTreeGenerationPipeline::Update() {
             case AutoTreeGenerationPipelineStatus::AfterGrowth:
                 pipelineBehaviour->OnAfterGrowth(*this);
                 if (m_status != AutoTreeGenerationPipelineStatus::AfterGrowth) {
-                    if (m_currentGrowingTree.IsValid())
-                        Entities::DeleteEntity(Entities::GetCurrentScene(), m_currentGrowingTree);
+                    if (scene->IsEntityValid(m_currentGrowingTree))
+                        scene->DeleteEntity(m_currentGrowingTree);
                 }
                 break;
         }

@@ -9,34 +9,35 @@
 #include "IInternodePhyllotaxis.hpp"
 #include "PlantDataComponents.hpp"
 #include "TransformLayer.hpp"
+#include "Graphics.hpp"
 
 using namespace PlantArchitect;
 
-void IPlantBehaviour::UpdateBranches() {
+void IPlantBehaviour::UpdateBranches(const std::shared_ptr<Scene> &scene) {
     std::vector<Entity> roots;
-    m_rootsQuery.ToEntityArray(Entities::GetCurrentScene(), roots);
+    scene->GetEntityArray(m_rootsQuery, roots);
     for (const auto &root: roots) {
-        if (!RootCheck(root)) return;
+        if (!RootCheck(scene, root)) return;
         Entity rootInternode, rootBranch;
-        root.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
-            if (InternodeCheck(child)) rootInternode = child;
-            else if (BranchCheck(child)) rootBranch = child;
+        scene->ForEachChild(root, [&](Entity child) {
+            if (InternodeCheck(scene, child)) rootInternode = child;
+            else if (BranchCheck(scene, child)) rootBranch = child;
         });
-        if (!rootInternode.IsValid() || !rootBranch.IsValid()) return;
-        auto children = rootBranch.GetChildren();
-        for (const auto &i: children) Entities::DeleteEntity(Entities::GetCurrentScene(), i);
-        auto branch = rootBranch.GetOrSetPrivateComponent<Branch>().lock();
+        if (!scene->IsEntityValid(rootInternode) || !scene->IsEntityValid(rootBranch)) return;
+        auto children = scene->GetChildren(rootBranch);
+        for (const auto &i: children) scene->DeleteEntity(i);
+        auto branch = scene->GetOrSetPrivateComponent<Branch>(rootBranch).lock();
         branch->m_internodeChain.clear();
-        BranchGraphWalkerRootToEnd(rootBranch, [](Entity parent, Entity child) {
-            child.GetOrSetPrivateComponent<Branch>().lock()->m_internodeChain.clear();
+        BranchGraphWalkerRootToEnd(scene, rootBranch, [&](Entity parent, Entity child) {
+            scene->GetOrSetPrivateComponent<Branch>(child).lock()->m_internodeChain.clear();
         });
-        UpdateBranchHelper(rootBranch, rootInternode);
+        UpdateBranchHelper(scene, rootBranch, rootInternode);
         {
-            auto branchInfo = rootBranch.GetDataComponent<BranchInfo>();
-            auto branchStartInternodeGT = branch->m_internodeChain.front().GetDataComponent<GlobalTransform>();
-            auto branchEndInternodeGT = branch->m_internodeChain.back().GetDataComponent<GlobalTransform>();
-            auto branchStartInternodeInfo = branch->m_internodeChain.front().GetDataComponent<InternodeInfo>();
-            auto branchEndInternodeInfo = branch->m_internodeChain.back().GetDataComponent<InternodeInfo>();
+            auto branchInfo = scene->GetDataComponent<BranchInfo>(rootBranch);
+            auto branchStartInternodeGT = scene->GetDataComponent<GlobalTransform>(branch->m_internodeChain.front());
+            auto branchEndInternodeGT = scene->GetDataComponent<GlobalTransform>(branch->m_internodeChain.back());
+            auto branchStartInternodeInfo = scene->GetDataComponent<InternodeInfo>(branch->m_internodeChain.front());
+            auto branchEndInternodeInfo = scene->GetDataComponent<InternodeInfo>(branch->m_internodeChain.back());
             glm::vec3 scale;
             glm::quat rotation;
             glm::vec3 translation;
@@ -55,16 +56,16 @@ void IPlantBehaviour::UpdateBranches() {
             else branchGT.SetPosition(branchEndPosition);
             branchInfo.m_thickness = branchStartInternodeInfo.m_thickness;
 
-            rootBranch.SetDataComponent(branchGT);
-            rootBranch.SetDataComponent(branchInfo);
+            scene->SetDataComponent(rootBranch, branchGT);
+            scene->SetDataComponent(rootBranch, branchInfo);
         }
-        BranchGraphWalkerRootToEnd(rootBranch, [](Entity parent, Entity child) {
-            auto branch = child.GetOrSetPrivateComponent<Branch>().lock();
-            auto branchInfo = child.GetDataComponent<BranchInfo>();
-            auto branchStartInternodeGT = branch->m_internodeChain.front().GetDataComponent<GlobalTransform>();
-            auto branchEndInternodeGT = branch->m_internodeChain.back().GetDataComponent<GlobalTransform>();
-            auto branchStartInternodeInfo = branch->m_internodeChain.front().GetDataComponent<InternodeInfo>();
-            auto branchEndInternodeInfo = branch->m_internodeChain.back().GetDataComponent<InternodeInfo>();
+        BranchGraphWalkerRootToEnd(scene, rootBranch, [&](Entity parent, Entity child) {
+            auto branch = scene->GetOrSetPrivateComponent<Branch>(child).lock();
+            auto branchInfo = scene->GetDataComponent<BranchInfo>(child);
+            auto branchStartInternodeGT = scene->GetDataComponent<GlobalTransform>(branch->m_internodeChain.front());
+            auto branchEndInternodeGT = scene->GetDataComponent<GlobalTransform>(branch->m_internodeChain.back());
+            auto branchStartInternodeInfo = scene->GetDataComponent<InternodeInfo>(branch->m_internodeChain.front());
+            auto branchEndInternodeInfo = scene->GetDataComponent<InternodeInfo>(branch->m_internodeChain.back());
             glm::vec3 scale;
             glm::quat rotation;
             glm::vec3 translation;
@@ -84,33 +85,33 @@ void IPlantBehaviour::UpdateBranches() {
 
             branchInfo.m_thickness = branchStartInternodeInfo.m_thickness;
 
-            child.SetDataComponent(branchGT);
-            child.SetDataComponent(branchInfo);
+            scene->SetDataComponent(child, branchGT);
+            scene->SetDataComponent(child, branchInfo);
         });
         Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(
-                Entities::GetCurrentScene(),
+                scene,
                 rootBranch);
     }
 }
 
-void IPlantBehaviour::DestroyInternode(const Entity &internode) {
+void IPlantBehaviour::DestroyInternode(const std::shared_ptr<Scene> &scene, const Entity &internode) {
     std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
-    Entities::DeleteEntity(Entities::GetCurrentScene(), internode);
+    scene->DeleteEntity(internode);
 }
 
-void IPlantBehaviour::DestroyBranch(const Entity &branch) {
+void IPlantBehaviour::DestroyBranch(const std::shared_ptr<Scene> &scene, const Entity &branch) {
     std::lock_guard<std::mutex> lockGuard(m_branchFactoryLock);
-    auto internode = branch.GetOrSetPrivateComponent<Branch>().lock()->m_currentInternode.Get();
-    if (InternodeCheck(internode))DestroyInternode(internode);
-    Entities::DeleteEntity(Entities::GetCurrentScene(), branch);
+    auto internode = scene->GetOrSetPrivateComponent<Branch>(branch).lock()->m_currentInternode.Get();
+    if (InternodeCheck(scene, internode))DestroyInternode(scene, internode);
+    scene->DeleteEntity(branch);
 }
 
 void
-IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
+IPlantBehaviour::GenerateSkinnedMeshes(const std::shared_ptr<Scene> &scene, float subdivision,
                                        float resolution) {
-    UpdateBranches();
+    UpdateBranches(scene);
     std::vector<Entity> currentRoots;
-    m_rootsQuery.ToEntityArray(Entities::GetCurrentScene(), currentRoots);
+    scene->GetEntityArray(m_rootsQuery, currentRoots);
     int plantSize = currentRoots.size();
     std::vector<std::vector<Entity>> boundEntitiesLists;
     std::vector<std::vector<unsigned>> boneIndicesLists;
@@ -123,10 +124,10 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
     std::vector<std::shared_future<void>> results;
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
         results.push_back(Jobs::Workers().Push([&, plantIndex](int id) {
-            auto children = currentRoots[plantIndex].GetChildren();
+            auto children = scene->GetChildren(currentRoots[plantIndex]);
             for (const auto &child: children) {
-                if (BranchCheck(child)) {
-                    BranchCollector(boundEntitiesLists[plantIndex],
+                if (BranchCheck(scene, child)) {
+                    BranchCollector(scene, boundEntitiesLists[plantIndex],
                                     parentIndicesLists[plantIndex], -1, child);
                     break;
                 }
@@ -137,19 +138,18 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
         i.wait();
 
 #pragma region Prepare rings for branch mesh.
-    Entities::ForEach<GlobalTransform, Transform,
-            InternodeInfo>(Entities::GetCurrentScene(),
-                           Jobs::Workers(),
+    scene->ForEach<GlobalTransform, Transform,
+            InternodeInfo>(Jobs::Workers(),
                            m_internodesQuery,
-                           [resolution, subdivision](int i, Entity entity, GlobalTransform &globalTransform,
-                                                     Transform &transform, InternodeInfo &internodeInfo) {
+                           [&, resolution, subdivision](int i, Entity entity, GlobalTransform &globalTransform,
+                                                        Transform &transform, InternodeInfo &internodeInfo) {
                                auto internode =
-                                       entity.GetOrSetPrivateComponent<Internode>().lock();
+                                       scene->GetOrSetPrivateComponent<Internode>(entity).lock();
                                internode->m_rings.clear();
                                auto rootGlobalTransform = globalTransform;
-                               auto root = internode->GetOwner().GetRoot();
+                               auto root = scene->GetRoot(internode->GetOwner());
                                if (root != entity) {
-                                   rootGlobalTransform = root.GetDataComponent<GlobalTransform>();
+                                   rootGlobalTransform = scene->GetDataComponent<GlobalTransform>(root);
                                }
                                GlobalTransform relativeGlobalTransform;
                                relativeGlobalTransform.m_value =
@@ -160,11 +160,12 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
                                glm::vec3 positionEnd = positionStart + internodeInfo.m_length * directionStart;
                                float thicknessStart = internodeInfo.m_thickness;
                                if (root != entity) {
-                                   auto parent = entity.GetParent();
-                                   if (!parent.IsNull()) {
-                                       if (parent.HasDataComponent<InternodeInfo>()) {
-                                           auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
-                                           auto parentGlobalTransform = parent.GetDataComponent<GlobalTransform>();
+                                   auto parent = scene->GetParent(entity);
+                                   if (parent.GetIndex() != 0) {
+                                       if (scene->HasDataComponent<InternodeInfo>(parent)) {
+                                           auto parentInternodeInfo = scene->GetDataComponent<InternodeInfo>(parent);
+                                           auto parentGlobalTransform = scene->GetDataComponent<GlobalTransform>(
+                                                   parent);
                                            thicknessStart = parentInternodeInfo.m_thickness;
                                            GlobalTransform parentRelativeGlobalTransform;
                                            parentRelativeGlobalTransform.m_value =
@@ -219,22 +220,21 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
 #pragma endregion
 #pragma region Prepare foliage transforms.
     std::mutex mutex;
-    Entities::ForEach<Transform, GlobalTransform, InternodeInfo>
-            (Entities::GetCurrentScene(),
-             Jobs::Workers(),
+    scene->ForEach<Transform, GlobalTransform, InternodeInfo>
+            (Jobs::Workers(),
              m_internodesQuery,
              [&](int index, Entity entity, Transform &transform, GlobalTransform &globalTransform,
                  InternodeInfo &internodeInfo) {
-                 if (entity.GetChildrenAmount() != 0) return;
+                 if (scene->GetChildrenAmount(entity) != 0) return;
                  auto internode =
-                         entity.GetOrSetPrivateComponent<Internode>().lock();
+                         scene->GetOrSetPrivateComponent<Internode>(entity).lock();
                  internode->m_foliageMatrices.clear();
                  auto rootGlobalTransform = globalTransform;
-                 auto rootEntity = internode->GetOwner().GetRoot();
+                 auto rootEntity = scene->GetRoot(internode->GetOwner());
                  if (rootEntity != entity) {
-                     rootGlobalTransform = rootEntity.GetDataComponent<GlobalTransform>();
+                     rootGlobalTransform = scene->GetDataComponent<GlobalTransform>(rootEntity);
                  }
-                 auto root = rootEntity.GetOrSetPrivateComponent<Root>().lock();
+                 auto root = scene->GetOrSetPrivateComponent<Root>(rootEntity).lock();
                  auto inverseGlobalTransform = glm::inverse(rootGlobalTransform.m_value);
                  GlobalTransform relativeGlobalTransform;
                  GlobalTransform relativeParentGlobalTransform;
@@ -249,27 +249,27 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
 #pragma endregion
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
         const auto &rootEntity = currentRoots[plantIndex];
-        auto children = rootEntity.GetChildren();
+        auto children = scene->GetChildren(rootEntity);
         Entity rootInternode, rootBranch;
         for (const auto &child: children) {
-            if (InternodeCheck(child)) rootInternode = child;
-            else if (BranchCheck(child)) rootBranch = child;
+            if (InternodeCheck(scene, child)) rootInternode = child;
+            else if (BranchCheck(scene, child)) rootBranch = child;
         }
         Entity branchMesh, foliageMesh;
-        PrepareInternodeForSkeletalAnimation(rootEntity, branchMesh, foliageMesh);
+        PrepareInternodeForSkeletalAnimation(scene, rootEntity, branchMesh, foliageMesh);
         {
 #pragma region Branch mesh
-            auto animator = branchMesh.GetOrSetPrivateComponent<Animator>().lock();
-            auto skinnedMeshRenderer = branchMesh.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
+            auto animator = scene->GetOrSetPrivateComponent<Animator>(branchMesh).lock();
+            auto skinnedMeshRenderer = scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(branchMesh).lock();
             auto material = skinnedMeshRenderer->m_material.Get<Material>();
             skinnedMeshRenderer->SetEnabled(true);
-            auto root = rootEntity.GetOrSetPrivateComponent<Root>().lock();
+            auto root = scene->GetOrSetPrivateComponent<Root>(rootEntity).lock();
             if (root->m_branchTexture.Get<Texture2D>())
                 material->m_albedoTexture = root->m_branchTexture.Get<Texture2D>();
             material->m_albedoColor = root->m_branchColor;
-            auto internode = rootInternode.GetOrSetPrivateComponent<Internode>().lock();
+            auto internode = scene->GetOrSetPrivateComponent<Internode>(rootInternode).lock();
             const auto plantGlobalTransform =
-                    rootEntity.GetDataComponent<GlobalTransform>();
+                    scene->GetDataComponent<GlobalTransform>(rootEntity);
 #pragma region Animator
             std::vector<glm::mat4> offsetMatrices;
             std::vector<std::string> names;
@@ -278,11 +278,10 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
             boneIndicesLists[plantIndex].resize(
                     boundEntitiesLists[plantIndex].size());
             for (int i = 0; i < boundEntitiesLists[plantIndex].size(); i++) {
-                names[i] = boundEntitiesLists[plantIndex][i].GetName();
+                names[i] = scene->GetEntityName(boundEntitiesLists[plantIndex][i]);
                 offsetMatrices[i] =
                         glm::inverse(glm::inverse(plantGlobalTransform.m_value) *
-                                     boundEntitiesLists[plantIndex][i]
-                                             .GetDataComponent<GlobalTransform>()
+                                     scene->GetDataComponent<GlobalTransform>(boundEntitiesLists[plantIndex][i])
                                              .m_value);
                 boneIndicesLists[plantIndex][i] = i;
             }
@@ -292,7 +291,7 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
 #pragma endregion
             std::vector<unsigned> skinnedIndices;
             std::vector<SkinnedVertex> skinnedVertices;
-            BranchSkinnedMeshGenerator(boundEntitiesLists[plantIndex],
+            BranchSkinnedMeshGenerator(scene, boundEntitiesLists[plantIndex],
                                        parentIndicesLists[plantIndex],
                                        skinnedVertices, skinnedIndices);
             if (!skinnedVertices.empty()) {
@@ -308,17 +307,17 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
         }
         {
 #pragma region Foliage mesh
-            auto animator = foliageMesh.GetOrSetPrivateComponent<Animator>().lock();
-            auto skinnedMeshRenderer = foliageMesh.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
+            auto animator = scene->GetOrSetPrivateComponent<Animator>(foliageMesh).lock();
+            auto skinnedMeshRenderer = scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(foliageMesh).lock();
             auto material = skinnedMeshRenderer->m_material.Get<Material>();
             skinnedMeshRenderer->SetEnabled(true);
-            auto root = rootEntity.GetOrSetPrivateComponent<Root>().lock();
+            auto root = scene->GetOrSetPrivateComponent<Root>(rootEntity).lock();
             auto foliagePhyllotaxis = root->m_foliagePhyllotaxis.Get<IInternodePhyllotaxis>();
             if (root->m_foliageTexture.Get<Texture2D>())
                 material->m_albedoTexture = root->m_foliageTexture.Get<Texture2D>();
             material->m_albedoColor = root->m_foliageColor;
             const auto plantGlobalTransform =
-                    rootEntity.GetDataComponent<GlobalTransform>();
+                    scene->GetDataComponent<GlobalTransform>(rootEntity);
 #pragma region Animator
             std::vector<glm::mat4> offsetMatrices;
             std::vector<std::string> names;
@@ -327,11 +326,10 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
             boneIndicesLists[plantIndex].resize(
                     boundEntitiesLists[plantIndex].size());
             for (int i = 0; i < boundEntitiesLists[plantIndex].size(); i++) {
-                names[i] = boundEntitiesLists[plantIndex][i].GetName();
+                names[i] = scene->GetEntityName(boundEntitiesLists[plantIndex][i]);
                 offsetMatrices[i] =
                         glm::inverse(glm::inverse(plantGlobalTransform.m_value) *
-                                     boundEntitiesLists[plantIndex][i]
-                                             .GetDataComponent<GlobalTransform>()
+                                     scene->GetDataComponent<GlobalTransform>(boundEntitiesLists[plantIndex][i])
                                              .m_value);
                 boneIndicesLists[plantIndex][i] = i;
             }
@@ -341,7 +339,7 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
 #pragma endregion
             std::vector<unsigned> skinnedIndices;
             std::vector<SkinnedVertex> skinnedVertices;
-            FoliageSkinnedMeshGenerator(boundEntitiesLists[plantIndex],
+            FoliageSkinnedMeshGenerator(scene, boundEntitiesLists[plantIndex],
                                         parentIndicesLists[plantIndex],
                                         skinnedVertices, skinnedIndices);
             if (!skinnedVertices.empty()) {
@@ -358,19 +356,20 @@ IPlantBehaviour::GenerateSkinnedMeshes(float subdivision,
     }
 }
 
-void IPlantBehaviour::BranchCollector(std::vector<Entity> &boundEntities, std::vector<int> &parentIndices,
+void IPlantBehaviour::BranchCollector(const std::shared_ptr<Scene> &scene, std::vector<Entity> &boundEntities,
+                                      std::vector<int> &parentIndices,
                                       const int &parentIndex, const Entity &node) {
-    if (!BranchCheck(node)) return;
+    if (!BranchCheck(scene, node)) return;
     boundEntities.push_back(node);
     parentIndices.push_back(parentIndex);
     const size_t currentIndex = boundEntities.size() - 1;
-    node.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
-        if (BranchCheck(child)) BranchCollector(boundEntities, parentIndices, currentIndex, child);
+    scene->ForEachChild(node, [&](Entity child) {
+        if (BranchCheck(scene, child)) BranchCollector(scene, boundEntities, parentIndices, currentIndex, child);
     });
 
 }
 
-void IPlantBehaviour::FoliageSkinnedMeshGenerator(std::vector<Entity> &entities,
+void IPlantBehaviour::FoliageSkinnedMeshGenerator(const std::shared_ptr<Scene> &scene, std::vector<Entity> &entities,
                                                   std::vector<int> &parentIndices,
                                                   std::vector<SkinnedVertex> &vertices,
                                                   std::vector<unsigned int> &indices) {
@@ -383,14 +382,14 @@ void IPlantBehaviour::FoliageSkinnedMeshGenerator(std::vector<Entity> &entities,
         int parentIndex = 0;
         if (branchIndex != 0) parentIndex = parentIndices[branchIndex];
         auto &branchEntity = entities[branchIndex];
-        auto branchGlobalTransform = branchEntity.GetDataComponent<GlobalTransform>();
-        auto branch = branchEntity.GetOrSetPrivateComponent<Branch>().lock();
+        auto branchGlobalTransform = scene->GetDataComponent<GlobalTransform>(branchEntity);
+        auto branch = scene->GetOrSetPrivateComponent<Branch>(branchEntity).lock();
         for (const auto &internodeEntity: branch->m_internodeChain) {
-            auto internodeGlobalTransform = internodeEntity.GetDataComponent<GlobalTransform>();
-            auto internode = internodeEntity.GetOrSetPrivateComponent<Internode>().lock();
+            auto internodeGlobalTransform = scene->GetDataComponent<GlobalTransform>(internodeEntity);
+            auto internode = scene->GetOrSetPrivateComponent<Internode>(internodeEntity).lock();
             glm::vec3 newNormalDir;
             if (branchIndex != 0) {
-                newNormalDir = entities[parentIndex].GetOrSetPrivateComponent<Internode>().lock()->m_normalDir;
+                newNormalDir = scene->GetOrSetPrivateComponent<Internode>(entities[parentIndex]).lock()->m_normalDir;
             } else {
                 newNormalDir = internodeGlobalTransform.GetRotation() *
                                glm::vec3(1.0f, 0.0f, 0.0f);
@@ -432,7 +431,8 @@ void IPlantBehaviour::FoliageSkinnedMeshGenerator(std::vector<Entity> &entities,
     }
 }
 
-void IPlantBehaviour::BranchSkinnedMeshGenerator(std::vector<Entity> &entities, std::vector<int> &parentIndices,
+void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &scene, std::vector<Entity> &entities,
+                                                 std::vector<int> &parentIndices,
                                                  std::vector<SkinnedVertex> &vertices,
                                                  std::vector<unsigned int> &indices) {
     int parentStep = -1;
@@ -441,13 +441,13 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(std::vector<Entity> &entities, 
         int parentIndex = 0;
         if (branchIndex != 0) parentIndex = parentIndices[branchIndex];
         auto &branchEntity = entities[branchIndex];
-        auto branchGlobalTransform = branchEntity.GetDataComponent<GlobalTransform>();
-        auto branch = branchEntity.GetOrSetPrivateComponent<Branch>().lock();
+        auto branchGlobalTransform = scene->GetDataComponent<GlobalTransform>(branchEntity);
+        auto branch = scene->GetOrSetPrivateComponent<Branch>(branchEntity).lock();
         for (const auto &internodeEntity: branch->m_internodeChain) {
-            auto internodeGlobalTransform = internodeEntity.GetDataComponent<GlobalTransform>();
+            auto internodeGlobalTransform = scene->GetDataComponent<GlobalTransform>(internodeEntity);
             glm::vec3 newNormalDir;
             if (branchIndex != 0) {
-                newNormalDir = entities[parentIndex].GetOrSetPrivateComponent<Internode>().lock()->m_normalDir;
+                newNormalDir = scene->GetOrSetPrivateComponent<Internode>(entities[parentIndex]).lock()->m_normalDir;
             } else {
                 newNormalDir = internodeGlobalTransform.GetRotation() *
                                glm::vec3(1.0f, 0.0f, 0.0f);
@@ -456,8 +456,8 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(std::vector<Entity> &entities, 
                     internodeGlobalTransform.GetRotation() *
                     glm::vec3(0.0f, 0.0f, -1.0f);
             newNormalDir = glm::cross(glm::cross(front, newNormalDir), front);
-            auto internode = internodeEntity.GetOrSetPrivateComponent<Internode>().lock();
-            auto branchColor = internodeEntity.GetDataComponent<InternodeColor>();
+            auto internode = scene->GetOrSetPrivateComponent<Internode>(internodeEntity).lock();
+            auto branchColor = scene->GetDataComponent<InternodeColor>(internodeEntity);
             internode->m_normalDir = newNormalDir;
             if (internode->m_rings.empty()) {
                 continue;
@@ -602,19 +602,19 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(std::vector<Entity> &entities, 
 }
 
 void
-IPlantBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, Entity &branchMesh, Entity &foliageMesh) {
-    auto children = entity.GetChildren();
-    for(const auto& child : children){
-        if (child.GetName() == "BranchMesh" || child.GetName() == "FoliageMesh") {
-            Entities::DeleteEntity(Entities::GetCurrentScene(), child);
+IPlantBehaviour::PrepareInternodeForSkeletalAnimation(const std::shared_ptr<Scene>& scene, const Entity &entity, Entity &branchMesh, Entity &foliageMesh) {
+    auto children = scene->GetChildren(entity);
+    for (const auto &child: children) {
+        if (scene->GetEntityName(child) == "BranchMesh" || scene->GetEntityName(child) == "FoliageMesh") {
+            scene->DeleteEntity(child);
         }
     }
 
     {
-        if (branchMesh.IsNull()) branchMesh = Entities::CreateEntity(Entities::GetCurrentScene(), "BranchMesh");
-        auto animator = branchMesh.GetOrSetPrivateComponent<Animator>().lock();
+        if (branchMesh.GetIndex() == 0) branchMesh = scene->CreateEntity("BranchMesh");
+        auto animator = scene->GetOrSetPrivateComponent<Animator>(branchMesh).lock();
         auto skinnedMeshRenderer =
-                branchMesh.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
+                scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(branchMesh).lock();
         skinnedMeshRenderer->m_skinnedMesh = ProjectManager::CreateTemporaryAsset<SkinnedMesh>();
         auto skinnedMat = ProjectManager::CreateTemporaryAsset<Material>();
         skinnedMat->SetProgram(DefaultResources::GLPrograms::StandardSkinnedProgram);
@@ -622,13 +622,13 @@ IPlantBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, Enti
         skinnedMat->m_albedoColor = glm::vec3(40.0f / 255, 15.0f / 255, 0.0f);
         skinnedMat->m_roughness = 1.0f;
         skinnedMat->m_metallic = 0.0f;
-        skinnedMeshRenderer->m_animator = branchMesh.GetOrSetPrivateComponent<Animator>().lock();
+        skinnedMeshRenderer->m_animator = scene->GetOrSetPrivateComponent<Animator>(branchMesh).lock();
     }
     {
-        if (foliageMesh.IsNull()) foliageMesh = Entities::CreateEntity(Entities::GetCurrentScene(), "FoliageMesh");
-        auto animator = foliageMesh.GetOrSetPrivateComponent<Animator>().lock();
+        if (foliageMesh.GetIndex() == 0) foliageMesh = scene->CreateEntity("FoliageMesh");
+        auto animator = scene->GetOrSetPrivateComponent<Animator>(foliageMesh).lock();
         auto skinnedMeshRenderer =
-                foliageMesh.GetOrSetPrivateComponent<SkinnedMeshRenderer>().lock();
+                scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(foliageMesh).lock();
         skinnedMeshRenderer->m_skinnedMesh = ProjectManager::CreateTemporaryAsset<SkinnedMesh>();
         auto skinnedMat = ProjectManager::CreateTemporaryAsset<Material>();
         skinnedMat->SetProgram(DefaultResources::GLPrograms::StandardSkinnedProgram);
@@ -637,51 +637,51 @@ IPlantBehaviour::PrepareInternodeForSkeletalAnimation(const Entity &entity, Enti
         skinnedMat->m_roughness = 1.0f;
         skinnedMat->m_metallic = 0.0f;
         skinnedMat->m_cullingMode = MaterialCullingMode::Off;
-        skinnedMeshRenderer->m_animator = foliageMesh.GetOrSetPrivateComponent<Animator>().lock();
+        skinnedMeshRenderer->m_animator = scene->GetOrSetPrivateComponent<Animator>(foliageMesh).lock();
     }
-    branchMesh.SetParent(entity);
-    foliageMesh.SetParent(entity);
+    scene->SetParent(branchMesh, entity);
+    scene->SetParent(foliageMesh, entity);
 }
 
-Entity IPlantBehaviour::CreateBranchHelper(const Entity &parent, const Entity &internode) {
+Entity IPlantBehaviour::CreateBranchHelper(const std::shared_ptr<Scene>& scene, const Entity &parent, const Entity &internode) {
     Entity retVal;
     std::lock_guard<std::mutex> lockGuard(m_branchFactoryLock);
-    retVal = Entities::CreateEntity(Entities::GetCurrentScene(), m_branchArchetype, "Branch");
-    retVal.SetParent(parent);
+    retVal = scene->CreateEntity(m_branchArchetype, "Branch");
+    scene->SetParent(retVal, parent);
     BranchInfo branchInfo;
-    retVal.SetDataComponent(branchInfo);
-    auto parentBranch = parent.GetOrSetPrivateComponent<Branch>().lock();
-    auto branch = retVal.GetOrSetPrivateComponent<Branch>().lock();
+    scene->SetDataComponent(retVal, branchInfo);
+    auto parentBranch = scene->GetOrSetPrivateComponent<Branch>(parent).lock();
+    auto branch = scene->GetOrSetPrivateComponent<Branch>(retVal).lock();
     branch->m_currentRoot = parentBranch->m_currentRoot;
     branch->m_currentInternode = internode;
     return retVal;
 }
 
 void
-IPlantBehaviour::InternodeGraphWalker(const Entity &startInternode,
+IPlantBehaviour::InternodeGraphWalker(const std::shared_ptr<Scene> &scene, const Entity &startInternode,
                                       const std::function<void(Entity, Entity)> &rootToEndAction,
                                       const std::function<void(Entity)> &endToRootAction,
                                       const std::function<void(Entity)> &endNodeAction) {
     auto currentNode = startInternode;
-    while (currentNode.GetChildrenAmount() == 1) {
-        Entity child = currentNode.GetChildren()[0];
-        if (InternodeCheck(child)) {
+    while (scene->GetChildrenAmount(currentNode) == 1) {
+        Entity child = scene->GetChildren(currentNode)[0];
+        if (InternodeCheck(scene, child)) {
             rootToEndAction(currentNode, child);
         }
-        if (InternodeCheck(child)) {
+        if (InternodeCheck(scene, child)) {
             currentNode = child;
         }
     }
     int trueChildAmount = 0;
-    if (currentNode.GetChildrenAmount() != 0) {
-        auto children = currentNode.GetChildren();
+    if (scene->GetChildrenAmount(currentNode) != 0) {
+        auto children = scene->GetChildren(currentNode);
         for (const auto &child: children) {
-            if (InternodeCheck(child)) {
+            if (InternodeCheck(scene, child)) {
                 rootToEndAction(currentNode, child);
             }
-            if (InternodeCheck(child)) {
-                InternodeGraphWalker(child, rootToEndAction, endToRootAction, endNodeAction);
-                if (InternodeCheck(child)) {
+            if (InternodeCheck(scene, child)) {
+                InternodeGraphWalker(scene, child, rootToEndAction, endToRootAction, endNodeAction);
+                if (InternodeCheck(scene, child)) {
                     trueChildAmount++;
                 }
             }
@@ -693,97 +693,101 @@ IPlantBehaviour::InternodeGraphWalker(const Entity &startInternode,
         endToRootAction(currentNode);
     }
     while (currentNode != startInternode) {
-        auto parent = currentNode.GetParent();
+        auto parent = scene->GetParent(currentNode);
         endToRootAction(parent);
-        if (!InternodeCheck(currentNode)) {
+        if (!InternodeCheck(scene, currentNode)) {
             endNodeAction(parent);
         }
         currentNode = parent;
     }
 }
 
-bool IPlantBehaviour::InternodeCheck(const Entity &target) {
-    return target.IsValid() && target.IsEnabled() && target.HasDataComponent<InternodeInfo>() &&
-           target.HasPrivateComponent<Internode>() &&
-           InternalInternodeCheck(target);
+bool IPlantBehaviour::InternodeCheck(const std::shared_ptr<Scene> &scene, const Entity &target) {
+    return scene->IsEntityValid(target) && scene->IsEntityEnabled(target) &&
+           scene->HasDataComponent<InternodeInfo>(target) &&
+           scene->HasPrivateComponent<Internode>(target) &&
+           InternalInternodeCheck(scene, target);
 }
 
-bool IPlantBehaviour::RootCheck(const Entity &target) {
-    return target.IsValid() && target.IsEnabled() && target.HasDataComponent<RootInfo>() &&
-           target.HasPrivateComponent<Root>() &&
-           InternalRootCheck(target);
+bool IPlantBehaviour::RootCheck(const std::shared_ptr<Scene> &scene, const Entity &target) {
+    return scene->IsEntityValid(target) && scene->IsEntityEnabled(target) &&
+           scene->HasDataComponent<RootInfo>(target) &&
+           scene->HasPrivateComponent<Root>(target) &&
+           InternalRootCheck(scene, target);
 }
 
-bool IPlantBehaviour::BranchCheck(const Entity &target) {
-    return target.IsValid() && target.IsEnabled() && target.HasDataComponent<BranchInfo>() &&
-           target.HasPrivateComponent<Branch>() &&
-           InternalBranchCheck(target);
+bool IPlantBehaviour::BranchCheck(const std::shared_ptr<Scene> &scene, const Entity &target) {
+    return scene->IsEntityValid(target) && scene->IsEntityEnabled(target) &&
+           scene->HasDataComponent<BranchInfo>(target) &&
+           scene->HasPrivateComponent<Branch>(target) &&
+           InternalBranchCheck(scene, target);
 }
 
-void IPlantBehaviour::UpdateBranchHelper(const Entity &currentBranch, const Entity &currentInternode) {
+void IPlantBehaviour::UpdateBranchHelper(const std::shared_ptr<Scene> &scene, const Entity &currentBranch,
+                                         const Entity &currentInternode) {
     int trueChildAmount = 0;
-    currentInternode.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
-        if (InternodeCheck(child)) trueChildAmount++;
+    scene->ForEachChild(currentInternode, [&](Entity child) {
+        if (InternodeCheck(scene, child)) trueChildAmount++;
     });
-    currentBranch.GetOrSetPrivateComponent<Branch>().lock()->m_internodeChain.push_back(currentInternode);
+    scene->GetOrSetPrivateComponent<Branch>(currentBranch).lock()->m_internodeChain.push_back(currentInternode);
     if (trueChildAmount > 1) {
         BranchInfo branchInfo;
         branchInfo.m_endNode = false;
-        currentBranch.SetDataComponent(branchInfo);
-        currentInternode.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
-            if (!InternodeCheck(child)) return;
-            auto newBranch = CreateBranch(currentBranch, child);
-            UpdateBranchHelper(newBranch, child);
+        scene->SetDataComponent(currentBranch, branchInfo);
+        scene->ForEachChild(currentInternode, [&](Entity child) {
+            if (!InternodeCheck(scene, child)) return;
+            auto newBranch = CreateBranch(scene, currentBranch, child);
+            UpdateBranchHelper(scene, newBranch, child);
         });
     } else if (trueChildAmount == 1) {
-        currentInternode.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
-            if (!InternodeCheck(child)) return;
-            UpdateBranchHelper(currentBranch, child);
+        scene->ForEachChild(currentInternode, [&](Entity child) {
+            if (!InternodeCheck(scene, child)) return;
+            UpdateBranchHelper(scene, currentBranch, child);
         });
     }
 
 }
 
-void IPlantBehaviour::InternodeGraphWalkerRootToEnd(const Entity &startInternode,
+void IPlantBehaviour::InternodeGraphWalkerRootToEnd(const std::shared_ptr<Scene> &scene, const Entity &startInternode,
                                                     const std::function<void(Entity, Entity)> &rootToEndAction) {
     auto currentNode = startInternode;
-    while (currentNode.GetChildrenAmount() == 1) {
-        Entity child = currentNode.GetChildren()[0];
-        if (InternodeCheck(child)) {
+    while (scene->GetChildrenAmount(currentNode) == 1) {
+        Entity child = scene->GetChildren(currentNode)[0];
+        if (InternodeCheck(scene, child)) {
             rootToEndAction(currentNode, child);
         }
-        if (InternodeCheck(child)) {
+        if (InternodeCheck(scene, child)) {
             currentNode = child;
         }
     }
-    if (currentNode.GetChildrenAmount() != 0) {
-        auto children = currentNode.GetChildren();
+    if (scene->GetChildrenAmount(currentNode) != 0) {
+        auto children = scene->GetChildren(currentNode);
         for (const auto &child: children) {
-            if (InternodeCheck(child)) {
+            if (InternodeCheck(scene, child)) {
                 rootToEndAction(currentNode, child);
-                InternodeGraphWalkerRootToEnd(child, rootToEndAction);
+                InternodeGraphWalkerRootToEnd(scene, child, rootToEndAction);
             }
         }
     }
 }
 
-void IPlantBehaviour::InternodeGraphWalkerEndToRoot(const Entity &startInternode,
+void IPlantBehaviour::InternodeGraphWalkerEndToRoot(const std::shared_ptr<Scene> &scene, const Entity &startInternode,
                                                     const std::function<void(Entity)> &endToRootAction,
                                                     const std::function<void(Entity)> &endNodeAction) {
     auto currentNode = startInternode;
-    while (currentNode.GetChildrenAmount() == 1) {
-        Entity child = currentNode.GetChildren()[0];
-        if (child.IsValid()) {
+    while (scene->GetChildrenAmount(currentNode) == 1) {
+        Entity child = scene->GetChildren(currentNode)[0];
+        if (InternodeCheck(scene, child)) {
             currentNode = child;
         }
     }
     int trueChildAmount = 0;
-    if (currentNode.GetChildrenAmount() != 0) {
-        auto children = currentNode.GetChildren();
+    if (scene->GetChildrenAmount(currentNode) != 0) {
+        auto children = scene->GetChildren(currentNode);
         for (const auto &child: children) {
-            if (InternodeCheck(child)) {
-                InternodeGraphWalkerEndToRoot(child, endToRootAction, endNodeAction);
-                if (InternodeCheck(child)) {
+            if (InternodeCheck(scene, child)) {
+                InternodeGraphWalkerEndToRoot(scene, child, endToRootAction, endNodeAction);
+                if (InternodeCheck(scene, child)) {
                     trueChildAmount++;
                 }
             }
@@ -795,39 +799,39 @@ void IPlantBehaviour::InternodeGraphWalkerEndToRoot(const Entity &startInternode
         endToRootAction(currentNode);
     }
     while (currentNode != startInternode) {
-        auto parent = currentNode.GetParent();
+        auto parent = scene->GetParent(currentNode);
         endToRootAction(parent);
-        if (!InternodeCheck(currentNode)) {
+        if (!InternodeCheck(scene, currentNode)) {
             endNodeAction(parent);
         }
         currentNode = parent;
     }
 }
 
-void IPlantBehaviour::BranchGraphWalker(const Entity &startBranch,
+void IPlantBehaviour::BranchGraphWalker(const std::shared_ptr<Scene> &scene, const Entity &startBranch,
                                         const std::function<void(Entity, Entity)> &rootToEndAction,
                                         const std::function<void(Entity)> &endToRootAction,
                                         const std::function<void(Entity)> &endNodeAction) {
     auto currentNode = startBranch;
-    while (currentNode.GetChildrenAmount() == 1) {
-        Entity child = currentNode.GetChildren()[0];
-        if (BranchCheck(child)) {
+    while (scene->GetChildrenAmount(currentNode) == 1) {
+        Entity child = scene->GetChildren(currentNode)[0];
+        if (BranchCheck(scene, child)) {
             rootToEndAction(currentNode, child);
         }
-        if (BranchCheck(child)) {
+        if (BranchCheck(scene, child)) {
             currentNode = child;
         }
     }
     int trueChildAmount = 0;
-    if (currentNode.GetChildrenAmount() != 0) {
-        auto children = currentNode.GetChildren();
+    if (scene->GetChildrenAmount(currentNode) != 0) {
+        auto children = scene->GetChildren(currentNode);
         for (const auto &child: children) {
-            if (BranchCheck(child)) {
+            if (BranchCheck(scene, child)) {
                 rootToEndAction(currentNode, child);
             }
-            if (BranchCheck(child)) {
-                BranchGraphWalker(child, rootToEndAction, endToRootAction, endNodeAction);
-                if (BranchCheck(child)) {
+            if (BranchCheck(scene, child)) {
+                BranchGraphWalker(scene, child, rootToEndAction, endToRootAction, endNodeAction);
+                if (BranchCheck(scene, child)) {
                     trueChildAmount++;
                 }
             }
@@ -839,55 +843,55 @@ void IPlantBehaviour::BranchGraphWalker(const Entity &startBranch,
         endToRootAction(currentNode);
     }
     while (currentNode != startBranch) {
-        auto parent = currentNode.GetParent();
+        auto parent = scene->GetParent(currentNode);
         endToRootAction(parent);
-        if (!BranchCheck(currentNode)) {
+        if (!BranchCheck(scene, currentNode)) {
             endNodeAction(parent);
         }
         currentNode = parent;
     }
 }
 
-void IPlantBehaviour::BranchGraphWalkerRootToEnd(const Entity &startBranch,
+void IPlantBehaviour::BranchGraphWalkerRootToEnd(const std::shared_ptr<Scene> &scene, const Entity &startBranch,
                                                  const std::function<void(Entity, Entity)> &rootToEndAction) {
     auto currentNode = startBranch;
-    while (currentNode.GetChildrenAmount() == 1) {
-        Entity child = currentNode.GetChildren()[0];
-        if (BranchCheck(child)) {
+    while (scene->GetChildrenAmount(currentNode) == 1) {
+        Entity child = scene->GetChildren(currentNode)[0];
+        if (BranchCheck(scene, child)) {
             rootToEndAction(currentNode, child);
         }
-        if (BranchCheck(child)) {
+        if (BranchCheck(scene, child)) {
             currentNode = child;
         }
     }
-    if (currentNode.GetChildrenAmount() != 0) {
-        auto children = currentNode.GetChildren();
+    if (scene->GetChildrenAmount(currentNode) != 0) {
+        auto children = scene->GetChildren(currentNode);
         for (const auto &child: children) {
-            if (BranchCheck(child)) {
+            if (BranchCheck(scene, child)) {
                 rootToEndAction(currentNode, child);
-                BranchGraphWalkerRootToEnd(child, rootToEndAction);
+                BranchGraphWalkerRootToEnd(scene, child, rootToEndAction);
             }
         }
     }
 }
 
-void IPlantBehaviour::BranchGraphWalkerEndToRoot(const Entity &startBranch,
+void IPlantBehaviour::BranchGraphWalkerEndToRoot(const std::shared_ptr<Scene> &scene, const Entity &startBranch,
                                                  const std::function<void(Entity)> &endToRootAction,
                                                  const std::function<void(Entity)> &endNodeAction) {
     auto currentNode = startBranch;
-    while (currentNode.GetChildrenAmount() == 1) {
-        Entity child = currentNode.GetChildren()[0];
-        if (child.IsValid()) {
+    while (scene->GetChildrenAmount(currentNode) == 1) {
+        Entity child = scene->GetChildren(currentNode)[0];
+        if (BranchCheck(scene, child)) {
             currentNode = child;
         }
     }
     int trueChildAmount = 0;
-    if (currentNode.GetChildrenAmount() != 0) {
-        auto children = currentNode.GetChildren();
+    if (scene->GetChildrenAmount(currentNode) != 0) {
+        auto children = scene->GetChildren(currentNode);
         for (const auto &child: children) {
-            if (BranchCheck(child)) {
-                BranchGraphWalkerEndToRoot(child, endToRootAction, endNodeAction);
-                if (BranchCheck(child)) {
+            if (BranchCheck(scene, child)) {
+                BranchGraphWalkerEndToRoot(scene, child, endToRootAction, endNodeAction);
+                if (BranchCheck(scene, child)) {
                     trueChildAmount++;
                 }
             }
@@ -899,9 +903,9 @@ void IPlantBehaviour::BranchGraphWalkerEndToRoot(const Entity &startBranch,
         endToRootAction(currentNode);
     }
     while (currentNode != startBranch) {
-        auto parent = currentNode.GetParent();
+        auto parent = scene->GetParent(currentNode);
         endToRootAction(parent);
-        if (!BranchCheck(currentNode)) {
+        if (!BranchCheck(scene, currentNode)) {
             endNodeAction(parent);
         }
         currentNode = parent;

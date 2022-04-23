@@ -17,7 +17,7 @@ namespace Scripts {
         GlobalTransform TransformCamera(const Bound& bound, float turnAngle, float pitchAngle);
         void SetUpCamera(AutoTreeGenerationPipeline& pipeline);
         void ExportMatrices(const std::filesystem::path& path);
-        void ExportGraphNode(const std::shared_ptr<IPlantBehaviour>& behaviour, YAML::Emitter &out, int parentIndex, const Entity& internode);
+        void ExportGraphNode(AutoTreeGenerationPipeline& pipeline, const std::shared_ptr<IPlantBehaviour>& behaviour, YAML::Emitter &out, int parentIndex, const Entity& internode);
         void ExportGraph(AutoTreeGenerationPipeline& pipeline, const std::shared_ptr<IPlantBehaviour>& behaviour, const std::filesystem::path& path);
         void ExportCSV(AutoTreeGenerationPipeline& pipeline, const std::shared_ptr<IPlantBehaviour>& behaviour, const std::filesystem::path& path);
     public:

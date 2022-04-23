@@ -63,6 +63,7 @@ int main() {
 
 void EngineSetup() {
     ProjectManager::SetScenePostLoadActions([=]() {
+        auto scene = Application::GetActiveScene();
 #pragma region Engine Setup
         Transform transform;
         transform.SetEulerRotation(glm::radians(glm::vec3(150, 30, 0)));
@@ -71,13 +72,13 @@ void EngineSetup() {
         transform = Transform();
         transform.SetPosition(glm::vec3(0, 2, 35));
         transform.SetEulerRotation(glm::radians(glm::vec3(15, 0, 0)));
-        auto mainCamera = Entities::GetCurrentScene()->m_mainCamera.Get<UniEngine::Camera>();
+        auto mainCamera = Application::GetActiveScene()->m_mainCamera.Get<UniEngine::Camera>();
         if (mainCamera) {
             auto postProcessing =
-                    mainCamera->GetOwner().GetOrSetPrivateComponent<PostProcessing>().lock();
+                    scene->GetOrSetPrivateComponent<PostProcessing>(mainCamera->GetOwner()).lock();
             auto ssao = postProcessing->GetLayer<SSAO>().lock();
             ssao->m_kernelRadius = 0.1;
-            mainCamera->GetOwner().SetDataComponent(transform);
+            scene->SetDataComponent(mainCamera->GetOwner(), transform);
             mainCamera->m_useClearColor = true;
             mainCamera->m_clearColor = glm::vec3(0.5f);
         }

@@ -160,27 +160,27 @@ namespace PlantArchitect {
     };
 
     class PLANT_ARCHITECT_API GeneralTreeBehaviour : public IPlantBehaviour {
-        Entity ImportGraphTree(const std::filesystem::path &path, AssetRef descriptor);
+        Entity ImportGraphTree(const std::shared_ptr<Scene>& scene, const std::filesystem::path &path, AssetRef descriptor);
     protected:
-        bool InternalInternodeCheck(const Entity &target) override;
-        bool InternalRootCheck(const Entity &target) override;
-        bool InternalBranchCheck(const Entity &target) override;
+        bool InternalInternodeCheck(const std::shared_ptr<Scene>& scene, const Entity &target) override;
+        bool InternalRootCheck(const std::shared_ptr<Scene>& scene, const Entity &target) override;
+        bool InternalBranchCheck(const std::shared_ptr<Scene>& scene, const Entity &target) override;
 
-        void CalculateChainDistance(const Entity &target, float previousChainDistance);
+        void CalculateChainDistance(const std::shared_ptr<Scene> &scene, const Entity &target, float previousChainDistance);
 
     public:
-        void Preprocess(std::vector<Entity>& currentRoots);
+        void Preprocess(const std::shared_ptr<Scene>& scene, std::vector<Entity>& currentRoots);
 
         void OnInspect() override;
 
         GeneralTreeBehaviour();
 
-        void Grow(int iteration) override;
+        void Grow(const std::shared_ptr<Scene>& scene, int iteration) override;
 
-        Entity CreateRoot(AssetRef descriptor, Entity& rootInternode, Entity& rootBranch) override;
-        Entity CreateBranch(const Entity &parent, const Entity &internode) override;
-        Entity CreateInternode(const Entity &parent) override;
+        Entity CreateRoot(const std::shared_ptr<Scene>& scene, AssetRef descriptor, Entity& rootInternode, Entity& rootBranch) override;
+        Entity CreateBranch(const std::shared_ptr<Scene>& scene, const Entity &parent, const Entity &internode) override;
+        Entity CreateInternode(const std::shared_ptr<Scene>& scene, const Entity &parent) override;
 
-        Entity NewPlant(const std::shared_ptr<GeneralTreeParameters> &descriptor, const Transform &transform);
+        Entity NewPlant(const std::shared_ptr<Scene>& scene, const std::shared_ptr<GeneralTreeParameters> &descriptor, const Transform &transform);
     };
 }

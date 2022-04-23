@@ -27,13 +27,15 @@ void Internode::OnCreate() {
 void Internode::DownStreamResource(float deltaTime) {
     if (!m_resource) return;
     auto owner = GetOwner();
-    m_resource->DownStream(deltaTime, owner, owner.GetParent());
+    auto scene = GetScene();
+    m_resource->DownStream(deltaTime, owner, scene->GetParent(owner));
 }
 
 void Internode::UpStreamResource(float deltaTime) {
     if (!m_resource) return;
     auto owner = GetOwner();
-    auto children = owner.GetChildren();
+    auto scene = GetScene();
+    auto children = scene->GetChildren(owner);
     for (const auto &child: children) {
         m_resource->UpStream(deltaTime, owner, child);
     }
@@ -45,9 +47,10 @@ void Internode::CollectResource(float deltaTime) {
 }
 
 void Internode::CollectInternodesHelper(const Entity &target, std::vector<Entity> &results) {
-    if (target.IsValid() && target.HasDataComponent<InternodeInfo>() && target.HasPrivateComponent<Internode>()) {
+    auto scene = GetScene();
+    if (scene->IsEntityValid(target) && scene->HasDataComponent<InternodeInfo>(target) && scene->HasPrivateComponent<Internode>(target)) {
         results.push_back(target);
-        target.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
+        scene->ForEachChild(target, [&](Entity child) {
             CollectInternodesHelper(child, results);
         });
     }
@@ -63,10 +66,11 @@ void Internode::ExportLString(const std::shared_ptr<LSystemString> &lString) {
 }
 
 void Internode::ExportLSystemCommandsHelper(int &index, const Entity &target, std::vector<LSystemCommand> &commands) {
-    if (!target.IsValid() || !target.HasDataComponent<InternodeInfo>()) return;
-    auto internodeInfo = target.GetDataComponent<InternodeInfo>();
-    auto internodeStatstics = target.GetDataComponent<InternodeStatistics>();
-    auto transform = target.GetDataComponent<Transform>();
+    auto scene = GetScene();
+    if (!scene->IsEntityValid(target) || !scene->HasDataComponent<InternodeInfo>(target)) return;
+    auto internodeInfo = scene->GetDataComponent<InternodeInfo>(target);
+    auto internodeStatstics = scene->GetDataComponent<InternodeStatistics>(target);
+    auto transform = scene->GetDataComponent<Transform>(target);
     auto eulerRotation = transform.GetEulerRotation();
     if (eulerRotation.x > 0) {
         commands.push_back({LSystemCommandType::PitchUp, eulerRotation.x});
@@ -91,12 +95,12 @@ void Internode::ExportLSystemCommandsHelper(int &index, const Entity &target, st
     }
     commands.push_back({LSystemCommandType::Forward, internodeInfo.m_length});
     internodeStatstics.m_lSystemStringIndex = index;
-    target.SetDataComponent(internodeInfo);
+    scene->SetDataComponent(target, internodeInfo);
     index++;
-    auto children = target.GetChildren();
+    auto children = scene->GetChildren(target);
     for(int i = 1; i < children.size(); i++){
         auto& child = children[i];
-        if (!child.IsValid() || !child.HasDataComponent<InternodeInfo>()) continue;
+        if (!scene->IsEntityValid(child) || !scene->HasDataComponent<InternodeInfo>(child)) continue;
         commands.push_back({LSystemCommandType::Push, 0.0f});
         index++;
         ExportLSystemCommandsHelper(index, child, commands);
@@ -104,7 +108,7 @@ void Internode::ExportLSystemCommandsHelper(int &index, const Entity &target, st
         index++;
     }
     if(!children.empty()){
-        if (!children[0].IsValid() || !children[0].HasDataComponent<InternodeInfo>()) return;
+        if (!scene->IsEntityValid(children[0]) || !scene->HasDataComponent<InternodeInfo>(children[0])) return;
         ExportLSystemCommandsHelper(index, children[0], commands);
     }
 }
@@ -183,8 +187,9 @@ Bound Internode::CalculateChildrenBound() {
     Bound retVal;
     retVal.m_max = glm::vec3(-99999.0f);
     retVal.m_min = glm::vec3(99999.0f);
+    auto scene = GetScene();
     for(const auto& i : internodes){
-        auto position = i.GetDataComponent<GlobalTransform>().GetPosition();
+        auto position = scene->GetDataComponent<GlobalTransform>(i).GetPosition();
         retVal.m_min.x = glm::min(retVal.m_min.x, position.x);
         retVal.m_min.y = glm::min(retVal.m_min.y, position.y);
         retVal.m_min.z = glm::min(retVal.m_min.z, position.z);
@@ -198,14 +203,15 @@ Bound Internode::CalculateChildrenBound() {
 void Internode::ExportTreeIOTree(const std::filesystem::path &path) {
     ArrayTree tree;
     TreeNodeData rootNodeData;
-    auto gt = GetOwner().GetDataComponent<GlobalTransform>();
-    auto internodeInfo = GetOwner().GetDataComponent<InternodeInfo>();
+    auto scene = GetScene();
+    auto gt = scene->GetDataComponent<GlobalTransform>(GetOwner());
+    auto internodeInfo = scene->GetDataComponent<InternodeInfo>(GetOwner());
     rootNodeData.direction = gt.GetRotation() * glm::vec3(0, 0, -1);
     rootNodeData.thickness = internodeInfo.m_thickness;
     rootNodeData.pos = gt.GetPosition();
 
     auto rootId = tree.addRoot(rootNodeData);
-    auto children = GetOwner().GetChildren();
+    auto children = scene->GetChildren(GetOwner());
     for(const auto& child : children) {
         ExportTreeIOTreeHelper(tree, child, rootId);
     }
@@ -214,16 +220,15 @@ void Internode::ExportTreeIOTree(const std::filesystem::path &path) {
 
 void Internode::ExportTreeIOTreeHelper(ArrayTree& tree, const Entity &target, ArrayTreeT<TreeNodeData, TreeMetaData>::NodeIdT id) {
     TreeNodeData nodeData;
-    auto gt = target.GetDataComponent<GlobalTransform>();
-    auto internodeInfo = target.GetDataComponent<InternodeInfo>();
+    auto scene = GetScene();
+    auto gt = scene->GetDataComponent<GlobalTransform>(target);
+    auto internodeInfo = scene->GetDataComponent<InternodeInfo>(target);
     nodeData.direction = gt.GetRotation() * glm::vec3(0, 0, -1);
     nodeData.thickness = internodeInfo.m_thickness;
     nodeData.pos = gt.GetPosition();
 
-
-
     auto currentId = tree.addNodeChild(id, nodeData);
-    auto children = target.GetChildren();
+    auto children = scene->GetChildren(target);
     for(const auto& child : children){
         ExportTreeIOTreeHelper(tree, child, currentId);
     }

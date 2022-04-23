@@ -52,6 +52,10 @@ void Root::OnCreate() {
 
 void Root::OnDestroy() {
     m_center = glm::vec3(0.0f);
+    m_foliagePhyllotaxis.Clear();
+    m_foliageTexture.Clear();
+    m_branchTexture.Clear();
+    m_plantDescriptor.Clear();
 }
 
 void Root::CollectAssetRef(std::vector<AssetRef> &list) {

@@ -84,13 +84,6 @@ namespace PlantArchitect {
         template<class T = IPlantBehaviour>
         std::shared_ptr<T> GetPlantBehaviour();
 
-        /**
-         * Check if the entity is valid internode.
-         * @param target Target for check.
-         * @return True if the entity is valid and contains [InternodeInfo] and [Internode], false otherwise.
-         */
-        static bool InternodeCheck(const Entity &target);
-
         BranchColorMode m_branchColorMode = BranchColorMode::None;
         int m_indexDivider = 512;
         int m_indexRangeMin = 128;

@@ -37,7 +37,7 @@ LSystemBehaviour::LSystemBehaviour() {
 }
 
 
-Entity LSystemBehaviour::NewPlant(const std::shared_ptr<LSystemString> &descriptor, const Transform &transform) {
+Entity LSystemBehaviour::NewPlant(const std::shared_ptr<Scene> &scene, const std::shared_ptr<LSystemString> &descriptor, const Transform &transform) {
     auto &commands = descriptor->m_commands;
     if (commands.empty()) return {};
     LSystemState currentState;
@@ -103,22 +103,22 @@ Entity LSystemBehaviour::NewPlant(const std::shared_ptr<LSystemString> &descript
                 InternodeStatistics newStat;
                 newStat.m_lSystemStringIndex = index;
                 newInfo.m_localRotation = glm::quat(currentState.m_eulerRotation);
-                if (internode.IsNull() && !rootExists) {
+                if (internode.GetIndex() == 0 && !rootExists) {
                     //If this is the first push in the string, we create the root internode.
                     //The node creation is handled by the CreateInternode() function. The internode creation is performed in a factory pattern.
-                    root = CreateRoot(descriptor, rootInternode, rootBranch);
-                    root.GetOrSetPrivateComponent<Root>().lock()->m_foliagePhyllotaxis = ProjectManager::CreateTemporaryAsset<DefaultInternodePhyllotaxis>();
+                    root = CreateRoot(scene, descriptor, rootInternode, rootBranch);
+                    scene->GetOrSetPrivateComponent<Root>(root).lock()->m_foliagePhyllotaxis = ProjectManager::CreateTemporaryAsset<DefaultInternodePhyllotaxis>();
                     internode = rootInternode;
                     rootExists = true;
                 } else {
                     //Calculate the local rotation as quaternion from euler angles.
                     //We need to create a child node with this function. Here CreateInternode(Entity) will instantiate a new internode for you and set it as a child of current internode.
-                    internode = CreateInternode(internode);
+                    internode = CreateInternode(scene, internode);
                 }
                 newInfo.m_length = command.m_value;
                 newInfo.m_thickness = 0.2f;
-                internode.SetDataComponent(newInfo);
-                internode.SetDataComponent(newStat);
+                scene->SetDataComponent(internode, newInfo);
+                scene->SetDataComponent(internode, newStat);
                 currentState.m_eulerRotation = glm::vec3(0.0f);
             }
                 break;
@@ -127,22 +127,22 @@ Entity LSystemBehaviour::NewPlant(const std::shared_ptr<LSystemString> &descript
     }
 
     Transform rootTransform;
-    rootTransform.SetRotation(rootInternode.GetDataComponent<InternodeInfo>().m_localRotation);
-    rootInternode.SetDataComponent(rootTransform);
+    rootTransform.SetRotation(scene->GetDataComponent<InternodeInfo>(rootInternode).m_localRotation);
+    scene->SetDataComponent(rootInternode, rootTransform);
 
     //Since we only stored the rotation data into internode info without applying it to the local transformation matrix of the internode, we do it here.
-    InternodeGraphWalkerRootToEnd(rootInternode, [](Entity parent, Entity child) {
-        auto parentGlobalTransform = parent.GetDataComponent<GlobalTransform>();
+    InternodeGraphWalkerRootToEnd(scene, rootInternode, [&](Entity parent, Entity child) {
+        auto parentGlobalTransform = scene->GetDataComponent<GlobalTransform>(parent);
         auto parentPosition = parentGlobalTransform.GetPosition();
-        auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
-        auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
+        auto parentInternodeInfo = scene->GetDataComponent<InternodeInfo>(parent);
+        auto childInternodeInfo = scene->GetDataComponent<InternodeInfo>(child);
         auto parentRotation = parentGlobalTransform.GetRotation();
         auto childPosition = parentInternodeInfo.m_length * (parentRotation * glm::vec3(0, 0, -1));
         auto childRotation = childInternodeInfo.m_localRotation;
-        auto childTransform = child.GetDataComponent<Transform>();
+        auto childTransform = scene->GetDataComponent<Transform>(child);
         childTransform.SetRotation(childRotation);
         childTransform.SetPosition(childPosition);
-        child.SetDataComponent(childTransform);
+        scene->SetDataComponent(child, childTransform);
     });
 
     //This is another way to do above procedures but in multi-threaded way.
@@ -172,53 +172,53 @@ Entity LSystemBehaviour::NewPlant(const std::shared_ptr<LSystemString> &descript
     */
 
     //After you setup the local transformation matrix, you call this function to calculate the world(global) transformation matrix from the root of the plant.
-    Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(Entities::GetCurrentScene(),
+    Application::GetLayer<TransformLayer>()->CalculateTransformGraphForDescendents(scene,
                                                                                    root);
     //Calculate other properties like thickness after the structure of the tree is ready.
-    InternodeGraphWalkerEndToRoot(rootInternode, [&](Entity parent) {
+    InternodeGraphWalkerEndToRoot(scene, rootInternode, [&](Entity parent) {
         float thicknessCollection = 0.0f;
-        auto parentInternodeInfo = parent.GetDataComponent<InternodeInfo>();
-        parent.ForEachChild([&](const std::shared_ptr<Scene> &scene, Entity child) {
-            if (!InternodeCheck(child)) return;
-            auto childInternodeInfo = child.GetDataComponent<InternodeInfo>();
+        auto parentInternodeInfo = scene->GetDataComponent<InternodeInfo>(parent);
+        scene->ForEachChild(parent, [&](Entity child) {
+            if (!InternodeCheck(scene, child)) return;
+            auto childInternodeInfo = scene->GetDataComponent<InternodeInfo>(child);
             thicknessCollection += glm::pow(childInternodeInfo.m_thickness,
                                             1.0f / descriptor->m_thicknessFactor);
         });
         parentInternodeInfo.m_thickness = glm::pow(thicknessCollection, descriptor->m_thicknessFactor);
-        parent.SetDataComponent(parentInternodeInfo);
+        scene->SetDataComponent(parent, parentInternodeInfo);
     }, [&](Entity endNode) {
-        auto internodeInfo = endNode.GetDataComponent<InternodeInfo>();
+        auto internodeInfo = scene->GetDataComponent<InternodeInfo>(endNode);
         internodeInfo.m_thickness = descriptor->m_endNodeThickness;
-        endNode.SetDataComponent(internodeInfo);
+        scene->SetDataComponent(endNode, internodeInfo);
     });
 
     Application::GetLayer<PlantLayer>()->CalculateStatistics();
-    UpdateBranches();
+    UpdateBranches(scene);
     return root;
 }
 
-bool LSystemBehaviour::InternalInternodeCheck(const Entity &target) {
-    return target.HasDataComponent<LSystemTag>();
+bool LSystemBehaviour::InternalInternodeCheck(const std::shared_ptr<Scene> &scene, const Entity &target) {
+    return scene->HasDataComponent<LSystemTag>(target);
 }
 
-Entity LSystemBehaviour::CreateInternode(const Entity &parent) {
-    return CreateInternodeHelper<EmptyInternodeResource>(parent);
+Entity LSystemBehaviour::CreateInternode(const std::shared_ptr<Scene> &scene, const Entity &parent) {
+    return CreateInternodeHelper<EmptyInternodeResource>(scene, parent);
 }
 
-bool LSystemBehaviour::InternalRootCheck(const Entity &target) {
-    return target.HasDataComponent<LSystemTag>();
+bool LSystemBehaviour::InternalRootCheck(const std::shared_ptr<Scene> &scene, const Entity &target) {
+    return scene->HasDataComponent<LSystemTag>(target);
 }
 
-bool LSystemBehaviour::InternalBranchCheck(const Entity &target) {
-    return target.HasDataComponent<LSystemTag>();
+bool LSystemBehaviour::InternalBranchCheck(const std::shared_ptr<Scene> &scene, const Entity &target) {
+    return scene->HasDataComponent<LSystemTag>(target);
 }
 
-Entity LSystemBehaviour::CreateRoot(AssetRef descriptor, Entity &rootInternode, Entity &rootBranch) {
-    return CreateRootHelper<EmptyInternodeResource>(descriptor, rootInternode, rootBranch);
+Entity LSystemBehaviour::CreateRoot(const std::shared_ptr<Scene> &scene, AssetRef descriptor, Entity &rootInternode, Entity &rootBranch) {
+    return CreateRootHelper<EmptyInternodeResource>(scene, descriptor, rootInternode, rootBranch);
 }
 
-Entity LSystemBehaviour::CreateBranch(const Entity &parent, const Entity &internode) {
-    return CreateBranchHelper(parent, internode);
+Entity LSystemBehaviour::CreateBranch(const std::shared_ptr<Scene> &scene, const Entity &parent, const Entity &internode) {
+    return CreateBranchHelper(scene, parent, internode);
 }
 
 bool LSystemString::LoadInternal(const std::filesystem::path &path) {
@@ -371,6 +371,6 @@ void LSystemString::OnInspect() {
 }
 
 Entity LSystemString::InstantiateTree() {
-    return Application::GetLayer<PlantLayer>()->GetPlantBehaviour<LSystemBehaviour>()->NewPlant(
+    return Application::GetLayer<PlantLayer>()->GetPlantBehaviour<LSystemBehaviour>()->NewPlant(Application::GetActiveScene(),
             std::dynamic_pointer_cast<LSystemString>(m_self.lock()), Transform());
 }
