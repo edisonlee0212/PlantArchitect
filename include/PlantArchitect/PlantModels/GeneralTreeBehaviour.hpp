@@ -3,17 +3,21 @@
 #include <plant_architect_export.h>
 #include "IPlantBehaviour.hpp"
 #include "IPlantDescriptor.hpp"
+
 using namespace UniEngine;
 namespace PlantArchitect {
 #pragma region Data Components
     struct PLANT_ARCHITECT_API GeneralTreeTag : public IDataComponent {
 
     };
+
+
     class PLANT_ARCHITECT_API GeneralTreeParameters : public IPlantDescriptor {
     public:
         Entity InstantiateTree() override;
 
         void Serialize(YAML::Emitter &out) override;
+
         void Deserialize(const YAML::Node &in) override;
 
         int m_lateralBudCount;
@@ -113,6 +117,7 @@ namespace PlantArchitect {
         bool m_heaviestChild = false;
 
         void OnInspect();
+
         void CalculateApicalControl(float apicalControl);
     };
 
@@ -143,13 +148,9 @@ namespace PlantArchitect {
 
         void OnInspect();
     };
+
 #pragma endregion
-    struct GanNode {
-        Entity m_internode;
-        glm::vec3 m_start;
-        float m_length;
-        glm::quat m_globalRotation;
-    };
+
 
     class PLANT_ARCHITECT_API InternodeWaterFeeder : public IPrivateComponent {
     public:
@@ -159,28 +160,57 @@ namespace PlantArchitect {
         void OnInspect() override;
     };
 
-    class PLANT_ARCHITECT_API GeneralTreeBehaviour : public IPlantBehaviour {
-        Entity ImportGraphTree(const std::shared_ptr<Scene>& scene, const std::filesystem::path &path, AssetRef descriptor);
-    protected:
-        bool InternalInternodeCheck(const std::shared_ptr<Scene>& scene, const Entity &target) override;
-        bool InternalRootCheck(const std::shared_ptr<Scene>& scene, const Entity &target) override;
-        bool InternalBranchCheck(const std::shared_ptr<Scene>& scene, const Entity &target) override;
+    struct TreeGraphNode {
+        glm::vec3 m_start;
+        float m_length;
+        float m_thickness;
+        glm::quat m_globalRotation;
 
-        void CalculateChainDistance(const std::shared_ptr<Scene> &scene, const Entity &target, float previousChainDistance);
+        std::weak_ptr<TreeGraphNode> m_parent;
+        std::vector<std::shared_ptr<TreeGraphNode>> m_children;
+    };
+
+    class PLANT_ARCHITECT_API GeneralTreeBehaviour : public IPlantBehaviour {
+    protected:
+        bool InternalInternodeCheck(const std::shared_ptr<Scene> &scene, const Entity &target) override;
+
+        bool InternalRootCheck(const std::shared_ptr<Scene> &scene, const Entity &target) override;
+
+        bool InternalBranchCheck(const std::shared_ptr<Scene> &scene, const Entity &target) override;
+
+        void
+        CalculateChainDistance(const std::shared_ptr<Scene> &scene, const Entity &target, float previousChainDistance);
 
     public:
-        void Preprocess(const std::shared_ptr<Scene>& scene, std::vector<Entity>& currentRoots);
+        void Preprocess(const std::shared_ptr<Scene> &scene, std::vector<Entity> &currentRoots);
 
         void OnInspect() override;
 
         GeneralTreeBehaviour();
 
-        void Grow(const std::shared_ptr<Scene>& scene, int iteration) override;
+        void Grow(const std::shared_ptr<Scene> &scene, int iteration) override;
 
-        Entity CreateRoot(const std::shared_ptr<Scene>& scene, AssetRef descriptor, Entity& rootInternode, Entity& rootBranch) override;
-        Entity CreateBranch(const std::shared_ptr<Scene>& scene, const Entity &parent, const Entity &internode) override;
-        Entity CreateInternode(const std::shared_ptr<Scene>& scene, const Entity &parent) override;
+        Entity CreateRoot(const std::shared_ptr<Scene> &scene, AssetRef descriptor, Entity &rootInternode,
+                          Entity &rootBranch) override;
 
-        Entity NewPlant(const std::shared_ptr<Scene>& scene, const std::shared_ptr<GeneralTreeParameters> &descriptor, const Transform &transform);
+        Entity
+        CreateBranch(const std::shared_ptr<Scene> &scene, const Entity &parent, const Entity &internode) override;
+
+        Entity CreateInternode(const std::shared_ptr<Scene> &scene, const Entity &parent) override;
+
+        Entity NewPlant(const std::shared_ptr<Scene> &scene, const std::shared_ptr<GeneralTreeParameters> &descriptor,
+                        const Transform &transform);
+    };
+
+    class PLANT_ARCHITECT_API TreeGraph : public IPlantDescriptor {
+        void InstantiateChildren(const std::shared_ptr<Scene>& scene, const std::shared_ptr<GeneralTreeBehaviour>& behaviour, const Entity& parent, const std::shared_ptr<TreeGraphNode>& node) const;
+    public:
+        std::shared_ptr<TreeGraphNode> m_root;
+        std::string m_name;
+        Entity InstantiateTree() override;
+
+        void Serialize(YAML::Emitter &out) override;
+
+        void Deserialize(const YAML::Node &in) override;
     };
 }

@@ -13,7 +13,7 @@ namespace PlantArchitect {
 
     class PLANT_ARCHITECT_API IPlantBehaviour {
         friend class PlantLayer;
-
+        friend class TreeGraph;
     protected:
         std::string m_typeName;
 #pragma region InternodeFactory

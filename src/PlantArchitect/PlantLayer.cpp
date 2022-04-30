@@ -490,6 +490,9 @@ void PlantLayer::OnCreate() {
 
     ClassRegistry::RegisterDataComponent<GeneralTreeTag>("GeneralTreeTag");
     ClassRegistry::RegisterAsset<GeneralTreeParameters>("GeneralTreeParameters", {".gtparams"});
+
+    ClassRegistry::RegisterAsset<TreeGraph>("TreeGraph", {".treegraph"});
+
     ClassRegistry::RegisterDataComponent<InternodeStatus>("InternodeStatus");
     ClassRegistry::RegisterDataComponent<InternodeWaterPressure>("InternodeWaterPressure");
     ClassRegistry::RegisterDataComponent<InternodeWater>("InternodeWater");
