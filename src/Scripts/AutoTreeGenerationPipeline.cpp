@@ -39,28 +39,48 @@ void AutoTreeGenerationPipeline::Update() {
                 switch (m_behaviourType) {
                     case BehaviourType::GeneralTree:
                         m_iterations = m_currentUsingDescriptor.Get<GeneralTreeParameters>()->m_matureAge;
-                        m_prefix = m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName() + "_";
+                        m_prefix =
+                                m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName() +
+                                "_";
                         break;
                     case BehaviourType::LSystem:
-                        m_prefix = m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName() + "_";
+                        m_prefix =
+                                m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName() +
+                                "_";
+                        break;
+                    case BehaviourType::TreeGraph:
+                        m_prefix =
+                                m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName() +
+                                "_";
                         break;
                     case BehaviourType::SpaceColonization:
-                        m_prefix = m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName() + "_";
+                        m_prefix =
+                                m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName() +
+                                "_";
                         break;
                 }
                 m_prefix += std::to_string(GetSeed());
                 switch (m_behaviourType) {
                     case BehaviourType::GeneralTree:
                         m_currentGrowingTree = std::dynamic_pointer_cast<GeneralTreeBehaviour>(
-                                m_currentInternodeBehaviour)->NewPlant(scene, m_currentUsingDescriptor.Get<GeneralTreeParameters>(), Transform());
+                                m_currentInternodeBehaviour)->NewPlant(scene,
+                                                                       m_currentUsingDescriptor.Get<GeneralTreeParameters>(),
+                                                                       Transform());
+                        break;
+                    case BehaviourType::TreeGraph:
+                        m_currentGrowingTree = m_currentUsingDescriptor.Get<TreeGraph>()->InstantiateTree();
                         break;
                     case BehaviourType::LSystem:
                         m_currentGrowingTree = std::dynamic_pointer_cast<LSystemBehaviour>(
-                                m_currentInternodeBehaviour)->NewPlant(scene, m_currentUsingDescriptor.Get<LSystemString>(), Transform());
+                                m_currentInternodeBehaviour)->NewPlant(scene,
+                                                                       m_currentUsingDescriptor.Get<LSystemString>(),
+                                                                       Transform());
                         break;
                     case BehaviourType::SpaceColonization:
                         m_currentGrowingTree = std::dynamic_pointer_cast<SpaceColonizationBehaviour>(
-                                m_currentInternodeBehaviour)->NewPlant(scene, m_currentUsingDescriptor.Get<SpaceColonizationParameters>(), Transform());
+                                m_currentInternodeBehaviour)->NewPlant(scene,
+                                                                       m_currentUsingDescriptor.Get<SpaceColonizationParameters>(),
+                                                                       Transform());
                         break;
                 }
                 pipelineBehaviour->OnBeforeGrowth(*this);
@@ -88,7 +108,7 @@ void AutoTreeGenerationPipeline::Update() {
     }
 }
 
-static const char *BehaviourTypes[]{"GeneralTree", "LSystem", "SpaceColonization"};
+static const char *BehaviourTypes[]{"GeneralTree", "LSystem", "SpaceColonization", "TreeGraph"};
 
 void IAutoTreeGenerationPipelineBehaviour::OnStart(AutoTreeGenerationPipeline &pipeline) {
 
@@ -117,33 +137,44 @@ void AutoTreeGenerationPipeline::OnInspect() {
                 &behaviourType,
                 BehaviourTypes,
                 IM_ARRAYSIZE(BehaviourTypes))) {
-            SetBehaviourType((BehaviourType)behaviourType);
+            SetBehaviourType((BehaviourType) behaviourType);
         }
         ImGui::Text(("Loaded descriptors: " + std::to_string(m_descriptors.size())).c_str());
         FileUtils::OpenFolder("Collect descriptors", [&](const std::filesystem::path &path) {
-            auto& projectManager = ProjectManager::GetInstance();
+            auto &projectManager = ProjectManager::GetInstance();
             if (std::filesystem::exists(path) && std::filesystem::is_directory(path)) {
                 for (const auto &entry: std::filesystem::recursive_directory_iterator(path)) {
                     if (!std::filesystem::is_directory(entry.path())) {
                         auto relativePath = ProjectManager::GetPathRelativeToProject(entry.path());
-                         switch (m_behaviourType) {
+                        switch (m_behaviourType) {
                             case BehaviourType::GeneralTree:
                                 if (entry.path().extension() == ".gtparams") {
-                                    auto descriptor = std::dynamic_pointer_cast<GeneralTreeParameters>(ProjectManager::GetOrCreateAsset(relativePath));
+                                    auto descriptor = std::dynamic_pointer_cast<GeneralTreeParameters>(
+                                            ProjectManager::GetOrCreateAsset(relativePath));
                                     m_descriptors.emplace_back(descriptor);
                                     break;
                                 }
                                 break;
                             case BehaviourType::LSystem:
                                 if (entry.path().extension() == ".lstring") {
-                                    auto descriptor = std::dynamic_pointer_cast<LSystemString>(ProjectManager::GetOrCreateAsset(relativePath));
+                                    auto descriptor = std::dynamic_pointer_cast<LSystemString>(
+                                            ProjectManager::GetOrCreateAsset(relativePath));
                                     m_descriptors.emplace_back(descriptor);
                                     break;
                                 }
                                 break;
                             case BehaviourType::SpaceColonization:
                                 if (entry.path().extension() == ".scparams") {
-                                    auto descriptor = std::dynamic_pointer_cast<SpaceColonizationParameters>(ProjectManager::GetOrCreateAsset(relativePath));
+                                    auto descriptor = std::dynamic_pointer_cast<SpaceColonizationParameters>(
+                                            ProjectManager::GetOrCreateAsset(relativePath));
+                                    m_descriptors.emplace_back(descriptor);
+                                    break;
+                                }
+                                break;
+                            case BehaviourType::TreeGraph:
+                                if (entry.path().extension() == ".treegraph") {
+                                    auto descriptor = std::dynamic_pointer_cast<TreeGraph>(
+                                            ProjectManager::GetOrCreateAsset(relativePath));
                                     m_descriptors.emplace_back(descriptor);
                                     break;
                                 }
@@ -154,10 +185,9 @@ void AutoTreeGenerationPipeline::OnInspect() {
             }
 
         });
-        if(m_descriptors.empty()){
+        if (m_descriptors.empty()) {
             ImGui::Text("No descriptors!");
-        }
-        else if (Application::IsPlaying()) {
+        } else if (Application::IsPlaying()) {
             if (ImGui::Button("Start")) {
                 m_busy = true;
                 behaviour->OnStart(*this);
@@ -195,6 +225,10 @@ void AutoTreeGenerationPipeline::UpdateInternodeBehaviour() {
         case BehaviourType::SpaceColonization:
             m_currentInternodeBehaviour =
                     Application::GetLayer<PlantLayer>()->GetPlantBehaviour<SpaceColonizationBehaviour>();
+            break;
+        case BehaviourType::TreeGraph:
+            m_currentInternodeBehaviour =
+                    Application::GetLayer<PlantLayer>()->GetPlantBehaviour<GeneralTreeBehaviour>();
             break;
     }
 

@@ -16,7 +16,8 @@ namespace Scripts {
     enum class BehaviourType{
         GeneralTree,
         LSystem,
-        SpaceColonization
+        SpaceColonization,
+        TreeGraph
     };
 
     class AutoTreeGenerationPipeline : public IPrivateComponent {

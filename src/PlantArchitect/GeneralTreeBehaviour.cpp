@@ -943,7 +943,7 @@ void InternodeIllumination::OnInspect() {
 }
 
 void TreeGraph::Serialize(YAML::Emitter &out) {
-    
+
 }
 
 Entity TreeGraph::InstantiateTree() {
@@ -1002,7 +1002,7 @@ void TreeGraph::InstantiateChildren(const std::shared_ptr<Scene> &scene,
         globalTransform.SetPosition(childNode->m_start);
         scene->SetDataComponent(child, globalTransform);
         scene->SetDataComponent(child, internodeInfo);
-        InstantiateChildren(scene, behaviour, parent, childNode);
+        InstantiateChildren(scene, behaviour, child, childNode);
     }
 }
 

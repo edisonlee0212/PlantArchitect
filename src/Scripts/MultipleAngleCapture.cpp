@@ -208,7 +208,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
     pipeline.m_status = AutoTreeGenerationPipelineStatus::Idle;
 }
 
-static const char *DefaultBehaviourTypes[]{"GeneralTree", "LSystem", "SpaceColonization"};
+static const char *DefaultBehaviourTypes[]{"GeneralTree", "LSystem", "SpaceColonization", "TreeGraph"};
 
 void MultipleAngleCapture::OnInspect() {
     auto scene = Application::GetActiveScene();
