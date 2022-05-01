@@ -164,8 +164,10 @@ namespace PlantArchitect {
         glm::vec3 m_start;
         float m_length;
         float m_thickness;
+        int m_id;
+        int m_parentId;
         glm::quat m_globalRotation;
-
+        glm::vec3 m_position;
         std::weak_ptr<TreeGraphNode> m_parent;
         std::vector<std::shared_ptr<TreeGraphNode>> m_children;
     };
@@ -204,9 +206,12 @@ namespace PlantArchitect {
 
     class PLANT_ARCHITECT_API TreeGraph : public IPlantDescriptor {
         void InstantiateChildren(const std::shared_ptr<Scene>& scene, const std::shared_ptr<GeneralTreeBehaviour>& behaviour, const Entity& parent, const std::shared_ptr<TreeGraphNode>& node) const;
+
+        void CollectChild(const std::shared_ptr<TreeGraphNode>& node, std::vector<std::vector<std::shared_ptr<TreeGraphNode>>>& graphNodes, int currentLayer) const;
     public:
         std::shared_ptr<TreeGraphNode> m_root;
         std::string m_name;
+        int m_layerSize;
         Entity InstantiateTree() override;
 
         void Serialize(YAML::Emitter &out) override;

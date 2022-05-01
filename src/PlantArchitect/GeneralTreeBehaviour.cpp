@@ -943,7 +943,49 @@ void InternodeIllumination::OnInspect() {
 }
 
 void TreeGraph::Serialize(YAML::Emitter &out) {
+    out << YAML::Key << "name" << YAML::Value << m_name;
+    out << YAML::Key << "layersize" << YAML::Value << m_layerSize;
+    out << YAML::Key << "layers" << YAML::Value << YAML::BeginMap;
+    std::vector<std::vector<std::shared_ptr<TreeGraphNode>>> graphNodes;
+    graphNodes.resize(m_layerSize);
+    CollectChild(m_root, graphNodes, 0);
+    for (int layerIndex = 0; layerIndex < m_layerSize; layerIndex++) {
+        out << YAML::Key << std::to_string(layerIndex) << YAML::Value << YAML::BeginMap;
+        {
+            auto &layer = graphNodes[layerIndex];
+            out << YAML::Key << "internodesize" << YAML::Value << layer.size();
+            for (int nodeIndex = 0; nodeIndex < layer.size(); nodeIndex++) {
+                auto node = layer[nodeIndex];
+                out << YAML::Key << std::to_string(nodeIndex) << YAML::Value << YAML::BeginMap;
+                {
+                    out << YAML::Key << "id" << YAML::Value << node->m_id;
+                    out << YAML::Key << "parent" << YAML::Value << node->m_parentId;
+                    out << YAML::Key << "quat" << YAML::Value << YAML::BeginSeq;
+                    for (int i = 0; i < 4; i++) {
+                        out << YAML::BeginMap;
+                        out << std::to_string(node->m_globalRotation[i]);
+                        out << YAML::EndMap;
+                    }
+                    out << YAML::EndSeq;
 
+                    out << YAML::Key << "position" << YAML::Value << YAML::BeginSeq;
+                    for (int i = 0; i < 3; i++) {
+                        out << YAML::BeginMap;
+                        out << std::to_string(node->m_position[i]);
+                        out << YAML::EndMap;
+                    }
+                    out << YAML::EndSeq;
+
+                    out << YAML::Key << "thickness" << YAML::Value << node->m_thickness;
+                    out << YAML::Key << "length" << YAML::Value << node->m_length;
+                }
+                out << YAML::EndMap;
+            }
+        }
+        out << YAML::EndMap;
+    }
+
+    out << YAML::BeginMap;
 }
 
 Entity TreeGraph::InstantiateTree() {
@@ -990,8 +1032,8 @@ Entity TreeGraph::InstantiateTree() {
 }
 
 void TreeGraph::InstantiateChildren(const std::shared_ptr<Scene> &scene,
-                                      const std::shared_ptr<GeneralTreeBehaviour> &behaviour, const Entity &parent,
-                                      const std::shared_ptr<TreeGraphNode> &node) const {
+                                    const std::shared_ptr<GeneralTreeBehaviour> &behaviour, const Entity &parent,
+                                    const std::shared_ptr<TreeGraphNode> &node) const {
     for (const auto &childNode: node->m_children) {
         auto child = behaviour->CreateInternode(scene, parent);
         InternodeInfo internodeInfo;
@@ -1008,41 +1050,69 @@ void TreeGraph::InstantiateChildren(const std::shared_ptr<Scene> &scene,
 
 void TreeGraph::Deserialize(const YAML::Node &in) {
     m_name = in["name"].as<std::string>();
-    int layerSize = in["layersize"].as<int>();
+    m_layerSize = in["layersize"].as<int>();
     auto layers = in["layers"];
     auto rootLayer = layers["0"];
     std::unordered_map<int, std::shared_ptr<TreeGraphNode>> previousNodes;
     m_root = std::make_shared<TreeGraphNode>();
     m_root->m_start = glm::vec3(0, 0, 0);
-    m_root->m_globalRotation = glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f));
     int rootIndex = 0;
-    m_root->m_length = rootLayer["0"]["length"].as<float>();
-    m_root->m_thickness = rootLayer["0"]["thickness"].as<float>();
-    previousNodes[0] = m_root;
-    for (int layerIndex = 0; layerIndex < layerSize; layerIndex++) {
+    auto rootNode = rootLayer["0"];
+    m_root->m_length = rootNode["length"].as<float>();
+    m_root->m_thickness = rootNode["thickness"].as<float>();
+    m_root->m_id = rootNode["id"].as<int>();
+    m_root->m_parentId = -1;
+    int index = 0;
+    for (const auto &component: rootNode["quat"]) {
+        m_root->m_globalRotation[index] = component.as<float>();
+        index++;
+    }
+    index = 0;
+    for (const auto &component: rootNode["position"]) {
+        m_root->m_position[index] = component.as<float>();
+        index++;
+    }
+    previousNodes[m_root->m_id] = m_root;
+    for (int layerIndex = 1; layerIndex < m_layerSize; layerIndex++) {
         auto layer = layers[std::to_string(layerIndex)];
         auto internodeSize = layer["internodesize"].as<int>();
         for (int nodeIndex = 0; nodeIndex < internodeSize; nodeIndex++) {
             auto node = layer[std::to_string(nodeIndex)];
-            auto id = node["id"].as<int>();
             auto parentNodeId = node["parent"].as<int>();
             if (parentNodeId == -1) parentNodeId = 0;
             auto &parentNode = previousNodes[parentNodeId];
             auto newNode = std::make_shared<TreeGraphNode>();
+            newNode->m_id = node["id"].as<int>();
             newNode->m_start = parentNode->m_start + parentNode->m_length *
                                                      (glm::normalize(parentNode->m_globalRotation) *
                                                       glm::vec3(0, 0, -1));
             newNode->m_thickness = node["thickness"].as<float>();
             newNode->m_length = node["length"].as<float>();
-            int index = 0;
+            newNode->m_parentId = parentNodeId;
+            if (newNode->m_parentId == 0) newNode->m_parentId = -1;
+            index = 0;
             for (const auto &component: node["quat"]) {
                 newNode->m_globalRotation[index] = component.as<float>();
                 index++;
             }
-            previousNodes[id] = newNode;
+            index = 0;
+            for (const auto &component: node["position"]) {
+                newNode->m_position[index] = component.as<float>();
+                index++;
+            }
+            previousNodes[newNode->m_id] = newNode;
             parentNode->m_children.push_back(newNode);
             newNode->m_parent = parentNode;
         }
+    }
+}
+
+void TreeGraph::CollectChild(const std::shared_ptr<TreeGraphNode> &node,
+                             std::vector<std::vector<std::shared_ptr<TreeGraphNode>>> &graphNodes,
+                             int currentLayer) const {
+    graphNodes[currentLayer].push_back(node);
+    for (const auto &i: node->m_children) {
+        CollectChild(i, graphNodes, currentLayer + 1);
     }
 }
 
