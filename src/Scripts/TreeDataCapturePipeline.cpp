@@ -237,6 +237,7 @@ void TreeDataCapturePipeline::OnInspect() {
 
         ImGui::Checkbox("Random obstacle", &m_enableRandomObstacle);
         if(m_enableRandomObstacle){
+            ImGui::Checkbox("Render obstacle", &m_renderObstacle);
             ImGui::DragFloat2("Obstacle distance (min/max)", &m_obstacleDistanceRange.x, 0.01f);
             ImGui::DragFloat2("Wall render size (thickness/height)", &m_wallRenderSize.x, 0.01f);
         }
