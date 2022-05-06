@@ -82,6 +82,7 @@ void PlantLayer::Simulate(int iterations) {
         for (auto &i: m_plantBehaviours) {
             if (i) i->Grow(scene, iteration);
         }
+        ObstacleRemoval();
     }
     CalculateStatistics();
     UpdateInternodeColors();
@@ -907,7 +908,7 @@ void PlantLayer::RenderInternodeCylinders() {
     scene->GetComponentDataArray<InternodeCylinder>(m_internodesQuery, branchCylinders);
     std::vector<InternodeColor> branchColors;
     scene->GetComponentDataArray<InternodeColor>(m_internodesQuery,
-                                                           branchColors);
+                                                 branchColors);
     if (!branchCylinders.empty())
         Graphics::DrawGizmoMeshInstancedColored(
                 DefaultResources::Primitives::Cylinder, m_visualizationCamera,
@@ -924,7 +925,7 @@ void PlantLayer::RenderInternodePointers() {
     std::vector<InternodePointer> branchPointers;
     auto scene = GetScene();
     scene->GetComponentDataArray<InternodePointer>(m_internodesQuery,
-                                                             branchPointers);
+                                                   branchPointers);
     if (!branchPointers.empty())
         Graphics::DrawGizmoMeshInstanced(
                 DefaultResources::Primitives::Cylinder, m_visualizationCamera,
@@ -1022,6 +1023,7 @@ void PlantLayer::DrawColorModeSelectionMenu() {
 
 void PlantLayer::CalculateStatistics() {
     auto scene = Application::GetActiveScene();
+
     for (auto &behaviour: m_plantBehaviours) {
         if (behaviour) {
             std::vector<Entity> currentRoots;
@@ -1029,22 +1031,22 @@ void PlantLayer::CalculateStatistics() {
             for (auto root: currentRoots) {
                 scene->ForEachChild(root, [&](Entity child) {
                     if (!behaviour->InternodeCheck(scene, child)) return;
-                    behaviour->InternodeGraphWalker(scene, child,
-                                                    [](Entity parent, Entity child) {
-
-                                                    },
+                    behaviour->InternodeGraphWalkerEndToRoot(scene, child,
                                                     [&](Entity parent) {
-                                                        auto parentStat = scene->GetDataComponent<InternodeStatistics>(parent);
+                                                        auto parentStat = scene->GetDataComponent<InternodeStatistics>(
+                                                                parent);
                                                         std::vector<int> indices;
                                                         parentStat.m_childCount = 0;
                                                         scene->ForEachChild(parent,
-                                                                [&](Entity child) {
-                                                                    if (behaviour->InternodeCheck(scene, child)) {
-                                                                        indices.push_back(
-                                                                                scene->GetDataComponent<InternodeStatistics>(child).m_strahlerOrder);
-                                                                        parentStat.m_childCount++;
-                                                                    }
-                                                                });
+                                                                            [&](Entity child) {
+                                                                                if (behaviour->InternodeCheck(scene,
+                                                                                                              child)) {
+                                                                                    indices.push_back(
+                                                                                            scene->GetDataComponent<InternodeStatistics>(
+                                                                                                    child).m_strahlerOrder);
+                                                                                    parentStat.m_childCount++;
+                                                                                }
+                                                                            });
                                                         if (indices.empty()) { parentStat.m_strahlerOrder = 1; }
                                                         else if (indices.size() == 1) {
                                                             parentStat.m_strahlerOrder = indices[0];
@@ -1067,7 +1069,8 @@ void PlantLayer::CalculateStatistics() {
                                                         scene->SetDataComponent(parent, parentStat);
                                                     },
                                                     [&](Entity endNode) {
-                                                        auto endNodeStat = scene->GetDataComponent<InternodeStatistics>(endNode);
+                                                        auto endNodeStat = scene->GetDataComponent<InternodeStatistics>(
+                                                                endNode);
                                                         endNodeStat.m_strahlerOrder = 1;
                                                         endNodeStat.m_childCount = 0;
                                                         scene->SetDataComponent(endNode, endNodeStat);
@@ -1092,7 +1095,8 @@ void PlantLayer::FixedUpdate() {
             forces.resize(branches.size());
             scene->ForEach<GlobalTransform>(Jobs::Workers(), m_branchesQuery,
                                             [&](int i, Entity entity, GlobalTransform &globalTransform) {
-                                                const auto position = scene->GetDataComponent<GlobalTransform>(entity).GetPosition();
+                                                const auto position = scene->GetDataComponent<GlobalTransform>(
+                                                        entity).GetPosition();
                                                 forces[i] = m_fBMField.GetT(position,
                                                                             Application::Time().CurrentTime(),
                                                                             10.0f, 0.02f, 6) *
@@ -1113,11 +1117,11 @@ void PlantLayer::FixedUpdate() {
 void PlantLayer::UpdateBranchColors() {
     auto scene = GetScene();
     scene->ForEach<BranchColor>(Jobs::Workers(),
-            m_branchesQuery,
-            [=](int i, Entity entity, BranchColor &branchRenderColor) {
-                branchRenderColor.m_value = glm::vec4(m_branchColor, m_branchTransparency);
-            },
-            true);
+                                m_branchesQuery,
+                                [=](int i, Entity entity, BranchColor &branchRenderColor) {
+                                    branchRenderColor.m_value = glm::vec4(m_branchColor, m_branchTransparency);
+                                },
+                                true);
 }
 
 void PlantLayer::RenderBranchCylinders() {
@@ -1126,10 +1130,10 @@ void PlantLayer::RenderBranchCylinders() {
     std::vector<BranchCylinder> branchCylinders;
     auto scene = GetScene();
     scene->GetComponentDataArray<BranchCylinder>(m_branchesQuery,
-                                                         branchCylinders);
+                                                 branchCylinders);
     std::vector<BranchColor> branchColors;
     scene->GetComponentDataArray<BranchColor>(m_branchesQuery,
-                                                      branchColors);
+                                              branchColors);
     if (!branchCylinders.empty())
         Graphics::DrawGizmoMeshInstancedColored(
                 DefaultResources::Primitives::Cylinder, m_visualizationCamera,
@@ -1138,6 +1142,48 @@ void PlantLayer::RenderBranchCylinders() {
                 *reinterpret_cast<std::vector<glm::vec4> *>(&branchColors),
                 *reinterpret_cast<std::vector<glm::mat4> *>(&branchCylinders),
                 glm::mat4(1.0f), 1.0f);
+}
+
+void PlantLayer::ObstacleRemoval() {
+    auto scene = Application::GetActiveScene();
+    auto *obstaclesEntities = scene->UnsafeGetPrivateComponentOwnersList<CubeVolume>();
+    std::vector<std::pair<GlobalTransform, std::shared_ptr<IVolume>>> obstacleVolumes;
+    if (obstaclesEntities)
+        for (const auto &i: *obstaclesEntities) {
+            if (scene->IsEntityEnabled(i) && scene->HasPrivateComponent<CubeVolume>(i)) {
+                auto volume = std::dynamic_pointer_cast<IVolume>(scene->GetOrSetPrivateComponent<CubeVolume>(i).lock());
+                if (volume->m_asObstacle && volume->IsEnabled())
+                    obstacleVolumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
+            }
+        }
+    for (auto &behaviour: m_plantBehaviours) {
+        if (behaviour) {
+            std::vector<Entity> currentRoots;
+            scene->GetEntityArray(behaviour->m_rootsQuery, currentRoots);
+            for (auto root: currentRoots) {
+                scene->ForEachChild(root, [&](Entity child) {
+                    if (!behaviour->InternodeCheck(scene, child)) return;
+                    behaviour->InternodeGraphWalkerRootToEnd(scene, child,
+                                                             [&](Entity parent, Entity child) {
+                                                                 //Remove if obstacle.
+                                                                 if (!obstacleVolumes.empty()) {
+                                                                     auto position = scene->GetDataComponent<GlobalTransform>(
+                                                                             child).GetPosition();
+                                                                     for (const auto &i: obstacleVolumes) {
+                                                                         if (i.second->InVolume(i.first, position)) {
+                                                                             scene->DeleteEntity(child);
+                                                                             return;
+                                                                         }
+                                                                     }
+                                                                 }
+                                                             }
+                    );
+                });
+
+            }
+        }
+    }
+
 }
 
 

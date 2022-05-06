@@ -2,12 +2,12 @@
 // Created by lllll on 9/24/2021.
 //
 
-#include "MultipleAngleCapture.hpp"
+#include "TreeDataCapturePipeline.hpp"
 #include "Entities.hpp"
 #include "PlantLayer.hpp"
 #include "ProjectManager.hpp"
 #include "LSystemBehaviour.hpp"
-
+#include "CubeVolume.hpp"
 #ifdef RAYTRACERFACILITY
 
 #include "RayTracerCamera.hpp"
@@ -22,7 +22,7 @@ using namespace RayTracerFacility;
 
 using namespace Scripts;
 
-void MultipleAngleCapture::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) {
+void TreeDataCapturePipeline::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) {
     Entity rootInternode;
     auto scene = pipeline.GetScene();
     auto children = scene->GetChildren(pipeline.m_currentGrowingTree);
@@ -42,7 +42,7 @@ void MultipleAngleCapture::OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) 
     pipeline.m_status = AutoTreeGenerationPipelineStatus::Growth;
 }
 
-void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
+void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
     auto scene = pipeline.GetScene();
     auto behaviour = pipeline.GetBehaviour();
 #ifdef RAYTRACERFACILITY
@@ -210,7 +210,7 @@ void MultipleAngleCapture::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
 
 static const char *DefaultBehaviourTypes[]{"GeneralTree", "LSystem", "SpaceColonization", "TreeGraph"};
 
-void MultipleAngleCapture::OnInspect() {
+void TreeDataCapturePipeline::OnInspect() {
     auto scene = Application::GetActiveScene();
     if (ImGui::Button("Instantiate Pipeline")) {
         auto multipleAngleCapturePipelineEntity = scene->CreateEntity(
@@ -235,6 +235,11 @@ void MultipleAngleCapture::OnInspect() {
     if (ImGui::TreeNodeEx("Pipeline Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::DragFloat("Branch width", &m_branchWidth, 0.01f);
 
+        ImGui::Checkbox("Random obstacle", &m_enableRandomObstacle);
+        if(m_enableRandomObstacle){
+            ImGui::DragFloat2("Obstacle distance (min/max)", &m_obstacleDistanceRange.x, 0.01f);
+            ImGui::DragFloat2("Wall render size (thickness/height)", &m_wallRenderSize.x, 0.01f);
+        }
         ImGui::Checkbox("Override phyllotaxis", &m_applyPhyllotaxis);
         if (m_applyPhyllotaxis) {
             Editor::DragAndDropButton<DefaultInternodePhyllotaxis>(m_foliagePhyllotaxis, "Phyllotaxis", true);
@@ -277,13 +282,19 @@ void MultipleAngleCapture::OnInspect() {
             ImGui::DragFloat("Light Size", &m_lightSize, 0.001f);
             ImGui::DragFloat("Ambient light intensity", &m_ambientLightIntensity, 0.01f);
             ImGui::DragFloat("Environment light intensity", &m_envLightIntensity, 0.01f);
+
+#ifdef RAYTRACERFACILITY
+            ImGui::Text("Ray tracer Settings");
+            ImGui::DragInt("Bounce", &m_rayProperties.m_bounces);
+            ImGui::DragInt("Sample", &m_rayProperties.m_samples);
+#endif
             ImGui::TreePop();
         }
         if (m_exportBranchCapture) Application::GetLayer<PlantLayer>()->DrawColorModeSelectionMenu();
     }
 }
 
-void MultipleAngleCapture::SetUpCamera(AutoTreeGenerationPipeline &pipeline) {
+void TreeDataCapturePipeline::SetUpCamera(AutoTreeGenerationPipeline &pipeline) {
     auto scene = pipeline.GetScene();
     auto cameraEntity = pipeline.GetOwner();
 #ifdef RAYTRACERFACILITY
@@ -298,12 +309,12 @@ void MultipleAngleCapture::SetUpCamera(AutoTreeGenerationPipeline &pipeline) {
     }
 }
 
-void MultipleAngleCapture::OnCreate() {
+void TreeDataCapturePipeline::OnCreate() {
 }
 
-void MultipleAngleCapture::ExportGraph(AutoTreeGenerationPipeline &pipeline,
-                                       const std::shared_ptr<IPlantBehaviour> &behaviour,
-                                       const std::filesystem::path &path) {
+void TreeDataCapturePipeline::ExportGraph(AutoTreeGenerationPipeline &pipeline,
+                                          const std::shared_ptr<IPlantBehaviour> &behaviour,
+                                          const std::filesystem::path &path) {
     auto scene = pipeline.GetScene();
     try {
         auto directory = path;
@@ -354,9 +365,9 @@ void MultipleAngleCapture::ExportGraph(AutoTreeGenerationPipeline &pipeline,
 
 }
 
-void MultipleAngleCapture::ExportGraphNode(AutoTreeGenerationPipeline &pipeline,
-                                           const std::shared_ptr<IPlantBehaviour> &behaviour, YAML::Emitter &out,
-                                           int parentIndex, const Entity &internode) {
+void TreeDataCapturePipeline::ExportGraphNode(AutoTreeGenerationPipeline &pipeline,
+                                              const std::shared_ptr<IPlantBehaviour> &behaviour, YAML::Emitter &out,
+                                              int parentIndex, const Entity &internode) {
     auto scene = pipeline.GetScene();
     out << YAML::BeginMap;
     out << YAML::Key << "Parent Entity Index" << parentIndex;
@@ -407,7 +418,7 @@ void MultipleAngleCapture::ExportGraphNode(AutoTreeGenerationPipeline &pipeline,
     out << YAML::EndMap;
 }
 
-void MultipleAngleCapture::ExportMatrices(const std::filesystem::path &path) {
+void TreeDataCapturePipeline::ExportMatrices(const std::filesystem::path &path) {
     YAML::Emitter out;
     out << YAML::BeginMap;
     out << YAML::Key << "Capture Info" << YAML::BeginSeq;
@@ -428,8 +439,8 @@ void MultipleAngleCapture::ExportMatrices(const std::filesystem::path &path) {
 }
 
 void
-MultipleAngleCapture::ExportCSV(AutoTreeGenerationPipeline &pipeline, const std::shared_ptr<IPlantBehaviour> &behaviour,
-                                const std::filesystem::path &path) {
+TreeDataCapturePipeline::ExportCSV(AutoTreeGenerationPipeline &pipeline, const std::shared_ptr<IPlantBehaviour> &behaviour,
+                                   const std::filesystem::path &path) {
     auto scene = pipeline.GetScene();
     std::ofstream ofs;
     ofs.open(path.c_str(), std::ofstream::out | std::ofstream::trunc);
@@ -449,10 +460,10 @@ MultipleAngleCapture::ExportCSV(AutoTreeGenerationPipeline &pipeline, const std:
                                                                  child);
                                                      });
         });
-        output += "in_id,in_pos_x,in_pos_y,in_pos_z,in_front_x,in_front_y,in_front_z,in_up_x,in_up_y,in_up_z,in_thickness,in_length,in_root_distance,in_chain_distance,in_distance_to_branch_start,in_level,in_order,in_flush_age,in_proximity,in_node_count,in_quat_x,in_quat_y,in_quat_z,in_quat_w,";
-        output += "out0_id,out0_pos_x,out0_pos_y,out0_pos_z,out0_front_x,out0_front_y,out0_front_z,out0_up_x,out0_up_y,out0_up_z,out0_thickness,out0_length,out0_root_distance,out0_chain_distance,out0_distance_to_branch_start,out0_level,out0_order,out0_flush_age,out0_proximity,out0_node_count,out0_quat_x,out0_quat_y,out0_quat_z,out0_quat_w,";
-        output += "out1_id,out1_pos_x,out1_pos_y,out1_pos_z,out1_front_x,out1_front_y,out1_front_z,out1_up_x,out1_up_y,out1_up_z,out1_thickness,out1_length,out1_root_distance,out1_chain_distance,out1_distance_to_branch_start,out1_level,out1_order,out1_flush_age,out1_proximity,out1_node_count,out1_quat_x,out1_quat_y,out1_quat_z,out1_quat_w,";
-        output += "out2_id,out2_pos_x,out2_pos_y,out2_pos_z,out2_front_x,out2_front_y,out2_front_z,out2_up_x,out2_up_y,out2_up_z,out2_thickness,out2_length,out2_root_distance,out2_chain_distance,out2_distance_to_branch_start,out2_level,out2_order,out2_flush_age,out2_proximity,out2_node_count,out2_quat_x,out2_quat_y,out2_quat_z,out2_quat_w\n";
+        output += "in_id,in_pos_x,in_pos_y,in_pos_z,in_front_x,in_front_y,in_front_z,in_up_x,in_up_y,in_up_z,in_thickness,in_length,in_root_distance,in_chain_distance,in_distance_to_branch_start,in_order,in_quat_x,in_quat_y,in_quat_z,in_quat_w,";
+        output += "out0_id,out0_pos_x,out0_pos_y,out0_pos_z,out0_front_x,out0_front_y,out0_front_z,out0_up_x,out0_up_y,out0_up_z,out0_thickness,out0_length,out0_root_distance,out0_chain_distance,out0_distance_to_branch_start,out0_order,out0_quat_x,out0_quat_y,out0_quat_z,out0_quat_w,";
+        output += "out1_id,out1_pos_x,out1_pos_y,out1_pos_z,out1_front_x,out1_front_y,out1_front_z,out1_up_x,out1_up_y,out1_up_z,out1_thickness,out1_length,out1_root_distance,out1_chain_distance,out1_distance_to_branch_start,out1_order,out1_quat_x,out1_quat_y,out1_quat_z,out1_quat_w,";
+        output += "out2_id,out2_pos_x,out2_pos_y,out2_pos_z,out2_front_x,out2_front_y,out2_front_z,out2_up_x,out2_up_y,out2_up_z,out2_thickness,out2_length,out2_root_distance,out2_chain_distance,out2_distance_to_branch_start,out2_order,out2_quat_x,out2_quat_y,out2_quat_z,out2_quat_w\n";
         int layerIndex = 0;
         for (const auto &layer: internodes) {
             if (layer.empty()) break;
@@ -501,13 +512,7 @@ MultipleAngleCapture::ExportCSV(AutoTreeGenerationPipeline &pipeline, const std:
                 row += std::to_string(internodeStatus.m_rootDistance) + ",";
                 row += std::to_string(internodeStatus.m_chainDistance) + ",";
                 row += std::to_string(internodeStatus.m_branchLength) + ",";
-                row += std::to_string(internodeStatus.m_level) + ",";
                 row += std::to_string(internodeStatus.m_order) + ",";
-
-                row += std::to_string(internodeStatus.m_age) + ",";
-                //row += std::to_string(internodeStatus.m_recordedProbability) + ",";
-                row += std::to_string(internodeStatus.m_startDensity) + ",";
-                row += std::to_string(internodeStatus.m_currentTotalNodeCount) + ",";
 
                 row += std::to_string(globalRotation.x) + ",";
                 row += std::to_string(globalRotation.y) + ",";
@@ -517,7 +522,7 @@ MultipleAngleCapture::ExportCSV(AutoTreeGenerationPipeline &pipeline, const std:
                 for (int i = 0; i < 3; i++) {
                     auto child = children[i];
                     if (child.GetIndex() == 0 || scene->GetDataComponent<InternodeInfo>(child).m_endNode) {
-                        row += "N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A";
+                        row += "N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A";
                     } else {
                         auto globalTransformChild = scene->GetDataComponent<GlobalTransform>(child);
                         auto transformChild = scene->GetDataComponent<Transform>(child);
@@ -550,13 +555,7 @@ MultipleAngleCapture::ExportCSV(AutoTreeGenerationPipeline &pipeline, const std:
                         row += std::to_string(internodeStatusChild.m_rootDistance) + ",";
                         row += std::to_string(internodeStatusChild.m_chainDistance) + ",";
                         row += std::to_string(internodeStatusChild.m_branchLength) + ",";
-                        row += std::to_string(internodeStatusChild.m_level) + ",";
                         row += std::to_string(internodeStatusChild.m_order) + ",";
-
-                        row += std::to_string(internodeStatusChild.m_age) + ",";
-                        //row += std::to_string(internodeStatusChild.m_recordedProbability) + ",";
-                        row += std::to_string(internodeStatusChild.m_startDensity) + ",";
-                        row += std::to_string(internodeStatusChild.m_currentTotalNodeCount) + ",";
 
                         row += std::to_string(globalRotationChild.x) + ",";
                         row += std::to_string(globalRotationChild.y) + ",";
@@ -573,13 +572,12 @@ MultipleAngleCapture::ExportCSV(AutoTreeGenerationPipeline &pipeline, const std:
         ofs.write(output.c_str(), output.size());
         ofs.flush();
         ofs.close();
-        //UNIENGINE_LOG("Tree group saved: " + path.string() + ".csv");
     } else {
         UNIENGINE_ERROR("Can't open file!");
     }
 }
 
-void MultipleAngleCapture::OnStart(AutoTreeGenerationPipeline &pipeline) {
+void TreeDataCapturePipeline::OnStart(AutoTreeGenerationPipeline &pipeline) {
     auto scene = pipeline.GetScene();
 #ifdef RAYTRACERFACILITY
     auto &environment = Application::GetLayer<RayTracerLayer>()->m_environmentProperties;
@@ -595,14 +593,50 @@ void MultipleAngleCapture::OnStart(AutoTreeGenerationPipeline &pipeline) {
     m_names.clear();
     m_cameraModels.clear();
     m_treeModels.clear();
+
+    m_ground = scene->CreateEntity("Ground");
+    auto groundMeshRenderer = scene->GetOrSetPrivateComponent<MeshRenderer>(m_ground).lock();
+    groundMeshRenderer->m_material = ProjectManager::CreateTemporaryAsset<Material>();
+    groundMeshRenderer->m_mesh = DefaultResources::Primitives::Quad;
+    GlobalTransform groundGT;
+    groundGT.SetScale({1000, 1, 1000});
+    scene->SetDataComponent<GlobalTransform>(m_ground, groundGT);
+
+    if(m_enableRandomObstacle) {
+        m_obstacle = scene->CreateEntity("Obstacle");
+        m_obstacleAngle = 0.0f;
+        m_obstacleDistance = glm::linearRand(glm::min(m_obstacleDistanceRange.x, m_obstacleDistanceRange.y),
+                                             glm::max(m_obstacleDistanceRange.x, m_obstacleDistanceRange.y));
+        GlobalTransform obstacleGT;
+        const float wallActualThickness = 3.0f;
+        obstacleGT.SetPosition({m_obstacleDistance + wallActualThickness, 0.0f, 0.0f});
+        obstacleGT.SetScale({m_wallRenderSize.x, m_wallRenderSize.y, m_wallRenderSize.y});
+        scene->SetDataComponent<GlobalTransform>(m_obstacle, obstacleGT);
+        auto cubeVolume = scene->GetOrSetPrivateComponent<CubeVolume>(m_obstacle).lock();
+        cubeVolume->m_minMaxBound.m_min = glm::vec3(-wallActualThickness / m_wallRenderSize.x, -10000, -10000);
+        cubeVolume->m_minMaxBound.m_max = glm::vec3(wallActualThickness / m_wallRenderSize.x, 10000, 10000);
+        cubeVolume->m_asObstacle = true;
+
+        if(m_renderObstacle){
+            auto obstacleMeshRenderer = scene->GetOrSetPrivateComponent<MeshRenderer>(m_obstacle).lock();
+            obstacleMeshRenderer->m_material = ProjectManager::CreateTemporaryAsset<Material>();
+            obstacleMeshRenderer->m_material.Get<Material>()->m_albedoColor = glm::vec3(0.7f);
+            obstacleMeshRenderer->m_mesh = DefaultResources::Primitives::Cube;
+        }
+    }
 }
 
-void MultipleAngleCapture::OnEnd(AutoTreeGenerationPipeline &pipeline) {
+void TreeDataCapturePipeline::OnEnd(AutoTreeGenerationPipeline &pipeline) {
+    auto scene = pipeline.GetScene();
+
     ExportMatrices(m_currentExportFolder /
                    "matrices.yml");
+
+    scene->DeleteEntity(m_ground);
+    if(m_enableRandomObstacle)scene->DeleteEntity(m_obstacle);
 }
 
-void MultipleAngleCapture::DisableAllExport() {
+void TreeDataCapturePipeline::DisableAllExport() {
     m_exportOBJ = false;
     m_exportCSV = false;
     m_exportGraph = false;
@@ -613,7 +647,7 @@ void MultipleAngleCapture::DisableAllExport() {
     m_exportLString = false;
 }
 
-GlobalTransform MultipleAngleCapture::TransformCamera(const Bound &bound, float turnAngle, float pitchAngle) {
+GlobalTransform TreeDataCapturePipeline::TransformCamera(const Bound &bound, float turnAngle, float pitchAngle) {
     GlobalTransform cameraGlobalTransform;
     float distance = m_distance;
     glm::vec3 focusPoint = m_focusPoint;
@@ -644,18 +678,22 @@ GlobalTransform MultipleAngleCapture::TransformCamera(const Bound &bound, float 
     return cameraGlobalTransform;
 }
 
-void MultipleAngleCapture::CollectAssetRef(std::vector<AssetRef> &list) {
+void TreeDataCapturePipeline::CollectAssetRef(std::vector<AssetRef> &list) {
     list.push_back(m_foliageTexture);
     list.push_back(m_branchTexture);
     list.push_back(m_foliagePhyllotaxis);
 
-
 }
 
-void MultipleAngleCapture::Serialize(YAML::Emitter &out) {
+void TreeDataCapturePipeline::Serialize(YAML::Emitter &out) {
     m_foliageTexture.Save("m_foliageTexture", out);
     m_branchTexture.Save("m_branchTexture", out);
     m_foliagePhyllotaxis.Save("m_foliagePhyllotaxis", out);
+
+    out << YAML::Key << "m_enableRandomObstacle" << YAML::Value << m_enableRandomObstacle;
+    out << YAML::Key << "m_renderObstacle" << YAML::Value << m_renderObstacle;
+    out << YAML::Key << "m_obstacleDistanceRange" << YAML::Value << m_obstacleDistanceRange;
+    out << YAML::Key << "m_wallRenderSize" << YAML::Value << m_wallRenderSize;
 
     out << YAML::Key << "m_defaultBehaviourType" << YAML::Value << (unsigned) m_defaultBehaviourType;
     out << YAML::Key << "m_autoAdjustCamera" << YAML::Value << m_autoAdjustCamera;
@@ -690,11 +728,15 @@ void MultipleAngleCapture::Serialize(YAML::Emitter &out) {
     out << YAML::Key << "m_cameraMax" << YAML::Value << m_cameraMax;
 }
 
-void MultipleAngleCapture::Deserialize(const YAML::Node &in) {
+void TreeDataCapturePipeline::Deserialize(const YAML::Node &in) {
     m_foliageTexture.Load("m_foliageTexture", in);
     m_branchTexture.Load("m_branchTexture", in);
     m_foliagePhyllotaxis.Load("m_foliagePhyllotaxis", in);
 
+    if (in["m_enableRandomObstacle"]) m_enableRandomObstacle = in["m_enableRandomObstacle"].as<bool>();
+    if (in["m_renderObstacle"]) m_renderObstacle = in["m_renderObstacle"].as<bool>();
+    if (in["m_obstacleDistanceRange"]) m_obstacleDistanceRange = in["m_obstacleDistanceRange"].as<glm::vec2>();
+    if (in["m_wallRenderSize"]) m_wallRenderSize = in["m_wallRenderSize"].as<glm::vec2>();
 
     if (in["m_defaultBehaviourType"]) m_defaultBehaviourType = (BehaviourType) in["m_defaultBehaviourType"].as<unsigned>();
     if (in["m_autoAdjustCamera"]) m_autoAdjustCamera = in["m_autoAdjustCamera"].as<bool>();
@@ -729,7 +771,7 @@ void MultipleAngleCapture::Deserialize(const YAML::Node &in) {
     if (in["m_cameraMax"]) m_cameraMax = in["m_cameraMax"].as<float>();
 }
 
-MultipleAngleCapture::~MultipleAngleCapture() {
+TreeDataCapturePipeline::~TreeDataCapturePipeline() {
     m_foliagePhyllotaxis.Clear();
     m_foliageTexture.Clear();
     m_branchTexture.Clear();

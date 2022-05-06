@@ -8,12 +8,18 @@ using namespace RayTracerFacility;
 #endif
 using namespace PlantArchitect;
 namespace Scripts {
-    class MultipleAngleCapture : public IAutoTreeGenerationPipelineBehaviour {
+    class TreeDataCapturePipeline : public IAutoTreeGenerationPipelineBehaviour {
         std::vector<glm::mat4> m_cameraModels;
         std::vector<glm::mat4> m_treeModels;
         std::vector<glm::mat4> m_projections;
         std::vector<glm::mat4> m_views;
         std::vector<std::string> m_names;
+
+        float m_obstacleAngle = 0.0f;
+        float m_obstacleDistance = 0.0f;
+        Entity m_ground;
+        Entity m_obstacle;
+
         GlobalTransform TransformCamera(const Bound& bound, float turnAngle, float pitchAngle);
         void SetUpCamera(AutoTreeGenerationPipeline& pipeline);
         void ExportMatrices(const std::filesystem::path& path);
@@ -21,6 +27,11 @@ namespace Scripts {
         void ExportGraph(AutoTreeGenerationPipeline& pipeline, const std::shared_ptr<IPlantBehaviour>& behaviour, const std::filesystem::path& path);
         void ExportCSV(AutoTreeGenerationPipeline& pipeline, const std::shared_ptr<IPlantBehaviour>& behaviour, const std::filesystem::path& path);
     public:
+        bool m_enableRandomObstacle = false;
+        bool m_renderObstacle = true;
+        glm::vec2 m_obstacleDistanceRange = glm::vec2(1, 20);
+        glm::vec2 m_wallRenderSize = glm::vec2(0.5f, 20.0f);
+
         AssetRef m_foliageTexture;
         AssetRef m_branchTexture;
         BehaviourType m_defaultBehaviourType = BehaviourType::GeneralTree;
@@ -75,6 +86,6 @@ namespace Scripts {
         void Deserialize(const YAML::Node &in) override;
 
         void DisableAllExport();
-        ~MultipleAngleCapture();
+        ~TreeDataCapturePipeline();
     };
 }

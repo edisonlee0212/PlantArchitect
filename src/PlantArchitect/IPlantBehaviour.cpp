@@ -667,9 +667,9 @@ IPlantBehaviour::InternodeGraphWalker(const std::shared_ptr<Scene> &scene, const
         Entity child = scene->GetChildren(currentNode)[0];
         if (InternodeCheck(scene, child)) {
             rootToEndAction(currentNode, child);
-        }
-        if (InternodeCheck(scene, child)) {
-            currentNode = child;
+            if (InternodeCheck(scene, child)) {
+                currentNode = child;
+            }
         }
     }
     int trueChildAmount = 0;
@@ -678,11 +678,11 @@ IPlantBehaviour::InternodeGraphWalker(const std::shared_ptr<Scene> &scene, const
         for (const auto &child: children) {
             if (InternodeCheck(scene, child)) {
                 rootToEndAction(currentNode, child);
-            }
-            if (InternodeCheck(scene, child)) {
-                InternodeGraphWalker(scene, child, rootToEndAction, endToRootAction, endNodeAction);
                 if (InternodeCheck(scene, child)) {
-                    trueChildAmount++;
+                    InternodeGraphWalker(scene, child, rootToEndAction, endToRootAction, endNodeAction);
+                    if (InternodeCheck(scene, child)) {
+                        trueChildAmount++;
+                    }
                 }
             }
         }
@@ -755,9 +755,9 @@ void IPlantBehaviour::InternodeGraphWalkerRootToEnd(const std::shared_ptr<Scene>
         Entity child = scene->GetChildren(currentNode)[0];
         if (InternodeCheck(scene, child)) {
             rootToEndAction(currentNode, child);
-        }
-        if (InternodeCheck(scene, child)) {
-            currentNode = child;
+            if (InternodeCheck(scene, child)) {
+                currentNode = child;
+            }
         }
     }
     if (scene->GetChildrenAmount(currentNode) != 0) {
@@ -765,7 +765,9 @@ void IPlantBehaviour::InternodeGraphWalkerRootToEnd(const std::shared_ptr<Scene>
         for (const auto &child: children) {
             if (InternodeCheck(scene, child)) {
                 rootToEndAction(currentNode, child);
-                InternodeGraphWalkerRootToEnd(scene, child, rootToEndAction);
+                if (InternodeCheck(scene, child)) {
+                    InternodeGraphWalkerRootToEnd(scene, child, rootToEndAction);
+                }
             }
         }
     }

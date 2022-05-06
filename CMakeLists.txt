@@ -164,33 +164,33 @@ endif ()
 # ------------------------------------------------------------------
 # Example program
 # ------------------------------------------------------------------
-add_executable(Application
+add_executable(TreeFramework
         "src/app/Application.cpp")
-target_precompile_headers(Application
+target_precompile_headers(TreeFramework
         PRIVATE
         ${PLANT_ARCHITECT_PCH_LOCAL}
         )
-target_include_directories(Application
+target_include_directories(TreeFramework
         PUBLIC
         ${SCRIPTS_INCLUDES_LOCAL}
         )
 if (BUILD_RAY_TRACER_FACILITY)
-    target_link_libraries(Application
+    target_link_libraries(TreeFramework
             RayTracerFacility
             PlantArchitect
             Scripts
             )
-    target_compile_definitions(Application
+    target_compile_definitions(TreeFramework
             PRIVATE
             RAYTRACERFACILITY
             NOMINMAX
             )
 else ()
-    target_link_libraries(Application
+    target_link_libraries(TreeFramework
             PlantArchitect
             Scripts
             )
-    target_compile_definitions(Application
+    target_compile_definitions(TreeFramework
             PRIVATE
             NOMINMAX
             )

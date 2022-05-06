@@ -28,7 +28,7 @@
 #include "AutoTreeGenerationPipeline.hpp"
 #include "DefaultInternodePhyllotaxis.hpp"
 #include "RadialBoundingVolume.hpp"
-#include "MultipleAngleCapture.hpp"
+#include "TreeDataCapturePipeline.hpp"
 #include "PlantLayer.hpp"
 
 using namespace PlantArchitect;
@@ -43,7 +43,7 @@ void EngineSetup();
 int main() {
     ClassRegistry::RegisterPrivateComponent<ObjectRotator>("ObjectRotator");
     ClassRegistry::RegisterPrivateComponent<AutoTreeGenerationPipeline>("AutoTreeGenerationPipeline");
-    ClassRegistry::RegisterAsset<MultipleAngleCapture>("MultipleAngleCapture", {".mulanglecap"});
+    ClassRegistry::RegisterAsset<TreeDataCapturePipeline>("TreeDataCapturePipeline", {".tdcp"});
 
 
     EngineSetup();

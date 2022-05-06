@@ -60,7 +60,7 @@ namespace PlantArchitect {
         void DrawColorModeSelectionMenu();
 
         void PreparePhysics();
-
+        void ObstacleRemoval();
         void CalculateStatistics();
 
         /**
