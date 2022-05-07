@@ -8,6 +8,7 @@
 #include "ProjectManager.hpp"
 #include "LSystemBehaviour.hpp"
 #include "CubeVolume.hpp"
+
 #ifdef RAYTRACERFACILITY
 
 #include "RayTracerCamera.hpp"
@@ -40,6 +41,28 @@ void TreeDataCapturePipeline::OnBeforeGrowth(AutoTreeGenerationPipeline &pipelin
         SetUpCamera(pipeline);
     }
     pipeline.m_status = AutoTreeGenerationPipelineStatus::Growth;
+
+    if (m_enableRandomObstacle) {
+        m_obstacle = scene->CreateEntity("Obstacle");
+        m_obstacleAngle = 0.0f;
+        m_obstacleDistance = glm::linearRand(glm::min(m_obstacleDistanceRange.x, m_obstacleDistanceRange.y),
+                                             glm::max(m_obstacleDistanceRange.x, m_obstacleDistanceRange.y));
+        GlobalTransform obstacleGT;
+        obstacleGT.SetPosition({m_obstacleDistance + m_wallSize.x / 2.0f, 0.0f, 0.0f});
+        obstacleGT.SetScale(m_wallSize);
+        scene->SetDataComponent<GlobalTransform>(m_obstacle, obstacleGT);
+        auto cubeVolume = scene->GetOrSetPrivateComponent<CubeVolume>(m_obstacle).lock();
+        cubeVolume->m_minMaxBound.m_min = glm::vec3(-1.0f);
+        cubeVolume->m_minMaxBound.m_max = glm::vec3(1.0f);
+        cubeVolume->m_asObstacle = true;
+
+        if (m_renderObstacle) {
+            auto obstacleMeshRenderer = scene->GetOrSetPrivateComponent<MeshRenderer>(m_obstacle).lock();
+            obstacleMeshRenderer->m_material = ProjectManager::CreateTemporaryAsset<Material>();
+            obstacleMeshRenderer->m_material.Get<Material>()->m_albedoColor = glm::vec3(0.7f);
+            obstacleMeshRenderer->m_mesh = DefaultResources::Primitives::Cube;
+        }
+    }
 }
 
 void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
@@ -63,6 +86,7 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
     auto branchFolder = m_currentExportFolder / "Branch";
     auto graphFolder = m_currentExportFolder / "Graph";
     auto csvFolder = m_currentExportFolder / "CSV";
+    auto envGridFolder = m_currentExportFolder / "EnvGrid";
     auto lStringFolder = m_currentExportFolder / "LSystemString";
     if (m_exportOBJ || m_exportImage || m_exportDepth || m_exportBranchCapture) {
         behaviour->GenerateSkinnedMeshes(scene);
@@ -86,6 +110,11 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
         std::filesystem::create_directories(csvFolder);
         auto exportPath = std::filesystem::absolute(csvFolder / (pipeline.m_prefix + ".csv"));
         ExportCSV(pipeline, behaviour, exportPath);
+    }
+    if(m_exportEnvironmentalGrid){
+        std::filesystem::create_directories(envGridFolder);
+        auto exportPath = std::filesystem::absolute(envGridFolder / (pipeline.m_prefix + ".csv"));
+        ExportEnvironmentalGrid(pipeline, exportPath);
     }
     if (m_exportLString) {
         std::filesystem::create_directories(lStringFolder);
@@ -205,6 +234,8 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
     }
 #endif
 #pragma endregion
+
+    if (m_enableRandomObstacle)scene->DeleteEntity(m_obstacle);
     pipeline.m_status = AutoTreeGenerationPipelineStatus::Idle;
 }
 
@@ -236,10 +267,19 @@ void TreeDataCapturePipeline::OnInspect() {
         ImGui::DragFloat("Branch width", &m_branchWidth, 0.01f);
 
         ImGui::Checkbox("Random obstacle", &m_enableRandomObstacle);
-        if(m_enableRandomObstacle){
+        if (m_enableRandomObstacle) {
             ImGui::Checkbox("Render obstacle", &m_renderObstacle);
             ImGui::DragFloat2("Obstacle distance (min/max)", &m_obstacleDistanceRange.x, 0.01f);
-            ImGui::DragFloat2("Wall render size (thickness/height)", &m_wallRenderSize.x, 0.01f);
+            ImGui::DragFloat3("Wall size", &m_wallSize.x, 0.01f);
+
+            static bool renderGrid = true;
+            if (ImGui::Button("Refresh obstacles")) {
+                m_obstacleGrid.FillObstacle(Application::GetActiveScene());
+            }
+            ImGui::Checkbox("Render grid", &renderGrid);
+            if (renderGrid) {
+                m_obstacleGrid.RenderGrid();
+            }
         }
         ImGui::Checkbox("Override phyllotaxis", &m_applyPhyllotaxis);
         if (m_applyPhyllotaxis) {
@@ -248,6 +288,7 @@ void TreeDataCapturePipeline::OnInspect() {
             Editor::DragAndDropButton<Texture2D>(m_branchTexture, "Branch texture", true);
         }
         ImGui::Text("Data export:");
+        ImGui::Checkbox("Export Environmental Grid", &m_exportEnvironmentalGrid);
         ImGui::Checkbox("Export TreeIO", &m_exportTreeIOTrees);
         ImGui::Checkbox("Export OBJ", &m_exportOBJ);
         ImGui::Checkbox("Export Graph", &m_exportGraph);
@@ -261,6 +302,7 @@ void TreeDataCapturePipeline::OnInspect() {
 
         ImGui::TreePop();
     }
+
     if (m_exportDepth || m_exportImage || m_exportBranchCapture) {
         if (ImGui::TreeNodeEx("Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::Checkbox("Export Camera matrices", &m_exportMatrices);
@@ -439,8 +481,29 @@ void TreeDataCapturePipeline::ExportMatrices(const std::filesystem::path &path) 
     fout.flush();
 }
 
+void TreeDataCapturePipeline::ExportEnvironmentalGrid(AutoTreeGenerationPipeline &pipeline,
+                                                      const std::filesystem::path &path) {
+    auto scene = pipeline.GetScene();
+    std::ofstream ofs;
+    ofs.open(path.c_str(), std::ofstream::out | std::ofstream::trunc);
+    if (ofs.is_open()) {
+        std::string output;
+        m_obstacleGrid.FillObstacle(pipeline.GetScene());
+        for(int i = 0; i < 262143; i++){
+            output += std::to_string(m_obstacleGrid.m_voxels[i]) + ",";
+        }
+        output += std::to_string(m_obstacleGrid.m_voxels[262143]);
+        ofs.write(output.c_str(), output.size());
+        ofs.flush();
+        ofs.close();
+    } else {
+        UNIENGINE_ERROR("Can't open file!");
+    }
+}
+
 void
-TreeDataCapturePipeline::ExportCSV(AutoTreeGenerationPipeline &pipeline, const std::shared_ptr<IPlantBehaviour> &behaviour,
+TreeDataCapturePipeline::ExportCSV(AutoTreeGenerationPipeline &pipeline,
+                                   const std::shared_ptr<IPlantBehaviour> &behaviour,
                                    const std::filesystem::path &path) {
     auto scene = pipeline.GetScene();
     std::ofstream ofs;
@@ -454,7 +517,8 @@ TreeDataCapturePipeline::ExportCSV(AutoTreeGenerationPipeline &pipeline, const s
             internodes[0].emplace_back(-1, child);
             behaviour->InternodeGraphWalkerRootToEnd(scene, child,
                                                      [&](Entity parent, Entity child) {
-                                                         auto childInternodeInfo = scene->GetDataComponent<InternodeInfo>(child);
+                                                         auto childInternodeInfo = scene->GetDataComponent<InternodeInfo>(
+                                                                 child);
                                                          if (childInternodeInfo.m_endNode) return;
                                                          internodes[childInternodeInfo.m_layer].emplace_back(
                                                                  parent.GetIndex(),
@@ -603,28 +667,7 @@ void TreeDataCapturePipeline::OnStart(AutoTreeGenerationPipeline &pipeline) {
     groundGT.SetScale({1000, 1, 1000});
     scene->SetDataComponent<GlobalTransform>(m_ground, groundGT);
 
-    if(m_enableRandomObstacle) {
-        m_obstacle = scene->CreateEntity("Obstacle");
-        m_obstacleAngle = 0.0f;
-        m_obstacleDistance = glm::linearRand(glm::min(m_obstacleDistanceRange.x, m_obstacleDistanceRange.y),
-                                             glm::max(m_obstacleDistanceRange.x, m_obstacleDistanceRange.y));
-        GlobalTransform obstacleGT;
-        const float wallActualThickness = 3.0f;
-        obstacleGT.SetPosition({m_obstacleDistance + wallActualThickness, 0.0f, 0.0f});
-        obstacleGT.SetScale({m_wallRenderSize.x, m_wallRenderSize.y, m_wallRenderSize.y});
-        scene->SetDataComponent<GlobalTransform>(m_obstacle, obstacleGT);
-        auto cubeVolume = scene->GetOrSetPrivateComponent<CubeVolume>(m_obstacle).lock();
-        cubeVolume->m_minMaxBound.m_min = glm::vec3(-wallActualThickness / m_wallRenderSize.x, -10000, -10000);
-        cubeVolume->m_minMaxBound.m_max = glm::vec3(wallActualThickness / m_wallRenderSize.x, 10000, 10000);
-        cubeVolume->m_asObstacle = true;
 
-        if(m_renderObstacle){
-            auto obstacleMeshRenderer = scene->GetOrSetPrivateComponent<MeshRenderer>(m_obstacle).lock();
-            obstacleMeshRenderer->m_material = ProjectManager::CreateTemporaryAsset<Material>();
-            obstacleMeshRenderer->m_material.Get<Material>()->m_albedoColor = glm::vec3(0.7f);
-            obstacleMeshRenderer->m_mesh = DefaultResources::Primitives::Cube;
-        }
-    }
 }
 
 void TreeDataCapturePipeline::OnEnd(AutoTreeGenerationPipeline &pipeline) {
@@ -634,7 +677,7 @@ void TreeDataCapturePipeline::OnEnd(AutoTreeGenerationPipeline &pipeline) {
                    "matrices.yml");
 
     scene->DeleteEntity(m_ground);
-    if(m_enableRandomObstacle)scene->DeleteEntity(m_obstacle);
+
 }
 
 void TreeDataCapturePipeline::DisableAllExport() {
@@ -691,10 +734,11 @@ void TreeDataCapturePipeline::Serialize(YAML::Emitter &out) {
     m_branchTexture.Save("m_branchTexture", out);
     m_foliagePhyllotaxis.Save("m_foliagePhyllotaxis", out);
 
+    out << YAML::Key << "m_exportEnvironmentalGrid" << YAML::Value << m_exportEnvironmentalGrid;
     out << YAML::Key << "m_enableRandomObstacle" << YAML::Value << m_enableRandomObstacle;
     out << YAML::Key << "m_renderObstacle" << YAML::Value << m_renderObstacle;
     out << YAML::Key << "m_obstacleDistanceRange" << YAML::Value << m_obstacleDistanceRange;
-    out << YAML::Key << "m_wallRenderSize" << YAML::Value << m_wallRenderSize;
+    out << YAML::Key << "m_wallSize" << YAML::Value << m_wallSize;
 
     out << YAML::Key << "m_defaultBehaviourType" << YAML::Value << (unsigned) m_defaultBehaviourType;
     out << YAML::Key << "m_autoAdjustCamera" << YAML::Value << m_autoAdjustCamera;
@@ -734,10 +778,11 @@ void TreeDataCapturePipeline::Deserialize(const YAML::Node &in) {
     m_branchTexture.Load("m_branchTexture", in);
     m_foliagePhyllotaxis.Load("m_foliagePhyllotaxis", in);
 
+    if (in["m_exportEnvironmentalGrid"]) m_exportEnvironmentalGrid = in["m_exportEnvironmentalGrid"].as<bool>();
     if (in["m_enableRandomObstacle"]) m_enableRandomObstacle = in["m_enableRandomObstacle"].as<bool>();
     if (in["m_renderObstacle"]) m_renderObstacle = in["m_renderObstacle"].as<bool>();
     if (in["m_obstacleDistanceRange"]) m_obstacleDistanceRange = in["m_obstacleDistanceRange"].as<glm::vec2>();
-    if (in["m_wallRenderSize"]) m_wallRenderSize = in["m_wallRenderSize"].as<glm::vec2>();
+    if (in["m_wallSize"]) m_wallSize = in["m_wallSize"].as<glm::vec3>();
 
     if (in["m_defaultBehaviourType"]) m_defaultBehaviourType = (BehaviourType) in["m_defaultBehaviourType"].as<unsigned>();
     if (in["m_autoAdjustCamera"]) m_autoAdjustCamera = in["m_autoAdjustCamera"].as<bool>();
@@ -779,4 +824,73 @@ TreeDataCapturePipeline::~TreeDataCapturePipeline() {
 }
 
 
+float &VoxelGrid::GetVoxel(int x, int y, int z) {
+    return m_voxels[x * 4096 + y * 64 + z];
+}
 
+glm::vec3 VoxelGrid::GetCenter(int x, int y, int z) const {
+    return {(float) x - 31.5f, (float) y + 0.5f, (float) z - 31.5f};
+}
+
+glm::vec3 VoxelGrid::GetCenter(unsigned index) const {
+    return {(float) (index / 4096) - 31.5f, (float) (index % 4096 / 64) + 0.5f, (float) (index % 64) - 31.5f};
+}
+
+void VoxelGrid::Clear() {
+    std::memset(m_voxels, 0, sizeof(float) * 262144);
+    std::memset(&m_colors[0], 0, sizeof(float) * 262144 * 4);
+}
+
+void VoxelGrid::FillObstacle(const std::shared_ptr<Scene>& scene) {
+    Clear();
+    auto *obstaclesEntities = scene->UnsafeGetPrivateComponentOwnersList<CubeVolume>();
+    std::vector<std::pair<GlobalTransform, std::shared_ptr<IVolume>>> obstacleVolumes;
+    if (obstaclesEntities) {
+        for (const auto &i: *obstaclesEntities) {
+            if (scene->IsEntityEnabled(i) && scene->HasPrivateComponent<CubeVolume>(i)) {
+                auto volume = std::dynamic_pointer_cast<IVolume>(scene->GetOrSetPrivateComponent<CubeVolume>(i).lock());
+                if (volume->m_asObstacle && volume->IsEnabled())
+                    obstacleVolumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
+            }
+        }
+        std::vector<std::shared_future<void>> results;
+        Jobs::ParallelFor(262144, [&](unsigned i) {
+            auto center = GetCenter(i);
+            const int div = 2;
+            float fillRatio = 0;
+            for (int block = 0; block < div * div * div; block++) {
+                auto position = center + glm::vec3((float) (block / (div * div)) / div + 0.5f / div,
+                                                   (float) (block % (div * div) / div) / div + 0.5f / div,
+                                                   (float) (block % div) / div + 0.5f / div);
+                for (const auto &volume: obstacleVolumes) {
+                    if (volume.second->InVolume(volume.first, position)) {
+                        fillRatio += 1.0f / (div * div * div);
+                        break;
+                    }
+                }
+            }
+            m_voxels[i] = fillRatio;
+            m_colors[i] = glm::vec4(1, 1, 1, fillRatio);
+        }, results);
+        for (const auto &i: results) {
+            i.wait();
+        }
+    }
+}
+
+void VoxelGrid::RenderGrid() {
+    OpenGLUtils::SetEnable(OpenGLCapability::CullFace, false);
+    Graphics::DrawGizmoMeshInstancedColored(DefaultResources::Primitives::Cube,
+                                            m_colors,
+                                            m_matrices, glm::mat4(1.0f), 1.0f);
+}
+
+VoxelGrid::VoxelGrid() {
+    m_colors.resize(262144);
+    m_matrices.resize(262144);
+    Clear();
+    for (int i = 0; i < 262144; i++) {
+        m_matrices[i] =
+                glm::translate(GetCenter(i)) * glm::mat4_cast(glm::quat(glm::vec3(0.0f))) * glm::scale(glm::vec3(1.0f));
+    }
+}

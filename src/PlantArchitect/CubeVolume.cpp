@@ -51,20 +51,9 @@ glm::vec3 CubeVolume::GetRandomPoint() {
 
 bool CubeVolume::InVolume(const GlobalTransform &globalTransform,
                           const glm::vec3 &position) {
-    auto min = glm::vec3(
-            (globalTransform.m_value * glm::translate(m_minMaxBound.m_min))[3]);
-    auto max = glm::vec3(
-            (globalTransform.m_value * glm::translate(m_minMaxBound.m_max))[3]);
-    glm::vec3 center = (min + max) / 2.0f;
-    glm::vec3 size = (max - min) / 2.0f;
-
-    if (glm::abs(position.x - center.x) > size.x)
-        return false;
-    if (glm::abs(position.y - center.y) > size.y)
-        return false;
-    if (glm::abs(position.z - center.z) > size.z)
-        return false;
-    return true;
+    const auto &finalPos = glm::vec3(
+            (glm::inverse(globalTransform.m_value) * glm::translate(position))[3]);
+    return m_minMaxBound.InBound(finalPos);
 }
 
 void CubeVolume::Serialize(YAML::Emitter &out) {

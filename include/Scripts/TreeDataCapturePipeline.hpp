@@ -1,13 +1,36 @@
 #pragma once
+
 #include <PlantLayer.hpp>
 #include <AutoTreeGenerationPipeline.hpp>
+
 #ifdef RAYTRACERFACILITY
+
 #include "RayTracerCamera.hpp"
 #include "RayTracerLayer.hpp"
+
 using namespace RayTracerFacility;
 #endif
 using namespace PlantArchitect;
 namespace Scripts {
+    struct VoxelGrid {
+        float m_voxels[262144];
+        std::vector<glm::vec4> m_colors;
+        std::vector<glm::mat4> m_matrices;
+        VoxelGrid();
+        float &GetVoxel(int x, int y, int z);
+
+        [[nodiscard]] glm::vec3 GetCenter(int x, int y, int z) const;
+
+        [[nodiscard]] glm::vec3 GetCenter(unsigned index) const;
+
+        void Clear();
+
+        void FillObstacle(const std::shared_ptr<Scene>& scene);
+
+        void RenderGrid();
+    };
+
+
     class TreeDataCapturePipeline : public IAutoTreeGenerationPipelineBehaviour {
         std::vector<glm::mat4> m_cameraModels;
         std::vector<glm::mat4> m_treeModels;
@@ -20,17 +43,30 @@ namespace Scripts {
         Entity m_ground;
         Entity m_obstacle;
 
-        GlobalTransform TransformCamera(const Bound& bound, float turnAngle, float pitchAngle);
-        void SetUpCamera(AutoTreeGenerationPipeline& pipeline);
-        void ExportMatrices(const std::filesystem::path& path);
-        void ExportGraphNode(AutoTreeGenerationPipeline& pipeline, const std::shared_ptr<IPlantBehaviour>& behaviour, YAML::Emitter &out, int parentIndex, const Entity& internode);
-        void ExportGraph(AutoTreeGenerationPipeline& pipeline, const std::shared_ptr<IPlantBehaviour>& behaviour, const std::filesystem::path& path);
-        void ExportCSV(AutoTreeGenerationPipeline& pipeline, const std::shared_ptr<IPlantBehaviour>& behaviour, const std::filesystem::path& path);
+        VoxelGrid m_obstacleGrid;
+
+        GlobalTransform TransformCamera(const Bound &bound, float turnAngle, float pitchAngle);
+
+        void SetUpCamera(AutoTreeGenerationPipeline &pipeline);
+
+        void ExportMatrices(const std::filesystem::path &path);
+
+        void ExportGraphNode(AutoTreeGenerationPipeline &pipeline, const std::shared_ptr<IPlantBehaviour> &behaviour,
+                             YAML::Emitter &out, int parentIndex, const Entity &internode);
+
+        void ExportGraph(AutoTreeGenerationPipeline &pipeline, const std::shared_ptr<IPlantBehaviour> &behaviour,
+                         const std::filesystem::path &path);
+
+        void ExportCSV(AutoTreeGenerationPipeline &pipeline, const std::shared_ptr<IPlantBehaviour> &behaviour,
+                       const std::filesystem::path &path);
+
+        void ExportEnvironmentalGrid(AutoTreeGenerationPipeline &pipeline,
+                                     const std::filesystem::path &path);
     public:
         bool m_enableRandomObstacle = false;
         bool m_renderObstacle = true;
-        glm::vec2 m_obstacleDistanceRange = glm::vec2(1, 20);
-        glm::vec2 m_wallRenderSize = glm::vec2(0.5f, 20.0f);
+        glm::vec2 m_obstacleDistanceRange = glm::vec2(2, 10);
+        glm::vec3 m_wallSize = glm::vec3(2.0f, 20.0f, 20.0f);
 
         AssetRef m_foliageTexture;
         AssetRef m_branchTexture;
@@ -62,6 +98,7 @@ namespace Scripts {
         bool m_exportTreeIOTrees = false;
         bool m_exportOBJ = false;
         bool m_exportCSV = true;
+        bool m_exportEnvironmentalGrid = false;
         bool m_exportGraph = false;
         bool m_exportImage = false;
         bool m_exportDepth = false;
@@ -72,11 +109,17 @@ namespace Scripts {
         bool m_useClearColor = true;
         glm::vec3 m_backgroundColor = glm::vec3(1.0f);
         float m_cameraMax = 200;
-        void OnStart(AutoTreeGenerationPipeline& pipeline) override;
-        void OnEnd(AutoTreeGenerationPipeline& pipeline) override;
+
+        void OnStart(AutoTreeGenerationPipeline &pipeline) override;
+
+        void OnEnd(AutoTreeGenerationPipeline &pipeline) override;
+
         void OnCreate() override;
-        void OnBeforeGrowth(AutoTreeGenerationPipeline& pipeline) override;
-        void OnAfterGrowth(AutoTreeGenerationPipeline& pipeline) override;
+
+        void OnBeforeGrowth(AutoTreeGenerationPipeline &pipeline) override;
+
+        void OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) override;
+
         void OnInspect() override;
 
         void CollectAssetRef(std::vector<AssetRef> &list) override;
@@ -86,6 +129,7 @@ namespace Scripts {
         void Deserialize(const YAML::Node &in) override;
 
         void DisableAllExport();
+
         ~TreeDataCapturePipeline();
     };
 }
