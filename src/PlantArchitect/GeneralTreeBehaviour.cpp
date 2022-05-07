@@ -349,6 +349,11 @@ GeneralTreeBehaviour::GeneralTreeBehaviour() {
 }
 
 void GeneralTreeBehaviour::OnInspect() {
+    FileUtils::OpenFile("Import Graph", "TreeGraph", {".treegraph"}, [&](const std::filesystem::path &path) {
+        auto parameters = ProjectManager::CreateTemporaryAsset<TreeGraph>();
+        parameters->Import(path);
+        parameters->InstantiateTree();
+    }, false);
 }
 
 bool GeneralTreeBehaviour::InternalInternodeCheck(const std::shared_ptr<Scene> &scene, const Entity &target) {

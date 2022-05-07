@@ -111,7 +111,7 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
         auto exportPath = std::filesystem::absolute(csvFolder / (pipeline.m_prefix + ".csv"));
         ExportCSV(pipeline, behaviour, exportPath);
     }
-    if(m_exportEnvironmentalGrid){
+    if (m_exportEnvironmentalGrid) {
         std::filesystem::create_directories(envGridFolder);
         auto exportPath = std::filesystem::absolute(envGridFolder / (pipeline.m_prefix + ".csv"));
         ExportEnvironmentalGrid(pipeline, exportPath);
@@ -489,10 +489,10 @@ void TreeDataCapturePipeline::ExportEnvironmentalGrid(AutoTreeGenerationPipeline
     if (ofs.is_open()) {
         std::string output;
         m_obstacleGrid.FillObstacle(pipeline.GetScene());
-        for(int i = 0; i < 262143; i++){
+        for (int i = 0; i < 32767; i++) {
             output += std::to_string(m_obstacleGrid.m_voxels[i]) + ",";
         }
-        output += std::to_string(m_obstacleGrid.m_voxels[262143]);
+        output += std::to_string(m_obstacleGrid.m_voxels[32767]);
         ofs.write(output.c_str(), output.size());
         ofs.flush();
         ofs.close();
@@ -825,23 +825,23 @@ TreeDataCapturePipeline::~TreeDataCapturePipeline() {
 
 
 float &VoxelGrid::GetVoxel(int x, int y, int z) {
-    return m_voxels[x * 4096 + y * 64 + z];
+    return m_voxels[x * 1024 + y * 32 + z];
 }
 
 glm::vec3 VoxelGrid::GetCenter(int x, int y, int z) const {
-    return {(float) x - 31.5f, (float) y + 0.5f, (float) z - 31.5f};
+    return glm::vec3(2.0f * x - 31.0f, 2.0f * y + 1.0f, 2.0f * z - 31.0f);
 }
 
 glm::vec3 VoxelGrid::GetCenter(unsigned index) const {
-    return {(float) (index / 4096) - 31.5f, (float) (index % 4096 / 64) + 0.5f, (float) (index % 64) - 31.5f};
+    return glm::vec3(2.0f * (index / 1024) - 31.0f, 2.0f * (index % 1024 / 32) + 1.0f, 2.0f * (index % 32) - 31.0f);
 }
 
 void VoxelGrid::Clear() {
-    std::memset(m_voxels, 0, sizeof(float) * 262144);
-    std::memset(&m_colors[0], 0, sizeof(float) * 262144 * 4);
+    std::memset(m_voxels, 0, sizeof(float) * 32768);
+    std::memset(&m_colors[0], 0, sizeof(float) * 32768 * 4);
 }
 
-void VoxelGrid::FillObstacle(const std::shared_ptr<Scene>& scene) {
+void VoxelGrid::FillObstacle(const std::shared_ptr<Scene> &scene) {
     Clear();
     auto *obstaclesEntities = scene->UnsafeGetPrivateComponentOwnersList<CubeVolume>();
     std::vector<std::pair<GlobalTransform, std::shared_ptr<IVolume>>> obstacleVolumes;
@@ -854,14 +854,14 @@ void VoxelGrid::FillObstacle(const std::shared_ptr<Scene>& scene) {
             }
         }
         std::vector<std::shared_future<void>> results;
-        Jobs::ParallelFor(262144, [&](unsigned i) {
+        Jobs::ParallelFor(32768, [&](unsigned i) {
             auto center = GetCenter(i);
-            const int div = 2;
+            const int div = 4;
             float fillRatio = 0;
             for (int block = 0; block < div * div * div; block++) {
-                auto position = center + glm::vec3((float) (block / (div * div)) / div + 0.5f / div,
-                                                   (float) (block % (div * div) / div) / div + 0.5f / div,
-                                                   (float) (block % div) / div + 0.5f / div);
+                auto position = center + 2.0f * glm::vec3((float) (block / (div * div)) / div + 0.5f / div - 0.5f,
+                                                          (float) (block % (div * div) / div) / div + 0.5f / div - 0.5f,
+                                                          (float) (block % div) / div + 0.5f / div - 0.5f);
                 for (const auto &volume: obstacleVolumes) {
                     if (volume.second->InVolume(volume.first, position)) {
                         fillRatio += 1.0f / (div * div * div);
@@ -886,10 +886,10 @@ void VoxelGrid::RenderGrid() {
 }
 
 VoxelGrid::VoxelGrid() {
-    m_colors.resize(262144);
-    m_matrices.resize(262144);
+    m_colors.resize(32768);
+    m_matrices.resize(32768);
     Clear();
-    for (int i = 0; i < 262144; i++) {
+    for (int i = 0; i < 32768; i++) {
         m_matrices[i] =
                 glm::translate(GetCenter(i)) * glm::mat4_cast(glm::quat(glm::vec3(0.0f))) * glm::scale(glm::vec3(1.0f));
     }

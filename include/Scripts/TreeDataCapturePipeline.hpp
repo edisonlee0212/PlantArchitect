@@ -13,7 +13,7 @@ using namespace RayTracerFacility;
 using namespace PlantArchitect;
 namespace Scripts {
     struct VoxelGrid {
-        float m_voxels[262144];
+        float m_voxels[32768];
         std::vector<glm::vec4> m_colors;
         std::vector<glm::mat4> m_matrices;
         VoxelGrid();
