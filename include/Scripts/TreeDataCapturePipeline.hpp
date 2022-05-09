@@ -2,7 +2,7 @@
 
 #include <PlantLayer.hpp>
 #include <AutoTreeGenerationPipeline.hpp>
-
+#include "VoxelGrid.hpp"
 #ifdef RAYTRACERFACILITY
 
 #include "RayTracerCamera.hpp"
@@ -12,24 +12,6 @@ using namespace RayTracerFacility;
 #endif
 using namespace PlantArchitect;
 namespace Scripts {
-    struct VoxelGrid {
-        float m_voxels[32768];
-        std::vector<glm::vec4> m_colors;
-        std::vector<glm::mat4> m_matrices;
-        VoxelGrid();
-        float &GetVoxel(int x, int y, int z);
-
-        [[nodiscard]] glm::vec3 GetCenter(int x, int y, int z) const;
-
-        [[nodiscard]] glm::vec3 GetCenter(unsigned index) const;
-
-        void Clear();
-
-        void FillObstacle(const std::shared_ptr<Scene>& scene);
-
-        void RenderGrid();
-    };
-
 
     class TreeDataCapturePipeline : public IAutoTreeGenerationPipelineBehaviour {
         std::vector<glm::mat4> m_cameraModels;
@@ -43,7 +25,7 @@ namespace Scripts {
         Entity m_ground;
         Entity m_obstacle;
 
-        VoxelGrid m_obstacleGrid;
+        AssetRef m_obstacleGrid;
 
         GlobalTransform TransformCamera(const Bound &bound, float turnAngle, float pitchAngle);
 
@@ -66,7 +48,7 @@ namespace Scripts {
         bool m_enableRandomObstacle = false;
         bool m_renderObstacle = true;
         glm::vec2 m_obstacleDistanceRange = glm::vec2(2, 10);
-        glm::vec3 m_wallSize = glm::vec3(2.0f, 20.0f, 20.0f);
+        glm::vec3 m_wallSize = glm::vec3(2.0f, 5.0f, 20.0f);
 
         AssetRef m_foliageTexture;
         AssetRef m_branchTexture;

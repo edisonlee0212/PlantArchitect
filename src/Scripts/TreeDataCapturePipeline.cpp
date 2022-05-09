@@ -47,9 +47,14 @@ void TreeDataCapturePipeline::OnBeforeGrowth(AutoTreeGenerationPipeline &pipelin
         m_obstacleAngle = 0.0f;
         m_obstacleDistance = glm::linearRand(glm::min(m_obstacleDistanceRange.x, m_obstacleDistanceRange.y),
                                              glm::max(m_obstacleDistanceRange.x, m_obstacleDistanceRange.y));
+
         GlobalTransform obstacleGT;
-        obstacleGT.SetPosition({m_obstacleDistance + m_wallSize.x / 2.0f, 0.0f, 0.0f});
-        obstacleGT.SetScale(m_wallSize);
+        auto angle = glm::linearRand(0, 360);
+        float wallYZ = glm::linearRand(glm::min(m_wallSize.y, m_wallSize.z), glm::max(m_wallSize.y, m_wallSize.z));
+        obstacleGT.SetValue({glm::cos(angle) * m_obstacleDistance + m_wallSize.x / 2.0f, 0.0f, -glm::sin(angle) * m_obstacleDistance + m_wallSize.x / 2.0f},
+                            glm::vec3(0, angle, 0),
+                            {m_wallSize.x, wallYZ, wallYZ});
+
         scene->SetDataComponent<GlobalTransform>(m_obstacle, obstacleGT);
         auto cubeVolume = scene->GetOrSetPrivateComponent<CubeVolume>(m_obstacle).lock();
         cubeVolume->m_minMaxBound.m_min = glm::vec3(-1.0f);
@@ -113,7 +118,7 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
     }
     if (m_exportEnvironmentalGrid) {
         std::filesystem::create_directories(envGridFolder);
-        auto exportPath = std::filesystem::absolute(envGridFolder / (pipeline.m_prefix + ".csv"));
+        auto exportPath = std::filesystem::absolute(envGridFolder / (pipeline.m_prefix + ".vg"));
         ExportEnvironmentalGrid(pipeline, exportPath);
     }
     if (m_exportLString) {
@@ -264,22 +269,13 @@ void TreeDataCapturePipeline::OnInspect() {
         m_currentExportFolder = std::filesystem::absolute(path);
     }, false);
     if (ImGui::TreeNodeEx("Pipeline Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::DragFloat("Branch width", &m_branchWidth, 0.01f);
-
+        //ImGui::DragFloat("Branch width", &m_branchWidth, 0.01f);
+        Editor::DragAndDropButton<VoxelGrid>(m_obstacleGrid, "Voxel Grid", true);
         ImGui::Checkbox("Random obstacle", &m_enableRandomObstacle);
         if (m_enableRandomObstacle) {
             ImGui::Checkbox("Render obstacle", &m_renderObstacle);
             ImGui::DragFloat2("Obstacle distance (min/max)", &m_obstacleDistanceRange.x, 0.01f);
             ImGui::DragFloat3("Wall size", &m_wallSize.x, 0.01f);
-
-            static bool renderGrid = true;
-            if (ImGui::Button("Refresh obstacles")) {
-                m_obstacleGrid.FillObstacle(Application::GetActiveScene());
-            }
-            ImGui::Checkbox("Render grid", &renderGrid);
-            if (renderGrid) {
-                m_obstacleGrid.RenderGrid();
-            }
         }
         ImGui::Checkbox("Override phyllotaxis", &m_applyPhyllotaxis);
         if (m_applyPhyllotaxis) {
@@ -479,26 +475,6 @@ void TreeDataCapturePipeline::ExportMatrices(const std::filesystem::path &path) 
     std::ofstream fout(path.string());
     fout << out.c_str();
     fout.flush();
-}
-
-void TreeDataCapturePipeline::ExportEnvironmentalGrid(AutoTreeGenerationPipeline &pipeline,
-                                                      const std::filesystem::path &path) {
-    auto scene = pipeline.GetScene();
-    std::ofstream ofs;
-    ofs.open(path.c_str(), std::ofstream::out | std::ofstream::trunc);
-    if (ofs.is_open()) {
-        std::string output;
-        m_obstacleGrid.FillObstacle(pipeline.GetScene());
-        for (int i = 0; i < 32767; i++) {
-            output += std::to_string(m_obstacleGrid.m_voxels[i]) + ",";
-        }
-        output += std::to_string(m_obstacleGrid.m_voxels[32767]);
-        ofs.write(output.c_str(), output.size());
-        ofs.flush();
-        ofs.close();
-    } else {
-        UNIENGINE_ERROR("Can't open file!");
-    }
 }
 
 void
@@ -823,74 +799,12 @@ TreeDataCapturePipeline::~TreeDataCapturePipeline() {
     m_branchTexture.Clear();
 }
 
-
-float &VoxelGrid::GetVoxel(int x, int y, int z) {
-    return m_voxels[x * 1024 + y * 32 + z];
-}
-
-glm::vec3 VoxelGrid::GetCenter(int x, int y, int z) const {
-    return glm::vec3(2.0f * x - 31.0f, 2.0f * y + 1.0f, 2.0f * z - 31.0f);
-}
-
-glm::vec3 VoxelGrid::GetCenter(unsigned index) const {
-    return glm::vec3(2.0f * (index / 1024) - 31.0f, 2.0f * (index % 1024 / 32) + 1.0f, 2.0f * (index % 32) - 31.0f);
-}
-
-void VoxelGrid::Clear() {
-    std::memset(m_voxels, 0, sizeof(float) * 32768);
-    std::memset(&m_colors[0], 0, sizeof(float) * 32768 * 4);
-}
-
-void VoxelGrid::FillObstacle(const std::shared_ptr<Scene> &scene) {
-    Clear();
-    auto *obstaclesEntities = scene->UnsafeGetPrivateComponentOwnersList<CubeVolume>();
-    std::vector<std::pair<GlobalTransform, std::shared_ptr<IVolume>>> obstacleVolumes;
-    if (obstaclesEntities) {
-        for (const auto &i: *obstaclesEntities) {
-            if (scene->IsEntityEnabled(i) && scene->HasPrivateComponent<CubeVolume>(i)) {
-                auto volume = std::dynamic_pointer_cast<IVolume>(scene->GetOrSetPrivateComponent<CubeVolume>(i).lock());
-                if (volume->m_asObstacle && volume->IsEnabled())
-                    obstacleVolumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
-            }
-        }
-        std::vector<std::shared_future<void>> results;
-        Jobs::ParallelFor(32768, [&](unsigned i) {
-            auto center = GetCenter(i);
-            const int div = 4;
-            float fillRatio = 0;
-            for (int block = 0; block < div * div * div; block++) {
-                auto position = center + 2.0f * glm::vec3((float) (block / (div * div)) / div + 0.5f / div - 0.5f,
-                                                          (float) (block % (div * div) / div) / div + 0.5f / div - 0.5f,
-                                                          (float) (block % div) / div + 0.5f / div - 0.5f);
-                for (const auto &volume: obstacleVolumes) {
-                    if (volume.second->InVolume(volume.first, position)) {
-                        fillRatio += 1.0f / (div * div * div);
-                        break;
-                    }
-                }
-            }
-            m_voxels[i] = fillRatio;
-            m_colors[i] = glm::vec4(1, 1, 1, fillRatio);
-        }, results);
-        for (const auto &i: results) {
-            i.wait();
-        }
+void TreeDataCapturePipeline::ExportEnvironmentalGrid(AutoTreeGenerationPipeline &pipeline,
+                                                      const std::filesystem::path &path) {
+    auto grid = m_obstacleGrid.Get<VoxelGrid>();
+    if(grid){
+        grid->FillObstacle(pipeline.GetScene());
     }
+    grid->Export(path);
 }
 
-void VoxelGrid::RenderGrid() {
-    OpenGLUtils::SetEnable(OpenGLCapability::CullFace, false);
-    Graphics::DrawGizmoMeshInstancedColored(DefaultResources::Primitives::Cube,
-                                            m_colors,
-                                            m_matrices, glm::mat4(1.0f), 1.0f);
-}
-
-VoxelGrid::VoxelGrid() {
-    m_colors.resize(32768);
-    m_matrices.resize(32768);
-    Clear();
-    for (int i = 0; i < 32768; i++) {
-        m_matrices[i] =
-                glm::translate(GetCenter(i)) * glm::mat4_cast(glm::quat(glm::vec3(0.0f))) * glm::scale(glm::vec3(1.0f));
-    }
-}

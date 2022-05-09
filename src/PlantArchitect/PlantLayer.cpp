@@ -5,7 +5,7 @@
 #include "PlantLayer.hpp"
 #include <Internode.hpp>
 #include "EditorLayer.hpp"
-#include <PlantDataComponents.hpp>
+#include "PlantDataComponents.hpp"
 #include "GeneralTreeBehaviour.hpp"
 #include "SpaceColonizationBehaviour.hpp"
 #include "LSystemBehaviour.hpp"
@@ -18,7 +18,7 @@
 #include "DefaultInternodePhyllotaxis.hpp"
 #include "FBM.hpp"
 #include "ClassRegistry.hpp"
-
+#include "VoxelGrid.hpp"
 using namespace PlantArchitect;
 
 void PlantLayer::PreparePhysics(const Entity &entity, const Entity &child,
@@ -493,6 +493,7 @@ void PlantLayer::OnCreate() {
     ClassRegistry::RegisterAsset<GeneralTreeParameters>("GeneralTreeParameters", {".gtparams"});
 
     ClassRegistry::RegisterAsset<TreeGraph>("TreeGraph", {".treegraph"});
+    ClassRegistry::RegisterAsset<VoxelGrid>("VoxelGrid", {".vg"});
 
     ClassRegistry::RegisterDataComponent<InternodeStatus>("InternodeStatus");
     ClassRegistry::RegisterDataComponent<InternodeWaterPressure>("InternodeWaterPressure");
