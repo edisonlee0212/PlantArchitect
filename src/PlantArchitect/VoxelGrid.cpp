@@ -102,9 +102,6 @@ bool VoxelGrid::LoadInternal(const std::filesystem::path &path) {
         for (int i = 0; i < 32768; i++) {
             std::getline(str, word, ',');
             m_voxels[i] = std::stof(word);
-            if(m_voxels[i] != 0){
-                UNIENGINE_LOG("Hit");
-            }
             m_colors[i] = glm::vec4(1, 1, 1, m_voxels[i]);
         }
     }
