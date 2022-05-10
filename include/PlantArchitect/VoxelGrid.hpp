@@ -11,12 +11,12 @@ namespace PlantArchitect {
         bool SaveInternal(const std::filesystem::path &path) override;
 
         bool LoadInternal(const std::filesystem::path &path) override;
-
     public:
+
+        void FormMesh(std::vector<Vertex> &vertices, std::vector<glm::uvec3> &triangles);
+
         void OnInspect() override;
         float m_voxels[32768];
-        std::vector<glm::vec4> m_colors;
-        std::vector<glm::mat4> m_matrices;
 
         void OnCreate() override;
 
@@ -29,9 +29,5 @@ namespace PlantArchitect {
         void Clear();
 
         void FillObstacle(const std::shared_ptr<Scene> &scene);
-
-        void RenderGrid();
-
-
     };
 }

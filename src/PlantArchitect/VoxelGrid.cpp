@@ -23,7 +23,6 @@ glm::vec3 VoxelGrid::GetCenter(unsigned index) const {
 
 void VoxelGrid::Clear() {
     std::memset(m_voxels, 0, sizeof(float) * 32768);
-    std::memset(&m_colors[0], 0, sizeof(float) * 32768 * 4);
 }
 
 void VoxelGrid::FillObstacle(const std::shared_ptr<Scene> &scene) {
@@ -55,18 +54,11 @@ void VoxelGrid::FillObstacle(const std::shared_ptr<Scene> &scene) {
                 }
             }
             m_voxels[i] = fillRatio;
-            m_colors[i] = glm::vec4(1, 1, 1, fillRatio);
         }, results);
         for (const auto &i: results) {
             i.wait();
         }
     }
-}
-
-void VoxelGrid::RenderGrid() {
-    Graphics::DrawGizmoMeshInstancedColored(DefaultResources::Primitives::Cube,
-                                            m_colors,
-                                            m_matrices, glm::mat4(1.0f), 1.0f);
 }
 
 bool VoxelGrid::SaveInternal(const std::filesystem::path &path) {
@@ -102,7 +94,6 @@ bool VoxelGrid::LoadInternal(const std::filesystem::path &path) {
         for (int i = 0; i < 32768; i++) {
             std::getline(str, word, ',');
             m_voxels[i] = std::stof(word);
-            m_colors[i] = glm::vec4(1, 1, 1, m_voxels[i]);
         }
     }
     catch (std::exception e) {
@@ -113,22 +104,60 @@ bool VoxelGrid::LoadInternal(const std::filesystem::path &path) {
 }
 
 void VoxelGrid::OnCreate() {
-    m_colors.resize(32768);
-    m_matrices.resize(32768);
     Clear();
-    for (int i = 0; i < 32768; i++) {
-        m_matrices[i] =
-                glm::translate(GetCenter(i)) * glm::mat4_cast(glm::quat(glm::vec3(0.0f))) * glm::scale(glm::vec3(1.0f));
-    }
 }
 
 void VoxelGrid::OnInspect() {
-    static bool renderGrid = true;
     if (ImGui::Button("Refresh obstacles")) {
         FillObstacle(Application::GetActiveScene());
     }
-    ImGui::Checkbox("Render grid", &renderGrid);
-    if (renderGrid) {
-        RenderGrid();
+    if(ImGui::Button("Form mesh")){
+        auto mesh = ProjectManager::CreateTemporaryAsset<Mesh>();
+        std::vector<Vertex> vertices;
+        std::vector<glm::uvec3> triangles;
+        FormMesh(vertices, triangles);
+        mesh->SetVertices(17, vertices, triangles);
+        auto scene = Application::GetActiveScene();
+        auto entity = scene->CreateEntity("Voxels");
+        auto meshRenderer = scene->GetOrSetPrivateComponent<MeshRenderer>(entity).lock();
+        meshRenderer->m_mesh = mesh;
+        auto material = ProjectManager::CreateTemporaryAsset<Material>();
+        material->SetProgram(DefaultResources::GLPrograms::StandardProgram);
+        meshRenderer->m_material = material;
+    }
+}
+
+void VoxelGrid::FormMesh(std::vector<Vertex> &vertices, std::vector<glm::uvec3> &triangles) {
+    auto cubeMesh = DefaultResources::Primitives::Cube;
+    auto &cubeTriangles = cubeMesh->UnsafeGetTriangles();
+    auto cubeVerticesSize = cubeMesh->GetVerticesAmount();
+    size_t offset = 0;
+    int index = 0;
+    for (const auto &voxel: m_voxels) {
+        if (voxel >= 0.5f) {
+            auto matrix =
+                    glm::translate(GetCenter(index)) * glm::mat4_cast(glm::quat(glm::vec3(0.0f))) * glm::scale(glm::vec3(1.0f));
+            Vertex archetype;
+            for (auto i = 0; i < cubeMesh->GetVerticesAmount(); i++) {
+                archetype.m_position =
+                        matrix * glm::vec4(cubeMesh->UnsafeGetVertices()[i].m_position, 1.0f);
+                archetype.m_normal = glm::normalize(glm::vec3(
+                        matrix * glm::vec4(cubeMesh->UnsafeGetVertices()[i].m_normal, 0.0f)));
+                archetype.m_tangent = glm::normalize(glm::vec3(
+                        matrix *
+                        glm::vec4(cubeMesh->UnsafeGetVertices()[i].m_tangent, 0.0f)));
+                archetype.m_texCoords =
+                        cubeMesh->UnsafeGetVertices()[i].m_texCoords;
+                vertices.push_back(archetype);
+            }
+            for (auto triangle: cubeTriangles) {
+                triangle.x += offset;
+                triangle.y += offset;
+                triangle.z += offset;
+                triangles.emplace_back(triangle);
+            }
+            offset += cubeVerticesSize;
+        }
+        index++;
     }
 }
