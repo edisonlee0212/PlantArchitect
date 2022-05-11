@@ -1,10 +1,11 @@
 #pragma once
 #include <plant_architect_export.h>
-#include "IInternodePhyllotaxis.hpp"
+#include "IInternodeFoliage.hpp"
 using namespace UniEngine;
 namespace PlantArchitect {
-    class PLANT_ARCHITECT_API DefaultInternodePhyllotaxis : public IInternodePhyllotaxis {
+    class PLANT_ARCHITECT_API DefaultInternodeFoliage : public IInternodeFoliage {
     public:
+
         float m_positionVariance = 0.5f;
         float m_randomRotation = 10.0f;
         glm::vec2 m_leafSize = glm::vec2(0.1f, 0.1f);
@@ -15,5 +16,6 @@ namespace PlantArchitect {
 
         void Serialize(YAML::Emitter &out) override;
         void Deserialize(const YAML::Node &in) override;
+        void CollectAssetRef(std::vector<AssetRef> &list) override;
     };
 }

@@ -50,7 +50,6 @@ namespace Scripts {
         glm::vec2 m_obstacleDistanceRange = glm::vec2(2, 10);
         glm::vec3 m_wallSize = glm::vec3(2.0f, 5.0f, 20.0f);
 
-        AssetRef m_foliageTexture;
         AssetRef m_branchTexture;
         BehaviourType m_defaultBehaviourType = BehaviourType::GeneralTree;
 #ifdef RAYTRACERFACILITY

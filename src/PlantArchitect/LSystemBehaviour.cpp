@@ -6,7 +6,7 @@
 #include "PlantLayer.hpp"
 #include "EmptyInternodeResource.hpp"
 #include "TransformLayer.hpp"
-#include "DefaultInternodePhyllotaxis.hpp"
+#include "DefaultInternodeFoliage.hpp"
 
 using namespace PlantArchitect;
 
@@ -107,7 +107,6 @@ Entity LSystemBehaviour::NewPlant(const std::shared_ptr<Scene> &scene, const std
                     //If this is the first push in the string, we create the root internode.
                     //The node creation is handled by the CreateInternode() function. The internode creation is performed in a factory pattern.
                     root = CreateRoot(scene, descriptor, rootInternode, rootBranch);
-                    scene->GetOrSetPrivateComponent<Root>(root).lock()->m_foliagePhyllotaxis = ProjectManager::CreateTemporaryAsset<DefaultInternodePhyllotaxis>();
                     internode = rootInternode;
                     rootExists = true;
                 } else {
@@ -192,7 +191,7 @@ Entity LSystemBehaviour::NewPlant(const std::shared_ptr<Scene> &scene, const std
         scene->SetDataComponent(endNode, internodeInfo);
     });
 
-    Application::GetLayer<PlantLayer>()->CalculateStatistics();
+    Application::GetLayer<PlantLayer>()->CalculateStatistics(scene);
     UpdateBranches(scene);
     return root;
 }

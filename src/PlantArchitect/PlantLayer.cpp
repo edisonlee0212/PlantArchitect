@@ -15,10 +15,11 @@
 #include "PhysicsLayer.hpp"
 #include "DefaultInternodeResource.hpp"
 #include "EmptyInternodeResource.hpp"
-#include "DefaultInternodePhyllotaxis.hpp"
+#include "DefaultInternodeFoliage.hpp"
 #include "FBM.hpp"
 #include "ClassRegistry.hpp"
 #include "VoxelGrid.hpp"
+
 using namespace PlantArchitect;
 
 void PlantLayer::PreparePhysics(const Entity &entity, const Entity &child,
@@ -80,11 +81,12 @@ void PlantLayer::Simulate(int iterations) {
                                                  });
                  }, true);
         for (auto &i: m_plantBehaviours) {
+            Preprocess(scene);
             if (i) i->Grow(scene, iteration);
         }
         ObstacleRemoval();
     }
-    CalculateStatistics();
+    CalculateStatistics(scene);
     UpdateInternodeColors();
     UpdateInternodeCylinder();
     UpdateInternodePointer(m_pointerLength, m_pointerWidth);
@@ -520,7 +522,7 @@ void PlantLayer::OnCreate() {
     ClassRegistry::RegisterDataComponent<BranchInfo>("BranchInfo");
     ClassRegistry::RegisterDataComponent<InternodeStatistics>("InternodeStatistics");
 
-    ClassRegistry::RegisterAsset<DefaultInternodePhyllotaxis>("DefaultInternodePhyllotaxis", {".defaultip"});
+    ClassRegistry::RegisterAsset<DefaultInternodeFoliage>("DefaultInternodeFoliage", {".defaultip"});
 
     Editor::RegisterComponentDataInspector<InternodeInfo>([](Entity entity, IDataComponent *data, bool isRoot) {
         auto *ltw = reinterpret_cast<InternodeInfo *>(data);
@@ -644,16 +646,16 @@ void PlantLayer::UpdateInternodeColors() {
 
     switch (m_branchColorMode) {
         case BranchColorMode::Order:
-            scene->ForEach<InternodeColor, InternodeStatus>(
+            scene->ForEach<InternodeColor, InternodeInfo>(
                     Jobs::Workers(),
                     m_internodesQuery,
                     [=](int i, Entity entity,
                         InternodeColor &internodeRenderColor,
-                        InternodeStatus &internodeStatus) {
+                        InternodeInfo &internodeInfo) {
                         internodeRenderColor.m_value = glm::vec4(
                                 glm::vec3(m_internodeColorValueMultiplier *
                                           glm::pow(
-                                                  (float) internodeStatus.m_order,
+                                                  (float) internodeInfo.m_order,
                                                   m_internodeColorValueCompressFactor)),
                                 m_internodeTransparency);
                     },
@@ -1022,9 +1024,7 @@ void PlantLayer::DrawColorModeSelectionMenu() {
     }
 }
 
-void PlantLayer::CalculateStatistics() {
-    auto scene = Application::GetActiveScene();
-
+void PlantLayer::CalculateStatistics(const std::shared_ptr<Scene>& scene) {
     for (auto &behaviour: m_plantBehaviours) {
         if (behaviour) {
             std::vector<Entity> currentRoots;
@@ -1033,49 +1033,50 @@ void PlantLayer::CalculateStatistics() {
                 scene->ForEachChild(root, [&](Entity child) {
                     if (!behaviour->InternodeCheck(scene, child)) return;
                     behaviour->InternodeGraphWalkerEndToRoot(scene, child,
-                                                    [&](Entity parent) {
-                                                        auto parentStat = scene->GetDataComponent<InternodeStatistics>(
-                                                                parent);
-                                                        std::vector<int> indices;
-                                                        parentStat.m_childCount = 0;
-                                                        scene->ForEachChild(parent,
-                                                                            [&](Entity child) {
-                                                                                if (behaviour->InternodeCheck(scene,
-                                                                                                              child)) {
-                                                                                    indices.push_back(
-                                                                                            scene->GetDataComponent<InternodeStatistics>(
-                                                                                                    child).m_strahlerOrder);
-                                                                                    parentStat.m_childCount++;
-                                                                                }
-                                                                            });
-                                                        if (indices.empty()) { parentStat.m_strahlerOrder = 1; }
-                                                        else if (indices.size() == 1) {
-                                                            parentStat.m_strahlerOrder = indices[0];
-                                                        } else {
-                                                            bool different = false;
-                                                            int maxIndex = indices[0];
-                                                            for (int i = 1; i < indices.size(); i++) {
-                                                                if (indices[i] != maxIndex) {
-                                                                    different = true;
-                                                                    maxIndex = glm::max(maxIndex, indices[i]);
-                                                                }
-                                                            }
-                                                            if (different) {
-                                                                parentStat.m_strahlerOrder = maxIndex;
-                                                            } else {
-                                                                parentStat.m_strahlerOrder = maxIndex + 1;
-                                                            }
-                                                        }
+                                                             [&](Entity parent) {
+                                                                 auto parentStat = scene->GetDataComponent<InternodeStatistics>(
+                                                                         parent);
+                                                                 std::vector<int> indices;
+                                                                 parentStat.m_childCount = 0;
+                                                                 scene->ForEachChild(parent,
+                                                                                     [&](Entity child) {
+                                                                                         if (behaviour->InternodeCheck(
+                                                                                                 scene,
+                                                                                                 child)) {
+                                                                                             indices.push_back(
+                                                                                                     scene->GetDataComponent<InternodeStatistics>(
+                                                                                                             child).m_strahlerOrder);
+                                                                                             parentStat.m_childCount++;
+                                                                                         }
+                                                                                     });
+                                                                 if (indices.empty()) { parentStat.m_strahlerOrder = 1; }
+                                                                 else if (indices.size() == 1) {
+                                                                     parentStat.m_strahlerOrder = indices[0];
+                                                                 } else {
+                                                                     bool different = false;
+                                                                     int maxIndex = indices[0];
+                                                                     for (int i = 1; i < indices.size(); i++) {
+                                                                         if (indices[i] != maxIndex) {
+                                                                             different = true;
+                                                                             maxIndex = glm::max(maxIndex, indices[i]);
+                                                                         }
+                                                                     }
+                                                                     if (different) {
+                                                                         parentStat.m_strahlerOrder = maxIndex;
+                                                                     } else {
+                                                                         parentStat.m_strahlerOrder = maxIndex + 1;
+                                                                     }
+                                                                 }
 
-                                                        scene->SetDataComponent(parent, parentStat);
-                                                    },
-                                                    [&](Entity endNode) {
-                                                        auto endNodeStat = scene->GetDataComponent<InternodeStatistics>(
-                                                                endNode);
-                                                        endNodeStat.m_strahlerOrder = 1;
-                                                        endNodeStat.m_childCount = 0;
-                                                        scene->SetDataComponent(endNode, endNodeStat);
-                                                    }
+                                                                 scene->SetDataComponent(parent, parentStat);
+                                                             },
+                                                             [&](Entity endNode) {
+                                                                 auto endNodeStat = scene->GetDataComponent<InternodeStatistics>(
+                                                                         endNode);
+                                                                 endNodeStat.m_strahlerOrder = 1;
+                                                                 endNodeStat.m_childCount = 0;
+                                                                 scene->SetDataComponent(endNode, endNodeStat);
+                                                             }
                     );
                 });
 
@@ -1185,6 +1186,132 @@ void PlantLayer::ObstacleRemoval() {
         }
     }
 
+}
+
+void PlantLayer::Preprocess(const std::shared_ptr<Scene> &scene) {
+#pragma region PreProcess
+#pragma region InternodeStatus
+    for (auto &behaviour: m_plantBehaviours) {
+        if (behaviour) {
+            std::vector<Entity> currentRoots;
+            scene->GetEntityArray(behaviour->m_rootsQuery, currentRoots);
+            for (auto rootEntity: currentRoots) {
+                if (!behaviour->RootCheck(scene, rootEntity)) return;
+                auto root = scene->GetOrSetPrivateComponent<Root>(rootEntity).lock();
+                auto center = glm::vec3(0);
+                int amount = 1;
+                auto internodeGlobalTransform = scene->GetDataComponent<GlobalTransform>(
+                        rootEntity);
+                center += internodeGlobalTransform.GetPosition();
+                scene->ForEachChild(rootEntity, [&](Entity child) {
+                    if (!behaviour->InternodeCheck(scene, child)) return;
+                    behaviour->InternodeGraphWalker(scene, child,
+                                                    [&](Entity parent, Entity child) {
+                                                        auto parentInternodeInfo = scene->GetDataComponent<InternodeInfo>(
+                                                                parent);
+                                                        auto childInternodeInfo = scene->GetDataComponent<InternodeInfo>(
+                                                                child);
+                                                        auto childGlobalTransform = scene->GetDataComponent<GlobalTransform>(
+                                                                child);
+                                                        center += childGlobalTransform.GetPosition();
+                                                        amount++;
+                                                        auto childInternode = scene->GetOrSetPrivateComponent<Internode>(
+                                                                child).lock();
+                                                        childInternodeInfo.m_rootDistance =
+                                                                parentInternodeInfo.m_length +
+                                                                parentInternodeInfo.m_rootDistance;
+                                                        childInternodeInfo.m_biomass =
+                                                                childInternodeInfo.m_length *
+                                                                childInternodeInfo.m_thickness;
+                                                        if (!childInternode->m_fromApicalBud) {
+                                                            childInternodeInfo.m_order =
+                                                                    parentInternodeInfo.m_order + 1;
+                                                        } else {
+                                                            childInternodeInfo.m_order = parentInternodeInfo.m_order;
+                                                        }
+                                                        scene->SetDataComponent(child, childInternodeInfo);
+                                                    },
+                                                    [&](Entity parent) {
+                                                        auto parentInternodeInfo = scene->GetDataComponent<InternodeInfo>(
+                                                                parent);
+
+                                                        parentInternodeInfo.m_endNode = false;
+                                                        parentInternodeInfo.m_totalDistanceToAllBranchEnds = parentInternodeInfo.m_childTotalBiomass = 0;
+                                                        float maxDistanceToAnyBranchEnd = -1.0f;
+                                                        float maxTotalDistanceToAllBranchEnds = -1.0f;
+                                                        float maxChildTotalBiomass = -1.0f;
+                                                        Entity largestChild;
+                                                        Entity longestChild;
+                                                        Entity heaviestChild;
+                                                        scene->ForEachChild(parent,
+                                                                            [&](Entity child) {
+                                                                                if (!behaviour->InternodeCheck(scene,
+                                                                                                               child))
+                                                                                    return;
+                                                                                auto childInternodeInfo = scene->GetDataComponent<InternodeInfo>(
+                                                                                        child);
+                                                                                float childTotalDistanceToAllBranchEnds =
+                                                                                        childInternodeInfo.m_totalDistanceToAllBranchEnds +
+                                                                                        childInternodeInfo.m_length;
+                                                                                float childTotalBiomass =
+                                                                                        childInternodeInfo.m_childTotalBiomass +
+                                                                                        childInternodeInfo.m_biomass;
+                                                                                float childMaxDistanceToAnyBranchEnd =
+                                                                                        childInternodeInfo.m_maxDistanceToAnyBranchEnd +
+                                                                                        childInternodeInfo.m_length;
+                                                                                parentInternodeInfo.m_totalDistanceToAllBranchEnds += childTotalDistanceToAllBranchEnds;
+                                                                                parentInternodeInfo.m_childTotalBiomass += childTotalBiomass;
+                                                                                if (maxTotalDistanceToAllBranchEnds <
+                                                                                    childTotalDistanceToAllBranchEnds) {
+                                                                                    maxTotalDistanceToAllBranchEnds = childTotalDistanceToAllBranchEnds;
+                                                                                    largestChild = child;
+                                                                                }
+                                                                                if (maxDistanceToAnyBranchEnd <
+                                                                                    childMaxDistanceToAnyBranchEnd) {
+                                                                                    maxDistanceToAnyBranchEnd = childMaxDistanceToAnyBranchEnd;
+                                                                                    longestChild = child;
+                                                                                }
+                                                                                if (maxChildTotalBiomass <
+                                                                                    childTotalBiomass) {
+                                                                                    maxChildTotalBiomass = childTotalBiomass;
+                                                                                    heaviestChild = child;
+                                                                                }
+                                                                            });
+                                                        scene->ForEachChild(parent,
+                                                                            [&](Entity child) {
+                                                                                if (!behaviour->InternodeCheck(scene,
+                                                                                                               child))
+                                                                                    return;
+                                                                                auto childInternodeInfo = scene->GetDataComponent<InternodeInfo>(
+                                                                                        child);
+                                                                                childInternodeInfo.m_largestChild =
+                                                                                        largestChild == child;
+                                                                                childInternodeInfo.m_longestChild =
+                                                                                        longestChild == child;
+                                                                                childInternodeInfo.m_heaviestChild =
+                                                                                        heaviestChild ==
+                                                                                        child;
+                                                                                scene->SetDataComponent(child,
+                                                                                                        childInternodeInfo);
+                                                                            });
+                                                        parentInternodeInfo.m_maxDistanceToAnyBranchEnd = maxDistanceToAnyBranchEnd;
+                                                        scene->SetDataComponent(parent, parentInternodeInfo);
+                                                    },
+                                                    [&](Entity endNode) {
+                                                        auto endNodeInternodeInfo = scene->GetDataComponent<InternodeInfo>(
+                                                                endNode);
+                                                        endNodeInternodeInfo.m_endNode = true;
+                                                        endNodeInternodeInfo.m_maxDistanceToAnyBranchEnd = endNodeInternodeInfo.m_totalDistanceToAllBranchEnds = endNodeInternodeInfo.m_childTotalBiomass = 0;
+                                                        endNodeInternodeInfo.m_largestChild = endNodeInternodeInfo.m_longestChild = endNodeInternodeInfo.m_heaviestChild = true;
+                                                        scene->SetDataComponent(endNode,
+                                                                                endNodeInternodeInfo);
+                                                    });
+
+                });
+                root->m_center = center / static_cast<float>(amount);
+            };
+        }
+    }
 }
 
 

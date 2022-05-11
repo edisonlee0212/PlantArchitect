@@ -77,7 +77,7 @@ namespace PlantArchitect {
         int m_matureAge = 0;
 
         void OnInspect() override;
-
+        void CollectAssetRef(std::vector<AssetRef> &list) override;
         void OnCreate() override;
     };
 
@@ -90,31 +90,13 @@ namespace PlantArchitect {
         float m_apicalControl = 0;
         float m_inhibitor = 0;
         float m_level = 0;
-        float m_rootDistance = 0;
-        float m_chainDistance = 0;
         float m_branchLength = 0;
-        float m_maxDistanceToAnyBranchEnd = 0;
-        float m_totalDistanceToAllBranchEnds = 0;
-        float m_order = 0;
-        float m_biomass = 0;
-        float m_childTotalBiomass = 0;
         float m_recordedProbability = 0;
         glm::quat m_desiredLocalRotation;
         float m_sagging = 0;
         float m_currentTotalNodeCount = 0;
         float m_startDensity = 0.0f;
-        /**
-         * Is child with largest total distance to all branch ends
-         */
-        bool m_largestChild = false;
-        /**
-         * Is child with largest max distance to any branch end
-         */
-        bool m_longestChild = false;
-        /**
-         * Is child with largest total biomass
-         */
-        bool m_heaviestChild = false;
+        float m_chainDistance = 0;
 
         void OnInspect();
 

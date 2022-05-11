@@ -379,13 +379,17 @@ void SpaceColonizationParameters::OnInspect() {
 }
 
 void SpaceColonizationParameters::Serialize(YAML::Emitter &out) {
-    ISerializable::Serialize(out);
+    IPlantDescriptor::Serialize(out);
 }
 
 void SpaceColonizationParameters::Deserialize(const YAML::Node &in) {
-    ISerializable::Deserialize(in);
+    IPlantDescriptor::Deserialize(in);
 }
 
 Entity SpaceColonizationParameters::InstantiateTree() {
     return Application::GetLayer<PlantLayer>()->GetPlantBehaviour<SpaceColonizationBehaviour>()->NewPlant(Application::GetActiveScene(), std::dynamic_pointer_cast<SpaceColonizationParameters>(m_self.lock()), Transform());
+}
+
+void SpaceColonizationParameters::CollectAssetRef(std::vector<AssetRef> &list) {
+    IPlantDescriptor::CollectAssetRef(list);
 }

@@ -18,7 +18,7 @@ using namespace RayTracerFacility;
 #endif
 
 #include "TransformLayer.hpp"
-#include "DefaultInternodePhyllotaxis.hpp"
+#include "DefaultInternodeFoliage.hpp"
 
 
 using namespace Scripts;
@@ -33,10 +33,9 @@ void TreeDataCapturePipeline::OnBeforeGrowth(AutoTreeGenerationPipeline &pipelin
     auto internode = scene->GetOrSetPrivateComponent<Internode>(rootInternode).lock();
     auto root = scene->GetOrSetPrivateComponent<Root>(pipeline.m_currentGrowingTree).lock();
     if (m_applyPhyllotaxis) {
-        root->m_foliagePhyllotaxis = m_foliagePhyllotaxis;
+        root->m_plantDescriptor.Get<IPlantDescriptor>()->m_foliagePhyllotaxis = m_foliagePhyllotaxis;
     }
-    root->m_branchTexture = m_branchTexture;
-    root->m_foliageTexture = m_foliageTexture;
+    root->m_plantDescriptor.Get<IPlantDescriptor>()->m_branchTexture = m_branchTexture;
     if (m_exportImage || m_exportDepth || m_exportBranchCapture) {
         SetUpCamera(pipeline);
     }
@@ -279,8 +278,7 @@ void TreeDataCapturePipeline::OnInspect() {
         }
         ImGui::Checkbox("Override phyllotaxis", &m_applyPhyllotaxis);
         if (m_applyPhyllotaxis) {
-            Editor::DragAndDropButton<DefaultInternodePhyllotaxis>(m_foliagePhyllotaxis, "Phyllotaxis", true);
-            Editor::DragAndDropButton<Texture2D>(m_foliageTexture, "Foliage texture", true);
+            Editor::DragAndDropButton<DefaultInternodeFoliage>(m_foliagePhyllotaxis, "Phyllotaxis", true);
             Editor::DragAndDropButton<Texture2D>(m_branchTexture, "Branch texture", true);
         }
         ImGui::Text("Data export:");
@@ -442,7 +440,7 @@ void TreeDataCapturePipeline::ExportGraphNode(AutoTreeGenerationPipeline &pipeli
     auto internodeStatus = scene->GetDataComponent<InternodeStatus>(internode);
     out << YAML::Key << "Branching Order" << YAML::Value << internodeStatus.m_branchingOrder;
     out << YAML::Key << "Level" << YAML::Value << internodeStatus.m_level;
-    out << YAML::Key << "Distance to Root" << YAML::Value << internodeStatus.m_rootDistance;
+    out << YAML::Key << "Distance to Root" << YAML::Value << internodeInfo.m_rootDistance;
     out << YAML::Key << "Local Rotation" << YAML::Value << transform.GetRotation();
     out << YAML::Key << "Global Rotation" << YAML::Value << globalRotation;
     out << YAML::Key << "Position" << YAML::Value << position + front * internodeInfo.m_length;
@@ -550,10 +548,10 @@ TreeDataCapturePipeline::ExportCSV(AutoTreeGenerationPipeline &pipeline,
 
                 row += std::to_string(internodeInfo.m_thickness) + ",";
                 row += std::to_string(internodeInfo.m_length) + ",";
-                row += std::to_string(internodeStatus.m_rootDistance) + ",";
+                row += std::to_string(internodeInfo.m_rootDistance) + ",";
                 row += std::to_string(internodeStatus.m_chainDistance) + ",";
                 row += std::to_string(internodeStatus.m_branchLength) + ",";
-                row += std::to_string(internodeStatus.m_order) + ",";
+                row += std::to_string(internodeInfo.m_order) + ",";
 
                 row += std::to_string(globalRotation.x) + ",";
                 row += std::to_string(globalRotation.y) + ",";
@@ -593,10 +591,10 @@ TreeDataCapturePipeline::ExportCSV(AutoTreeGenerationPipeline &pipeline,
 
                         row += std::to_string(internodeInfoChild.m_thickness) + ",";
                         row += std::to_string(internodeInfoChild.m_length) + ",";
-                        row += std::to_string(internodeStatusChild.m_rootDistance) + ",";
+                        row += std::to_string(internodeInfoChild.m_rootDistance) + ",";
                         row += std::to_string(internodeStatusChild.m_chainDistance) + ",";
                         row += std::to_string(internodeStatusChild.m_branchLength) + ",";
-                        row += std::to_string(internodeStatusChild.m_order) + ",";
+                        row += std::to_string(internodeInfoChild.m_order) + ",";
 
                         row += std::to_string(globalRotationChild.x) + ",";
                         row += std::to_string(globalRotationChild.y) + ",";
@@ -699,14 +697,12 @@ GlobalTransform TreeDataCapturePipeline::TransformCamera(const Bound &bound, flo
 }
 
 void TreeDataCapturePipeline::CollectAssetRef(std::vector<AssetRef> &list) {
-    list.push_back(m_foliageTexture);
     list.push_back(m_branchTexture);
     list.push_back(m_foliagePhyllotaxis);
 
 }
 
 void TreeDataCapturePipeline::Serialize(YAML::Emitter &out) {
-    m_foliageTexture.Save("m_foliageTexture", out);
     m_branchTexture.Save("m_branchTexture", out);
     m_foliagePhyllotaxis.Save("m_foliagePhyllotaxis", out);
 
@@ -750,7 +746,6 @@ void TreeDataCapturePipeline::Serialize(YAML::Emitter &out) {
 }
 
 void TreeDataCapturePipeline::Deserialize(const YAML::Node &in) {
-    m_foliageTexture.Load("m_foliageTexture", in);
     m_branchTexture.Load("m_branchTexture", in);
     m_foliagePhyllotaxis.Load("m_foliagePhyllotaxis", in);
 
@@ -795,7 +790,6 @@ void TreeDataCapturePipeline::Deserialize(const YAML::Node &in) {
 
 TreeDataCapturePipeline::~TreeDataCapturePipeline() {
     m_foliagePhyllotaxis.Clear();
-    m_foliageTexture.Clear();
     m_branchTexture.Clear();
 }
 

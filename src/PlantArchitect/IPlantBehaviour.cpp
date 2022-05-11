@@ -6,7 +6,7 @@
 #include "Internode.hpp"
 #include "Curve.hpp"
 #include "PlantLayer.hpp"
-#include "IInternodePhyllotaxis.hpp"
+#include "IInternodeFoliage.hpp"
 #include "PlantDataComponents.hpp"
 #include "TransformLayer.hpp"
 #include "Graphics.hpp"
@@ -241,7 +241,7 @@ IPlantBehaviour::GenerateSkinnedMeshes(const std::shared_ptr<Scene> &scene, floa
                  relativeGlobalTransform.m_value = inverseGlobalTransform * globalTransform.m_value;
                  relativeParentGlobalTransform.m_value =
                          inverseGlobalTransform * (glm::inverse(transform.m_value) * globalTransform.m_value);
-                 auto foliagePhyllotaxis = root->m_foliagePhyllotaxis.Get<IInternodePhyllotaxis>();
+                 auto foliagePhyllotaxis = root->m_plantDescriptor.Get<IPlantDescriptor>()->m_foliagePhyllotaxis.Get<IInternodeFoliage>();
                  if (foliagePhyllotaxis)
                      foliagePhyllotaxis->GenerateFoliage(internode, internodeInfo,
                                                          relativeGlobalTransform, relativeParentGlobalTransform);
@@ -264,9 +264,10 @@ IPlantBehaviour::GenerateSkinnedMeshes(const std::shared_ptr<Scene> &scene, floa
             auto material = skinnedMeshRenderer->m_material.Get<Material>();
             skinnedMeshRenderer->SetEnabled(true);
             auto root = scene->GetOrSetPrivateComponent<Root>(rootEntity).lock();
-            if (root->m_branchTexture.Get<Texture2D>())
-                material->m_albedoTexture = root->m_branchTexture.Get<Texture2D>();
-            material->m_albedoColor = root->m_branchColor;
+            auto texture = root->m_plantDescriptor.Get<IPlantDescriptor>()->m_branchTexture.Get<Texture2D>();
+            if (texture)
+                material->m_albedoTexture = texture;
+            material->m_albedoColor = root->m_plantDescriptor.Get<IPlantDescriptor>()->m_branchColor;
             auto internode = scene->GetOrSetPrivateComponent<Internode>(rootInternode).lock();
             const auto plantGlobalTransform =
                     scene->GetDataComponent<GlobalTransform>(rootEntity);
@@ -312,10 +313,10 @@ IPlantBehaviour::GenerateSkinnedMeshes(const std::shared_ptr<Scene> &scene, floa
             auto material = skinnedMeshRenderer->m_material.Get<Material>();
             skinnedMeshRenderer->SetEnabled(true);
             auto root = scene->GetOrSetPrivateComponent<Root>(rootEntity).lock();
-            auto foliagePhyllotaxis = root->m_foliagePhyllotaxis.Get<IInternodePhyllotaxis>();
-            if (root->m_foliageTexture.Get<Texture2D>())
-                material->m_albedoTexture = root->m_foliageTexture.Get<Texture2D>();
-            material->m_albedoColor = root->m_foliageColor;
+            auto texture = root->m_plantDescriptor.Get<IPlantDescriptor>()->m_foliagePhyllotaxis.Get<IInternodeFoliage>()->m_foliageTexture.Get<Texture2D>();
+            if (texture)
+                material->m_albedoTexture = texture;
+            material->m_albedoColor = root->m_plantDescriptor.Get<IPlantDescriptor>()->m_foliageColor;
             const auto plantGlobalTransform =
                     scene->GetDataComponent<GlobalTransform>(rootEntity);
 #pragma region Animator

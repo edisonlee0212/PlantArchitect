@@ -26,6 +26,7 @@ namespace PlantArchitect {
         void Serialize(YAML::Emitter &out) override;
         void Deserialize(const YAML::Node &in) override;
         void OnInspect() override;
+        void CollectAssetRef(std::vector<AssetRef> &list) override;
     };
 
     class IVolume;

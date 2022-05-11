@@ -26,7 +26,7 @@
 #include "EmptyInternodeResource.hpp"
 #include "LSystemBehaviour.hpp"
 #include "AutoTreeGenerationPipeline.hpp"
-#include "DefaultInternodePhyllotaxis.hpp"
+#include "DefaultInternodeFoliage.hpp"
 #include "RadialBoundingVolume.hpp"
 #include "TreeDataCapturePipeline.hpp"
 #include "PlantLayer.hpp"

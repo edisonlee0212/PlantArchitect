@@ -50,7 +50,7 @@ namespace PlantArchitect {
     class PLANT_ARCHITECT_API PlantLayer : public ILayer {
         void PreparePhysics(const Entity &entity, const Entity &child,
                             const BranchPhysicsParameters &branchPhysicsParameters);
-
+        void Preprocess(const std::shared_ptr<Scene>& scene);
     public:
         BranchPhysicsParameters m_branchPhysicsParameters;
         FBM m_fBMField;
@@ -61,7 +61,7 @@ namespace PlantArchitect {
 
         void PreparePhysics();
         void ObstacleRemoval();
-        void CalculateStatistics();
+        void CalculateStatistics(const std::shared_ptr<Scene>& scene);
 
         /**
          * The EntityQuery for filtering all internodes.

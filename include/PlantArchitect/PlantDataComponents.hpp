@@ -52,6 +52,26 @@ namespace PlantArchitect {
          */
         unsigned m_layer = 0;
 
+        float m_rootDistance = 0;
+
+
+        float m_maxDistanceToAnyBranchEnd = 0;
+        float m_totalDistanceToAllBranchEnds = 0;
+        float m_order = 0;
+        float m_biomass = 0;
+        float m_childTotalBiomass = 0;
+        /**
+         * Is child with largest total distance to all branch ends
+         */
+        bool m_largestChild = false;
+        /**
+         * Is child with largest max distance to any branch end
+         */
+        bool m_longestChild = false;
+        /**
+         * Is child with largest total biomass
+         */
+        bool m_heaviestChild = false;
         void OnInspect();
     };
 

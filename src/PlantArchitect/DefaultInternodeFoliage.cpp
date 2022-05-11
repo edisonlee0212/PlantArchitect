@@ -2,15 +2,15 @@
 // Created by lllll on 9/6/2021.
 //
 
-#include "DefaultInternodePhyllotaxis.hpp"
+#include "DefaultInternodeFoliage.hpp"
 #include "Internode.hpp"
 #include "PlantLayer.hpp"
 
 using namespace PlantArchitect;
 
-void DefaultInternodePhyllotaxis::GenerateFoliage(const std::shared_ptr<Internode> &internode,
-                                                  const InternodeInfo &internodeInfo,
-                                                  const GlobalTransform &relativeGlobalTransform, const GlobalTransform &relativeParentGlobalTransform) {
+void DefaultInternodeFoliage::GenerateFoliage(const std::shared_ptr<Internode> &internode,
+                                              const InternodeInfo &internodeInfo,
+                                              const GlobalTransform &relativeGlobalTransform, const GlobalTransform &relativeParentGlobalTransform) {
     auto radius = glm::abs(m_positionVariance);
     auto length = internodeInfo.m_length;
     auto rotation = glm::abs(m_randomRotation);
@@ -28,23 +28,31 @@ void DefaultInternodePhyllotaxis::GenerateFoliage(const std::shared_ptr<Internod
     }
 }
 
-void DefaultInternodePhyllotaxis::OnInspect() {
+void DefaultInternodeFoliage::OnInspect() {
+    IInternodeFoliage::OnInspect();
+
     ImGui::DragInt("Leaf count", &m_leafCount);
     ImGui::DragFloat("Position Variance", &m_positionVariance, 0.01f);
     ImGui::DragFloat("Rotation", &m_randomRotation, 0.01f);
     ImGui::DragFloat2("Leaf size", &m_leafSize.x, 0.01f);
 }
-void DefaultInternodePhyllotaxis::Serialize(YAML::Emitter &out) {
+void DefaultInternodeFoliage::Serialize(YAML::Emitter &out) {
+    IInternodeFoliage::Serialize(out);
     out << YAML::Key << "m_positionVariance" << YAML::Value << m_positionVariance;
     out << YAML::Key << "m_randomRotation" << YAML::Value << m_randomRotation;
     out << YAML::Key << "m_leafSize" << YAML::Value << m_leafSize;
     out << YAML::Key << "m_leafCount" << YAML::Value << m_leafCount;
 }
 
-void DefaultInternodePhyllotaxis::Deserialize(const YAML::Node &in) {
+void DefaultInternodeFoliage::Deserialize(const YAML::Node &in) {
+    IInternodeFoliage::Deserialize(in);
     if(in["m_positionVariance"]) m_positionVariance = in["m_positionVariance"].as<float>();
     if(in["m_randomRotation"]) m_randomRotation = in["m_randomRotation"].as<float>();
     if(in["m_leafSize"]) m_leafSize = in["m_leafSize"].as<glm::vec2>();
     if(in["m_leafCount"]) m_leafCount = in["m_leafCount"].as<int>();
+}
+
+void DefaultInternodeFoliage::CollectAssetRef(std::vector<AssetRef> &list) {
+    IInternodeFoliage::CollectAssetRef(list);
 }
 

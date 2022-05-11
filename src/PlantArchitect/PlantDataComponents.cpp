@@ -6,6 +6,13 @@
 using namespace PlantArchitect;
 
 void InternodeInfo::OnInspect() {
+    ImGui::Text(("DistanceToRoot: " + std::to_string(m_rootDistance)).c_str());
+    ImGui::Text(("MaxDistanceToAnyBranchEnd: " + std::to_string(m_maxDistanceToAnyBranchEnd)).c_str());
+    ImGui::Text(("TotalDistanceToAllBranchEnds: " + std::to_string(m_totalDistanceToAllBranchEnds)).c_str());
+    ImGui::Text(("Order: " + std::to_string(m_order)).c_str());
+    ImGui::Text(("Biomass: " + std::to_string(m_biomass)).c_str());
+    ImGui::Text(("ChildTotalBiomass: " + std::to_string(m_childTotalBiomass)).c_str());
+
     ImGui::Text(("Proximity: " + std::to_string(m_neighborsProximity)).c_str());
 
     ImGui::Text(("Thickness: " + std::to_string(m_thickness)).c_str());
