@@ -647,7 +647,11 @@ void PlantLayer::UpdateInternodeColors() {
 
     switch (m_branchColorMode) {
         case BranchColorMode::SubTree: {
-
+            ColorSubTree(scene, editorLayer->m_selectedEntity, 0);
+        }
+            break;
+        case BranchColorMode::Branchlet: {
+            ColorBranchlet(scene, editorLayer->m_selectedEntity);
         }
             break;
         case BranchColorMode::Order:
@@ -830,9 +834,11 @@ void PlantLayer::UpdateInternodeColors() {
     color.m_value = glm::vec4(1, 1, 1, 1);
     if (scene->IsEntityValid(focusingInternode) && scene->HasDataComponent<InternodeColor>(focusingInternode))
         scene->SetDataComponent(focusingInternode, color);
-    color.m_value = glm::vec4(1, 0, 0, 1);
-    if (scene->IsEntityValid(selectedEntity) && scene->HasDataComponent<InternodeColor>(selectedEntity))
-        scene->SetDataComponent(selectedEntity, color);
+    if(m_branchColorMode != BranchColorMode::Branchlet) {
+        color.m_value = glm::vec4(1, 0, 0, 1);
+        if (scene->IsEntityValid(selectedEntity) && scene->HasDataComponent<InternodeColor>(selectedEntity))
+            scene->SetDataComponent(selectedEntity, color);
+    }
 }
 
 void PlantLayer::UpdateInternodeCylinder() {
@@ -998,7 +1004,7 @@ void PlantLayer::UpdateInternodeCamera() {
 static const char *BranchColorModes[]{"None", "Order", "Level", "Water", "ApicalControl",
                                       "WaterPressure",
                                       "Proximity", "Inhibitor", "IndexDivider", "IndexRange", "StrahlerNumber",
-                                      "ChildCount"};
+                                      "ChildCount", "SubTree", "Branchlet"};
 
 void PlantLayer::DrawColorModeSelectionMenu() {
     if (ImGui::TreeNodeEx("Branch Coloring", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -1315,6 +1321,38 @@ void PlantLayer::Preprocess(const std::shared_ptr<Scene> &scene) {
                 });
                 root->m_center = center / static_cast<float>(amount);
             };
+        }
+    }
+}
+
+void PlantLayer::ColorSubTree(const std::shared_ptr<Scene> &scene, const Entity &entity, int colorIndex) {
+    if (scene->HasDataComponent<InternodeInfo>(entity)) {
+        InternodeColor internodeColor;
+        internodeColor.m_value = glm::vec4(m_randomColors[colorIndex], 1.0f);
+        scene->SetDataComponent(entity, internodeColor);
+        auto children = scene->GetChildren(entity);
+        for (const auto &i: children) {
+            ColorSubTree(scene, i, colorIndex + 1);
+        }
+    }
+}
+
+void PlantLayer::ColorBranchlet(const std::shared_ptr<Scene> &scene, const Entity &entity) {
+    if (scene->HasDataComponent<InternodeInfo>(entity)) {
+        InternodeColor internodeColor;
+        internodeColor.m_value = glm::vec4(glm::vec3(40.0f / 255, 15.0f / 255, 0.0f), 1.0f);
+        scene->SetDataComponent(entity, internodeColor);
+        auto children = scene->GetChildren(entity);
+        auto index = 0;
+        for (const auto &i: children) {
+            if (scene->HasDataComponent<InternodeInfo>(i)) {
+                InternodeColor childInternodeColor;
+                if (index == 0)childInternodeColor.m_value = glm::vec4(1, 0, 0, 1.0f);
+                else if (index == 1)childInternodeColor.m_value = glm::vec4(0, 1, 0, 1.0f);
+                else if (index == 2)childInternodeColor.m_value = glm::vec4(0, 0, 1, 1.0f);
+                scene->SetDataComponent(i, internodeColor);
+            }
+            index++;
         }
     }
 }

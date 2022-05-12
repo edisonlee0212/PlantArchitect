@@ -43,7 +43,8 @@ namespace PlantArchitect {
         IndexRange,
         StrahlerNumber,
         ChildCount,
-        SubTree
+        SubTree,
+        Branchlet,
     };
 
     class IPlantBehaviour;
@@ -52,6 +53,9 @@ namespace PlantArchitect {
         void PreparePhysics(const Entity &entity, const Entity &child,
                             const BranchPhysicsParameters &branchPhysicsParameters);
         void Preprocess(const std::shared_ptr<Scene>& scene);
+
+        void ColorSubTree(const std::shared_ptr<Scene>& scene, const Entity &entity, int colorIndex);
+        void ColorBranchlet(const std::shared_ptr<Scene>& scene, const Entity &entity);
     public:
         BranchPhysicsParameters m_branchPhysicsParameters;
         FBM m_fBMField;
