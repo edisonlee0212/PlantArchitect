@@ -19,7 +19,7 @@
 #include "FBM.hpp"
 #include "ClassRegistry.hpp"
 #include "VoxelGrid.hpp"
-
+#include "RenderLayer.hpp"
 using namespace PlantArchitect;
 
 void PlantLayer::PreparePhysics(const Entity &entity, const Entity &child,
@@ -232,6 +232,7 @@ void PlantLayer::OnInspect() {
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{5, 5});
                 if (ImGui::BeginMenu("Settings")) {
 #pragma region Menu
+                    ImGui::ColorEdit3("Background color", &m_visualizationCamera->m_clearColor.x);
                     ImGui::Checkbox("Auto update", &m_autoUpdate);
                     ImGui::Checkbox("Internodes", &m_drawInternodes);
                     if (m_drawInternodes) {
@@ -834,11 +835,13 @@ void PlantLayer::UpdateInternodeColors() {
     color.m_value = glm::vec4(1, 1, 1, 1);
     if (scene->IsEntityValid(focusingInternode) && scene->HasDataComponent<InternodeColor>(focusingInternode))
         scene->SetDataComponent(focusingInternode, color);
-    if(m_branchColorMode != BranchColorMode::Branchlet) {
+    if(m_branchColorMode != BranchColorMode::Branchlet && m_branchColorMode != BranchColorMode::SubTree) {
         color.m_value = glm::vec4(1, 0, 0, 1);
         if (scene->IsEntityValid(selectedEntity) && scene->HasDataComponent<InternodeColor>(selectedEntity))
             scene->SetDataComponent(selectedEntity, color);
     }
+
+
 }
 
 void PlantLayer::UpdateInternodeCylinder() {
@@ -964,6 +967,12 @@ void PlantLayer::UpdateInternodeCamera() {
             m_visualizationCameraResolutionX,
             m_visualizationCameraResolutionY);
     m_visualizationCamera->Clear();
+    auto renderLayer = Application::GetLayer<RenderLayer>();
+    renderLayer->ApplyEnvironmentalSettings(m_visualizationCamera);
+    GlobalTransform sceneCameraGT;
+    sceneCameraGT.SetValue(editorLayer->m_sceneCameraPosition,
+                           editorLayer->m_sceneCameraRotation, glm::vec3(1.0f));
+    renderLayer->RenderToCamera(m_visualizationCamera, sceneCameraGT);
 
 #pragma region Internode debug camera
     Camera::m_cameraInfoBlock.UpdateMatrices(
@@ -999,6 +1008,7 @@ void PlantLayer::UpdateInternodeCamera() {
             RenderInternodePointers();
     }
 #pragma endregion
+
 }
 
 static const char *BranchColorModes[]{"None", "Order", "Level", "Water", "ApicalControl",
@@ -1350,7 +1360,7 @@ void PlantLayer::ColorBranchlet(const std::shared_ptr<Scene> &scene, const Entit
                 if (index == 0)childInternodeColor.m_value = glm::vec4(1, 0, 0, 1.0f);
                 else if (index == 1)childInternodeColor.m_value = glm::vec4(0, 1, 0, 1.0f);
                 else if (index == 2)childInternodeColor.m_value = glm::vec4(0, 0, 1, 1.0f);
-                scene->SetDataComponent(i, internodeColor);
+                scene->SetDataComponent(i, childInternodeColor);
             }
             index++;
         }
