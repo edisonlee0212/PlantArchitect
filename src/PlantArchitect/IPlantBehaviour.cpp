@@ -107,8 +107,7 @@ void IPlantBehaviour::DestroyBranch(const std::shared_ptr<Scene> &scene, const E
 }
 
 void
-IPlantBehaviour::GenerateSkinnedMeshes(const std::shared_ptr<Scene> &scene, float subdivision,
-                                       float resolution) {
+IPlantBehaviour::GenerateSkinnedMeshes(const std::shared_ptr<Scene> &scene, const MeshGeneratorSettings &settings) {
     UpdateBranches(scene);
     std::vector<Entity> currentRoots;
     scene->GetEntityArray(m_rootsQuery, currentRoots);
@@ -138,114 +137,123 @@ IPlantBehaviour::GenerateSkinnedMeshes(const std::shared_ptr<Scene> &scene, floa
         i.wait();
 
 #pragma region Prepare rings for branch mesh.
-    scene->ForEach<GlobalTransform, Transform,
-            InternodeInfo>(Jobs::Workers(),
-                           m_internodesQuery,
-                           [&, resolution, subdivision](int i, Entity entity, GlobalTransform &globalTransform,
-                                                        Transform &transform, InternodeInfo &internodeInfo) {
-                               auto internode =
-                                       scene->GetOrSetPrivateComponent<Internode>(entity).lock();
-                               internode->m_rings.clear();
-                               auto rootGlobalTransform = globalTransform;
-                               auto root = scene->GetRoot(internode->GetOwner());
-                               if (root != entity) {
-                                   rootGlobalTransform = scene->GetDataComponent<GlobalTransform>(root);
-                               }
-                               GlobalTransform relativeGlobalTransform;
-                               relativeGlobalTransform.m_value =
-                                       glm::inverse(rootGlobalTransform.m_value) * globalTransform.m_value;
-                               glm::vec3 directionStart = relativeGlobalTransform.GetRotation() * glm::vec3(0, 0, -1);
-                               glm::vec3 directionEnd = directionStart;
-                               glm::vec3 positionStart = relativeGlobalTransform.GetPosition();
-                               glm::vec3 positionEnd = positionStart + internodeInfo.m_length * directionStart;
-                               float thicknessStart = internodeInfo.m_thickness;
-                               if (root != entity) {
-                                   auto parent = scene->GetParent(entity);
-                                   if (parent.GetIndex() != 0) {
-                                       if (scene->HasDataComponent<InternodeInfo>(parent)) {
-                                           auto parentInternodeInfo = scene->GetDataComponent<InternodeInfo>(parent);
-                                           auto parentGlobalTransform = scene->GetDataComponent<GlobalTransform>(
-                                                   parent);
-                                           thicknessStart = parentInternodeInfo.m_thickness;
-                                           GlobalTransform parentRelativeGlobalTransform;
-                                           parentRelativeGlobalTransform.m_value =
-                                                   glm::inverse(rootGlobalTransform.m_value) *
-                                                   parentGlobalTransform.m_value;
-                                           directionStart =
-                                                   parentRelativeGlobalTransform.GetRotation() * glm::vec3(0, 0, -1);
+    if(settings.m_enableBranch) {
+        scene->ForEach<GlobalTransform, Transform,
+                InternodeInfo>(Jobs::Workers(),
+                               m_internodesQuery,
+                               [&](int i, Entity entity, GlobalTransform &globalTransform,
+                                   Transform &transform, InternodeInfo &internodeInfo) {
+                                   auto internode =
+                                           scene->GetOrSetPrivateComponent<Internode>(entity).lock();
+                                   internode->m_rings.clear();
+                                   auto rootGlobalTransform = globalTransform;
+                                   auto root = scene->GetRoot(internode->GetOwner());
+                                   if (root != entity) {
+                                       rootGlobalTransform = scene->GetDataComponent<GlobalTransform>(root);
+                                   }
+                                   GlobalTransform relativeGlobalTransform;
+                                   relativeGlobalTransform.m_value =
+                                           glm::inverse(rootGlobalTransform.m_value) * globalTransform.m_value;
+                                   glm::vec3 directionStart =
+                                           relativeGlobalTransform.GetRotation() * glm::vec3(0, 0, -1);
+                                   glm::vec3 directionEnd = directionStart;
+                                   glm::vec3 positionStart = relativeGlobalTransform.GetPosition();
+                                   glm::vec3 positionEnd = positionStart + internodeInfo.m_length * directionStart;
+                                   float thicknessStart = internodeInfo.m_thickness;
+                                   if (root != entity) {
+                                       auto parent = scene->GetParent(entity);
+                                       if (parent.GetIndex() != 0) {
+                                           if (scene->HasDataComponent<InternodeInfo>(parent)) {
+                                               auto parentInternodeInfo = scene->GetDataComponent<InternodeInfo>(
+                                                       parent);
+                                               auto parentGlobalTransform = scene->GetDataComponent<GlobalTransform>(
+                                                       parent);
+                                               thicknessStart = parentInternodeInfo.m_thickness;
+                                               GlobalTransform parentRelativeGlobalTransform;
+                                               parentRelativeGlobalTransform.m_value =
+                                                       glm::inverse(rootGlobalTransform.m_value) *
+                                                       parentGlobalTransform.m_value;
+                                               directionStart =
+                                                       parentRelativeGlobalTransform.GetRotation() *
+                                                       glm::vec3(0, 0, -1);
+                                           }
                                        }
                                    }
-                               }
 #pragma region Subdivision internode here.
-                               int step = thicknessStart / resolution;
-                               if (step < 4)
-                                   step = 4;
-                               if (step % 2 != 0)
-                                   step++;
-                               internode->m_step = step;
-                               int amount = static_cast<int>(0.5f + internodeInfo.m_length * subdivision);
-                               if (amount % 2 != 0)
-                                   amount++;
-                               BezierCurve curve = BezierCurve(
-                                       positionStart, positionStart + internodeInfo.m_length / 3.0f * directionStart,
-                                       positionEnd - internodeInfo.m_length / 3.0f * directionEnd, positionEnd);
-                               float posStep = 1.0f / static_cast<float>(amount);
-                               glm::vec3 dirStep = (directionEnd - directionStart) / static_cast<float>(amount);
-                               float radiusStep = (internodeInfo.m_thickness - thicknessStart) /
-                                                  static_cast<float>(amount);
+                                   int step = thicknessStart / settings.m_resolution;
+                                   if (step < 4)
+                                       step = 4;
+                                   if (step % 2 != 0)
+                                       step++;
+                                   internode->m_step = step;
+                                   int amount = static_cast<int>(0.5f +
+                                                                 internodeInfo.m_length * settings.m_subdivision);
+                                   if (amount % 2 != 0)
+                                       amount++;
+                                   BezierCurve curve = BezierCurve(
+                                           positionStart,
+                                           positionStart + internodeInfo.m_length / 3.0f * directionStart,
+                                           positionEnd - internodeInfo.m_length / 3.0f * directionEnd, positionEnd);
+                                   float posStep = 1.0f / static_cast<float>(amount);
+                                   glm::vec3 dirStep = (directionEnd - directionStart) / static_cast<float>(amount);
+                                   float radiusStep = (internodeInfo.m_thickness - thicknessStart) /
+                                                      static_cast<float>(amount);
 
-                               for (int i = 1; i < amount; i++) {
-                                   float startThickness = static_cast<float>(i - 1) * radiusStep;
-                                   float endThickness = static_cast<float>(i) * radiusStep;
-                                   internode->m_rings.emplace_back(
-                                           curve.GetPoint(posStep * (i - 1)), curve.GetPoint(posStep * i),
-                                           directionStart + static_cast<float>(i - 1) * dirStep,
-                                           directionStart + static_cast<float>(i) * dirStep,
-                                           thicknessStart + startThickness, thicknessStart + endThickness);
-                               }
-                               if (amount > 1)
-                                   internode->m_rings.emplace_back(
-                                           curve.GetPoint(1.0f - posStep), positionEnd, directionEnd - dirStep,
-                                           directionEnd,
-                                           internodeInfo.m_thickness - radiusStep,
-                                           internodeInfo.m_thickness);
-                               else
-                                   internode->m_rings.emplace_back(positionStart, positionEnd,
-                                                                   directionStart, directionEnd, thicknessStart,
-                                                                   internodeInfo.m_thickness);
+                                   for (int i = 1; i < amount; i++) {
+                                       float startThickness = static_cast<float>(i - 1) * radiusStep;
+                                       float endThickness = static_cast<float>(i) * radiusStep;
+                                       internode->m_rings.emplace_back(
+                                               curve.GetPoint(posStep * (i - 1)), curve.GetPoint(posStep * i),
+                                               directionStart + static_cast<float>(i - 1) * dirStep,
+                                               directionStart + static_cast<float>(i) * dirStep,
+                                               thicknessStart + startThickness, thicknessStart + endThickness);
+                                   }
+                                   if (amount > 1)
+                                       internode->m_rings.emplace_back(
+                                               curve.GetPoint(1.0f - posStep), positionEnd, directionEnd - dirStep,
+                                               directionEnd,
+                                               internodeInfo.m_thickness - radiusStep,
+                                               internodeInfo.m_thickness);
+                                   else
+                                       internode->m_rings.emplace_back(positionStart, positionEnd,
+                                                                       directionStart, directionEnd, thicknessStart,
+                                                                       internodeInfo.m_thickness);
 #pragma endregion
 
-                           }
-    );
+                               }
+        );
+    }
 #pragma endregion
 #pragma region Prepare foliage transforms.
-    std::mutex mutex;
-    scene->ForEach<Transform, GlobalTransform, InternodeInfo>
-            (Jobs::Workers(),
-             m_internodesQuery,
-             [&](int index, Entity entity, Transform &transform, GlobalTransform &globalTransform,
-                 InternodeInfo &internodeInfo) {
-                 auto internode =
-                         scene->GetOrSetPrivateComponent<Internode>(entity).lock();
-                 internode->m_foliageMatrices.clear();
-                 auto rootGlobalTransform = globalTransform;
-                 auto rootEntity = scene->GetRoot(internode->GetOwner());
-                 if (rootEntity != entity) {
-                     rootGlobalTransform = scene->GetDataComponent<GlobalTransform>(rootEntity);
-                 }
-                 auto root = scene->GetOrSetPrivateComponent<Root>(rootEntity).lock();
-                 auto inverseGlobalTransform = glm::inverse(rootGlobalTransform.m_value);
-                 GlobalTransform relativeGlobalTransform;
-                 GlobalTransform relativeParentGlobalTransform;
-                 relativeGlobalTransform.m_value = inverseGlobalTransform * globalTransform.m_value;
-                 relativeParentGlobalTransform.m_value =
-                         inverseGlobalTransform * (glm::inverse(transform.m_value) * globalTransform.m_value);
-                 auto foliagePhyllotaxis = root->m_plantDescriptor.Get<IPlantDescriptor>()->m_foliagePhyllotaxis.Get<IInternodeFoliage>();
-                 if (foliagePhyllotaxis)
-                     foliagePhyllotaxis->GenerateFoliage(internode, internodeInfo,
-                                                         relativeGlobalTransform, relativeParentGlobalTransform);
-             });
+    if(settings.m_enableFoliage) {
+        scene->ForEach<Transform, GlobalTransform, InternodeInfo>
+                (Jobs::Workers(),
+                 m_internodesQuery,
+                 [&](int index, Entity entity, Transform &transform, GlobalTransform &globalTransform,
+                     InternodeInfo &internodeInfo) {
+                     auto internode =
+                             scene->GetOrSetPrivateComponent<Internode>(entity).lock();
+                     internode->m_foliageMatrices.clear();
+                     auto rootGlobalTransform = globalTransform;
+                     auto rootEntity = scene->GetRoot(internode->GetOwner());
+                     if (rootEntity != entity) {
+                         rootGlobalTransform = scene->GetDataComponent<GlobalTransform>(rootEntity);
+                     }
+                     auto root = scene->GetOrSetPrivateComponent<Root>(rootEntity).lock();
+                     auto inverseGlobalTransform = glm::inverse(rootGlobalTransform.m_value);
+                     GlobalTransform relativeGlobalTransform;
+                     GlobalTransform relativeParentGlobalTransform;
+                     relativeGlobalTransform.m_value = inverseGlobalTransform * globalTransform.m_value;
+                     relativeParentGlobalTransform.m_value =
+                             inverseGlobalTransform * (glm::inverse(transform.m_value) * globalTransform.m_value);
+                     auto foliagePhyllotaxis = root->m_plantDescriptor.Get<IPlantDescriptor>()->m_foliagePhyllotaxis.Get<IInternodeFoliage>();
+                     if (foliagePhyllotaxis)
+                         foliagePhyllotaxis->GenerateFoliage(internode, internodeInfo,
+                                                             relativeGlobalTransform, relativeParentGlobalTransform);
+                 });
+    }
 #pragma endregion
+
     for (int plantIndex = 0; plantIndex < plantSize; plantIndex++) {
         const auto &rootEntity = currentRoots[plantIndex];
         auto children = scene->GetChildren(rootEntity);
@@ -255,8 +263,8 @@ IPlantBehaviour::GenerateSkinnedMeshes(const std::shared_ptr<Scene> &scene, floa
             else if (BranchCheck(scene, child)) rootBranch = child;
         }
         Entity branchMesh, foliageMesh;
-        PrepareInternodeForSkeletalAnimation(scene, rootEntity, branchMesh, foliageMesh);
-        {
+        PrepareInternodeForSkeletalAnimation(scene, rootEntity, branchMesh, foliageMesh, settings);
+        if(settings.m_enableBranch){
 #pragma region Branch mesh
             auto animator = scene->GetOrSetPrivateComponent<Animator>(branchMesh).lock();
             auto skinnedMeshRenderer = scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(branchMesh).lock();
@@ -267,6 +275,7 @@ IPlantBehaviour::GenerateSkinnedMeshes(const std::shared_ptr<Scene> &scene, floa
             if (texture)
                 material->m_albedoTexture = texture;
             material->m_albedoColor = root->m_plantDescriptor.Get<IPlantDescriptor>()->m_branchColor;
+            material->m_vertexColorOnly = settings.m_vertexColorOnly;
             auto internode = scene->GetOrSetPrivateComponent<Internode>(rootInternode).lock();
             const auto plantGlobalTransform =
                     scene->GetDataComponent<GlobalTransform>(rootEntity);
@@ -302,10 +311,11 @@ IPlantBehaviour::GenerateSkinnedMeshes(const std::shared_ptr<Scene> &scene, floa
                         ->m_boneAnimatorIndices = boneIndicesLists[plantIndex];
                 skinnedMeshRenderer->m_skinnedMesh.Set<SkinnedMesh>(skinnedMesh);
                 skinnedMeshRenderer->GetBoneMatrices();
+                skinnedMeshRenderer->m_ragDollFreeze = true;
             }
 #pragma endregion
         }
-        {
+        if(settings.m_enableFoliage){
 #pragma region Foliage mesh
             auto animator = scene->GetOrSetPrivateComponent<Animator>(foliageMesh).lock();
             auto skinnedMeshRenderer = scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(foliageMesh).lock();
@@ -319,6 +329,7 @@ IPlantBehaviour::GenerateSkinnedMeshes(const std::shared_ptr<Scene> &scene, floa
                     material->m_albedoTexture = texture;
             }
             material->m_albedoColor = root->m_plantDescriptor.Get<IPlantDescriptor>()->m_foliageColor;
+            material->m_vertexColorOnly = settings.m_vertexColorOnly;
             const auto plantGlobalTransform =
                     scene->GetDataComponent<GlobalTransform>(rootEntity);
 #pragma region Animator
@@ -353,6 +364,7 @@ IPlantBehaviour::GenerateSkinnedMeshes(const std::shared_ptr<Scene> &scene, floa
                         ->m_boneAnimatorIndices = boneIndicesLists[plantIndex];
                 skinnedMeshRenderer->m_skinnedMesh.Set<SkinnedMesh>(skinnedMesh);
                 skinnedMeshRenderer->GetBoneMatrices();
+                skinnedMeshRenderer->m_ragDollFreeze = true;
             }
 #pragma endregion
         }
@@ -603,9 +615,40 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
         }
     }
 }
+void MeshGeneratorSettings::OnInspect() {
+    if(ImGui::TreeNodeEx("Mesh Generator settings")) {
+        ImGui::DragFloat("Resolution", &m_resolution, 0.001f);
+        ImGui::DragFloat("Subdivision", &m_subdivision, 0.001f);
+        ImGui::Checkbox("Vertex color only", &m_vertexColorOnly);
+        ImGui::Checkbox("Foliage", &m_enableFoliage);
+        ImGui::Checkbox("Branch", &m_enableBranch);
+        ImGui::TreePop();
+    }
+}
+
+void MeshGeneratorSettings::Save(const std::string &name, YAML::Emitter &out) {
+    out << YAML::Key << name << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "m_resolution" << YAML::Value << m_resolution;
+    out << YAML::Key << "m_subdivision" << YAML::Value << m_subdivision;
+    out << YAML::Key << "m_vertexColorOnly" << YAML::Value << m_vertexColorOnly;
+    out << YAML::Key << "m_enableFoliage" << YAML::Value << m_enableFoliage;
+    out << YAML::Key << "m_enableBranch" << YAML::Value << m_enableBranch;
+    out << YAML::EndMap;
+}
+
+void MeshGeneratorSettings::Load(const std::string &name, const YAML::Node &in) {
+    if (in[name]) {
+        const auto &ms = in[name];
+        if (ms["m_resolution"]) m_resolution = ms["m_resolution"].as<float>();
+        if (ms["m_subdivision"]) m_subdivision = ms["m_subdivision"].as<float>();
+        if (ms["m_vertexColorOnly"]) m_vertexColorOnly = ms["m_vertexColorOnly"].as<bool>();
+        if (ms["m_enableFoliage"]) m_enableFoliage = ms["m_enableFoliage"].as<bool>();
+        if (ms["m_enableBranch"]) m_enableBranch = ms["m_enableBranch"].as<bool>();
+    }
+}
 
 void
-IPlantBehaviour::PrepareInternodeForSkeletalAnimation(const std::shared_ptr<Scene>& scene, const Entity &entity, Entity &branchMesh, Entity &foliageMesh) {
+IPlantBehaviour::PrepareInternodeForSkeletalAnimation(const std::shared_ptr<Scene>& scene, const Entity &entity, Entity &branchMesh, Entity &foliageMesh, const MeshGeneratorSettings &settings) {
     auto children = scene->GetChildren(entity);
     for (const auto &child: children) {
         if (scene->GetEntityName(child) == "BranchMesh" || scene->GetEntityName(child) == "FoliageMesh") {
@@ -613,7 +656,7 @@ IPlantBehaviour::PrepareInternodeForSkeletalAnimation(const std::shared_ptr<Scen
         }
     }
 
-    {
+    if(settings.m_enableBranch){
         if (branchMesh.GetIndex() == 0) branchMesh = scene->CreateEntity("BranchMesh");
         auto animator = scene->GetOrSetPrivateComponent<Animator>(branchMesh).lock();
         auto skinnedMeshRenderer =
@@ -626,8 +669,9 @@ IPlantBehaviour::PrepareInternodeForSkeletalAnimation(const std::shared_ptr<Scen
         skinnedMat->m_roughness = 1.0f;
         skinnedMat->m_metallic = 0.0f;
         skinnedMeshRenderer->m_animator = scene->GetOrSetPrivateComponent<Animator>(branchMesh).lock();
+        scene->SetParent(branchMesh, entity);
     }
-    {
+    if(settings.m_enableFoliage){
         if (foliageMesh.GetIndex() == 0) foliageMesh = scene->CreateEntity("FoliageMesh");
         auto animator = scene->GetOrSetPrivateComponent<Animator>(foliageMesh).lock();
         auto skinnedMeshRenderer =
@@ -641,9 +685,8 @@ IPlantBehaviour::PrepareInternodeForSkeletalAnimation(const std::shared_ptr<Scen
         skinnedMat->m_metallic = 0.0f;
         skinnedMat->m_cullingMode = MaterialCullingMode::Off;
         skinnedMeshRenderer->m_animator = scene->GetOrSetPrivateComponent<Animator>(foliageMesh).lock();
+        scene->SetParent(foliageMesh, entity);
     }
-    scene->SetParent(branchMesh, entity);
-    scene->SetParent(foliageMesh, entity);
 }
 
 Entity IPlantBehaviour::CreateBranchHelper(const std::shared_ptr<Scene>& scene, const Entity &parent, const Entity &internode) {

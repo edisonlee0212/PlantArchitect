@@ -145,7 +145,7 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
     }
 
     if (m_exportOBJ || m_exportImage || m_exportDepth || m_exportBranchCapture) {
-        behaviour->GenerateSkinnedMeshes(scene);
+        behaviour->GenerateSkinnedMeshes(scene, m_meshGeneratorSettings);
         internodeLayer->UpdateInternodeColors();
     }
     Bound plantBound;
@@ -359,7 +359,7 @@ void TreeDataCapturePipeline::OnInspect() {
 
         ImGui::TreePop();
     }
-
+    m_meshGeneratorSettings.OnInspect();
     if (m_exportDepth || m_exportImage || m_exportBranchCapture) {
         if (ImGui::TreeNodeEx("Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::Checkbox("Export Camera matrices", &m_exportMatrices);
@@ -769,6 +769,9 @@ void TreeDataCapturePipeline::Serialize(YAML::Emitter &out) {
     m_branchTexture.Save("m_branchTexture", out);
     m_foliagePhyllotaxis.Save("m_foliagePhyllotaxis", out);
     m_obstacleGrid.Save("m_obstacleGrid", out);
+
+    m_meshGeneratorSettings.Save("m_meshGeneratorSettings", out);
+
     out << YAML::Key << "m_exportEnvironmentalGrid" << YAML::Value << m_exportEnvironmentalGrid;
     out << YAML::Key << "m_enableRandomObstacle" << YAML::Value << m_enableRandomObstacle;
     out << YAML::Key << "m_renderObstacle" << YAML::Value << m_renderObstacle;
@@ -814,6 +817,9 @@ void TreeDataCapturePipeline::Deserialize(const YAML::Node &in) {
     m_branchTexture.Load("m_branchTexture", in);
     m_foliagePhyllotaxis.Load("m_foliagePhyllotaxis", in);
     m_obstacleGrid.Load("m_obstacleGrid", in);
+
+    m_meshGeneratorSettings.Load("m_meshGeneratorSettings", in);
+
     if (in["m_randomRotation"]) m_randomRotation = in["m_randomRotation"].as<bool>();
     if (in["m_lShapedWall"]) m_lShapedWall = in["m_lShapedWall"].as<bool>();
     if (in["m_exportWallPrefab"]) m_exportWallPrefab = in["m_exportWallPrefab"].as<bool>();

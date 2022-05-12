@@ -201,13 +201,11 @@ void PlantLayer::OnInspect() {
 
         if (ImGui::TreeNodeEx("Plant Behaviour", ImGuiTreeNodeFlags_DefaultOpen)) {
             if (ImGui::TreeNodeEx("Meshes", ImGuiTreeNodeFlags_DefaultOpen)) {
-                static float resolution = 0.02f;
-                static float subdivision = 4.0f;
-                ImGui::DragFloat("Resolution", &resolution, 0.001f);
-                ImGui::DragFloat("Subdivision", &subdivision, 0.001f);
-                if (ImGui::Button("Generate branch mesh for all trees")) {
+                static MeshGeneratorSettings settings;
+                settings.OnInspect();
+                if (ImGui::Button("Generate mesh for all trees")) {
                     for (const auto &behaviour: m_plantBehaviours) {
-                        behaviour->GenerateSkinnedMeshes(scene, subdivision, resolution);
+                        behaviour->GenerateSkinnedMeshes(scene, settings);
                     }
                 }
                 ImGui::TreePop();

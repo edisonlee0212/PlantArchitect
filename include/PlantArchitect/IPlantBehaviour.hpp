@@ -11,6 +11,17 @@ using namespace UniEngine;
 namespace PlantArchitect {
     struct SpaceColonizationParameters;
 
+    struct PLANT_ARCHITECT_API MeshGeneratorSettings{
+        float m_resolution = 0.02f;
+        float m_subdivision = 4.0f;
+        bool m_vertexColorOnly = false;
+        bool m_enableFoliage = true;
+        bool m_enableBranch = true;
+        void OnInspect();
+        void Save(const std::string &name, YAML::Emitter &out);
+        void Load(const std::string &name, const YAML::Node &in);
+    };
+
     class PLANT_ARCHITECT_API IPlantBehaviour {
         friend class PlantLayer;
         friend class TreeGraph;
@@ -86,7 +97,7 @@ namespace PlantArchitect {
                                          std::vector<SkinnedVertex> &vertices,
                                          std::vector<unsigned> &indices);
 
-        void PrepareInternodeForSkeletalAnimation(const std::shared_ptr<Scene>& scene, const Entity &entity, Entity &branchMesh, Entity &foliageMesh);
+        void PrepareInternodeForSkeletalAnimation(const std::shared_ptr<Scene>& scene, const Entity &entity, Entity &branchMesh, Entity &foliageMesh, const MeshGeneratorSettings &settings);
 
 #pragma endregion
 
@@ -135,7 +146,7 @@ namespace PlantArchitect {
          * @param entities
          */
         void
-        GenerateSkinnedMeshes(const std::shared_ptr<Scene>& scene, float subdivision = 4.0f, float resolution = 0.02f);
+        GenerateSkinnedMeshes(const std::shared_ptr<Scene>& scene, const MeshGeneratorSettings &settings);
 
 
         /**
