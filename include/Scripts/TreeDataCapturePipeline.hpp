@@ -56,6 +56,7 @@ namespace Scripts {
         RayProperties m_rayProperties = {1, 512};
 #endif
         AssetRef m_foliagePhyllotaxis;
+        bool m_enableGround = true;
         bool m_autoAdjustCamera = true;
         bool m_applyPhyllotaxis = false;
         std::filesystem::path m_currentExportFolder;

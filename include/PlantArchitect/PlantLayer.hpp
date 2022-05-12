@@ -42,7 +42,8 @@ namespace PlantArchitect {
         IndexDivider,
         IndexRange,
         StrahlerNumber,
-        ChildCount
+        ChildCount,
+        SubTree
     };
 
     class IPlantBehaviour;

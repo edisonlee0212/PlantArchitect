@@ -227,9 +227,9 @@ void PlantLayer::OnInspect() {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
     ImGui::Begin("Plant Visual");
     {
-        if (ImGui::BeginChild("CameraRenderer", ImVec2(0, 0), false,
-                              ImGuiWindowFlags_None | ImGuiWindowFlags_MenuBar)) {
+        if (ImGui::BeginChild("InternodeCameraRenderer", ImVec2(0, 0), false, ImGuiWindowFlags_MenuBar)) {
             if (ImGui::BeginMenuBar()) {
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{5, 5});
                 if (ImGui::BeginMenu("Settings")) {
 #pragma region Menu
                     ImGui::Checkbox("Auto update", &m_autoUpdate);
@@ -239,6 +239,7 @@ void PlantLayer::OnInspect() {
                                               ImGuiTreeNodeFlags_DefaultOpen)) {
                             ImGui::Text("Current Internode amount: %zu",
                                         scene->GetEntityAmount(m_internodesQuery, false));
+                            ImGui::ColorEdit3("Base color", &m_internodeColor.x);
                             ImGui::SliderFloat("Transparency", &m_internodeTransparency, 0, 1);
                             DrawColorModeSelectionMenu();
                             ImGui::TreePop();
@@ -268,6 +269,7 @@ void PlantLayer::OnInspect() {
 #pragma endregion
                     ImGui::EndMenu();
                 }
+                ImGui::PopStyleVar();
                 ImGui::EndMenuBar();
             }
             viewPortSize = ImGui::GetWindowSize();
@@ -285,6 +287,7 @@ void PlantLayer::OnInspect() {
                 bool valid = true;
                 mousePosition = Inputs::GetMouseAbsolutePositionInternal(
                         Windows::GetWindow());
+                mousePosition.y -= 20;
                 float xOffset = 0;
                 float yOffset = 0;
                 if (valid) {
@@ -643,6 +646,10 @@ void PlantLayer::UpdateInternodeColors() {
             true);
 
     switch (m_branchColorMode) {
+        case BranchColorMode::SubTree: {
+
+        }
+            break;
         case BranchColorMode::Order:
             scene->ForEach<InternodeColor, InternodeInfo>(
                     Jobs::Workers(),
@@ -1022,7 +1029,7 @@ void PlantLayer::DrawColorModeSelectionMenu() {
     }
 }
 
-void PlantLayer::CalculateStatistics(const std::shared_ptr<Scene>& scene) {
+void PlantLayer::CalculateStatistics(const std::shared_ptr<Scene> &scene) {
     for (auto &behaviour: m_plantBehaviours) {
         if (behaviour) {
             std::vector<Entity> currentRoots;

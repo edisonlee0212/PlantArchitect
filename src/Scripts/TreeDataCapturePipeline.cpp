@@ -329,6 +329,7 @@ void TreeDataCapturePipeline::OnInspect() {
         m_currentExportFolder = std::filesystem::absolute(path);
     }, false);
     if (ImGui::TreeNodeEx("Pipeline Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Checkbox("Enable ground", &m_enableGround);
         Editor::DragAndDropButton<VoxelGrid>(m_obstacleGrid, "Voxel Grid", true);
         ImGui::Checkbox("Random obstacle", &m_enableRandomObstacle);
         if (m_enableRandomObstacle) {
@@ -696,24 +697,25 @@ void TreeDataCapturePipeline::OnStart(AutoTreeGenerationPipeline &pipeline) {
     m_cameraModels.clear();
     m_treeModels.clear();
 
-    m_ground = scene->CreateEntity("Ground");
-    auto groundMeshRenderer = scene->GetOrSetPrivateComponent<MeshRenderer>(m_ground).lock();
-    groundMeshRenderer->m_material = ProjectManager::CreateTemporaryAsset<Material>();
-    groundMeshRenderer->m_mesh = DefaultResources::Primitives::Quad;
-    GlobalTransform groundGT;
-    groundGT.SetScale({1000, 1, 1000});
-    scene->SetDataComponent<GlobalTransform>(m_ground, groundGT);
-
+    if(m_enableGround) {
+        m_ground = scene->CreateEntity("Ground");
+        auto groundMeshRenderer = scene->GetOrSetPrivateComponent<MeshRenderer>(m_ground).lock();
+        groundMeshRenderer->m_material = ProjectManager::CreateTemporaryAsset<Material>();
+        groundMeshRenderer->m_mesh = DefaultResources::Primitives::Quad;
+        GlobalTransform groundGT;
+        groundGT.SetScale({1000, 1, 1000});
+        scene->SetDataComponent<GlobalTransform>(m_ground, groundGT);
+    }
 
 }
 
 void TreeDataCapturePipeline::OnEnd(AutoTreeGenerationPipeline &pipeline) {
     auto scene = pipeline.GetScene();
 
-    ExportMatrices(m_currentExportFolder /
+    if(m_exportMatrices) ExportMatrices(m_currentExportFolder /
                    "matrices.yml");
 
-    scene->DeleteEntity(m_ground);
+    if(m_enableGround) scene->DeleteEntity(m_ground);
 
 }
 
@@ -771,7 +773,7 @@ void TreeDataCapturePipeline::Serialize(YAML::Emitter &out) {
     m_obstacleGrid.Save("m_obstacleGrid", out);
 
     m_meshGeneratorSettings.Save("m_meshGeneratorSettings", out);
-
+    out << YAML::Key << "m_enableGround" << YAML::Value << m_enableGround;
     out << YAML::Key << "m_exportEnvironmentalGrid" << YAML::Value << m_exportEnvironmentalGrid;
     out << YAML::Key << "m_enableRandomObstacle" << YAML::Value << m_enableRandomObstacle;
     out << YAML::Key << "m_renderObstacle" << YAML::Value << m_renderObstacle;
@@ -819,7 +821,7 @@ void TreeDataCapturePipeline::Deserialize(const YAML::Node &in) {
     m_obstacleGrid.Load("m_obstacleGrid", in);
 
     m_meshGeneratorSettings.Load("m_meshGeneratorSettings", in);
-
+    if (in["m_enableGround"]) m_enableGround = in["m_enableGround"].as<bool>();
     if (in["m_randomRotation"]) m_randomRotation = in["m_randomRotation"].as<bool>();
     if (in["m_lShapedWall"]) m_lShapedWall = in["m_lShapedWall"].as<bool>();
     if (in["m_exportWallPrefab"]) m_exportWallPrefab = in["m_exportWallPrefab"].as<bool>();
