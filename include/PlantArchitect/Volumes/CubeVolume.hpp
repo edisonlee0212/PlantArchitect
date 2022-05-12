@@ -16,7 +16,6 @@ public:
   glm::vec3 GetRandomPoint() override;
   void Serialize(YAML::Emitter &out) override;
   void Deserialize(const YAML::Node &in) override;
-
-  void CollectAssetRef(std::vector<AssetRef> &list) override;
+  void OnDestroy() override;
 };
 } // namespace PlantFactory

@@ -8,7 +8,7 @@
 #include "ProjectManager.hpp"
 #include "LSystemBehaviour.hpp"
 #include "CubeVolume.hpp"
-
+#include "Prefab.hpp"
 #ifdef RAYTRACERFACILITY
 
 #include "RayTracerCamera.hpp"
@@ -34,8 +34,9 @@ void TreeDataCapturePipeline::OnBeforeGrowth(AutoTreeGenerationPipeline &pipelin
     auto root = scene->GetOrSetPrivateComponent<Root>(pipeline.m_currentGrowingTree).lock();
     if (m_applyPhyllotaxis) {
         root->m_plantDescriptor.Get<IPlantDescriptor>()->m_foliagePhyllotaxis = m_foliagePhyllotaxis;
+        root->m_plantDescriptor.Get<IPlantDescriptor>()->m_branchTexture = m_branchTexture;
     }
-    root->m_plantDescriptor.Get<IPlantDescriptor>()->m_branchTexture = m_branchTexture;
+
     if (m_exportImage || m_exportDepth || m_exportBranchCapture) {
         SetUpCamera(pipeline);
     }
@@ -49,6 +50,7 @@ void TreeDataCapturePipeline::OnBeforeGrowth(AutoTreeGenerationPipeline &pipelin
 
         GlobalTransform obstacleGT;
         auto angle = glm::linearRand(0, 360);
+        if(!m_randomRotation) angle = 0;
         float wallYZ = glm::linearRand(glm::min(m_wallSize.y, m_wallSize.z), glm::max(m_wallSize.y, m_wallSize.z));
         obstacleGT.SetValue({glm::cos(angle) * m_obstacleDistance + m_wallSize.x / 2.0f, 0.0f, -glm::sin(angle) * m_obstacleDistance + m_wallSize.x / 2.0f},
                             glm::vec3(0, angle, 0),
@@ -82,8 +84,7 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
     for (const auto &i: children) {
         if (scene->HasPrivateComponent<Internode>(i)) rootInternode = i;
     }
-    auto treeIOFolder = m_currentExportFolder / "TreeIO" /
-                        pipeline.m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName();
+    auto treeIOFolder = m_currentExportFolder;
     auto imagesFolder = m_currentExportFolder / "Image";
     auto objFolder = m_currentExportFolder / "Mesh";
     auto depthFolder = m_currentExportFolder / "Depth";
@@ -92,6 +93,16 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
     auto csvFolder = m_currentExportFolder / "CSV";
     auto envGridFolder = m_currentExportFolder / "EnvGrid";
     auto lStringFolder = m_currentExportFolder / "LSystemString";
+    auto wallPrefabFolder = m_currentExportFolder / "WallPrefab";
+    if(m_exportWallPrefab){
+        std::filesystem::create_directories(wallPrefabFolder);
+        auto exportPath = wallPrefabFolder /
+                          (pipeline.m_prefix + ".ueprefab");
+        auto wallPrefab = ProjectManager::CreateTemporaryAsset<Prefab>();
+        wallPrefab->FromEntity(m_obstacle);
+        wallPrefab->Export(exportPath);
+    }
+
     if (m_exportOBJ || m_exportImage || m_exportDepth || m_exportBranchCapture) {
         behaviour->GenerateSkinnedMeshes(scene);
         internodeLayer->UpdateInternodeColors();
@@ -132,7 +143,7 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
         std::filesystem::create_directories(treeIOFolder);
         scene->GetOrSetPrivateComponent<Internode>(rootInternode).lock()->ExportTreeIOTree(
                 treeIOFolder /
-                ("tree" + std::to_string(pipeline.GetSeed()) + ".tree"));
+                ("tree" + std::to_string(pipeline.m_descriptorPaths.size() + 1) + ".tree"));
     }
     if (m_exportMatrices) {
         for (float turnAngle = m_turnAngleStart; turnAngle < m_turnAngleEnd; turnAngle += m_turnAngleStep) {
@@ -182,7 +193,6 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
         auto cameraEntity = pipeline.GetOwner();
         auto rayTracerCamera = scene->GetOrSetPrivateComponent<RayTracerCamera>(cameraEntity).lock();
         rayTracerCamera->SetOutputType(OutputType::Color);
-        Application::GetLayer<RayTracerLayer>()->UpdateScene();
         for (int turnAngle = m_turnAngleStart; turnAngle < m_turnAngleEnd; turnAngle += m_turnAngleStep) {
             for (int pitchAngle = m_pitchAngleStart; pitchAngle < m_pitchAngleEnd; pitchAngle += m_pitchAngleStep) {
                 auto anglePrefix = std::to_string(pitchAngle) + "_" +
@@ -191,7 +201,7 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
 
                 scene->SetDataComponent(cameraEntity, cameraGlobalTransform);
                 Application::GetLayer<TransformLayer>()->CalculateTransformGraphs(scene);
-
+                Application::GetLayer<RayTracerLayer>()->UpdateScene();
                 rayTracerCamera->Render(m_rayProperties);
                 rayTracerCamera->m_colorTexture->Export(
                         imagesFolder / (pipeline.m_prefix + "_" + anglePrefix + "_rgb.png"));
@@ -212,6 +222,7 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
                 auto cameraGlobalTransform = TransformCamera(plantBound, turnAngle, pitchAngle);
                 scene->SetDataComponent(cameraEntity, cameraGlobalTransform);
                 Application::GetLayer<TransformLayer>()->CalculateTransformGraphs(scene);
+                Application::GetLayer<RayTracerLayer>()->UpdateScene();
                 rayTracerCamera->Render(m_rayProperties);
                 rayTracerCamera->m_colorTexture->Export(
                         depthFolder / (pipeline.m_prefix + "_" + anglePrefix + "_depth.hdr"));
@@ -219,16 +230,25 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
         }
     }
     if (m_exportBranchCapture) {
+        std::filesystem::create_directories(branchFolder);
         auto cameraEntity = pipeline.GetOwner();
         auto rayTracerCamera = scene->GetOrSetPrivateComponent<RayTracerCamera>(cameraEntity).lock();
+        auto rootChildren = scene->GetChildren(pipeline.m_currentGrowingTree);
+        for(const auto & child : rootChildren){
+            if(scene->GetEntityName(child) == "FoliageMesh"){
+                scene->DeleteEntity(child);
+            }
+        }
+        rayTracerCamera->SetOutputType(OutputType::Color);
         for (int turnAngle = m_turnAngleStart; turnAngle < m_turnAngleEnd; turnAngle += m_turnAngleStep) {
-            for (int pitchAngle = m_pitchAngleStart;
-                 pitchAngle < m_pitchAngleEnd; pitchAngle += m_pitchAngleStep) {
+            for (int pitchAngle = m_pitchAngleStart; pitchAngle < m_pitchAngleEnd; pitchAngle += m_pitchAngleStep) {
                 auto anglePrefix = std::to_string(pitchAngle) + "_" +
                                    std::to_string(turnAngle);
                 auto cameraGlobalTransform = TransformCamera(plantBound, turnAngle, pitchAngle);
+
                 scene->SetDataComponent(cameraEntity, cameraGlobalTransform);
                 Application::GetLayer<TransformLayer>()->CalculateTransformGraphs(scene);
+                Application::GetLayer<RayTracerLayer>()->UpdateScene();
 
                 rayTracerCamera->Render(m_rayProperties);
                 rayTracerCamera->m_colorTexture->Export(
@@ -268,11 +288,12 @@ void TreeDataCapturePipeline::OnInspect() {
         m_currentExportFolder = std::filesystem::absolute(path);
     }, false);
     if (ImGui::TreeNodeEx("Pipeline Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
-        //ImGui::DragFloat("Branch width", &m_branchWidth, 0.01f);
         Editor::DragAndDropButton<VoxelGrid>(m_obstacleGrid, "Voxel Grid", true);
         ImGui::Checkbox("Random obstacle", &m_enableRandomObstacle);
         if (m_enableRandomObstacle) {
+            ImGui::Checkbox("Export obstacle as wall", &m_exportWallPrefab);
             ImGui::Checkbox("Render obstacle", &m_renderObstacle);
+            ImGui::Checkbox("Random rotation obstacle", &m_randomRotation);
             ImGui::DragFloat2("Obstacle distance (min/max)", &m_obstacleDistanceRange.x, 0.01f);
             ImGui::DragFloat3("Wall size", &m_wallSize.x, 0.01f);
         }
@@ -699,19 +720,20 @@ GlobalTransform TreeDataCapturePipeline::TransformCamera(const Bound &bound, flo
 void TreeDataCapturePipeline::CollectAssetRef(std::vector<AssetRef> &list) {
     list.push_back(m_branchTexture);
     list.push_back(m_foliagePhyllotaxis);
-
+    list.push_back(m_obstacleGrid);
 }
 
 void TreeDataCapturePipeline::Serialize(YAML::Emitter &out) {
     m_branchTexture.Save("m_branchTexture", out);
     m_foliagePhyllotaxis.Save("m_foliagePhyllotaxis", out);
-
+    m_obstacleGrid.Save("m_obstacleGrid", out);
     out << YAML::Key << "m_exportEnvironmentalGrid" << YAML::Value << m_exportEnvironmentalGrid;
     out << YAML::Key << "m_enableRandomObstacle" << YAML::Value << m_enableRandomObstacle;
     out << YAML::Key << "m_renderObstacle" << YAML::Value << m_renderObstacle;
     out << YAML::Key << "m_obstacleDistanceRange" << YAML::Value << m_obstacleDistanceRange;
     out << YAML::Key << "m_wallSize" << YAML::Value << m_wallSize;
-
+    out << YAML::Key << "m_exportWallPrefab" << YAML::Value << m_exportWallPrefab;
+    out << YAML::Key << "m_randomRotation" << YAML::Value << m_randomRotation;
     out << YAML::Key << "m_defaultBehaviourType" << YAML::Value << (unsigned) m_defaultBehaviourType;
     out << YAML::Key << "m_autoAdjustCamera" << YAML::Value << m_autoAdjustCamera;
     out << YAML::Key << "m_applyPhyllotaxis" << YAML::Value << m_applyPhyllotaxis;
@@ -748,7 +770,9 @@ void TreeDataCapturePipeline::Serialize(YAML::Emitter &out) {
 void TreeDataCapturePipeline::Deserialize(const YAML::Node &in) {
     m_branchTexture.Load("m_branchTexture", in);
     m_foliagePhyllotaxis.Load("m_foliagePhyllotaxis", in);
-
+    m_obstacleGrid.Load("m_obstacleGrid", in);
+    if (in["m_randomRotation"]) m_randomRotation = in["m_randomRotation"].as<bool>();
+    if (in["m_exportWallPrefab"]) m_exportWallPrefab = in["m_exportWallPrefab"].as<bool>();
     if (in["m_exportEnvironmentalGrid"]) m_exportEnvironmentalGrid = in["m_exportEnvironmentalGrid"].as<bool>();
     if (in["m_enableRandomObstacle"]) m_enableRandomObstacle = in["m_enableRandomObstacle"].as<bool>();
     if (in["m_renderObstacle"]) m_renderObstacle = in["m_renderObstacle"].as<bool>();
@@ -786,11 +810,6 @@ void TreeDataCapturePipeline::Deserialize(const YAML::Node &in) {
     if (in["m_useClearColor"]) m_useClearColor = in["m_useClearColor"].as<bool>();
     if (in["m_backgroundColor"]) m_backgroundColor = in["m_backgroundColor"].as<glm::vec3>();
     if (in["m_cameraMax"]) m_cameraMax = in["m_cameraMax"].as<float>();
-}
-
-TreeDataCapturePipeline::~TreeDataCapturePipeline() {
-    m_foliagePhyllotaxis.Clear();
-    m_branchTexture.Clear();
 }
 
 void TreeDataCapturePipeline::ExportEnvironmentalGrid(AutoTreeGenerationPipeline &pipeline,

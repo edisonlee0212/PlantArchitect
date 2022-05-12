@@ -33,7 +33,7 @@ namespace Scripts {
         int m_generationAmount = 1;
         int m_iterations = 0;
         void UpdateInternodeBehaviour();
-        std::vector<AssetRef> m_descriptors;
+        std::vector<std::filesystem::path> m_descriptorPaths;
         AutoTreeGenerationPipelineStatus m_status = AutoTreeGenerationPipelineStatus::Idle;
         AssetRef m_pipelineBehaviour;
         void Update() override;

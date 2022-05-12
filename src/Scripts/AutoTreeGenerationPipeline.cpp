@@ -25,9 +25,26 @@ void AutoTreeGenerationPipeline::Update() {
                 } else if (m_remainingInstanceAmount > 0) {
                     m_remainingInstanceAmount--;
                     m_status = AutoTreeGenerationPipelineStatus::BeforeGrowth;
-                } else if (!m_descriptors.empty()) {
-                    m_currentUsingDescriptor = m_descriptors.back();
-                    m_descriptors.pop_back();
+                } else if (!m_descriptorPaths.empty()) {
+                    switch (m_behaviourType) {
+                        case BehaviourType::GeneralTree:
+                            m_currentUsingDescriptor = std::dynamic_pointer_cast<GeneralTreeParameters>(
+                                    ProjectManager::GetOrCreateAsset(m_descriptorPaths.back()));
+                            break;
+                        case BehaviourType::LSystem:
+                            m_currentUsingDescriptor = std::dynamic_pointer_cast<LSystemString>(
+                                    ProjectManager::GetOrCreateAsset(m_descriptorPaths.back()));
+                            break;
+                        case BehaviourType::SpaceColonization:
+                            m_currentUsingDescriptor = std::dynamic_pointer_cast<SpaceColonizationParameters>(
+                                    ProjectManager::GetOrCreateAsset(m_descriptorPaths.back()));
+                            break;
+                        case BehaviourType::TreeGraph:
+                            m_currentUsingDescriptor = std::dynamic_pointer_cast<TreeGraph>(
+                                    ProjectManager::GetOrCreateAsset(m_descriptorPaths.back()));
+                            break;
+                    }
+                    m_descriptorPaths.pop_back();
                     m_remainingInstanceAmount = m_generationAmount;
                 } else {
                     pipelineBehaviour->OnEnd(*this);
@@ -122,12 +139,12 @@ void AutoTreeGenerationPipeline::OnInspect() {
         ImGui::Text("Behaviour missing!");
     } else if (m_busy) {
         ImGui::Text("Task dispatched...");
-        ImGui::Text(("Remaining descriptors: " + std::to_string(m_descriptors.size())).c_str());
+        ImGui::Text(("Remaining descriptors: " + std::to_string(m_descriptorPaths.size())).c_str());
         ImGui::Text(("Total: " + std::to_string(m_generationAmount) + ", Remaining: " +
                      std::to_string(m_remainingInstanceAmount)).c_str());
         if (ImGui::Button("Force stop")) {
             m_remainingInstanceAmount = 0;
-            m_descriptors.clear();
+            m_descriptorPaths.clear();
             m_busy = false;
         }
     } else {
@@ -139,7 +156,7 @@ void AutoTreeGenerationPipeline::OnInspect() {
                 IM_ARRAYSIZE(BehaviourTypes))) {
             SetBehaviourType((BehaviourType) behaviourType);
         }
-        ImGui::Text(("Loaded descriptors: " + std::to_string(m_descriptors.size())).c_str());
+        ImGui::Text(("Loaded descriptors: " + std::to_string(m_descriptorPaths.size())).c_str());
         FileUtils::OpenFolder("Collect descriptors", [&](const std::filesystem::path &path) {
             auto &projectManager = ProjectManager::GetInstance();
             if (std::filesystem::exists(path) && std::filesystem::is_directory(path)) {
@@ -149,33 +166,25 @@ void AutoTreeGenerationPipeline::OnInspect() {
                         switch (m_behaviourType) {
                             case BehaviourType::GeneralTree:
                                 if (entry.path().extension() == ".gtparams") {
-                                    auto descriptor = std::dynamic_pointer_cast<GeneralTreeParameters>(
-                                            ProjectManager::GetOrCreateAsset(relativePath));
-                                    m_descriptors.emplace_back(descriptor);
+                                    m_descriptorPaths.emplace_back(relativePath);
                                     break;
                                 }
                                 break;
                             case BehaviourType::LSystem:
                                 if (entry.path().extension() == ".lstring") {
-                                    auto descriptor = std::dynamic_pointer_cast<LSystemString>(
-                                            ProjectManager::GetOrCreateAsset(relativePath));
-                                    m_descriptors.emplace_back(descriptor);
+                                    m_descriptorPaths.emplace_back(relativePath);
                                     break;
                                 }
                                 break;
                             case BehaviourType::SpaceColonization:
                                 if (entry.path().extension() == ".scparams") {
-                                    auto descriptor = std::dynamic_pointer_cast<SpaceColonizationParameters>(
-                                            ProjectManager::GetOrCreateAsset(relativePath));
-                                    m_descriptors.emplace_back(descriptor);
+                                    m_descriptorPaths.emplace_back(relativePath);
                                     break;
                                 }
                                 break;
                             case BehaviourType::TreeGraph:
                                 if (entry.path().extension() == ".treegraph") {
-                                    auto descriptor = std::dynamic_pointer_cast<TreeGraph>(
-                                            ProjectManager::GetOrCreateAsset(relativePath));
-                                    m_descriptors.emplace_back(descriptor);
+                                    m_descriptorPaths.emplace_back(relativePath);
                                     break;
                                 }
                                 break;
@@ -185,7 +194,7 @@ void AutoTreeGenerationPipeline::OnInspect() {
             }
 
         });
-        if (m_descriptors.empty()) {
+        if (m_descriptorPaths.empty()) {
             ImGui::Text("No descriptors!");
         } else if (Application::IsPlaying()) {
             if (ImGui::Button("Start")) {
@@ -246,7 +255,7 @@ void AutoTreeGenerationPipeline::SetBehaviourType(BehaviourType type) {
     m_behaviourType = type;
     UpdateInternodeBehaviour();
     m_currentUsingDescriptor.Clear();
-    m_descriptors.clear();
+    m_descriptorPaths.clear();
 }
 
 int AutoTreeGenerationPipeline::GetSeed() const {

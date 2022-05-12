@@ -49,11 +49,11 @@ namespace Scripts {
         bool m_renderObstacle = true;
         glm::vec2 m_obstacleDistanceRange = glm::vec2(2, 10);
         glm::vec3 m_wallSize = glm::vec3(2.0f, 5.0f, 20.0f);
-
+        bool m_randomRotation = true;
         AssetRef m_branchTexture;
         BehaviourType m_defaultBehaviourType = BehaviourType::GeneralTree;
 #ifdef RAYTRACERFACILITY
-        RayProperties m_rayProperties = {1, 128};
+        RayProperties m_rayProperties = {1, 512};
 #endif
         AssetRef m_foliagePhyllotaxis;
         bool m_autoAdjustCamera = true;
@@ -80,6 +80,7 @@ namespace Scripts {
         bool m_exportOBJ = false;
         bool m_exportCSV = true;
         bool m_exportEnvironmentalGrid = false;
+        bool m_exportWallPrefab = false;
         bool m_exportGraph = false;
         bool m_exportImage = false;
         bool m_exportDepth = false;
@@ -110,7 +111,5 @@ namespace Scripts {
         void Deserialize(const YAML::Node &in) override;
 
         void DisableAllExport();
-
-        ~TreeDataCapturePipeline();
     };
 }

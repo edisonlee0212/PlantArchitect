@@ -225,7 +225,6 @@ IPlantBehaviour::GenerateSkinnedMeshes(const std::shared_ptr<Scene> &scene, floa
              m_internodesQuery,
              [&](int index, Entity entity, Transform &transform, GlobalTransform &globalTransform,
                  InternodeInfo &internodeInfo) {
-                 if (scene->GetChildrenAmount(entity) != 0) return;
                  auto internode =
                          scene->GetOrSetPrivateComponent<Internode>(entity).lock();
                  internode->m_foliageMatrices.clear();
@@ -313,9 +312,12 @@ IPlantBehaviour::GenerateSkinnedMeshes(const std::shared_ptr<Scene> &scene, floa
             auto material = skinnedMeshRenderer->m_material.Get<Material>();
             skinnedMeshRenderer->SetEnabled(true);
             auto root = scene->GetOrSetPrivateComponent<Root>(rootEntity).lock();
-            auto texture = root->m_plantDescriptor.Get<IPlantDescriptor>()->m_foliagePhyllotaxis.Get<IInternodeFoliage>()->m_foliageTexture.Get<Texture2D>();
-            if (texture)
-                material->m_albedoTexture = texture;
+            auto foliageModule = root->m_plantDescriptor.Get<IPlantDescriptor>()->m_foliagePhyllotaxis.Get<IInternodeFoliage>();
+            if(foliageModule) {
+                auto texture = foliageModule->m_foliageTexture.Get<Texture2D>();
+                if (texture)
+                    material->m_albedoTexture = texture;
+            }
             material->m_albedoColor = root->m_plantDescriptor.Get<IPlantDescriptor>()->m_foliageColor;
             const auto plantGlobalTransform =
                     scene->GetDataComponent<GlobalTransform>(rootEntity);
