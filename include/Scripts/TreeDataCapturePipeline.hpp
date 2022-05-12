@@ -20,8 +20,6 @@ namespace Scripts {
         std::vector<glm::mat4> m_views;
         std::vector<std::string> m_names;
 
-        float m_obstacleAngle = 0.0f;
-        float m_obstacleDistance = 0.0f;
         Entity m_ground;
         Entity m_obstacle;
 
@@ -47,6 +45,7 @@ namespace Scripts {
     public:
         bool m_enableRandomObstacle = false;
         bool m_renderObstacle = true;
+        bool m_lShapedWall = false;
         glm::vec2 m_obstacleDistanceRange = glm::vec2(2, 10);
         glm::vec3 m_wallSize = glm::vec3(2.0f, 5.0f, 20.0f);
         bool m_randomRotation = true;

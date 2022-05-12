@@ -9,6 +9,7 @@
 #include "LSystemBehaviour.hpp"
 #include "CubeVolume.hpp"
 #include "Prefab.hpp"
+
 #ifdef RAYTRACERFACILITY
 
 #include "RayTracerCamera.hpp"
@@ -44,29 +45,69 @@ void TreeDataCapturePipeline::OnBeforeGrowth(AutoTreeGenerationPipeline &pipelin
 
     if (m_enableRandomObstacle) {
         m_obstacle = scene->CreateEntity("Obstacle");
-        m_obstacleAngle = 0.0f;
-        m_obstacleDistance = glm::linearRand(glm::min(m_obstacleDistanceRange.x, m_obstacleDistanceRange.y),
-                                             glm::max(m_obstacleDistanceRange.x, m_obstacleDistanceRange.y));
+        float distance = glm::linearRand(glm::min(m_obstacleDistanceRange.x, m_obstacleDistanceRange.y),
+                                         glm::max(m_obstacleDistanceRange.x, m_obstacleDistanceRange.y));
 
-        GlobalTransform obstacleGT;
-        auto angle = glm::linearRand(0, 360);
-        if(!m_randomRotation) angle = 0;
-        float wallYZ = glm::linearRand(glm::min(m_wallSize.y, m_wallSize.z), glm::max(m_wallSize.y, m_wallSize.z));
-        obstacleGT.SetValue({glm::cos(angle) * m_obstacleDistance + m_wallSize.x / 2.0f, 0.0f, -glm::sin(angle) * m_obstacleDistance + m_wallSize.x / 2.0f},
-                            glm::vec3(0, angle, 0),
-                            {m_wallSize.x, wallYZ, wallYZ});
 
-        scene->SetDataComponent<GlobalTransform>(m_obstacle, obstacleGT);
-        auto cubeVolume = scene->GetOrSetPrivateComponent<CubeVolume>(m_obstacle).lock();
-        cubeVolume->m_minMaxBound.m_min = glm::vec3(-1.0f);
-        cubeVolume->m_minMaxBound.m_max = glm::vec3(1.0f);
-        cubeVolume->m_asObstacle = true;
+        auto angle = glm::linearRand(0.0f, 360.0f);
+        if (!m_randomRotation) angle = 0;
+        if (m_lShapedWall) {
+            float wallY = glm::linearRand(glm::min(m_wallSize.y, m_wallSize.z), glm::max(m_wallSize.y, m_wallSize.z));
+            GlobalTransform obstacleGT1, obstacleGT2;
+            obstacleGT1.SetValue({glm::cos(glm::radians(angle)) * (distance + m_wallSize.x / 2.0f), 0.0f,
+                                  -glm::sin(glm::radians(angle)) * (distance + m_wallSize.x / 2.0f)},
+                                 glm::vec3(0, glm::radians(angle), 0),
+                                 {m_wallSize.x, wallY, distance + m_wallSize.x / 2.0f});
+            obstacleGT2.SetValue({glm::cos(glm::radians(angle + 90.0f)) * (distance + m_wallSize.x / 2.0f), 0.0f,
+                                  -glm::sin(glm::radians(angle + 90.0f)) * (distance + m_wallSize.x / 2.0f)},
+                                 glm::vec3(0, glm::radians(angle + 90.0f), 0),
+                                 {m_wallSize.x, wallY, distance + m_wallSize.x / 2.0f});
+            auto wall1 = scene->CreateEntity("Wall1");
+            auto wall2 = scene->CreateEntity("Wall2");
+            scene->SetDataComponent<GlobalTransform>(wall1, obstacleGT1);
+            scene->SetDataComponent<GlobalTransform>(wall2, obstacleGT2);
 
-        if (m_renderObstacle) {
-            auto obstacleMeshRenderer = scene->GetOrSetPrivateComponent<MeshRenderer>(m_obstacle).lock();
-            obstacleMeshRenderer->m_material = ProjectManager::CreateTemporaryAsset<Material>();
-            obstacleMeshRenderer->m_material.Get<Material>()->m_albedoColor = glm::vec3(0.7f);
-            obstacleMeshRenderer->m_mesh = DefaultResources::Primitives::Cube;
+            auto cubeVolume1 = scene->GetOrSetPrivateComponent<CubeVolume>(wall1).lock();
+            cubeVolume1->m_minMaxBound.m_min = glm::vec3(-1.0f);
+            cubeVolume1->m_minMaxBound.m_max = glm::vec3(1.0f);
+            cubeVolume1->m_asObstacle = true;
+            auto cubeVolume2 = scene->GetOrSetPrivateComponent<CubeVolume>(wall2).lock();
+            cubeVolume2->m_minMaxBound.m_min = glm::vec3(-1.0f);
+            cubeVolume2->m_minMaxBound.m_max = glm::vec3(1.0f);
+            cubeVolume2->m_asObstacle = true;
+            if (m_renderObstacle) {
+                auto obstacleMeshRenderer1 = scene->GetOrSetPrivateComponent<MeshRenderer>(wall1).lock();
+                obstacleMeshRenderer1->m_material = ProjectManager::CreateTemporaryAsset<Material>();
+                obstacleMeshRenderer1->m_material.Get<Material>()->m_albedoColor = glm::vec3(0.7f);
+                obstacleMeshRenderer1->m_mesh = DefaultResources::Primitives::Cube;
+                auto obstacleMeshRenderer2 = scene->GetOrSetPrivateComponent<MeshRenderer>(wall2).lock();
+                obstacleMeshRenderer2->m_material = ProjectManager::CreateTemporaryAsset<Material>();
+                obstacleMeshRenderer2->m_material.Get<Material>()->m_albedoColor = glm::vec3(0.7f);
+                obstacleMeshRenderer2->m_mesh = DefaultResources::Primitives::Cube;
+            }
+
+            scene->SetParent(wall1, m_obstacle);
+            scene->SetParent(wall2, m_obstacle);
+        } else {
+            GlobalTransform obstacleGT;
+            float wallYZ = glm::linearRand(glm::min(m_wallSize.y, m_wallSize.z), glm::max(m_wallSize.y, m_wallSize.z));
+            obstacleGT.SetValue({glm::cos(glm::radians(angle)) * (distance + m_wallSize.x / 2.0f), 0.0f,
+                                 -glm::sin(glm::radians(angle)) * (distance + m_wallSize.x / 2.0f)},
+                                glm::vec3(0, glm::radians(angle), 0),
+                                {m_wallSize.x, wallYZ, wallYZ});
+
+            scene->SetDataComponent<GlobalTransform>(m_obstacle, obstacleGT);
+            auto cubeVolume = scene->GetOrSetPrivateComponent<CubeVolume>(m_obstacle).lock();
+            cubeVolume->m_minMaxBound.m_min = glm::vec3(-1.0f);
+            cubeVolume->m_minMaxBound.m_max = glm::vec3(1.0f);
+            cubeVolume->m_asObstacle = true;
+
+            if (m_renderObstacle) {
+                auto obstacleMeshRenderer = scene->GetOrSetPrivateComponent<MeshRenderer>(m_obstacle).lock();
+                obstacleMeshRenderer->m_material = ProjectManager::CreateTemporaryAsset<Material>();
+                obstacleMeshRenderer->m_material.Get<Material>()->m_albedoColor = glm::vec3(0.7f);
+                obstacleMeshRenderer->m_mesh = DefaultResources::Primitives::Cube;
+            }
         }
     }
 }
@@ -94,7 +135,7 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
     auto envGridFolder = m_currentExportFolder / "EnvGrid";
     auto lStringFolder = m_currentExportFolder / "LSystemString";
     auto wallPrefabFolder = m_currentExportFolder / "WallPrefab";
-    if(m_exportWallPrefab){
+    if (m_exportWallPrefab) {
         std::filesystem::create_directories(wallPrefabFolder);
         auto exportPath = wallPrefabFolder /
                           (pipeline.m_prefix + ".ueprefab");
@@ -234,8 +275,8 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
         auto cameraEntity = pipeline.GetOwner();
         auto rayTracerCamera = scene->GetOrSetPrivateComponent<RayTracerCamera>(cameraEntity).lock();
         auto rootChildren = scene->GetChildren(pipeline.m_currentGrowingTree);
-        for(const auto & child : rootChildren){
-            if(scene->GetEntityName(child) == "FoliageMesh"){
+        for (const auto &child: rootChildren) {
+            if (scene->GetEntityName(child) == "FoliageMesh") {
                 scene->DeleteEntity(child);
             }
         }
@@ -292,7 +333,8 @@ void TreeDataCapturePipeline::OnInspect() {
         ImGui::Checkbox("Random obstacle", &m_enableRandomObstacle);
         if (m_enableRandomObstacle) {
             ImGui::Checkbox("Export obstacle as wall", &m_exportWallPrefab);
-            ImGui::Checkbox("Render obstacle", &m_renderObstacle);
+            ImGui::Checkbox("Render obstacle", &m_lShapedWall);
+            ImGui::Checkbox("L-Shaped obstacle", &m_renderObstacle);
             ImGui::Checkbox("Random rotation obstacle", &m_randomRotation);
             ImGui::DragFloat2("Obstacle distance (min/max)", &m_obstacleDistanceRange.x, 0.01f);
             ImGui::DragFloat3("Wall size", &m_wallSize.x, 0.01f);
@@ -730,6 +772,7 @@ void TreeDataCapturePipeline::Serialize(YAML::Emitter &out) {
     out << YAML::Key << "m_exportEnvironmentalGrid" << YAML::Value << m_exportEnvironmentalGrid;
     out << YAML::Key << "m_enableRandomObstacle" << YAML::Value << m_enableRandomObstacle;
     out << YAML::Key << "m_renderObstacle" << YAML::Value << m_renderObstacle;
+    out << YAML::Key << "m_lShapedWall" << YAML::Value << m_lShapedWall;
     out << YAML::Key << "m_obstacleDistanceRange" << YAML::Value << m_obstacleDistanceRange;
     out << YAML::Key << "m_wallSize" << YAML::Value << m_wallSize;
     out << YAML::Key << "m_exportWallPrefab" << YAML::Value << m_exportWallPrefab;
@@ -772,6 +815,7 @@ void TreeDataCapturePipeline::Deserialize(const YAML::Node &in) {
     m_foliagePhyllotaxis.Load("m_foliagePhyllotaxis", in);
     m_obstacleGrid.Load("m_obstacleGrid", in);
     if (in["m_randomRotation"]) m_randomRotation = in["m_randomRotation"].as<bool>();
+    if (in["m_lShapedWall"]) m_lShapedWall = in["m_lShapedWall"].as<bool>();
     if (in["m_exportWallPrefab"]) m_exportWallPrefab = in["m_exportWallPrefab"].as<bool>();
     if (in["m_exportEnvironmentalGrid"]) m_exportEnvironmentalGrid = in["m_exportEnvironmentalGrid"].as<bool>();
     if (in["m_enableRandomObstacle"]) m_enableRandomObstacle = in["m_enableRandomObstacle"].as<bool>();
@@ -815,7 +859,7 @@ void TreeDataCapturePipeline::Deserialize(const YAML::Node &in) {
 void TreeDataCapturePipeline::ExportEnvironmentalGrid(AutoTreeGenerationPipeline &pipeline,
                                                       const std::filesystem::path &path) {
     auto grid = m_obstacleGrid.Get<VoxelGrid>();
-    if(grid){
+    if (grid) {
         grid->FillObstacle(pipeline.GetScene());
     }
     grid->Export(path);
