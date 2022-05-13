@@ -235,7 +235,7 @@ void SpaceColonizationBehaviour::Grow(const std::shared_ptr<Scene> &scene, int i
 
 }
 
-void SpaceColonizationBehaviour::OnInspect() {
+void SpaceColonizationBehaviour::OnMenu() {
     if (ImGui::TreeNodeEx("Attraction Points", ImGuiTreeNodeFlags_DefaultOpen)) {
         if (ImGui::Button("Clear")) {
             m_attractionPoints.clear();

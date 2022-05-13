@@ -91,7 +91,7 @@ namespace PlantArchitect {
     public:
         Entity NewPlant(const std::shared_ptr<Scene> &scene, const std::shared_ptr<LSystemString> &descriptor, const Transform &transform);
 
-        void OnInspect() override;
+        void OnMenu() override;
 
         LSystemBehaviour();
 

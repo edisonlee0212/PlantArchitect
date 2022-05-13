@@ -1163,3 +1163,18 @@ void IPlantBehaviour::BranchMeshGenerator(const std::shared_ptr<Scene> &scene, s
         }
     }
 }
+
+void IPlantBehaviour::InternodeCollector(const std::shared_ptr<Scene> &scene, const Entity &target, std::vector<Entity> &results, int remainingLayer) {
+    if(remainingLayer == 0) return;
+    if (scene->IsEntityValid(target) && scene->HasDataComponent<InternodeInfo>(target) && scene->HasPrivateComponent<Internode>(target)) {
+        results.push_back(target);
+        scene->ForEachChild(target, [&](Entity child) {
+            InternodeCollector(scene, child, results, remainingLayer - 1);
+        });
+    }
+}
+
+void IPlantBehaviour::OnInspect() {
+    OnMenu();
+
+}

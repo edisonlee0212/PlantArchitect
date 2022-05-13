@@ -96,7 +96,7 @@ namespace PlantArchitect {
         void BranchCollector(const std::shared_ptr<Scene> &scene, std::vector<Entity> &boundEntities,
                              std::vector<int> &parentIndices,
                              const int &parentIndex, const Entity &node);
-
+        void InternodeCollector(const std::shared_ptr<Scene> &scene, const Entity &target, std::vector<Entity> &results, int remainingLayer = -1);
         void BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &scene, std::vector<Entity> &entities,
                                         std::vector<int> &parentIndices,
                                         std::vector<SkinnedVertex> &vertices,
@@ -134,7 +134,9 @@ namespace PlantArchitect {
         void PrepareFoliageMatrices(const std::shared_ptr<Scene> &scene, const MeshGeneratorSettings &settings);
 
     public:
-        virtual void OnInspect() = 0;
+        void OnInspect();
+
+        virtual void OnMenu() = 0;
 
         [[nodiscard]] std::string GetTypeName() const;
 

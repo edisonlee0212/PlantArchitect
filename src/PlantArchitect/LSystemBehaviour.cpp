@@ -10,7 +10,7 @@
 
 using namespace PlantArchitect;
 
-void LSystemBehaviour::OnInspect() {
+void LSystemBehaviour::OnMenu() {
 }
 
 LSystemBehaviour::LSystemBehaviour() {

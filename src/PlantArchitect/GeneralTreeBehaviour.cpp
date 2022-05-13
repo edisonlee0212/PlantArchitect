@@ -348,7 +348,7 @@ GeneralTreeBehaviour::GeneralTreeBehaviour() {
     m_branchesQuery.SetAllFilters(BranchInfo(), GeneralTreeTag());
 }
 
-void GeneralTreeBehaviour::OnInspect() {
+void GeneralTreeBehaviour::OnMenu() {
     FileUtils::OpenFile("Import Graph", "TreeGraph", {".treegraph"}, [&](const std::filesystem::path &path) {
         auto parameters = ProjectManager::CreateTemporaryAsset<TreeGraph>();
         parameters->Import(path);

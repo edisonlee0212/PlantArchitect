@@ -44,7 +44,7 @@ namespace PlantArchitect {
         std::vector<glm::vec3> m_attractionPoints;
         glm::vec3 m_center;
 
-        void OnInspect() override;
+        void OnMenu() override;
 
         SpaceColonizationBehaviour();
 

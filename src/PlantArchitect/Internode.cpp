@@ -141,7 +141,6 @@ void Internode::OnInspect() {
 
         ImGui::TreePop();
     }
-
 }
 
 void Internode::CollectAssetRef(std::vector<AssetRef> &list) {

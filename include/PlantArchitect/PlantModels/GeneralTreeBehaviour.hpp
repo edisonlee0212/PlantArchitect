@@ -168,7 +168,7 @@ namespace PlantArchitect {
     public:
         void Preprocess(const std::shared_ptr<Scene> &scene, std::vector<Entity> &currentRoots);
 
-        void OnInspect() override;
+        void OnMenu() override;
 
         GeneralTreeBehaviour();
 

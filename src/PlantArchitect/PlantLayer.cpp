@@ -209,8 +209,41 @@ void PlantLayer::OnInspect() {
                         behaviour->GenerateSkinnedMeshes(scene, settings);
                     }
                 }
+                if(ImGui::TreeNodeEx("Subtree", ImGuiTreeNodeFlags_DefaultOpen)){
+                    static int layer = 1;
+                    ImGui::DragInt("Layer", &layer);
+                    static EntityRef internodeEntityRef;
+                    ImGui::Button("Drop base internode here");
+                    if(Editor::Droppable(internodeEntityRef)){
+                        auto internodeEntity = internodeEntityRef.Get();
+                        if(scene->IsEntityValid(internodeEntity)){
+                            internodeEntityRef.Clear();
+                            for (const auto &behaviour: m_plantBehaviours) {
+                                if(behaviour->InternodeCheck(scene, internodeEntity)){
+                                    std::vector<Entity> subtreeInternodes;
+                                    behaviour->InternodeCollector(scene, internodeEntity, subtreeInternodes, layer);
+                                    behaviour->PrepareBranchRings(scene, settings);
+                                    std::vector<Vertex> vertices;
+                                    std::vector<unsigned int> indices;
+                                    behaviour->BranchMeshGenerator(scene, subtreeInternodes, vertices, indices, settings);
+                                    auto subtree = scene->CreateEntity("Subtree");
+                                    auto meshRenderer = scene->GetOrSetPrivateComponent<MeshRenderer>(subtree).lock();
+                                    auto mesh = ProjectManager::CreateTemporaryAsset<Mesh>();
+                                    mesh->SetVertices(17, vertices, indices);
+                                    meshRenderer->m_mesh = mesh;
+                                    auto material = ProjectManager::CreateTemporaryAsset<Material>();
+                                    material->SetProgram(DefaultResources::GLPrograms::StandardProgram);
+                                    meshRenderer->m_material = material;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    ImGui::TreePop();
+                }
                 ImGui::TreePop();
             }
+
             for (const auto &behaviour: m_plantBehaviours) {
                 if (ImGui::TreeNodeEx(behaviour->GetTypeName().c_str())) {
                     behaviour->OnInspect();
