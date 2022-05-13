@@ -126,7 +126,9 @@ namespace PlantArchitect {
         EntityRef m_currentFocusingInternode = Entity();
 
 #pragma region Rendering
-
+        bool m_hideUnnecessaryInternodes = false;
+        bool m_overrideThickness = false;
+        float m_internodeThickness = 0.05f;
         float m_pointerLength = 0.4f;
         float m_pointerWidth = 0.02f;
 

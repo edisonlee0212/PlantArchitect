@@ -16,7 +16,8 @@ namespace PlantArchitect {
         void AppendPoints(std::vector<Vertex> &vertices, glm::vec3 &normalDir,
                           int step);
 
-        inline glm::vec3 GetPoint(glm::vec3 &normalDir, float angle, bool isStart);
+        [[nodiscard]] glm::vec3 GetPoint(glm::vec3 &normalDir, float angle, bool isStart);
+        [[nodiscard]] glm::vec3 GetPointOverrideRadius(glm::vec3 &normalDir, float angle, bool isStart, float radius);
     };
 
 } // namespace PlantFactory

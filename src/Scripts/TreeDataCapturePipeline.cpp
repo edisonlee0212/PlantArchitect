@@ -135,7 +135,7 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
     auto envGridFolder = m_currentExportFolder / "EnvGrid";
     auto lStringFolder = m_currentExportFolder / "LSystemString";
     auto wallPrefabFolder = m_currentExportFolder / "WallPrefab";
-    if (m_exportWallPrefab) {
+    if (m_enableRandomObstacle && m_exportWallPrefab) {
         std::filesystem::create_directories(wallPrefabFolder);
         auto exportPath = wallPrefabFolder /
                           (pipeline.m_prefix + ".ueprefab");
@@ -167,7 +167,7 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
         auto exportPath = std::filesystem::absolute(csvFolder / (pipeline.m_prefix + ".csv"));
         ExportCSV(pipeline, behaviour, exportPath);
     }
-    if (m_exportEnvironmentalGrid) {
+    if (m_enableRandomObstacle && m_exportEnvironmentalGrid) {
         std::filesystem::create_directories(envGridFolder);
         auto exportPath = std::filesystem::absolute(envGridFolder / (pipeline.m_prefix + ".vg"));
         ExportEnvironmentalGrid(pipeline, exportPath);
@@ -333,9 +333,8 @@ void TreeDataCapturePipeline::OnInspect() {
         Editor::DragAndDropButton<VoxelGrid>(m_obstacleGrid, "Voxel Grid", true);
         ImGui::Checkbox("Random obstacle", &m_enableRandomObstacle);
         if (m_enableRandomObstacle) {
-            ImGui::Checkbox("Export obstacle as wall", &m_exportWallPrefab);
-            ImGui::Checkbox("Render obstacle", &m_lShapedWall);
-            ImGui::Checkbox("L-Shaped obstacle", &m_renderObstacle);
+            ImGui::Checkbox("Render obstacle", &m_renderObstacle);
+            ImGui::Checkbox("L-Shaped obstacle", &m_lShapedWall);
             ImGui::Checkbox("Random rotation obstacle", &m_randomRotation);
             ImGui::DragFloat2("Obstacle distance (min/max)", &m_obstacleDistanceRange.x, 0.01f);
             ImGui::DragFloat3("Wall size", &m_wallSize.x, 0.01f);
@@ -345,24 +344,28 @@ void TreeDataCapturePipeline::OnInspect() {
             Editor::DragAndDropButton<DefaultInternodeFoliage>(m_foliagePhyllotaxis, "Phyllotaxis", true);
             Editor::DragAndDropButton<Texture2D>(m_branchTexture, "Branch texture", true);
         }
-        ImGui::Text("Data export:");
-        ImGui::Checkbox("Export Environmental Grid", &m_exportEnvironmentalGrid);
-        ImGui::Checkbox("Export TreeIO", &m_exportTreeIOTrees);
-        ImGui::Checkbox("Export OBJ", &m_exportOBJ);
-        ImGui::Checkbox("Export Graph", &m_exportGraph);
-        ImGui::Checkbox("Export CSV", &m_exportCSV);
-        ImGui::Checkbox("Export LSystemString", &m_exportLString);
-
-        ImGui::Text("Rendering export:");
-        ImGui::Checkbox("Export Depth", &m_exportDepth);
-        ImGui::Checkbox("Export Image", &m_exportImage);
-        ImGui::Checkbox("Export Branch Capture", &m_exportBranchCapture);
-
+        if (ImGui::TreeNodeEx("Export settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Text("Data:");
+            if (m_enableRandomObstacle) {
+                ImGui::Checkbox("Export Voxel Grid", &m_exportEnvironmentalGrid);
+                ImGui::Checkbox("Export Obstacle as Prefab", &m_exportWallPrefab);
+            }
+            ImGui::Checkbox("Export TreeIO", &m_exportTreeIOTrees);
+            ImGui::Checkbox("Export OBJ", &m_exportOBJ);
+            ImGui::Checkbox("Export Graph", &m_exportGraph);
+            ImGui::Checkbox("Export CSV", &m_exportCSV);
+            ImGui::Checkbox("Export LSystemString", &m_exportLString);
+            ImGui::Text("Rendering:");
+            ImGui::Checkbox("Export Depth", &m_exportDepth);
+            ImGui::Checkbox("Export Image", &m_exportImage);
+            ImGui::Checkbox("Export Branch Capture", &m_exportBranchCapture);
+            ImGui::TreePop();
+        }
         ImGui::TreePop();
     }
     m_meshGeneratorSettings.OnInspect();
     if (m_exportDepth || m_exportImage || m_exportBranchCapture) {
-        if (ImGui::TreeNodeEx("Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::TreeNodeEx("Camera settings")) {
             ImGui::Checkbox("Export Camera matrices", &m_exportMatrices);
             ImGui::Checkbox("Auto adjust camera", &m_autoAdjustCamera);
             if (!m_autoAdjustCamera) {
@@ -711,17 +714,17 @@ void TreeDataCapturePipeline::OnStart(AutoTreeGenerationPipeline &pipeline) {
 
 void TreeDataCapturePipeline::OnEnd(AutoTreeGenerationPipeline &pipeline) {
     auto scene = pipeline.GetScene();
-
-    if(m_exportMatrices) ExportMatrices(m_currentExportFolder /
+    if((m_exportDepth || m_exportImage || m_exportBranchCapture) && m_exportMatrices) ExportMatrices(m_currentExportFolder /
                    "matrices.yml");
-
     if(m_enableGround) scene->DeleteEntity(m_ground);
-
 }
 
 void TreeDataCapturePipeline::DisableAllExport() {
+    m_exportTreeIOTrees = false;
     m_exportOBJ = false;
     m_exportCSV = false;
+    m_exportEnvironmentalGrid = false;
+    m_exportWallPrefab = false;
     m_exportGraph = false;
     m_exportImage = false;
     m_exportDepth = false;

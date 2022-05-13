@@ -135,6 +135,8 @@ namespace PlantArchitect {
         [[nodiscard]] Bound CalculateChildrenBound();
 
         void Deserialize(const YAML::Node &in) override;
+
+
     };
 
     template<typename T>

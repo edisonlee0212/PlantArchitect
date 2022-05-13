@@ -87,6 +87,7 @@ void PlantLayer::Simulate(int iterations) {
         ObstacleRemoval();
     }
     CalculateStatistics(scene);
+
     UpdateInternodeColors();
     UpdateInternodeCylinder();
     UpdateInternodePointer(m_pointerLength, m_pointerWidth);
@@ -849,7 +850,7 @@ void PlantLayer::UpdateInternodeCylinder() {
     scene->ForEach<GlobalTransform, InternodeCylinder, InternodeCylinderWidth, InternodeInfo>(
             Jobs::Workers(),
             m_internodesQuery,
-            [](int i, Entity entity, GlobalTransform &ltw, InternodeCylinder &c,
+            [&](int i, Entity entity, GlobalTransform &ltw, InternodeCylinder &c,
                InternodeCylinderWidth &branchCylinderWidth, InternodeInfo &internodeInfo) {
                 glm::vec3 scale;
                 glm::quat rotation;
@@ -865,14 +866,17 @@ void PlantLayer::UpdateInternodeCylinder() {
                         direction, glm::vec3(direction.y, direction.z, direction.x));
                 rotation *= glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f));
                 const glm::mat4 rotationTransform = glm::mat4_cast(rotation);
-                branchCylinderWidth.m_value = internodeInfo.m_thickness;
+                float thickness = internodeInfo.m_thickness;
+                if(m_overrideThickness) thickness = m_internodeThickness;
+                if(m_hideUnnecessaryInternodes && !internodeInfo.m_display) thickness = 0.0f;
+                branchCylinderWidth.m_value = thickness;
                 c.m_value =
                         glm::translate((translation + position2) / 2.0f) *
                         rotationTransform *
                         glm::scale(glm::vec3(
                                 branchCylinderWidth.m_value,
                                 glm::distance(translation, position2) / 2.0f,
-                                internodeInfo.m_thickness));
+                                thickness));
 
             },
             true);
@@ -1023,9 +1027,13 @@ void PlantLayer::DrawColorModeSelectionMenu() {
                          IM_ARRAYSIZE(BranchColorModes))) {
             m_branchColorMode = (BranchColorMode) colorModeIndex;
         }
-
-        ImGui::DragFloat("Multiplier", &m_internodeColorValueMultiplier, 0.01f);
-        ImGui::DragFloat("Compress", &m_internodeColorValueCompressFactor, 0.01f);
+        //ImGui::DragFloat("Multiplier", &m_internodeColorValueMultiplier, 0.01f);
+        //ImGui::DragFloat("Compress", &m_internodeColorValueCompressFactor, 0.01f);
+        ImGui::Checkbox("Hide other branches", &m_hideUnnecessaryInternodes);
+        ImGui::Checkbox("Override thickness", &m_overrideThickness);
+        if(m_overrideThickness){
+            ImGui::DragFloat("Thickness", &m_internodeThickness, 0.01f);
+        }
         switch (m_branchColorMode) {
             case BranchColorMode::IndexDivider:
                 ImGui::DragInt("Divider", &m_indexDivider, 1, 2, 1024);

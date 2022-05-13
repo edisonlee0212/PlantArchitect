@@ -72,6 +72,8 @@ namespace PlantArchitect {
          * Is child with largest total biomass
          */
         bool m_heaviestChild = false;
+
+        bool m_display = true;
         void OnInspect();
     };
 
