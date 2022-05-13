@@ -62,14 +62,14 @@ namespace Scripts {
         std::filesystem::path m_currentExportFolder;
         float m_branchWidth = 0.04f;
         float m_nodeSize = 0.05f;
-        glm::vec3 m_focusPoint = glm::vec3(0, 3, 0);
+            glm::vec3 m_focusPoint = glm::vec3(0, 15, 0);
         int m_pitchAngleStart = 0;
         int m_pitchAngleStep = 10;
         int m_pitchAngleEnd = 10;
         int m_turnAngleStart = 0.0f;
         int m_turnAngleStep = 360;
         int m_turnAngleEnd = 360.0f;
-        float m_distance = 4.5;
+        float m_distance = 80;
         float m_fov = 60;
         float m_lightSize = 0.02f;
         float m_ambientLightIntensity = 0.1f;
