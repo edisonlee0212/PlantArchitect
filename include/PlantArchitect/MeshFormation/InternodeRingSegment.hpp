@@ -17,7 +17,6 @@ namespace PlantArchitect {
                           int step);
 
         [[nodiscard]] glm::vec3 GetPoint(glm::vec3 &normalDir, float angle, bool isStart);
-        [[nodiscard]] glm::vec3 GetPointOverrideRadius(glm::vec3 &normalDir, float angle, bool isStart, float radius);
     };
 
 } // namespace PlantFactory

@@ -64,11 +64,3 @@ glm::vec3 InternodeRingSegment::GetPoint(glm::vec3 &normalDir, float angle, bool
 InternodeRingSegment::InternodeRingSegment() {
 
 }
-
-glm::vec3 InternodeRingSegment::GetPointOverrideRadius(glm::vec3 &normalDir, float angle, bool isStart, float radius) {
-    glm::vec3 direction = glm::cross(normalDir, isStart ? this->m_startAxis : this->m_endAxis);
-    direction = glm::rotate(direction, glm::radians(angle), isStart ? this->m_startAxis : this->m_endAxis);
-    direction = glm::normalize(direction);
-    const glm::vec3 position = (isStart ? m_startPosition : m_endPosition) + direction * radius;
-    return position;
-}

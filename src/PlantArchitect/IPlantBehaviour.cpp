@@ -391,7 +391,6 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
             for (int i = 0; i < pStep; i++) {
                 archetype.m_position =
                         internode->m_rings.at(0).GetPoint(newNormalDir, angleStep * i, true);
-
                 float distanceToStart = 0;
                 float distanceToEnd = 1;
                 archetype.m_bondId =
@@ -470,7 +469,6 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
                 for (auto i = 0; i < step; i++) {
                     archetype.m_position = internode->m_rings.at(ringIndex).GetPoint(
                             newNormalDir, angleStep * i, false);
-
                     float distanceToStart = glm::distance(
                             internode->m_rings.at(ringIndex).m_endPosition, startPosition);
                     float distanceToEnd = glm::distance(
@@ -949,6 +947,7 @@ void IPlantBehaviour::PrepareBranchRings(const std::shared_ptr<Scene> &scene, co
                                glm::vec3 positionStart = relativeGlobalTransform.GetPosition();
                                glm::vec3 positionEnd = positionStart + internodeInfo.m_length * directionStart;
                                float thicknessStart = internodeInfo.m_thickness;
+                               float thicknessEnd = internodeInfo.m_thickness;
                                if (root != entity) {
                                    auto parent = scene->GetParent(entity);
                                    if (parent.GetIndex() != 0) {
@@ -968,6 +967,10 @@ void IPlantBehaviour::PrepareBranchRings(const std::shared_ptr<Scene> &scene, co
                                        }
                                    }
                                }
+                               if (settings.m_overrideRadius) {
+                                   thicknessStart = settings.m_radius;
+                                   thicknessEnd = settings.m_radius;
+                               }
 #pragma region Subdivision internode here.
                                int step = thicknessStart / settings.m_resolution;
                                if (step < 4)
@@ -985,7 +988,7 @@ void IPlantBehaviour::PrepareBranchRings(const std::shared_ptr<Scene> &scene, co
                                        positionEnd - internodeInfo.m_length / 3.0f * directionEnd, positionEnd);
                                float posStep = 1.0f / static_cast<float>(amount);
                                glm::vec3 dirStep = (directionEnd - directionStart) / static_cast<float>(amount);
-                               float radiusStep = (internodeInfo.m_thickness - thicknessStart) /
+                               float radiusStep = (thicknessEnd - thicknessStart) /
                                                   static_cast<float>(amount);
 
                                for (int i = 1; i < amount; i++) {
@@ -1001,12 +1004,12 @@ void IPlantBehaviour::PrepareBranchRings(const std::shared_ptr<Scene> &scene, co
                                    internode->m_rings.emplace_back(
                                            curve.GetPoint(1.0f - posStep), positionEnd, directionEnd - dirStep,
                                            directionEnd,
-                                           internodeInfo.m_thickness - radiusStep,
-                                           internodeInfo.m_thickness);
+                                           thicknessEnd - radiusStep,
+                                           thicknessEnd);
                                else
                                    internode->m_rings.emplace_back(positionStart, positionEnd,
                                                                    directionStart, directionEnd, thicknessStart,
-                                                                   internodeInfo.m_thickness);
+                                                                   thicknessEnd);
 #pragma endregion
 
                            }
@@ -1055,13 +1058,8 @@ void IPlantBehaviour::BranchMeshGenerator(const std::shared_ptr<Scene> &scene, s
         const auto startPosition = internode->m_rings.at(0).m_startPosition;
         const auto endPosition = internode->m_rings.back().m_endPosition;
         for (int i = 0; i < pStep; i++) {
-            if (settings.m_overrideRadius) {
-                archetype.m_position =
-                        internode->m_rings.at(0).GetPointOverrideRadius(newNormalDir, angleStep * i, true, settings.m_radius);
-            } else {
-                archetype.m_position =
-                        internode->m_rings.at(0).GetPoint(newNormalDir, angleStep * i, true);
-            }
+            archetype.m_position =
+                    internode->m_rings.at(0).GetPoint(newNormalDir, angleStep * i, true);
             float distanceToStart = 0;
             float distanceToEnd = 1;
             const float x =
@@ -1130,14 +1128,8 @@ void IPlantBehaviour::BranchMeshGenerator(const std::shared_ptr<Scene> &scene, s
         const int ringSize = internode->m_rings.size();
         for (auto ringIndex = 0; ringIndex < ringSize; ringIndex++) {
             for (auto i = 0; i < step; i++) {
-
-                if (settings.m_overrideRadius) {
-                    archetype.m_position = internode->m_rings.at(ringIndex).GetPointOverrideRadius(
-                            newNormalDir, angleStep * i, false, settings.m_radius);
-                } else {
-                    archetype.m_position = internode->m_rings.at(ringIndex).GetPoint(
-                            newNormalDir, angleStep * i, false);
-                }
+                archetype.m_position = internode->m_rings.at(ringIndex).GetPoint(
+                        newNormalDir, angleStep * i, false);
                 float distanceToStart = glm::distance(
                         internode->m_rings.at(ringIndex).m_endPosition, startPosition);
                 float distanceToEnd = glm::distance(
