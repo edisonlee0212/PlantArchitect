@@ -9,6 +9,8 @@ using namespace PlantArchitect;
 
 void Root::OnInspect() {
     ImGui::InputFloat3("Center", &m_center.x, "%.3f", ImGuiInputTextFlags_ReadOnly);
+    Editor::DragAndDropButton(m_plantDescriptor, "Descriptor",
+                              {"GeneralTreeParameters", "SpaceColonizationParameters", "LSystemString"}, true);
 }
 
 void Root::Serialize(YAML::Emitter &out) {

@@ -194,6 +194,17 @@ void AutoTreeGenerationPipeline::OnInspect() {
             }
 
         });
+        if(!m_descriptorPaths.empty()){
+            if(ImGui::TreeNodeEx("Loaded descriptors")){
+                for(const auto& i : m_descriptorPaths){
+                    ImGui::Text(i.string().c_str());
+                }
+                ImGui::TreePop();
+            }
+        }
+        if(ImGui::Button("Clear descriptors")){
+            m_descriptorPaths.clear();
+        }
         if (m_descriptorPaths.empty()) {
             ImGui::Text("No descriptors!");
         } else if (Application::IsPlaying()) {
