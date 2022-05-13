@@ -14,13 +14,6 @@ void IPlantDescriptor::OnInspect() {
     Editor::DragAndDropButton(m_foliagePhyllotaxis, "Phyllotaxis",
                               {"DefaultInternodeFoliage"}, true);
     Editor::DragAndDropButton<Texture2D>(m_branchTexture, "Branch texture", true);
-    auto phyllotaxis = m_foliagePhyllotaxis.Get<IInternodeFoliage>();
-    if (phyllotaxis) {
-        if (ImGui::TreeNodeEx("Foliage", ImGuiTreeNodeFlags_DefaultOpen)) {
-            phyllotaxis->OnInspect();
-            ImGui::TreePop();
-        }
-    }
 }
 
 void IPlantDescriptor::Serialize(YAML::Emitter &out) {

@@ -233,6 +233,7 @@ void PlantLayer::OnInspect() {
                                     meshRenderer->m_mesh = mesh;
                                     auto material = ProjectManager::CreateTemporaryAsset<Material>();
                                     material->SetProgram(DefaultResources::GLPrograms::StandardProgram);
+                                    material->m_vertexColorOnly = settings.m_vertexColorOnly;
                                     meshRenderer->m_material = material;
                                     break;
                                 }

@@ -916,7 +916,9 @@ IPlantBehaviour::PrepareFoliageMatrices(const std::shared_ptr<Scene> &scene, con
                  relativeGlobalTransform.m_value = inverseGlobalTransform * globalTransform.m_value;
                  relativeParentGlobalTransform.m_value =
                          inverseGlobalTransform * (glm::inverse(transform.m_value) * globalTransform.m_value);
-                 auto foliagePhyllotaxis = root->m_plantDescriptor.Get<IPlantDescriptor>()->m_foliagePhyllotaxis.Get<IInternodeFoliage>();
+                 auto plantDescriptor = root->m_plantDescriptor.Get<IPlantDescriptor>();
+                 if(!plantDescriptor) return;
+                 auto foliagePhyllotaxis = plantDescriptor->m_foliagePhyllotaxis.Get<IInternodeFoliage>();
                  if (foliagePhyllotaxis)
                      foliagePhyllotaxis->GenerateFoliage(internode, internodeInfo,
                                                          relativeGlobalTransform, relativeParentGlobalTransform);

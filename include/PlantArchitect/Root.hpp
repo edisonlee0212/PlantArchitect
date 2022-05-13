@@ -17,5 +17,6 @@ namespace PlantArchitect {
         void OnDestroy() override;
         void Deserialize(const YAML::Node &in) override;
 
+        void CollectAssetRef(std::vector<AssetRef> &list) override;
     };
 }
