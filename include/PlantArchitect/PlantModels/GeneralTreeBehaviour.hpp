@@ -148,6 +148,7 @@ namespace PlantArchitect {
         float m_thickness;
         int m_id;
         int m_parentId;
+        bool m_fromApicalBud = false;
         glm::quat m_globalRotation;
         glm::vec3 m_position;
         std::weak_ptr<TreeGraphNode> m_parent;

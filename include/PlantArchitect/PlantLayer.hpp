@@ -50,14 +50,13 @@ namespace PlantArchitect {
     class IPlantBehaviour;
 
     class PLANT_ARCHITECT_API PlantLayer : public ILayer {
+    public:
         void PreparePhysics(const Entity &entity, const Entity &child,
                             const BranchPhysicsParameters &branchPhysicsParameters);
         void Preprocess(const std::shared_ptr<Scene>& scene);
 
         void ColorSubTree(const std::shared_ptr<Scene>& scene, const Entity &entity, int colorIndex);
         void ColorBranchlet(const std::shared_ptr<Scene>& scene, const Entity &entity);
-    public:
-
         BranchPhysicsParameters m_branchPhysicsParameters;
         FBM m_fBMField;
         float m_forceFactor = 1.0f;
@@ -145,7 +144,7 @@ namespace PlantArchitect {
         float m_internodeColorValueMultiplier = 1.0f;
         float m_internodeColorValueCompressFactor = 0.0f;
         glm::vec3 m_branchColor = glm::vec3(1, 1, 0);
-        glm::vec3 m_internodeColor = glm::vec3(0, 1, 0);
+        glm::vec3 m_internodeColor = glm::vec3(1, 1, 1);
         std::vector<glm::vec3> m_randomColors;
         glm::vec4 m_pointerColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.5f);
 

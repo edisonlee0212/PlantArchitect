@@ -20,6 +20,7 @@
 #include "ClassRegistry.hpp"
 #include "VoxelGrid.hpp"
 #include "RenderLayer.hpp"
+
 using namespace PlantArchitect;
 
 void PlantLayer::PreparePhysics(const Entity &entity, const Entity &child,
@@ -209,20 +210,18 @@ void PlantLayer::OnInspect() {
                         behaviour->GenerateSkinnedMeshes(scene, settings);
                     }
                 }
-                if(ImGui::TreeNodeEx("Subtree", ImGuiTreeNodeFlags_DefaultOpen)){
-                    static int layer = 2;
-                    ImGui::DragInt("Layer", &layer);
-                    static bool baseInternode = false;
-                    ImGui::Checkbox("Base internode", &baseInternode);
+                if (ImGui::TreeNodeEx("Subtree", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    static SubtreeSettings subtreeSettings;
+                    subtreeSettings.OnInspect();
                     static EntityRef internodeEntityRef;
                     ImGui::Button("Drop base internode here");
-                    if(Editor::Droppable(internodeEntityRef)){
+                    if (Editor::Droppable(internodeEntityRef)) {
                         auto internodeEntity = internodeEntityRef.Get();
-                        if(scene->IsEntityValid(internodeEntity)){
+                        if (scene->IsEntityValid(internodeEntity)) {
                             internodeEntityRef.Clear();
                             for (const auto &behaviour: m_plantBehaviours) {
-                                if(behaviour->InternodeCheck(scene, internodeEntity)){
-                                    behaviour->CreateSubtree(scene, internodeEntity, layer, baseInternode);
+                                if (behaviour->InternodeCheck(scene, internodeEntity)) {
+                                    behaviour->CreateSubtree(scene, internodeEntity, subtreeSettings);
                                     break;
                                 }
                             }
@@ -231,50 +230,96 @@ void PlantLayer::OnInspect() {
                     ImGui::TreePop();
                 }
 
-                if(ImGui::TreeNodeEx("Branchlets", ImGuiTreeNodeFlags_DefaultOpen)){
+                if (ImGui::TreeNodeEx("Branchlets", ImGuiTreeNodeFlags_DefaultOpen)) {
                     static EntityRef rootEntityRef;
                     static std::shared_ptr<IPlantBehaviour> rootBehaviour;
                     static Entity rootEntity = {};
                     static EntityRef branchletCandidateRef[9];
-                    if(Editor::DragAndDropButton(rootEntityRef, "Root")){
+                    if (Editor::DragAndDropButton(rootEntityRef, "Root")) {
                         rootEntity = rootEntityRef.Get();
                         bool found = false;
                         for (const auto &behaviour: m_plantBehaviours) {
-                            if(behaviour->RootCheck(scene, rootEntity)){
+                            if (behaviour->RootCheck(scene, rootEntity)) {
                                 rootBehaviour = behaviour;
                                 found = true;
                             }
                         }
-                        if(!found){
+                        if (!found) {
                             rootEntityRef.Clear();
                             rootBehaviour.reset();
                             rootEntity = {};
-                            for(auto& i : branchletCandidateRef){
+                            for (auto &i: branchletCandidateRef) {
                                 i.Clear();
                             }
                         }
                     }
-                    if(!rootBehaviour){
+                    if (!rootBehaviour) {
                         ImGui::Text("Assign root to continue");
-                    }else if(!scene->IsEntityValid(rootEntity)){
+                    } else if (!scene->IsEntityValid(rootEntity)) {
                         rootEntityRef.Clear();
                         rootBehaviour.reset();
                         rootEntity = {};
-                        for(auto& i : branchletCandidateRef){
+                        for (auto &i: branchletCandidateRef) {
                             i.Clear();
                         }
-                    }else {
+                    } else {
                         for (int i = 0; i < 9; i++) {
                             Entity branchletEntity;
-                            if (Editor::DragAndDropButton(branchletCandidateRef[i], std::string("Internode") + "[" + std::to_string(i) + "]")) {
+                            if (Editor::DragAndDropButton(branchletCandidateRef[i],
+                                                          std::string("Internode") + "[" + std::to_string(i) + "]")) {
                                 branchletEntity = branchletCandidateRef[i].Get();
-                                if(!rootBehaviour->InternodeCheck(scene, branchletEntity)){
+                                if (!rootBehaviour->InternodeCheck(scene, branchletEntity)) {
                                     branchletCandidateRef[i].Clear();
                                 }
                             }
                         }
-                        if(ImGui::Button("Instantiate tree and branchlets")){
+                        if (ImGui::Button("Instantiate tree and branchlets")) {
+                            scene->ForEach<InternodeColor>(
+                                    Jobs::Workers(),
+                                    m_internodesQuery,
+                                    [=](int i, Entity entity,
+                                        InternodeColor &internodeRenderColor) {
+                                        internodeRenderColor.m_value = glm::vec4(1.0f);
+                                    },
+                                    true);
+                            auto branchletsEntity = scene->CreateEntity("Branchlets");
+                            for (int i = 0; i < 9; i++) {
+                                Entity branchletEntity = branchletCandidateRef[i].Get();
+                                if (rootBehaviour->InternodeCheck(scene, branchletEntity)) {
+                                    InternodeColor internodeColor;
 
+                                    internodeColor.m_value = glm::vec4(m_randomColors[i], 1.0f);
+                                    auto children = scene->GetChildren(branchletEntity);
+                                    for (auto &child: children) {
+                                        scene->SetDataComponent(child, internodeColor);
+                                    }
+                                    SubtreeSettings branchletSubtreeSettings;
+                                    branchletSubtreeSettings.m_enableBaseInternode = false;
+                                    branchletSubtreeSettings.m_lineColor = glm::vec3(0, 0, 0);
+                                    branchletSubtreeSettings.m_lineLengthFactor = 0.3f;
+                                    branchletSubtreeSettings.m_layer = 2;
+                                    auto subtree = rootBehaviour->CreateSubtree(scene, branchletEntity,
+                                                                                branchletSubtreeSettings);
+                                    auto gt = scene->GetDataComponent<GlobalTransform>(branchletEntity);
+                                    auto internodeInfo = scene->GetDataComponent<InternodeInfo>(branchletEntity);
+                                    GlobalTransform subtreeGT;
+                                    subtreeGT.m_value = glm::inverse(gt.m_value);
+                                    subtreeGT.SetPosition(subtreeGT.GetPosition() + glm::vec3(0, i / 3, i % 3) * 2.0f);
+                                    scene->SetDataComponent(subtree, subtreeGT);
+                                    auto branchlet = scene->CreateEntity(std::string("Branchlet " + std::to_string(i)));
+                                    scene->SetParent(subtree, branchlet);
+                                    scene->SetParent(branchlet, branchletsEntity);
+                                }
+                            }
+                            SubtreeSettings rootSubtreeSettings;
+                            rootSubtreeSettings.m_enableBaseInternode = true;
+                            rootSubtreeSettings.m_layer = 999;
+                            rootSubtreeSettings.m_enableLines = false;
+                            auto rootChildren = scene->GetChildren(rootEntity);
+                            for (const auto &child: rootChildren) {
+                                if (rootBehaviour->InternodeCheck(scene, child))
+                                    rootBehaviour->CreateSubtree(scene, child, rootSubtreeSettings);
+                            }
                         }
                     }
                     ImGui::TreePop();
@@ -735,11 +780,7 @@ void PlantLayer::UpdateInternodeColors() {
                     [=](int i, Entity entity,
                         InternodeColor &internodeRenderColor,
                         InternodeInfo &internodeInfo) {
-                        internodeRenderColor.m_value = glm::vec4(
-                                glm::vec3(m_internodeColorValueMultiplier *
-                                          glm::pow(
-                                                  (float) internodeInfo.m_order,
-                                                  m_internodeColorValueCompressFactor)),
+                        internodeRenderColor.m_value = glm::vec4(m_randomColors[internodeInfo.m_order],
                                 m_internodeTransparency);
                     },
                     true);
@@ -908,7 +949,7 @@ void PlantLayer::UpdateInternodeColors() {
     color.m_value = glm::vec4(1, 1, 1, 1);
     if (scene->IsEntityValid(focusingInternode) && scene->HasDataComponent<InternodeColor>(focusingInternode))
         scene->SetDataComponent(focusingInternode, color);
-    if(m_branchColorMode != BranchColorMode::Branchlet && m_branchColorMode != BranchColorMode::SubTree) {
+    if (m_branchColorMode != BranchColorMode::Branchlet && m_branchColorMode != BranchColorMode::SubTree) {
         color.m_value = glm::vec4(1, 0, 0, 1);
         if (scene->IsEntityValid(selectedEntity) && scene->HasDataComponent<InternodeColor>(selectedEntity))
             scene->SetDataComponent(selectedEntity, color);
@@ -923,7 +964,7 @@ void PlantLayer::UpdateInternodeCylinder() {
             Jobs::Workers(),
             m_internodesQuery,
             [&](int i, Entity entity, GlobalTransform &ltw, InternodeCylinder &c,
-               InternodeCylinderWidth &branchCylinderWidth, InternodeInfo &internodeInfo) {
+                InternodeCylinderWidth &branchCylinderWidth, InternodeInfo &internodeInfo) {
                 glm::vec3 scale;
                 glm::quat rotation;
                 glm::vec3 translation;
@@ -939,8 +980,8 @@ void PlantLayer::UpdateInternodeCylinder() {
                 rotation *= glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f));
                 const glm::mat4 rotationTransform = glm::mat4_cast(rotation);
                 float thickness = internodeInfo.m_thickness;
-                if(m_overrideThickness) thickness = m_internodeThickness;
-                if(m_hideUnnecessaryInternodes && !internodeInfo.m_display) thickness = 0.0f;
+                if (m_overrideThickness) thickness = m_internodeThickness;
+                if (m_hideUnnecessaryInternodes && !internodeInfo.m_display) thickness = 0.0f;
                 branchCylinderWidth.m_value = thickness;
                 c.m_value =
                         glm::translate((translation + position2) / 2.0f) *
@@ -1103,7 +1144,7 @@ void PlantLayer::DrawColorModeSelectionMenu() {
         //ImGui::DragFloat("Compress", &m_internodeColorValueCompressFactor, 0.01f);
         ImGui::Checkbox("Hide other branches", &m_hideUnnecessaryInternodes);
         ImGui::Checkbox("Override thickness", &m_overrideThickness);
-        if(m_overrideThickness){
+        if (m_overrideThickness) {
             ImGui::DragFloat("Thickness", &m_internodeThickness, 0.01f);
         }
         switch (m_branchColorMode) {

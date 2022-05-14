@@ -969,6 +969,9 @@ Entity TreeGraph::InstantiateTree() {
                  auto internode = scene->GetOrSetPrivateComponent<Internode>(entity).lock();
              }
             );
+
+    Application::GetLayer<PlantLayer>()->Preprocess(scene);
+
     return root;
 }
 
@@ -977,6 +980,7 @@ void TreeGraph::InstantiateChildren(const std::shared_ptr<Scene> &scene,
                                     const std::shared_ptr<TreeGraphNode> &node) const {
     for (const auto &childNode: node->m_children) {
         auto child = behaviour->CreateInternode(scene, parent);
+        scene->GetOrSetPrivateComponent<Internode>(child).lock()->m_fromApicalBud = childNode->m_fromApicalBud;
         InternodeInfo internodeInfo;
         internodeInfo.m_thickness = childNode->m_thickness;
         internodeInfo.m_length = childNode->m_length;
@@ -1003,6 +1007,7 @@ void TreeGraph::Deserialize(const YAML::Node &in) {
     m_root->m_thickness = rootNode["thickness"].as<float>();
     m_root->m_id = rootNode["id"].as<int>();
     m_root->m_parentId = -1;
+    m_root->m_fromApicalBud = true;
     int index = 0;
     for (const auto &component: rootNode["quat"]) {
         m_root->m_globalRotation[index] = component.as<float>();
@@ -1041,6 +1046,7 @@ void TreeGraph::Deserialize(const YAML::Node &in) {
                 newNode->m_position[index] = component.as<float>();
                 index++;
             }
+            if(parentNode->m_children.empty()) newNode->m_fromApicalBud = true;
             previousNodes[newNode->m_id] = newNode;
             parentNode->m_children.push_back(newNode);
             newNode->m_parent = parentNode;

@@ -521,7 +521,7 @@ void MeshGeneratorSettings::OnInspect() {
         ImGui::Checkbox("Branch", &m_enableBranch);
         ImGui::Checkbox("Smoothness", &m_smoothness);
         if(!m_smoothness){
-            ImGui::DragFloat("End node length factor", &m_endNodeLengthFactor, 0.001f, 0.0f, 1.0f);
+            ImGui::DragFloat("Internode length factor", &m_internodeLengthFactor, 0.001f, 0.0f, 1.0f);
         }
         ImGui::Checkbox("Override radius", &m_overrideRadius);
         if (m_overrideRadius) ImGui::DragFloat("Radius", &m_radius);
@@ -530,7 +530,26 @@ void MeshGeneratorSettings::OnInspect() {
         ImGui::TreePop();
     }
 }
+void SubtreeSettings::OnInspect() {
+    if (ImGui::TreeNodeEx("Subtree settings")) {
+        ImGui::DragInt("Layer", &m_layer);
+        ImGui::Checkbox("Include base internode", &m_enableBaseInternode);
+        ImGui::DragFloat("Resolution", &m_resolution, 0.001f);
+        ImGui::DragFloat("Subdivision", &m_subdivision, 0.001f);
+        ImGui::Checkbox("Base", &m_enableBase);
+        ImGui::Checkbox("Line", &m_enableLines);
+        ImGui::Checkbox("Point", &m_enablePoints);
+        ImGui::Checkbox("Arrow", &m_enableArrows);
 
+
+        ImGui::DragFloat("Line radius", &m_lineRadius, 0.001f);
+        ImGui::Checkbox("Line smoothness", &m_lineSmoothness);
+        ImGui::DragFloat("Line length factor", &m_lineLengthFactor, 0.01f);
+        if(m_enablePoints) ImGui::ColorEdit3("Point color", &m_pointColor.x);
+        if(m_enableLines) ImGui::ColorEdit3("Line color", &m_lineColor.x);
+        if(m_enableArrows) ImGui::ColorEdit3("Arrow color", &m_arrowColor.x);
+    }
+}
 void MeshGeneratorSettings::Save(const std::string &name, YAML::Emitter &out) {
     out << YAML::Key << name << YAML::Value << YAML::BeginMap;
     out << YAML::Key << "m_resolution" << YAML::Value << m_resolution;
@@ -541,7 +560,7 @@ void MeshGeneratorSettings::Save(const std::string &name, YAML::Emitter &out) {
     out << YAML::Key << "m_smoothness" << YAML::Value << m_smoothness;
     out << YAML::Key << "m_overrideRadius" << YAML::Value << m_overrideRadius;
     out << YAML::Key << "m_radius" << YAML::Value << m_radius;
-    out << YAML::Key << "m_endNodeLengthFactor" << YAML::Value << m_endNodeLengthFactor;
+    out << YAML::Key << "m_internodeLengthFactor" << YAML::Value << m_internodeLengthFactor;
     out << YAML::Key << "m_overrideVertexColor" << YAML::Value << m_overrideVertexColor;
     out << YAML::Key << "m_vertexColor" << YAML::Value << m_vertexColor;
     out << YAML::EndMap;
@@ -558,7 +577,7 @@ void MeshGeneratorSettings::Load(const std::string &name, const YAML::Node &in) 
         if (ms["m_smoothness"]) m_smoothness = ms["m_smoothness"].as<bool>();
         if (ms["m_overrideRadius"]) m_overrideRadius = ms["m_overrideRadius"].as<bool>();
         if (ms["m_radius"]) m_radius = ms["m_radius"].as<float>();
-        if (ms["m_endNodeLengthFactor"]) m_endNodeLengthFactor = ms["m_endNodeLengthFactor"].as<float>();
+        if (ms["m_internodeLengthFactor"]) m_internodeLengthFactor = ms["m_internodeLengthFactor"].as<float>();
         if (ms["m_overrideVertexColor"]) m_overrideVertexColor = ms["m_overrideVertexColor"].as<bool>();
         if (ms["m_vertexColor"]) m_vertexColor = ms["m_vertexColor"].as<glm::vec4>();
     }
@@ -929,18 +948,18 @@ IPlantBehaviour::PrepareFoliageMatrices(const std::shared_ptr<Scene> &scene, con
                                                          relativeGlobalTransform, relativeParentGlobalTransform);
              });
 }
-Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const Entity &internodeEntity, int layer, bool includeBaseInternode) {
+Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const Entity &internodeEntity, const SubtreeSettings& subtreeSettings) {
     auto subtree = scene->CreateEntity("Subtree");
-    {
+    if(subtreeSettings.m_enableBase){
         MeshGeneratorSettings settings;
-        settings.m_resolution = 0.001f;
-        settings.m_subdivision = 16;
+        settings.m_resolution = subtreeSettings.m_resolution;
+        settings.m_subdivision = subtreeSettings.m_subdivision;
         settings.m_vertexColorOnly = true;
         settings.m_enableFoliage = false;
         std::vector<Entity> subtreeInternodes;
-        InternodeCollector(scene, internodeEntity, subtreeInternodes, false, layer);
+        InternodeCollector(scene, internodeEntity, subtreeInternodes, false, subtreeSettings.m_layer);
 
-        if(!includeBaseInternode){
+        if(!subtreeSettings.m_enableBaseInternode){
             subtreeInternodes.erase(subtreeInternodes.begin());
         }
 
@@ -961,20 +980,20 @@ Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const
         meshRenderer->m_material = material;
     }
 
-    {
+    if(subtreeSettings.m_enableLines){
         MeshGeneratorSettings settings;
-        settings.m_resolution = 0.001f;
-        settings.m_subdivision = 16;
+        settings.m_resolution = subtreeSettings.m_resolution;
+        settings.m_subdivision = subtreeSettings.m_subdivision;
         settings.m_vertexColorOnly = true;
         settings.m_enableFoliage = false;
-        settings.m_smoothness = false;
+        settings.m_smoothness = subtreeSettings.m_lineSmoothness;
         settings.m_overrideRadius = true;
-        settings.m_radius = 0.01f;
-        settings.m_endNodeLengthFactor = 0.5f;
+        settings.m_radius = subtreeSettings.m_lineRadius;
+        settings.m_internodeLengthFactor = subtreeSettings.m_lineLengthFactor;
         settings.m_overrideVertexColor = true;
-        settings.m_vertexColor = glm::vec4(1, 1, 0, 1);
+        settings.m_vertexColor = glm::vec4(subtreeSettings.m_lineColor, 1);
         std::vector<Entity> subtreeInternodes;
-        InternodeCollector(scene, internodeEntity, subtreeInternodes, true, layer + 1);
+        InternodeCollector(scene, internodeEntity, subtreeInternodes, true, subtreeSettings.m_layer + 1);
         PrepareBranchRings(scene, settings);
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
@@ -993,11 +1012,11 @@ Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const
         meshRenderer->m_material = material;
     }
 
-    if(false){
+    if(subtreeSettings.m_enablePoints){
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
         std::vector<Entity> subtreeInternodes;
-        InternodeCollector(scene, internodeEntity, subtreeInternodes, true, layer);
+        InternodeCollector(scene, internodeEntity, subtreeInternodes, true, subtreeSettings.m_layer);
         auto balls = scene->CreateEntity("Points");
         scene->SetParent(balls, subtree);
 
@@ -1046,15 +1065,15 @@ Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const
         auto material = ProjectManager::CreateTemporaryAsset<Material>();
         material->SetProgram(DefaultResources::GLPrograms::StandardProgram);
         material->m_vertexColorOnly = false;
-        material->m_albedoColor = glm::vec3(1, 0, 0);
+        material->m_albedoColor = subtreeSettings.m_pointColor;
         meshRenderer->m_material = material;
     }
 
-    {
+    if(subtreeSettings.m_enableArrows){
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
         std::vector<Entity> subtreeInternodes;
-        InternodeCollector(scene, internodeEntity, subtreeInternodes, true, layer + 1);
+        InternodeCollector(scene, internodeEntity, subtreeInternodes, true, subtreeSettings.m_layer + 1);
         auto balls = scene->CreateEntity("Arrows");
         scene->SetParent(balls, subtree);
 
@@ -1067,8 +1086,8 @@ Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const
             GlobalTransform globalTransform = scene->GetDataComponent<GlobalTransform>(entity);
             glm::vec3 front =  globalTransform.GetRotation() * glm::vec3(0, 0, -1);
             glm::vec3 up = globalTransform.GetRotation() * glm::vec3(0, 1, 0);
-            globalTransform.SetPosition(globalTransform.GetPosition() + internodeInfo.m_length * 0.5f * front);
-            globalTransform.SetScale(glm::vec3(0.02f));
+            globalTransform.SetPosition(globalTransform.GetPosition() + internodeInfo.m_length * subtreeSettings.m_lineLengthFactor * front);
+            globalTransform.SetScale(glm::vec3(subtreeSettings.m_lineRadius * 2.0f));
             globalTransform.SetRotation(glm::quatLookAt(up, front));
             pointMatrices.emplace_back(globalTransform.m_value);
         }
@@ -1106,9 +1125,10 @@ Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const
         auto material = ProjectManager::CreateTemporaryAsset<Material>();
         material->SetProgram(DefaultResources::GLPrograms::StandardProgram);
         material->m_vertexColorOnly = false;
-        material->m_albedoColor = glm::vec3(0, 0, 1);
+        material->m_albedoColor = subtreeSettings.m_arrowColor;
         meshRenderer->m_material = material;
     }
+    return subtree;
 }
 void IPlantBehaviour::PrepareBranchRings(const std::shared_ptr<Scene> &scene, const MeshGeneratorSettings &settings) {
     scene->ForEach<GlobalTransform, Transform,
@@ -1132,7 +1152,7 @@ void IPlantBehaviour::PrepareBranchRings(const std::shared_ptr<Scene> &scene, co
                                        relativeGlobalTransform.GetRotation() * glm::vec3(0, 0, -1);
                                glm::vec3 directionEnd = directionStart;
                                glm::vec3 positionStart = relativeGlobalTransform.GetPosition();
-                               glm::vec3 positionEnd = positionStart + (settings.m_smoothness ? internodeInfo.m_length : internodeInfo.m_length * settings.m_endNodeLengthFactor) * directionStart;
+                               glm::vec3 positionEnd = positionStart + internodeInfo.m_length * settings.m_internodeLengthFactor * directionStart;
                                float thicknessStart = internodeInfo.m_thickness;
                                float thicknessEnd = internodeInfo.m_thickness;
                                if (root != entity) {

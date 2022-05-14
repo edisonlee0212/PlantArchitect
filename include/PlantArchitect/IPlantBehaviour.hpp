@@ -24,12 +24,31 @@ namespace PlantArchitect {
         glm::vec4 m_vertexColor = glm::vec4(1.0f);
 
         bool m_smoothness = true;
-        float m_endNodeLengthFactor = 1.0f;
+        float m_internodeLengthFactor = 1.0f;
         void OnInspect();
 
         void Save(const std::string &name, YAML::Emitter &out);
 
         void Load(const std::string &name, const YAML::Node &in);
+    };
+
+    struct PLANT_ARCHITECT_API SubtreeSettings{
+        int m_layer = 2;
+        bool m_enableBaseInternode = false;
+        bool m_enableBase = true;
+        bool m_enableLines = true;
+        bool m_enablePoints = false;
+        bool m_enableArrows = false;
+
+        float m_resolution = 0.001f;
+        float m_subdivision = 16.0f;
+        float m_lineRadius = 0.01f;
+        bool m_lineSmoothness = false;
+        float m_lineLengthFactor = 0.3f;
+        glm::vec3 m_pointColor = glm::vec3(1, 0, 0);
+        glm::vec3 m_lineColor = glm::vec3(1, 1, 0);
+        glm::vec3 m_arrowColor = glm::vec3(0, 0, 1);
+        void OnInspect();
     };
 
     class PLANT_ARCHITECT_API IPlantBehaviour {
@@ -96,7 +115,7 @@ namespace PlantArchitect {
 #pragma endregion
 #pragma region Helpers
 
-        Entity CreateSubtree(const std::shared_ptr<Scene> &scene, const Entity& internodeEntity, int layer, bool includeBaseInternode);
+        Entity CreateSubtree(const std::shared_ptr<Scene> &scene, const Entity& internodeEntity, const SubtreeSettings& subtreeSettings);
 
         void BranchCollector(const std::shared_ptr<Scene> &scene, std::vector<Entity> &boundEntities,
                              std::vector<int> &parentIndices,
