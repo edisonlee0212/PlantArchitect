@@ -230,6 +230,56 @@ void PlantLayer::OnInspect() {
                     }
                     ImGui::TreePop();
                 }
+
+                if(ImGui::TreeNodeEx("Branchlets", ImGuiTreeNodeFlags_DefaultOpen)){
+                    static EntityRef rootEntityRef;
+                    static std::shared_ptr<IPlantBehaviour> rootBehaviour;
+                    static Entity rootEntity = {};
+                    static EntityRef branchletCandidateRef[9];
+                    if(Editor::DragAndDropButton(rootEntityRef, "Root")){
+                        rootEntity = rootEntityRef.Get();
+                        bool found = false;
+                        for (const auto &behaviour: m_plantBehaviours) {
+                            if(behaviour->RootCheck(scene, rootEntity)){
+                                rootBehaviour = behaviour;
+                                found = true;
+                            }
+                        }
+                        if(!found){
+                            rootEntityRef.Clear();
+                            rootBehaviour.reset();
+                            rootEntity = {};
+                            for(auto& i : branchletCandidateRef){
+                                i.Clear();
+                            }
+                        }
+                    }
+                    if(!rootBehaviour){
+                        ImGui::Text("Assign root to continue");
+                    }else if(!scene->IsEntityValid(rootEntity)){
+                        rootEntityRef.Clear();
+                        rootBehaviour.reset();
+                        rootEntity = {};
+                        for(auto& i : branchletCandidateRef){
+                            i.Clear();
+                        }
+                    }else {
+                        for (int i = 0; i < 9; i++) {
+                            Entity branchletEntity;
+                            if (Editor::DragAndDropButton(branchletCandidateRef[i], std::string("Internode") + "[" + std::to_string(i) + "]")) {
+                                branchletEntity = branchletCandidateRef[i].Get();
+                                if(!rootBehaviour->InternodeCheck(scene, branchletEntity)){
+                                    branchletCandidateRef[i].Clear();
+                                }
+                            }
+                        }
+                        if(ImGui::Button("Instantiate tree and branchlets")){
+
+                        }
+                    }
+                    ImGui::TreePop();
+                }
+
                 ImGui::TreePop();
             }
 
