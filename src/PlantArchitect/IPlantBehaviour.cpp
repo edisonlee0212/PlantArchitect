@@ -970,7 +970,7 @@ Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const
         settings.m_smoothness = false;
         settings.m_overrideRadius = true;
         settings.m_radius = 0.01f;
-        settings.m_endNodeLengthFactor = 0.2f;
+        settings.m_endNodeLengthFactor = 0.5f;
         settings.m_overrideVertexColor = true;
         settings.m_vertexColor = glm::vec4(1, 1, 0, 1);
         std::vector<Entity> subtreeInternodes;
@@ -993,7 +993,7 @@ Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const
         meshRenderer->m_material = material;
     }
 
-    {
+    if(false){
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
         std::vector<Entity> subtreeInternodes;
@@ -1067,7 +1067,7 @@ Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const
             GlobalTransform globalTransform = scene->GetDataComponent<GlobalTransform>(entity);
             glm::vec3 front =  globalTransform.GetRotation() * glm::vec3(0, 0, -1);
             glm::vec3 up = globalTransform.GetRotation() * glm::vec3(0, 1, 0);
-            globalTransform.SetPosition(globalTransform.GetPosition() + internodeInfo.m_length * 0.2f * front);
+            globalTransform.SetPosition(globalTransform.GetPosition() + internodeInfo.m_length * 0.5f * front);
             globalTransform.SetScale(glm::vec3(0.02f));
             globalTransform.SetRotation(glm::quatLookAt(up, front));
             pointMatrices.emplace_back(globalTransform.m_value);
