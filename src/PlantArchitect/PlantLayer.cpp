@@ -212,6 +212,8 @@ void PlantLayer::OnInspect() {
                 if(ImGui::TreeNodeEx("Subtree", ImGuiTreeNodeFlags_DefaultOpen)){
                     static int layer = 1;
                     ImGui::DragInt("Layer", &layer);
+                    static bool baseInternode = true;
+                    ImGui::Checkbox("Base internode", &baseInternode);
                     static EntityRef internodeEntityRef;
                     ImGui::Button("Drop base internode here");
                     if(Editor::Droppable(internodeEntityRef)){
@@ -220,21 +222,7 @@ void PlantLayer::OnInspect() {
                             internodeEntityRef.Clear();
                             for (const auto &behaviour: m_plantBehaviours) {
                                 if(behaviour->InternodeCheck(scene, internodeEntity)){
-                                    std::vector<Entity> subtreeInternodes;
-                                    behaviour->InternodeCollector(scene, internodeEntity, subtreeInternodes, layer);
-                                    behaviour->PrepareBranchRings(scene, settings);
-                                    std::vector<Vertex> vertices;
-                                    std::vector<unsigned int> indices;
-                                    behaviour->BranchMeshGenerator(scene, subtreeInternodes, vertices, indices, settings);
-                                    auto subtree = scene->CreateEntity("Subtree");
-                                    auto meshRenderer = scene->GetOrSetPrivateComponent<MeshRenderer>(subtree).lock();
-                                    auto mesh = ProjectManager::CreateTemporaryAsset<Mesh>();
-                                    mesh->SetVertices(17, vertices, indices);
-                                    meshRenderer->m_mesh = mesh;
-                                    auto material = ProjectManager::CreateTemporaryAsset<Material>();
-                                    material->SetProgram(DefaultResources::GLPrograms::StandardProgram);
-                                    material->m_vertexColorOnly = settings.m_vertexColorOnly;
-                                    meshRenderer->m_material = material;
+                                    behaviour->CreateSubtree(scene, internodeEntity, layer, baseInternode);
                                     break;
                                 }
                             }

@@ -57,6 +57,7 @@ namespace PlantArchitect {
         void ColorSubTree(const std::shared_ptr<Scene>& scene, const Entity &entity, int colorIndex);
         void ColorBranchlet(const std::shared_ptr<Scene>& scene, const Entity &entity);
     public:
+
         BranchPhysicsParameters m_branchPhysicsParameters;
         FBM m_fBMField;
         float m_forceFactor = 1.0f;

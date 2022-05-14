@@ -519,7 +519,10 @@ void MeshGeneratorSettings::OnInspect() {
         ImGui::Checkbox("Vertex color only", &m_vertexColorOnly);
         ImGui::Checkbox("Foliage", &m_enableFoliage);
         ImGui::Checkbox("Branch", &m_enableBranch);
-
+        ImGui::Checkbox("Smoothness", &m_smoothness);
+        if(!m_smoothness){
+            ImGui::DragFloat("End node length factor", &m_endNodeLengthFactor, 0.001f, 0.0f, 1.0f);
+        }
         ImGui::Checkbox("Override radius", &m_overrideRadius);
         if (m_overrideRadius) ImGui::DragFloat("Radius", &m_radius);
         ImGui::Checkbox("Override vertex color", &m_overrideVertexColor);
@@ -535,9 +538,10 @@ void MeshGeneratorSettings::Save(const std::string &name, YAML::Emitter &out) {
     out << YAML::Key << "m_vertexColorOnly" << YAML::Value << m_vertexColorOnly;
     out << YAML::Key << "m_enableFoliage" << YAML::Value << m_enableFoliage;
     out << YAML::Key << "m_enableBranch" << YAML::Value << m_enableBranch;
-
+    out << YAML::Key << "m_smoothness" << YAML::Value << m_smoothness;
     out << YAML::Key << "m_overrideRadius" << YAML::Value << m_overrideRadius;
     out << YAML::Key << "m_radius" << YAML::Value << m_radius;
+    out << YAML::Key << "m_endNodeLengthFactor" << YAML::Value << m_endNodeLengthFactor;
     out << YAML::Key << "m_overrideVertexColor" << YAML::Value << m_overrideVertexColor;
     out << YAML::Key << "m_vertexColor" << YAML::Value << m_vertexColor;
     out << YAML::EndMap;
@@ -551,9 +555,10 @@ void MeshGeneratorSettings::Load(const std::string &name, const YAML::Node &in) 
         if (ms["m_vertexColorOnly"]) m_vertexColorOnly = ms["m_vertexColorOnly"].as<bool>();
         if (ms["m_enableFoliage"]) m_enableFoliage = ms["m_enableFoliage"].as<bool>();
         if (ms["m_enableBranch"]) m_enableBranch = ms["m_enableBranch"].as<bool>();
-
+        if (ms["m_smoothness"]) m_smoothness = ms["m_smoothness"].as<bool>();
         if (ms["m_overrideRadius"]) m_overrideRadius = ms["m_overrideRadius"].as<bool>();
         if (ms["m_radius"]) m_radius = ms["m_radius"].as<float>();
+        if (ms["m_endNodeLengthFactor"]) m_endNodeLengthFactor = ms["m_endNodeLengthFactor"].as<float>();
         if (ms["m_overrideVertexColor"]) m_overrideVertexColor = ms["m_overrideVertexColor"].as<bool>();
         if (ms["m_vertexColor"]) m_vertexColor = ms["m_vertexColor"].as<glm::vec4>();
     }
@@ -917,14 +922,98 @@ IPlantBehaviour::PrepareFoliageMatrices(const std::shared_ptr<Scene> &scene, con
                  relativeParentGlobalTransform.m_value =
                          inverseGlobalTransform * (glm::inverse(transform.m_value) * globalTransform.m_value);
                  auto plantDescriptor = root->m_plantDescriptor.Get<IPlantDescriptor>();
-                 if(!plantDescriptor) return;
+                 if (!plantDescriptor) return;
                  auto foliagePhyllotaxis = plantDescriptor->m_foliagePhyllotaxis.Get<IInternodeFoliage>();
                  if (foliagePhyllotaxis)
                      foliagePhyllotaxis->GenerateFoliage(internode, internodeInfo,
                                                          relativeGlobalTransform, relativeParentGlobalTransform);
              });
 }
+Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const Entity &internodeEntity, int layer, bool includeBaseInternode) {
+    auto subtree = scene->CreateEntity("Subtree");
+    {
+        MeshGeneratorSettings settings;
+        settings.m_resolution = 0.001f;
+        settings.m_subdivision = 16;
+        settings.m_vertexColorOnly = true;
+        settings.m_enableFoliage = false;
+        std::vector<Entity> subtreeInternodes;
+        InternodeCollector(scene, internodeEntity, subtreeInternodes, false, layer);
 
+        if(!includeBaseInternode){
+            subtreeInternodes.erase(subtreeInternodes.begin());
+        }
+
+        PrepareBranchRings(scene, settings);
+        std::vector<Vertex> vertices;
+        std::vector<unsigned int> indices;
+        BranchMeshGenerator(scene, subtreeInternodes, vertices, indices, settings);
+
+        auto base = scene->CreateEntity("Base");
+        scene->SetParent(base, subtree);
+        auto meshRenderer = scene->GetOrSetPrivateComponent<MeshRenderer>(base).lock();
+        auto mesh = ProjectManager::CreateTemporaryAsset<Mesh>();
+        mesh->SetVertices(17, vertices, indices);
+        meshRenderer->m_mesh = mesh;
+        auto material = ProjectManager::CreateTemporaryAsset<Material>();
+        material->SetProgram(DefaultResources::GLPrograms::StandardProgram);
+        material->m_vertexColorOnly = true;
+        meshRenderer->m_material = material;
+    }
+
+    {
+        MeshGeneratorSettings settings;
+        settings.m_resolution = 0.001f;
+        settings.m_subdivision = 16;
+        settings.m_vertexColorOnly = true;
+        settings.m_enableFoliage = false;
+        settings.m_smoothness = false;
+        settings.m_overrideRadius = true;
+        settings.m_radius = 0.01f;
+        settings.m_endNodeLengthFactor = 0.5f;
+        settings.m_overrideVertexColor = true;
+        settings.m_vertexColor = glm::vec4(0, 0, 0, 1);
+        std::vector<Entity> subtreeInternodes;
+        InternodeCollector(scene, internodeEntity, subtreeInternodes, true, layer + 1);
+        PrepareBranchRings(scene, settings);
+        std::vector<Vertex> vertices;
+        std::vector<unsigned int> indices;
+        BranchMeshGenerator(scene, subtreeInternodes, vertices, indices, settings);
+
+        auto lines = scene->CreateEntity("Lines");
+        scene->SetParent(lines, subtree);
+
+        auto meshRenderer = scene->GetOrSetPrivateComponent<MeshRenderer>(lines).lock();
+        auto mesh = ProjectManager::CreateTemporaryAsset<Mesh>();
+        mesh->SetVertices(17, vertices, indices);
+        meshRenderer->m_mesh = mesh;
+        auto material = ProjectManager::CreateTemporaryAsset<Material>();
+        material->SetProgram(DefaultResources::GLPrograms::StandardProgram);
+        material->m_vertexColorOnly = true;
+        meshRenderer->m_material = material;
+    }
+
+    {
+        std::vector<Vertex> vertices;
+        std::vector<unsigned int> indices;
+        std::vector<Entity> subtreeInternodes;
+        InternodeCollector(scene, internodeEntity, subtreeInternodes, true, layer + 1);
+        auto balls = scene->CreateEntity("Points");
+        scene->SetParent(balls, subtree);
+
+        auto meshRenderer = scene->GetOrSetPrivateComponent<MeshRenderer>(balls).lock();
+        auto mesh = ProjectManager::CreateTemporaryAsset<Mesh>();
+
+        
+
+        mesh->SetVertices(17, vertices, indices);
+        meshRenderer->m_mesh = mesh;
+        auto material = ProjectManager::CreateTemporaryAsset<Material>();
+        material->SetProgram(DefaultResources::GLPrograms::StandardProgram);
+        material->m_vertexColorOnly = true;
+        meshRenderer->m_material = material;
+    }
+}
 void IPlantBehaviour::PrepareBranchRings(const std::shared_ptr<Scene> &scene, const MeshGeneratorSettings &settings) {
     scene->ForEach<GlobalTransform, Transform,
             InternodeInfo>(Jobs::Workers(),
@@ -947,7 +1036,7 @@ void IPlantBehaviour::PrepareBranchRings(const std::shared_ptr<Scene> &scene, co
                                        relativeGlobalTransform.GetRotation() * glm::vec3(0, 0, -1);
                                glm::vec3 directionEnd = directionStart;
                                glm::vec3 positionStart = relativeGlobalTransform.GetPosition();
-                               glm::vec3 positionEnd = positionStart + internodeInfo.m_length * directionStart;
+                               glm::vec3 positionEnd = positionStart + (settings.m_smoothness ? internodeInfo.m_length : internodeInfo.m_length * settings.m_endNodeLengthFactor) * directionStart;
                                float thicknessStart = internodeInfo.m_thickness;
                                float thicknessEnd = internodeInfo.m_thickness;
                                if (root != entity) {
@@ -986,8 +1075,11 @@ void IPlantBehaviour::PrepareBranchRings(const std::shared_ptr<Scene> &scene, co
                                    amount++;
                                BezierCurve curve = BezierCurve(
                                        positionStart,
-                                       positionStart + internodeInfo.m_length / 3.0f * directionStart,
-                                       positionEnd - internodeInfo.m_length / 3.0f * directionEnd, positionEnd);
+                                       positionStart +
+                                       (settings.m_smoothness ? internodeInfo.m_length / 3.0f : 0.0f) * directionStart,
+                                       positionEnd -
+                                       (settings.m_smoothness ? internodeInfo.m_length / 3.0f : 0.0f) * directionEnd,
+                                       positionEnd);
                                float posStep = 1.0f / static_cast<float>(amount);
                                glm::vec3 dirStep = (directionEnd - directionStart) / static_cast<float>(amount);
                                float radiusStep = (thicknessEnd - thicknessStart) /
@@ -996,11 +1088,19 @@ void IPlantBehaviour::PrepareBranchRings(const std::shared_ptr<Scene> &scene, co
                                for (int i = 1; i < amount; i++) {
                                    float startThickness = static_cast<float>(i - 1) * radiusStep;
                                    float endThickness = static_cast<float>(i) * radiusStep;
-                                   internode->m_rings.emplace_back(
-                                           curve.GetPoint(posStep * (i - 1)), curve.GetPoint(posStep * i),
-                                           directionStart + static_cast<float>(i - 1) * dirStep,
-                                           directionStart + static_cast<float>(i) * dirStep,
-                                           thicknessStart + startThickness, thicknessStart + endThickness);
+                                   if (settings.m_smoothness) {
+                                       internode->m_rings.emplace_back(
+                                               curve.GetPoint(posStep * (i - 1)), curve.GetPoint(posStep * i),
+                                               directionStart + static_cast<float>(i - 1) * dirStep,
+                                               directionStart + static_cast<float>(i) * dirStep,
+                                               thicknessStart + startThickness, thicknessStart + endThickness);
+                                   } else {
+                                       internode->m_rings.emplace_back(
+                                               curve.GetPoint(posStep * (i - 1)), curve.GetPoint(posStep * i),
+                                               directionEnd,
+                                               directionEnd,
+                                               thicknessStart + startThickness, thicknessStart + endThickness);
+                                   }
                                }
                                if (amount > 1)
                                    internode->m_rings.emplace_back(
@@ -1127,7 +1227,7 @@ void IPlantBehaviour::BranchMeshGenerator(const std::shared_ptr<Scene> &scene, s
 
         vertexIndex += pStep;
         textureXStep = 1.0f / step * 4.0f;
-        const int ringSize = internode->m_rings.size();
+        int ringSize = internode->m_rings.size();
         for (auto ringIndex = 0; ringIndex < ringSize; ringIndex++) {
             for (auto i = 0; i < step; i++) {
                 archetype.m_position = internode->m_rings.at(ringIndex).GetPoint(
@@ -1166,12 +1266,14 @@ void IPlantBehaviour::BranchMeshGenerator(const std::shared_ptr<Scene> &scene, s
     }
 }
 
-void IPlantBehaviour::InternodeCollector(const std::shared_ptr<Scene> &scene, const Entity &target, std::vector<Entity> &results, int remainingLayer) {
-    if(remainingLayer == 0) return;
-    if (scene->IsEntityValid(target) && scene->HasDataComponent<InternodeInfo>(target) && scene->HasPrivateComponent<Internode>(target)) {
-        results.push_back(target);
+void IPlantBehaviour::InternodeCollector(const std::shared_ptr<Scene> &scene, const Entity &target,
+                                         std::vector<Entity> &results, bool onlyCollectEnd, int remainingLayer) {
+    if (remainingLayer == 0) return;
+    if (scene->IsEntityValid(target) && scene->HasDataComponent<InternodeInfo>(target) &&
+        scene->HasPrivateComponent<Internode>(target)) {
+        if(!onlyCollectEnd || remainingLayer == 1) results.push_back(target);
         scene->ForEachChild(target, [&](Entity child) {
-            InternodeCollector(scene, child, results, remainingLayer - 1);
+            InternodeCollector(scene, child, results, onlyCollectEnd, remainingLayer - 1);
         });
     }
 }

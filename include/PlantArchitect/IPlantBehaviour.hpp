@@ -22,6 +22,9 @@ namespace PlantArchitect {
         float m_radius = 0.01f;
         bool m_overrideVertexColor = false;
         glm::vec4 m_vertexColor = glm::vec4(1.0f);
+
+        bool m_smoothness = true;
+        float m_endNodeLengthFactor = 1.0f;
         void OnInspect();
 
         void Save(const std::string &name, YAML::Emitter &out);
@@ -93,10 +96,12 @@ namespace PlantArchitect {
 #pragma endregion
 #pragma region Helpers
 
+        Entity CreateSubtree(const std::shared_ptr<Scene> &scene, const Entity& internodeEntity, int layer, bool includeBaseInternode);
+
         void BranchCollector(const std::shared_ptr<Scene> &scene, std::vector<Entity> &boundEntities,
                              std::vector<int> &parentIndices,
                              const int &parentIndex, const Entity &node);
-        void InternodeCollector(const std::shared_ptr<Scene> &scene, const Entity &target, std::vector<Entity> &results, int remainingLayer = -1);
+        void InternodeCollector(const std::shared_ptr<Scene> &scene, const Entity &target, std::vector<Entity> &results, bool onlyCollectEnd, int remainingLayer = -1);
         void BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &scene, std::vector<Entity> &entities,
                                         std::vector<int> &parentIndices,
                                         std::vector<SkinnedVertex> &vertices,
@@ -462,6 +467,8 @@ namespace PlantArchitect {
         branch->m_currentInternode = rootInternode;
         return rootEntity;
     }
+
+
 
 
 }
