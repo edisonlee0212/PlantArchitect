@@ -970,9 +970,9 @@ Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const
         settings.m_smoothness = false;
         settings.m_overrideRadius = true;
         settings.m_radius = 0.01f;
-        settings.m_endNodeLengthFactor = 0.5f;
+        settings.m_endNodeLengthFactor = 0.2f;
         settings.m_overrideVertexColor = true;
-        settings.m_vertexColor = glm::vec4(0, 0, 0, 1);
+        settings.m_vertexColor = glm::vec4(1, 1, 0, 1);
         std::vector<Entity> subtreeInternodes;
         InternodeCollector(scene, internodeEntity, subtreeInternodes, true, layer + 1);
         PrepareBranchRings(scene, settings);
@@ -997,20 +997,116 @@ Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
         std::vector<Entity> subtreeInternodes;
-        InternodeCollector(scene, internodeEntity, subtreeInternodes, true, layer + 1);
+        InternodeCollector(scene, internodeEntity, subtreeInternodes, true, layer);
         auto balls = scene->CreateEntity("Points");
         scene->SetParent(balls, subtree);
 
         auto meshRenderer = scene->GetOrSetPrivateComponent<MeshRenderer>(balls).lock();
         auto mesh = ProjectManager::CreateTemporaryAsset<Mesh>();
 
-        
+        std::vector<glm::mat4> pointMatrices;
+        for(const auto& entity : subtreeInternodes){
+            auto internodeInfo = scene->GetDataComponent<InternodeInfo>(entity);
+            GlobalTransform globalTransform = scene->GetDataComponent<GlobalTransform>(entity);
+            globalTransform.SetPosition(globalTransform.GetPosition() + internodeInfo.m_length * (globalTransform.GetRotation() * glm::vec3(0, 0, -1)));
+            globalTransform.SetScale(glm::vec3(internodeInfo.m_thickness));
+            pointMatrices.emplace_back(globalTransform.m_value);
+        }
+        auto sphereMesh = DefaultResources::Primitives::Sphere;
+        auto &sphereTriangles = sphereMesh->UnsafeGetTriangles();
+        auto sphereVerticesSize = sphereMesh->GetVerticesAmount();
+        int offset = 0;
+        for (const auto &matrix: pointMatrices) {
+            Vertex archetype;
+            for (auto i = 0; i < sphereMesh->GetVerticesAmount(); i++) {
+                archetype.m_position =
+                        matrix * glm::vec4(sphereMesh->UnsafeGetVertices()[i].m_position, 1.0f);
+                archetype.m_normal = glm::normalize(glm::vec3(
+                        matrix * glm::vec4(sphereMesh->UnsafeGetVertices()[i].m_normal, 0.0f)));
+                archetype.m_tangent = glm::normalize(glm::vec3(
+                        matrix *
+                        glm::vec4(sphereMesh->UnsafeGetVertices()[i].m_tangent, 0.0f)));
+                archetype.m_texCoords =
+                        sphereMesh->UnsafeGetVertices()[i].m_texCoords;
+                vertices.push_back(archetype);
+            }
+            for (auto triangle: sphereTriangles) {
+                triangle.x += offset;
+                triangle.y += offset;
+                triangle.z += offset;
+                indices.push_back(triangle.x);
+                indices.push_back(triangle.y);
+                indices.push_back(triangle.z);
+            }
+            offset += sphereVerticesSize;
+        }
 
         mesh->SetVertices(17, vertices, indices);
         meshRenderer->m_mesh = mesh;
         auto material = ProjectManager::CreateTemporaryAsset<Material>();
         material->SetProgram(DefaultResources::GLPrograms::StandardProgram);
-        material->m_vertexColorOnly = true;
+        material->m_vertexColorOnly = false;
+        material->m_albedoColor = glm::vec3(1, 0, 0);
+        meshRenderer->m_material = material;
+    }
+
+    {
+        std::vector<Vertex> vertices;
+        std::vector<unsigned int> indices;
+        std::vector<Entity> subtreeInternodes;
+        InternodeCollector(scene, internodeEntity, subtreeInternodes, true, layer + 1);
+        auto balls = scene->CreateEntity("Arrows");
+        scene->SetParent(balls, subtree);
+
+        auto meshRenderer = scene->GetOrSetPrivateComponent<MeshRenderer>(balls).lock();
+        auto mesh = ProjectManager::CreateTemporaryAsset<Mesh>();
+
+        std::vector<glm::mat4> pointMatrices;
+        for(const auto& entity : subtreeInternodes){
+            auto internodeInfo = scene->GetDataComponent<InternodeInfo>(entity);
+            GlobalTransform globalTransform = scene->GetDataComponent<GlobalTransform>(entity);
+            glm::vec3 front =  globalTransform.GetRotation() * glm::vec3(0, 0, -1);
+            glm::vec3 up = globalTransform.GetRotation() * glm::vec3(0, 1, 0);
+            globalTransform.SetPosition(globalTransform.GetPosition() + internodeInfo.m_length * 0.2f * front);
+            globalTransform.SetScale(glm::vec3(0.02f));
+            globalTransform.SetRotation(glm::quatLookAt(up, front));
+            pointMatrices.emplace_back(globalTransform.m_value);
+        }
+        auto sphereMesh = DefaultResources::Primitives::Cone;
+        auto &sphereTriangles = sphereMesh->UnsafeGetTriangles();
+        auto sphereVerticesSize = sphereMesh->GetVerticesAmount();
+        int offset = 0;
+        for (const auto &matrix: pointMatrices) {
+            Vertex archetype;
+            for (auto i = 0; i < sphereMesh->GetVerticesAmount(); i++) {
+                archetype.m_position =
+                        matrix * glm::vec4(sphereMesh->UnsafeGetVertices()[i].m_position, 1.0f);
+                archetype.m_normal = glm::normalize(glm::vec3(
+                        matrix * glm::vec4(sphereMesh->UnsafeGetVertices()[i].m_normal, 0.0f)));
+                archetype.m_tangent = glm::normalize(glm::vec3(
+                        matrix *
+                        glm::vec4(sphereMesh->UnsafeGetVertices()[i].m_tangent, 0.0f)));
+                archetype.m_texCoords =
+                        sphereMesh->UnsafeGetVertices()[i].m_texCoords;
+                vertices.push_back(archetype);
+            }
+            for (auto triangle: sphereTriangles) {
+                triangle.x += offset;
+                triangle.y += offset;
+                triangle.z += offset;
+                indices.push_back(triangle.x);
+                indices.push_back(triangle.y);
+                indices.push_back(triangle.z);
+            }
+            offset += sphereVerticesSize;
+        }
+
+        mesh->SetVertices(17, vertices, indices);
+        meshRenderer->m_mesh = mesh;
+        auto material = ProjectManager::CreateTemporaryAsset<Material>();
+        material->SetProgram(DefaultResources::GLPrograms::StandardProgram);
+        material->m_vertexColorOnly = false;
+        material->m_albedoColor = glm::vec3(0, 0, 1);
         meshRenderer->m_material = material;
     }
 }

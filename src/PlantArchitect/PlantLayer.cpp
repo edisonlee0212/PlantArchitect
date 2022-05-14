@@ -210,9 +210,9 @@ void PlantLayer::OnInspect() {
                     }
                 }
                 if(ImGui::TreeNodeEx("Subtree", ImGuiTreeNodeFlags_DefaultOpen)){
-                    static int layer = 1;
+                    static int layer = 2;
                     ImGui::DragInt("Layer", &layer);
-                    static bool baseInternode = true;
+                    static bool baseInternode = false;
                     ImGui::Checkbox("Base internode", &baseInternode);
                     static EntityRef internodeEntityRef;
                     ImGui::Button("Drop base internode here");
