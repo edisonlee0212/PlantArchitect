@@ -688,7 +688,7 @@ void TreeDataCapturePipeline::OnStart(AutoTreeGenerationPipeline &pipeline) {
 #ifdef RAYTRACERFACILITY
     auto &environment = Application::GetLayer<RayTracerLayer>()->m_environmentProperties;
     environment.m_environmentalLightingType = EnvironmentalLightingType::SingleLightSource;
-    environment.m_sunDirection = glm::quat(glm::radians(glm::vec3(60, 160, 0))) * glm::vec3(0, 0, -1);
+    environment.m_sunDirection = glm::quat(glm::radians(glm::vec3(120, 0, 0))) * glm::vec3(0, 0, -1);
     environment.m_lightSize = m_lightSize;
     environment.m_ambientLightIntensity = m_ambientLightIntensity;
     scene->m_environmentSettings.m_ambientLightIntensity = m_envLightIntensity;

@@ -231,6 +231,8 @@ void PlantLayer::OnInspect() {
                 }
 
                 if (ImGui::TreeNodeEx("Branchlets", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    static float branchletDistance = 3.0f;
+                    ImGui::DragFloat("Branchlet distance", &branchletDistance);
                     static EntityRef rootEntityRef;
                     static std::shared_ptr<IPlantBehaviour> rootBehaviour;
                     static Entity rootEntity = {};
@@ -296,7 +298,7 @@ void PlantLayer::OnInspect() {
                                     SubtreeSettings branchletSubtreeSettings;
                                     branchletSubtreeSettings.m_enableBaseInternode = false;
                                     branchletSubtreeSettings.m_lineColor = glm::vec3(0, 0, 0);
-                                    branchletSubtreeSettings.m_lineLengthFactor = 0.3f;
+                                    branchletSubtreeSettings.m_lineLengthFactor = 0.5f;
                                     branchletSubtreeSettings.m_layer = 2;
                                     auto subtree = rootBehaviour->CreateSubtree(scene, branchletEntity,
                                                                                 branchletSubtreeSettings);
@@ -304,7 +306,7 @@ void PlantLayer::OnInspect() {
                                     auto internodeInfo = scene->GetDataComponent<InternodeInfo>(branchletEntity);
                                     GlobalTransform subtreeGT;
                                     subtreeGT.m_value = glm::inverse(gt.m_value);
-                                    subtreeGT.SetPosition(subtreeGT.GetPosition() + glm::vec3(0, i / 3, i % 3) * 2.0f);
+                                    subtreeGT.SetPosition(subtreeGT.GetPosition() + glm::vec3(0, i / 3, i % 3) * 3.0f);
                                     scene->SetDataComponent(subtree, subtreeGT);
                                     auto branchlet = scene->CreateEntity(std::string("Branchlet " + std::to_string(i)));
                                     scene->SetParent(subtree, branchlet);
