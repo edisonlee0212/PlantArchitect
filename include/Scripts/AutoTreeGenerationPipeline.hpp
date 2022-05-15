@@ -33,6 +33,9 @@ namespace Scripts {
         int m_generationAmount = 1;
         int m_iterations = 0;
         void UpdateInternodeBehaviour();
+
+        std::filesystem::path m_currentDescriptorPath;
+
         std::vector<std::filesystem::path> m_descriptorPaths;
         AutoTreeGenerationPipelineStatus m_status = AutoTreeGenerationPipelineStatus::Idle;
         AssetRef m_pipelineBehaviour;

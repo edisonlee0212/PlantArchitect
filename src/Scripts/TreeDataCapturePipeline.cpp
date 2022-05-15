@@ -110,6 +110,13 @@ void TreeDataCapturePipeline::OnBeforeGrowth(AutoTreeGenerationPipeline &pipelin
             }
         }
     }
+
+    auto prefabPath = pipeline.m_currentDescriptorPath;
+    prefabPath.replace_extension(".ueprefab");
+    if (std::filesystem::exists(prefabPath)) {
+        auto prefab = std::dynamic_pointer_cast<Prefab>(ProjectManager::GetOrCreateAsset(prefabPath));
+        m_prefabEntity = prefab->ToEntity(scene);
+    }
 }
 
 void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
@@ -301,6 +308,7 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
 #pragma endregion
 
     if (m_enableRandomObstacle)scene->DeleteEntity(m_obstacle);
+    if (scene->IsEntityValid(m_prefabEntity)) scene->DeleteEntity(m_prefabEntity);
     pipeline.m_status = AutoTreeGenerationPipelineStatus::Idle;
 }
 
@@ -700,7 +708,7 @@ void TreeDataCapturePipeline::OnStart(AutoTreeGenerationPipeline &pipeline) {
     m_cameraModels.clear();
     m_treeModels.clear();
 
-    if(m_enableGround) {
+    if (m_enableGround) {
         m_ground = scene->CreateEntity("Ground");
         auto groundMeshRenderer = scene->GetOrSetPrivateComponent<MeshRenderer>(m_ground).lock();
         groundMeshRenderer->m_material = ProjectManager::CreateTemporaryAsset<Material>();
@@ -714,9 +722,10 @@ void TreeDataCapturePipeline::OnStart(AutoTreeGenerationPipeline &pipeline) {
 
 void TreeDataCapturePipeline::OnEnd(AutoTreeGenerationPipeline &pipeline) {
     auto scene = pipeline.GetScene();
-    if((m_exportDepth || m_exportImage || m_exportBranchCapture) && m_exportMatrices) ExportMatrices(m_currentExportFolder /
-                   "matrices.yml");
-    if(m_enableGround) scene->DeleteEntity(m_ground);
+    if ((m_exportDepth || m_exportImage || m_exportBranchCapture) && m_exportMatrices)
+        ExportMatrices(m_currentExportFolder /
+                       "matrices.yml");
+    if (m_enableGround) scene->DeleteEntity(m_ground);
 }
 
 void TreeDataCapturePipeline::DisableAllExport() {

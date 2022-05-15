@@ -19,7 +19,7 @@ namespace Scripts {
         std::vector<glm::mat4> m_projections;
         std::vector<glm::mat4> m_views;
         std::vector<std::string> m_names;
-
+        Entity m_prefabEntity;
         Entity m_ground;
         Entity m_obstacle;
 

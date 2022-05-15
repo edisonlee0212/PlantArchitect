@@ -26,22 +26,23 @@ void AutoTreeGenerationPipeline::Update() {
                     m_remainingInstanceAmount--;
                     m_status = AutoTreeGenerationPipelineStatus::BeforeGrowth;
                 } else if (!m_descriptorPaths.empty()) {
+                    m_currentDescriptorPath = m_descriptorPaths.back();
                     switch (m_behaviourType) {
                         case BehaviourType::GeneralTree:
                             m_currentUsingDescriptor = std::dynamic_pointer_cast<GeneralTreeParameters>(
-                                    ProjectManager::GetOrCreateAsset(m_descriptorPaths.back()));
+                                    ProjectManager::GetOrCreateAsset(m_currentDescriptorPath));
                             break;
                         case BehaviourType::LSystem:
                             m_currentUsingDescriptor = std::dynamic_pointer_cast<LSystemString>(
-                                    ProjectManager::GetOrCreateAsset(m_descriptorPaths.back()));
+                                    ProjectManager::GetOrCreateAsset(m_currentDescriptorPath));
                             break;
                         case BehaviourType::SpaceColonization:
                             m_currentUsingDescriptor = std::dynamic_pointer_cast<SpaceColonizationParameters>(
-                                    ProjectManager::GetOrCreateAsset(m_descriptorPaths.back()));
+                                    ProjectManager::GetOrCreateAsset(m_currentDescriptorPath));
                             break;
                         case BehaviourType::TreeGraph:
                             m_currentUsingDescriptor = std::dynamic_pointer_cast<TreeGraph>(
-                                    ProjectManager::GetOrCreateAsset(m_descriptorPaths.back()));
+                                    ProjectManager::GetOrCreateAsset(m_currentDescriptorPath));
                             break;
                     }
                     m_descriptorPaths.pop_back();
