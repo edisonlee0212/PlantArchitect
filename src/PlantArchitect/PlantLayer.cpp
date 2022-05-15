@@ -770,7 +770,7 @@ void PlantLayer::UpdateInternodeColors() {
         }
             break;
         case BranchColorMode::Branchlet: {
-            ColorBranchlet(scene, editorLayer->m_selectedEntity);
+            ColorBranchlet(scene);
         }
             break;
         case BranchColorMode::Order:
@@ -781,7 +781,7 @@ void PlantLayer::UpdateInternodeColors() {
                         InternodeColor &internodeRenderColor,
                         InternodeInfo &internodeInfo) {
                         internodeRenderColor.m_value = glm::vec4(m_randomColors[internodeInfo.m_order],
-                                m_internodeTransparency);
+                                                                 m_internodeTransparency);
                     },
                     true);
             break;
@@ -1468,22 +1468,29 @@ void PlantLayer::ColorSubTree(const std::shared_ptr<Scene> &scene, const Entity 
     }
 }
 
-void PlantLayer::ColorBranchlet(const std::shared_ptr<Scene> &scene, const Entity &entity) {
-    if (scene->HasDataComponent<InternodeInfo>(entity)) {
-        InternodeColor internodeColor;
-        internodeColor.m_value = glm::vec4(glm::vec3(40.0f / 255, 15.0f / 255, 0.0f), 1.0f);
-        scene->SetDataComponent(entity, internodeColor);
-        auto children = scene->GetChildren(entity);
-        auto index = 0;
-        for (const auto &i: children) {
-            if (scene->HasDataComponent<InternodeInfo>(i)) {
-                InternodeColor childInternodeColor;
-                if (index == 0)childInternodeColor.m_value = glm::vec4(1, 0, 0, 1.0f);
-                else if (index == 1)childInternodeColor.m_value = glm::vec4(0, 1, 0, 1.0f);
-                else if (index == 2)childInternodeColor.m_value = glm::vec4(0, 0, 1, 1.0f);
-                scene->SetDataComponent(i, childInternodeColor);
-            }
-            index++;
+void PlantLayer::ColorBranchlet(const std::shared_ptr<Scene> &scene) {
+    for (auto &behaviour: m_plantBehaviours) {
+        if (behaviour) {
+            std::vector<Entity> currentRoots;
+            scene->GetEntityArray(behaviour->m_rootsQuery, currentRoots);
+            for (auto rootEntity: currentRoots) {
+                if (!behaviour->RootCheck(scene, rootEntity)) return;
+                scene->ForEachChild(rootEntity, [&](Entity child) {
+                    if (!behaviour->InternodeCheck(scene, child)) return;
+                    int colorIndex = 0;
+                    behaviour->InternodeGraphWalkerRootToEnd(scene, child,
+                                                    [&](Entity parent, Entity child) {
+                                                        auto children = scene->GetChildren(parent);
+                                                        InternodeColor internodeColor;
+                                                        internodeColor.m_value = {m_randomColors[colorIndex], 1.0};
+                                                        for(const auto& i : children){
+                                                            scene->SetDataComponent(i, internodeColor);
+                                                        }
+                                                        colorIndex++;
+                                                    });
+
+                });
+            };
         }
     }
 }

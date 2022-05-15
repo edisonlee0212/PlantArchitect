@@ -158,6 +158,7 @@ namespace PlantArchitect {
         void PrepareFoliageMatrices(const std::shared_ptr<Scene> &scene, const MeshGeneratorSettings &settings);
 
     public:
+
         void OnInspect();
 
         virtual void OnMenu() = 0;
