@@ -20,7 +20,7 @@
 #include "ClassRegistry.hpp"
 #include "VoxelGrid.hpp"
 #include "RenderLayer.hpp"
-
+#include "SphereVolume.hpp"
 using namespace PlantArchitect;
 
 void PlantLayer::PreparePhysics(const Entity &entity, const Entity &child,
@@ -610,6 +610,7 @@ void PlantLayer::OnCreate() {
 
     ClassRegistry::RegisterPrivateComponent<IVolume>("IVolume");
     ClassRegistry::RegisterPrivateComponent<CubeVolume>("CubeVolume");
+    ClassRegistry::RegisterPrivateComponent<SphereVolume>("SphereVolume");
     ClassRegistry::RegisterPrivateComponent<RadialBoundingVolume>("RadialBoundingVolume");
 
 
@@ -1292,16 +1293,27 @@ void PlantLayer::RenderBranchCylinders() {
 
 void PlantLayer::ObstacleRemoval() {
     auto scene = Application::GetActiveScene();
-    auto *obstaclesEntities = scene->UnsafeGetPrivateComponentOwnersList<CubeVolume>();
+
     std::vector<std::pair<GlobalTransform, std::shared_ptr<IVolume>>> obstacleVolumes;
-    if (obstaclesEntities)
-        for (const auto &i: *obstaclesEntities) {
+    auto *cubeObstaclesEntities = scene->UnsafeGetPrivateComponentOwnersList<CubeVolume>();
+    if (cubeObstaclesEntities)
+        for (const auto &i: *cubeObstaclesEntities) {
             if (scene->IsEntityEnabled(i) && scene->HasPrivateComponent<CubeVolume>(i)) {
                 auto volume = std::dynamic_pointer_cast<IVolume>(scene->GetOrSetPrivateComponent<CubeVolume>(i).lock());
                 if (volume->m_asObstacle && volume->IsEnabled())
                     obstacleVolumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
             }
         }
+    auto *sphereObstaclesEntities = scene->UnsafeGetPrivateComponentOwnersList<SphereVolume>();
+    if (sphereObstaclesEntities)
+        for (const auto &i: *sphereObstaclesEntities) {
+            if (scene->IsEntityEnabled(i) && scene->HasPrivateComponent<SphereVolume>(i)) {
+                auto volume = std::dynamic_pointer_cast<IVolume>(scene->GetOrSetPrivateComponent<SphereVolume>(i).lock());
+                if (volume->m_asObstacle && volume->IsEnabled())
+                    obstacleVolumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
+            }
+        }
+
     for (auto &behaviour: m_plantBehaviours) {
         if (behaviour) {
             std::vector<Entity> currentRoots;
