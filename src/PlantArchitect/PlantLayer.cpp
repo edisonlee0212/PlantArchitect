@@ -21,6 +21,7 @@
 #include "VoxelGrid.hpp"
 #include "RenderLayer.hpp"
 #include "SphereVolume.hpp"
+#include "CylinderVolume.hpp"
 using namespace PlantArchitect;
 
 void PlantLayer::PreparePhysics(const Entity &entity, const Entity &child,
@@ -611,6 +612,7 @@ void PlantLayer::OnCreate() {
     ClassRegistry::RegisterPrivateComponent<IVolume>("IVolume");
     ClassRegistry::RegisterPrivateComponent<CubeVolume>("CubeVolume");
     ClassRegistry::RegisterPrivateComponent<SphereVolume>("SphereVolume");
+    ClassRegistry::RegisterPrivateComponent<CylinderVolume>("CylinderVolume");
     ClassRegistry::RegisterPrivateComponent<RadialBoundingVolume>("RadialBoundingVolume");
 
 
@@ -1313,7 +1315,15 @@ void PlantLayer::ObstacleRemoval() {
                     obstacleVolumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
             }
         }
-
+    auto *cylinderObstaclesEntities = scene->UnsafeGetPrivateComponentOwnersList<CylinderVolume>();
+    if (cylinderObstaclesEntities)
+        for (const auto &i: *cylinderObstaclesEntities) {
+            if (scene->IsEntityEnabled(i) && scene->HasPrivateComponent<CylinderVolume>(i)) {
+                auto volume = std::dynamic_pointer_cast<IVolume>(scene->GetOrSetPrivateComponent<CylinderVolume>(i).lock());
+                if (volume->m_asObstacle && volume->IsEnabled())
+                    obstacleVolumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
+            }
+        }
     for (auto &behaviour: m_plantBehaviours) {
         if (behaviour) {
             std::vector<Entity> currentRoots;

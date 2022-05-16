@@ -6,7 +6,7 @@ using namespace UniEngine;
 namespace PlantArchitect {
     class PLANT_ARCHITECT_API IVolume : public IPrivateComponent {
     public:
-        bool m_asObstacle = false;
+        bool m_asObstacle = true;
 
         virtual glm::vec3 GetRandomPoint() { return glm::vec3(0.0f); }
 

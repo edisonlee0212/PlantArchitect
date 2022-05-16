@@ -6,6 +6,7 @@
 #include "CubeVolume.hpp"
 #include "Graphics.hpp"
 #include "SphereVolume.hpp"
+#include "CylinderVolume.hpp"
 using namespace PlantArchitect;
 
 
@@ -42,6 +43,15 @@ void VoxelGrid::FillObstacle(const std::shared_ptr<Scene> &scene) {
         for (const auto &i: *sphereObstaclesEntities) {
             if (scene->IsEntityEnabled(i) && scene->HasPrivateComponent<SphereVolume>(i)) {
                 auto volume = std::dynamic_pointer_cast<IVolume>(scene->GetOrSetPrivateComponent<SphereVolume>(i).lock());
+                if (volume->m_asObstacle && volume->IsEnabled())
+                    obstacleVolumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
+            }
+        }
+    auto *cylinderObstaclesEntities = scene->UnsafeGetPrivateComponentOwnersList<CylinderVolume>();
+    if (cylinderObstaclesEntities)
+        for (const auto &i: *cylinderObstaclesEntities) {
+            if (scene->IsEntityEnabled(i) && scene->HasPrivateComponent<CylinderVolume>(i)) {
+                auto volume = std::dynamic_pointer_cast<IVolume>(scene->GetOrSetPrivateComponent<CylinderVolume>(i).lock());
                 if (volume->m_asObstacle && volume->IsEnabled())
                     obstacleVolumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
             }
@@ -144,7 +154,7 @@ void VoxelGrid::FormMesh(std::vector<Vertex> &vertices, std::vector<glm::uvec3> 
     size_t offset = 0;
     int index = 0;
     for (const auto &voxel: m_voxels) {
-        if (voxel >= 0.5f) {
+        if (voxel > 0.0f) {
             auto matrix =
                     glm::translate(GetCenter(index)) * glm::mat4_cast(glm::quat(glm::vec3(0.0f))) * glm::scale(glm::vec3(1.0f));
             Vertex archetype;
