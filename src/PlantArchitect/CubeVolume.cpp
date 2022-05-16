@@ -37,7 +37,7 @@ void CubeVolume::OnInspect() {
 
 bool CubeVolume::InVolume(const glm::vec3 &position) {
     const auto globalTransform = GetScene()->GetDataComponent<GlobalTransform>(GetOwner());
-    const auto &finalPos = glm::vec3(
+    const auto finalPos = glm::vec3(
             (glm::inverse(globalTransform.m_value) * glm::translate(position))[3]);
     return m_minMaxBound.InBound(finalPos);
 }
@@ -50,7 +50,7 @@ glm::vec3 CubeVolume::GetRandomPoint() {
 
 bool CubeVolume::InVolume(const GlobalTransform &globalTransform,
                           const glm::vec3 &position) {
-    const auto &finalPos = glm::vec3(
+    const auto finalPos = glm::vec3(
             (glm::inverse(globalTransform.m_value) * glm::translate(position))[3]);
     return m_minMaxBound.InBound(finalPos);
 }

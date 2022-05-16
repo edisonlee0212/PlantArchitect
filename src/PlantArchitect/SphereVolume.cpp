@@ -37,7 +37,7 @@ void SphereVolume::OnInspect() {
 
 bool SphereVolume::InVolume(const glm::vec3 &position) {
     const auto globalTransform = GetScene()->GetDataComponent<GlobalTransform>(GetOwner());
-    const auto &finalPos = glm::vec3(
+    const auto finalPos = glm::vec3(
             (glm::inverse(globalTransform.m_value) * glm::translate(position))[3]);
     return glm::length(finalPos) <= m_radius;
 }
@@ -49,7 +49,7 @@ glm::vec3 SphereVolume::GetRandomPoint() {
 
 bool SphereVolume::InVolume(const GlobalTransform &globalTransform,
                           const glm::vec3 &position) {
-    const auto &finalPos = glm::vec3(
+    const auto finalPos = glm::vec3(
             (glm::inverse(globalTransform.m_value) * glm::translate(position))[3]);
     return glm::length(finalPos) <= m_radius;
 }

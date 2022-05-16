@@ -38,10 +38,10 @@ void CylinderVolume::OnInspect() {
 
 bool CylinderVolume::InVolume(const glm::vec3 &position) {
     const auto globalTransform = GetScene()->GetDataComponent<GlobalTransform>(GetOwner());
-    const auto &finalPos = glm::vec3(
+    const auto finalPos = glm::vec3(
             (glm::inverse(globalTransform.m_value) * glm::translate(position))[3]);
-    return (finalPos.x - m_radius) * (finalPos.x - m_radius) + (finalPos.y - m_radius) * (finalPos.y - m_radius) <=
-           m_radius * m_radius && (finalPos.y - m_height) * (finalPos.y - m_height) <= (m_height / 2.0f) * (m_height / 2.0f);
+    return (finalPos.x * finalPos.x + finalPos.z * finalPos.z <=
+            (m_radius * m_radius)) && glm::abs(finalPos.y) <= m_height;
 }
 
 glm::vec3 CylinderVolume::GetRandomPoint() {
@@ -51,9 +51,10 @@ glm::vec3 CylinderVolume::GetRandomPoint() {
 
 bool CylinderVolume::InVolume(const GlobalTransform &globalTransform,
                               const glm::vec3 &position) {
-    const auto &finalPos = glm::vec3(
+    const auto finalPos = glm::vec3(
             (glm::inverse(globalTransform.m_value) * glm::translate(position))[3]);
-    return glm::length(finalPos) <= m_radius;
+    return (finalPos.x * finalPos.x + finalPos.z * finalPos.z <=
+                   (m_radius * m_radius)) && glm::abs(finalPos.y) <= m_height;
 }
 
 void CylinderVolume::Serialize(YAML::Emitter &out) {
