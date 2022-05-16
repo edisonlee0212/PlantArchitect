@@ -113,7 +113,8 @@ void TreeDataCapturePipeline::OnBeforeGrowth(AutoTreeGenerationPipeline &pipelin
 
     auto prefabPath = pipeline.m_currentDescriptorPath;
     prefabPath.replace_extension(".ueprefab");
-    if (std::filesystem::exists(prefabPath)) {
+    auto prefabABPath = ProjectManager::GetProjectPath().parent_path() / prefabPath;
+    if (std::filesystem::exists(prefabABPath)) {
         auto prefab = std::dynamic_pointer_cast<Prefab>(ProjectManager::GetOrCreateAsset(prefabPath));
         m_prefabEntity = prefab->ToEntity(scene);
     }
