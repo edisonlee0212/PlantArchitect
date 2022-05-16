@@ -376,9 +376,9 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
             }
             auto step = internode->m_step;
             // For stitching
-            const int pStep = parentStep > 0 ? parentStep : step;
+            int pStep = parentStep > 0 ? parentStep : step;
             parentStep = step;
-
+            pStep = step;
             float angleStep = 360.0f / static_cast<float>(pStep);
             int vertexIndex = vertices.size();
             SkinnedVertex archetype;
