@@ -118,11 +118,20 @@ void TreeDataCapturePipeline::OnBeforeGrowth(AutoTreeGenerationPipeline &pipelin
         auto prefab = std::dynamic_pointer_cast<Prefab>(ProjectManager::GetOrCreateAsset(prefabPath));
         m_prefabEntity = prefab->ToEntity(scene);
     }
+    if(m_enableGround) scene->SetEnable(m_ground, false);
+
+    if(scene->IsEntityValid(m_volumeEntity.Get())){
+        scene->SetEnable(m_volumeEntity.Get(), true);
+    }
 }
 
 void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline) {
     auto scene = pipeline.GetScene();
     auto behaviour = pipeline.GetBehaviour();
+    if(m_enableGround) scene->SetEnable(m_ground, true);
+    if(scene->IsEntityValid(m_volumeEntity.Get())){
+        scene->SetEnable(m_volumeEntity.Get(), false);
+    }
 #ifdef RAYTRACERFACILITY
     auto camera = scene->GetOrSetPrivateComponent<RayTracerCamera>(pipeline.GetOwner()).lock();
 #endif
@@ -338,6 +347,7 @@ void TreeDataCapturePipeline::OnInspect() {
         m_currentExportFolder = std::filesystem::absolute(path);
     }, false);
     if (ImGui::TreeNodeEx("Pipeline Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+        Editor::DragAndDropButton(m_volumeEntity, "Volume");
         ImGui::Checkbox("Enable ground", &m_enableGround);
         Editor::DragAndDropButton<VoxelGrid>(m_obstacleGrid, "Voxel Grid", true);
         ImGui::Checkbox("Random obstacle", &m_enableRandomObstacle);
@@ -697,7 +707,7 @@ void TreeDataCapturePipeline::OnStart(AutoTreeGenerationPipeline &pipeline) {
 #ifdef RAYTRACERFACILITY
     auto &environment = Application::GetLayer<RayTracerLayer>()->m_environmentProperties;
     environment.m_environmentalLightingType = EnvironmentalLightingType::SingleLightSource;
-    environment.m_sunDirection = glm::quat(glm::radians(glm::vec3(120, 0, 0))) * glm::vec3(0, 0, -1);
+    environment.m_sunDirection = glm::quat(glm::radians(glm::vec3(110, 0, 0))) * glm::vec3(0, 0, -1);
     environment.m_lightSize = m_lightSize;
     environment.m_ambientLightIntensity = m_ambientLightIntensity;
     scene->m_environmentSettings.m_ambientLightIntensity = m_envLightIntensity;
@@ -717,6 +727,7 @@ void TreeDataCapturePipeline::OnStart(AutoTreeGenerationPipeline &pipeline) {
         GlobalTransform groundGT;
         groundGT.SetScale({1000, 1, 1000});
         scene->SetDataComponent<GlobalTransform>(m_ground, groundGT);
+
     }
 
 }
@@ -781,6 +792,7 @@ void TreeDataCapturePipeline::CollectAssetRef(std::vector<AssetRef> &list) {
 }
 
 void TreeDataCapturePipeline::Serialize(YAML::Emitter &out) {
+
     m_branchTexture.Save("m_branchTexture", out);
     m_foliagePhyllotaxis.Save("m_foliagePhyllotaxis", out);
     m_obstacleGrid.Save("m_obstacleGrid", out);

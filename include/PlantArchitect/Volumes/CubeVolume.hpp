@@ -7,7 +7,6 @@ class PLANT_ARCHITECT_API CubeVolume : public IVolume {
 public:
   void ApplyMeshRendererBounds();
   void OnCreate() override;
-  bool m_displayPoints = false;
   bool m_displayBounds = false;
   Bound m_minMaxBound;
   void OnInspect() override;

@@ -43,6 +43,7 @@ namespace Scripts {
         void ExportEnvironmentalGrid(AutoTreeGenerationPipeline &pipeline,
                                      const std::filesystem::path &path);
     public:
+        EntityRef m_volumeEntity;
         MeshGeneratorSettings m_meshGeneratorSettings;
         bool m_enableRandomObstacle = false;
         bool m_renderObstacle = true;

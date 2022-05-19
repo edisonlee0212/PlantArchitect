@@ -22,6 +22,7 @@
 #include "RenderLayer.hpp"
 #include "SphereVolume.hpp"
 #include "CylinderVolume.hpp"
+#include "MeshVolume.hpp"
 using namespace PlantArchitect;
 
 void PlantLayer::PreparePhysics(const Entity &entity, const Entity &child,
@@ -613,6 +614,7 @@ void PlantLayer::OnCreate() {
     ClassRegistry::RegisterPrivateComponent<CubeVolume>("CubeVolume");
     ClassRegistry::RegisterPrivateComponent<SphereVolume>("SphereVolume");
     ClassRegistry::RegisterPrivateComponent<CylinderVolume>("CylinderVolume");
+    ClassRegistry::RegisterPrivateComponent<MeshVolume>("MeshVolume");
     ClassRegistry::RegisterPrivateComponent<RadialBoundingVolume>("RadialBoundingVolume");
 
 
@@ -1297,13 +1299,18 @@ void PlantLayer::ObstacleRemoval() {
     auto scene = Application::GetActiveScene();
 
     std::vector<std::pair<GlobalTransform, std::shared_ptr<IVolume>>> obstacleVolumes;
+    std::vector<std::pair<GlobalTransform, std::shared_ptr<IVolume>>> volumes;
     auto *cubeObstaclesEntities = scene->UnsafeGetPrivateComponentOwnersList<CubeVolume>();
     if (cubeObstaclesEntities)
         for (const auto &i: *cubeObstaclesEntities) {
             if (scene->IsEntityEnabled(i) && scene->HasPrivateComponent<CubeVolume>(i)) {
                 auto volume = std::dynamic_pointer_cast<IVolume>(scene->GetOrSetPrivateComponent<CubeVolume>(i).lock());
-                if (volume->m_asObstacle && volume->IsEnabled())
-                    obstacleVolumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
+                if(volume->IsEnabled()) {
+                    if (volume->m_asObstacle)
+                        obstacleVolumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
+                    else
+                        volumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
+                }
             }
         }
     auto *sphereObstaclesEntities = scene->UnsafeGetPrivateComponentOwnersList<SphereVolume>();
@@ -1311,8 +1318,12 @@ void PlantLayer::ObstacleRemoval() {
         for (const auto &i: *sphereObstaclesEntities) {
             if (scene->IsEntityEnabled(i) && scene->HasPrivateComponent<SphereVolume>(i)) {
                 auto volume = std::dynamic_pointer_cast<IVolume>(scene->GetOrSetPrivateComponent<SphereVolume>(i).lock());
-                if (volume->m_asObstacle && volume->IsEnabled())
-                    obstacleVolumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
+                if(volume->IsEnabled()) {
+                    if (volume->m_asObstacle)
+                        obstacleVolumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
+                    else
+                        volumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
+                }
             }
         }
     auto *cylinderObstaclesEntities = scene->UnsafeGetPrivateComponentOwnersList<CylinderVolume>();
@@ -1320,11 +1331,55 @@ void PlantLayer::ObstacleRemoval() {
         for (const auto &i: *cylinderObstaclesEntities) {
             if (scene->IsEntityEnabled(i) && scene->HasPrivateComponent<CylinderVolume>(i)) {
                 auto volume = std::dynamic_pointer_cast<IVolume>(scene->GetOrSetPrivateComponent<CylinderVolume>(i).lock());
-                if (volume->m_asObstacle && volume->IsEnabled())
-                    obstacleVolumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
+                if(volume->IsEnabled()) {
+                    if (volume->m_asObstacle)
+                        obstacleVolumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
+                    else
+                        volumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
+                }
             }
         }
-    for (auto &behaviour: m_plantBehaviours) {
+    auto *meshObstaclesEntities = scene->UnsafeGetPrivateComponentOwnersList<MeshVolume>();
+    if (meshObstaclesEntities)
+        for (const auto &i: *meshObstaclesEntities) {
+            if (scene->IsEntityEnabled(i) && scene->HasPrivateComponent<MeshVolume>(i)) {
+                auto volume = std::dynamic_pointer_cast<IVolume>(scene->GetOrSetPrivateComponent<MeshVolume>(i).lock());
+                if(volume->IsEnabled()) {
+                    if (volume->m_asObstacle)
+                        obstacleVolumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
+                    else
+                        volumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
+                }
+            }
+        }
+
+    std::vector<Entity> internodes;
+    std::vector<glm::vec3> positions;
+    std::vector<bool> obstacleResults;
+    std::vector<bool> results;
+    internodes.resize(scene->GetEntityAmount(m_internodesQuery));
+    positions.resize(internodes.size());
+    obstacleResults.resize(internodes.size());
+    results.resize(internodes.size());
+    scene->ForEach<GlobalTransform>(Jobs::Workers(), m_internodesQuery, [&](int i, Entity entity, GlobalTransform& globalTransform){
+        internodes[i] = entity;
+        positions[i] = globalTransform.GetPosition();
+        obstacleResults[i] = false;
+        results[i] = true;
+    });
+    for(auto& i : obstacleVolumes){
+        i.second->InVolume(i.first, positions, obstacleResults);
+    }
+    for(auto& i : volumes){
+        i.second->InVolume(i.first, positions, results);
+    }
+
+    for(int i = 0; i < internodes.size(); i++){
+        if((obstacleResults[i] || !results[i]) && scene->IsEntityValid(internodes[i])){
+            scene->DeleteEntity(internodes[i]);
+        }
+    }
+    /*for (auto &behaviour: m_plantBehaviours) {
         if (behaviour) {
             std::vector<Entity> currentRoots;
             scene->GetEntityArray(behaviour->m_rootsQuery, currentRoots);
@@ -1351,6 +1406,7 @@ void PlantLayer::ObstacleRemoval() {
             }
         }
     }
+    */
 
 }
 

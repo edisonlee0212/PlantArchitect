@@ -488,10 +488,10 @@ void RadialBoundingVolume::CalculateVolume(float maxHeight) {
 }
 
 void RadialBoundingVolume::OnInspect() {
+    IVolume::OnInspect();
     Editor::DragAndDropButton<Internode>(m_rootInternode, "Root");
     auto scene = GetScene();
     ImGui::Checkbox("Prune Buds", &m_pruneBuds);
-    ImGui::Checkbox("Display bounds", &m_display);
     ImGui::ColorEdit4("Display Color", &m_displayColor.x);
     ImGui::DragFloat("Display Scale", &m_displayScale, 0.01f, 0.01f, 1.0f);
     bool edited = false;
@@ -558,7 +558,7 @@ void RadialBoundingVolume::OnInspect() {
                         [this](const std::filesystem::path &path) {
                             ExportAsObj(path.string());
                         });
-    if (!displayLayer && m_display && m_meshGenerated) {
+    if (!displayLayer && m_displayBounds && m_meshGenerated) {
         for (auto &i: m_boundMeshes) {
             Graphics::DrawGizmoMesh(
                     i, m_displayColor,
@@ -598,19 +598,16 @@ bool RadialBoundingVolume::InVolume(const GlobalTransform &globalTransform,
 }
 
 void RadialBoundingVolume::Deserialize(const YAML::Node &in) {
+    IVolume::Deserialize(in);
     m_meshGenerated = false;
-
     m_center = in["m_center"].as<glm::vec3>();
     m_displayColor = in["m_displayColor"].as<glm::vec4>();
-    m_display = in["m_display"].as<bool>();
     m_pruneBuds = in["m_pruneBuds"].as<bool>();
     m_maxHeight = in["m_maxHeight"].as<float>();
     m_maxRadius = in["m_maxRadius"].as<float>();
     m_displayScale = in["m_displayScale"].as<float>();
     m_layerAmount = in["m_layerAmount"].as<int>();
     m_sectorAmount = in["m_sectorAmount"].as<int>();
-    m_displayPoints = in["m_displayPoints"].as<bool>();
-    m_displayBounds = in["m_displayBounds"].as<bool>();
 
     if (in["m_layers"]) {
         m_layers.resize(m_layerAmount);
@@ -627,17 +624,15 @@ void RadialBoundingVolume::Deserialize(const YAML::Node &in) {
 }
 
 void RadialBoundingVolume::Serialize(YAML::Emitter &out) {
+    IVolume::Serialize(out);
     out << YAML::Key << "m_center" << YAML::Value << m_center;
     out << YAML::Key << "m_displayColor" << YAML::Value << m_displayColor;
-    out << YAML::Key << "m_display" << YAML::Value << m_display;
     out << YAML::Key << "m_pruneBuds" << YAML::Value << m_pruneBuds;
     out << YAML::Key << "m_maxHeight" << YAML::Value << m_maxHeight;
     out << YAML::Key << "m_maxRadius" << YAML::Value << m_maxRadius;
     out << YAML::Key << "m_displayScale" << YAML::Value << m_displayScale;
     out << YAML::Key << "m_layerAmount" << YAML::Value << m_layerAmount;
     out << YAML::Key << "m_sectorAmount" << YAML::Value << m_sectorAmount;
-    out << YAML::Key << "m_displayPoints" << YAML::Value << m_displayPoints;
-    out << YAML::Key << "m_displayBounds" << YAML::Value << m_displayBounds;
 
     if (!m_layers.empty()) {
         out << YAML::Key << "m_layers" << YAML::BeginSeq;
@@ -687,4 +682,8 @@ void RadialBoundingVolume::ResizeVolumes() {
             slice.m_maxDistance = 0.0f;
         }
     }
+}
+
+void RadialBoundingVolume::OnDestroy() {
+    IVolume::OnDestroy();
 }

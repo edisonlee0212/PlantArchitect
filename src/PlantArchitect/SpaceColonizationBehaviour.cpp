@@ -307,7 +307,7 @@ void SpaceColonizationBehaviour::VolumeSlotButton() {
     ImGui::Text("Add new volume");
     ImGui::SameLine();
     static PrivateComponentRef temp;
-    Editor::DragAndDropButton(temp, "Here", {"CubeVolume", "RadialBoundingVolume"}, false);
+    Editor::DragAndDropButton(temp, "Here", {"CubeVolume", "RadialBoundingVolume", "CylinderVolume", "SphereVolume", "MeshVolume"}, false);
     if (temp.Get<IVolume>()) {
         PushVolume(temp.Get<IVolume>());
         temp.Clear();

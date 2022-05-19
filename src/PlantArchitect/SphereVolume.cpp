@@ -17,9 +17,8 @@ void SphereVolume::OnCreate() {
 }
 
 void SphereVolume::OnInspect() {
-    ImGui::Checkbox("Obstacle", &m_asObstacle);
+    IVolume::OnInspect();
     ImGui::DragFloat("Radius", &m_radius, 0.1);
-    ImGui::Checkbox("Display bounds", &m_displayBounds);
     if (m_displayBounds) {
         const auto globalTransform = GetScene()->GetDataComponent<GlobalTransform>(GetOwner());
         Graphics::DrawGizmoMesh(
@@ -56,16 +55,12 @@ bool SphereVolume::InVolume(const GlobalTransform &globalTransform,
 
 void SphereVolume::Serialize(YAML::Emitter &out) {
     IVolume::Serialize(out);
-    out << YAML::Key << "m_displayPoints" << YAML::Value << m_displayPoints;
-    out << YAML::Key << "m_displayBounds" << YAML::Value << m_displayBounds;
     out << YAML::Key << "m_radius" << YAML::Value
         << m_radius;
 }
 
 void SphereVolume::Deserialize(const YAML::Node &in) {
     IVolume::Deserialize(in);
-    m_displayPoints = in["m_displayPoints"].as<bool>();
-    m_displayBounds = in["m_displayBounds"].as<bool>();
     m_radius = in["m_radius"].as<float>();
 }
 

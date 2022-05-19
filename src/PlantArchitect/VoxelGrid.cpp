@@ -7,6 +7,7 @@
 #include "Graphics.hpp"
 #include "SphereVolume.hpp"
 #include "CylinderVolume.hpp"
+#include "MeshVolume.hpp"
 using namespace PlantArchitect;
 
 
@@ -52,6 +53,15 @@ void VoxelGrid::FillObstacle(const std::shared_ptr<Scene> &scene) {
         for (const auto &i: *cylinderObstaclesEntities) {
             if (scene->IsEntityEnabled(i) && scene->HasPrivateComponent<CylinderVolume>(i)) {
                 auto volume = std::dynamic_pointer_cast<IVolume>(scene->GetOrSetPrivateComponent<CylinderVolume>(i).lock());
+                if (volume->m_asObstacle && volume->IsEnabled())
+                    obstacleVolumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
+            }
+        }
+    auto *meshObstaclesEntities = scene->UnsafeGetPrivateComponentOwnersList<MeshVolume>();
+    if (meshObstaclesEntities)
+        for (const auto &i: *meshObstaclesEntities) {
+            if (scene->IsEntityEnabled(i) && scene->HasPrivateComponent<MeshVolume>(i)) {
+                auto volume = std::dynamic_pointer_cast<IVolume>(scene->GetOrSetPrivateComponent<MeshVolume>(i).lock());
                 if (volume->m_asObstacle && volume->IsEnabled())
                     obstacleVolumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
             }

@@ -105,7 +105,7 @@ void GeneralTreeBehaviour::Grow(const std::shared_ptr<Scene> &scene, int iterati
                      case BudStatus::Flushed: {
                          for (auto &lateralBud: internode->m_lateralBuds) {
                              if (lateralBud.m_status != BudStatus::Sleeping) continue;
-                             if (generalTreeParameters->m_budKillProbabilityApicalLateral.y >
+                             if (generalTreeParameters->m_budKillProbabilityApicalLateral.y >=
                                  glm::linearRand(0.0f, 1.0f)) {
                                  lateralBud.m_status = BudStatus::Died;
                                  continue;
@@ -130,7 +130,7 @@ void GeneralTreeBehaviour::Grow(const std::shared_ptr<Scene> &scene, int iterati
                                          generalTreeParameters->m_neighborAvoidance.y);
                                  flushProbability /= avoidance;
                              }
-                             if (flushProbability > glm::linearRand(0.0f, 1.0f)) {
+                             if (flushProbability >= glm::linearRand(0.0f, 1.0f)) {
                                  flush = true;
                              }
                              if (flush) {

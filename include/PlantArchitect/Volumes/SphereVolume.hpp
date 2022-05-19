@@ -7,8 +7,6 @@ namespace PlantArchitect {
     public:
         void ApplyMeshRendererBounds();
         void OnCreate() override;
-        bool m_displayPoints = false;
-        bool m_displayBounds = false;
         float m_radius = 1.0f;
         void OnInspect() override;
         bool InVolume(const GlobalTransform& globalTransform, const glm::vec3 &position) override;

@@ -17,10 +17,9 @@ void CylinderVolume::OnCreate() {
 }
 
 void CylinderVolume::OnInspect() {
-    ImGui::Checkbox("Obstacle", &m_asObstacle);
+    IVolume::OnInspect();
     ImGui::DragFloat("Radius", &m_radius, 0.1);
     ImGui::DragFloat("Height", &m_height, 0.1);
-    ImGui::Checkbox("Display bounds", &m_displayBounds);
     if (m_displayBounds) {
         const auto globalTransform = GetScene()->GetDataComponent<GlobalTransform>(GetOwner());
         Graphics::DrawGizmoMesh(
@@ -59,16 +58,12 @@ bool CylinderVolume::InVolume(const GlobalTransform &globalTransform,
 
 void CylinderVolume::Serialize(YAML::Emitter &out) {
     IVolume::Serialize(out);
-    out << YAML::Key << "m_displayPoints" << YAML::Value << m_displayPoints;
-    out << YAML::Key << "m_displayBounds" << YAML::Value << m_displayBounds;
     out << YAML::Key << "m_radius" << YAML::Value << m_radius;
     out << YAML::Key << "m_height" << YAML::Value << m_height;
 }
 
 void CylinderVolume::Deserialize(const YAML::Node &in) {
     IVolume::Deserialize(in);
-    m_displayPoints = in["m_displayPoints"].as<bool>();
-    m_displayBounds = in["m_displayBounds"].as<bool>();
     m_radius = in["m_radius"].as<float>();
     m_height = in["m_height"].as<float>();
 }

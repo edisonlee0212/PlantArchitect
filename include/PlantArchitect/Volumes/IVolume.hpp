@@ -7,20 +7,22 @@ namespace PlantArchitect {
     class PLANT_ARCHITECT_API IVolume : public IPrivateComponent {
     public:
         bool m_asObstacle = true;
+        bool m_displayBounds = true;
 
         virtual glm::vec3 GetRandomPoint() { return glm::vec3(0.0f); }
 
-        virtual bool InVolume(const GlobalTransform &globalTransform, const glm::vec3 &position) { return false; }
+        virtual bool InVolume(const GlobalTransform &globalTransform, const glm::vec3 &position);
 
-        virtual bool InVolume(const glm::vec3 &position) { return false; }
+        virtual bool InVolume(const glm::vec3 &position);
+        virtual void InVolume(const GlobalTransform &globalTransform, const std::vector<glm::vec3> &positions, std::vector<bool>& results);
 
-        void Serialize(YAML::Emitter &out) override {
-            out << YAML::Key << "m_asObstacle" << YAML::Value << m_asObstacle;
-        }
+        virtual void InVolume(const std::vector<glm::vec3> &positions, std::vector<bool>& results);
+        void Serialize(YAML::Emitter &out) override;
 
-        void Deserialize(
-                const YAML::Node &in) override { if (in["m_asObstacle"]) m_asObstacle = in["m_asObstacle"].as<bool>(); };
+        void OnInspect() override;
 
-        void OnDestroy() override { m_asObstacle = false; }
+        void Deserialize(const YAML::Node &in) override;;
+
+        void OnDestroy() override;
     };
 } // namespace PlantFactory

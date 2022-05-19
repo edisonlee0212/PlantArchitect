@@ -16,10 +16,9 @@ void CubeVolume::OnCreate() {
 }
 
 void CubeVolume::OnInspect() {
-    ImGui::Checkbox("Obstacle", &m_asObstacle);
+    IVolume::OnInspect();
     ImGui::DragFloat3("Min", &m_minMaxBound.m_min.x, 0.1);
     ImGui::DragFloat3("Max", &m_minMaxBound.m_max.x, 0.1);
-    ImGui::Checkbox("Display bounds", &m_displayBounds);
     if (m_displayBounds) {
         const auto globalTransform = GetScene()->GetDataComponent<GlobalTransform>(GetOwner());
         Graphics::DrawGizmoMesh(
@@ -57,8 +56,6 @@ bool CubeVolume::InVolume(const GlobalTransform &globalTransform,
 
 void CubeVolume::Serialize(YAML::Emitter &out) {
     IVolume::Serialize(out);
-    out << YAML::Key << "m_displayPoints" << YAML::Value << m_displayPoints;
-    out << YAML::Key << "m_displayBounds" << YAML::Value << m_displayBounds;
     out << YAML::Key << "m_minMaxBound.m_min" << YAML::Value
         << m_minMaxBound.m_min;
     out << YAML::Key << "m_minMaxBound.m_max" << YAML::Value
@@ -67,8 +64,6 @@ void CubeVolume::Serialize(YAML::Emitter &out) {
 
 void CubeVolume::Deserialize(const YAML::Node &in) {
     IVolume::Deserialize(in);
-    m_displayPoints = in["m_displayPoints"].as<bool>();
-    m_displayBounds = in["m_displayBounds"].as<bool>();
     m_minMaxBound.m_min = in["m_minMaxBound.m_min"].as<glm::vec3>();
     m_minMaxBound.m_max = in["m_minMaxBound.m_max"].as<glm::vec3>();
 }

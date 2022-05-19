@@ -18,7 +18,6 @@ namespace PlantArchitect {
     public:
         glm::vec3 m_center;
         glm::vec4 m_displayColor = glm::vec4(0.0f, 0.0f, 1.0f, 0.5f);
-        bool m_display = false;
         bool m_pruneBuds = false;
 
         [[nodiscard]] glm::vec3 GetRandomPoint() override;
@@ -48,9 +47,6 @@ namespace PlantArchitect {
         PrivateComponentRef m_rootInternode;
         void CalculateVolume(float maxHeight);
 
-        bool m_displayPoints = true;
-        bool m_displayBounds = true;
-
         void OnInspect() override;
 
         void ResizeVolumes();
@@ -64,5 +60,7 @@ namespace PlantArchitect {
         void Deserialize(const YAML::Node &in) override;
 
         void Augmentation(float value);
+
+        void OnDestroy() override;
     };
 } // namespace PlantFactory
