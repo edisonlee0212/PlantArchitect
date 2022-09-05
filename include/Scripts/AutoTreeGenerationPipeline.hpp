@@ -20,6 +20,11 @@ namespace Scripts {
         TreeGraph
     };
 
+    struct DescriptorPath{
+        bool m_isInProjectFolder;
+        std::filesystem::path m_path;
+    };
+
     class AutoTreeGenerationPipeline : public IPrivateComponent {
         std::shared_ptr<IPlantBehaviour> m_currentInternodeBehaviour;
     public:
@@ -34,9 +39,9 @@ namespace Scripts {
         int m_iterations = 0;
         void UpdateInternodeBehaviour();
 
-        std::filesystem::path m_currentDescriptorPath;
+        DescriptorPath m_currentDescriptorPath;
 
-        std::vector<std::filesystem::path> m_descriptorPaths;
+        std::vector<DescriptorPath> m_descriptorPaths;
         AutoTreeGenerationPipelineStatus m_status = AutoTreeGenerationPipelineStatus::Idle;
         AssetRef m_pipelineBehaviour;
         void Update() override;

@@ -29,20 +29,44 @@ void AutoTreeGenerationPipeline::Update() {
                     m_currentDescriptorPath = m_descriptorPaths.back();
                     switch (m_behaviourType) {
                         case BehaviourType::GeneralTree:
-                            m_currentUsingDescriptor = std::dynamic_pointer_cast<GeneralTreeParameters>(
-                                    ProjectManager::GetOrCreateAsset(m_currentDescriptorPath));
+                            if (m_currentDescriptorPath.m_isInProjectFolder) {
+                                m_currentUsingDescriptor = std::dynamic_pointer_cast<GeneralTreeParameters>(
+                                        ProjectManager::GetOrCreateAsset(m_currentDescriptorPath.m_path));
+                            } else {
+                                auto descriptor = ProjectManager::CreateTemporaryAsset<GeneralTreeParameters>();
+                                descriptor->Import(m_currentDescriptorPath.m_path);
+                                m_currentUsingDescriptor = descriptor;
+                            }
                             break;
                         case BehaviourType::LSystem:
-                            m_currentUsingDescriptor = std::dynamic_pointer_cast<LSystemString>(
-                                    ProjectManager::GetOrCreateAsset(m_currentDescriptorPath));
+                            if (m_currentDescriptorPath.m_isInProjectFolder) {
+                                m_currentUsingDescriptor = std::dynamic_pointer_cast<LSystemString>(
+                                        ProjectManager::GetOrCreateAsset(m_currentDescriptorPath.m_path));
+                            } else {
+                                auto descriptor = ProjectManager::CreateTemporaryAsset<LSystemString>();
+                                descriptor->Import(m_currentDescriptorPath.m_path);
+                                m_currentUsingDescriptor = descriptor;
+                            }
                             break;
                         case BehaviourType::SpaceColonization:
-                            m_currentUsingDescriptor = std::dynamic_pointer_cast<SpaceColonizationParameters>(
-                                    ProjectManager::GetOrCreateAsset(m_currentDescriptorPath));
+                            if (m_currentDescriptorPath.m_isInProjectFolder) {
+                                m_currentUsingDescriptor = std::dynamic_pointer_cast<SpaceColonizationParameters>(
+                                        ProjectManager::GetOrCreateAsset(m_currentDescriptorPath.m_path));
+                            } else {
+                                auto descriptor = ProjectManager::CreateTemporaryAsset<SpaceColonizationParameters>();
+                                descriptor->Import(m_currentDescriptorPath.m_path);
+                                m_currentUsingDescriptor = descriptor;
+                            }
                             break;
                         case BehaviourType::TreeGraph:
-                            m_currentUsingDescriptor = std::dynamic_pointer_cast<TreeGraph>(
-                                    ProjectManager::GetOrCreateAsset(m_currentDescriptorPath));
+                            if (m_currentDescriptorPath.m_isInProjectFolder) {
+                                m_currentUsingDescriptor = std::dynamic_pointer_cast<TreeGraph>(
+                                        ProjectManager::GetOrCreateAsset(m_currentDescriptorPath.m_path));
+                            } else {
+                                auto descriptor = ProjectManager::CreateTemporaryAsset<TreeGraph>();
+                                descriptor->Import(m_currentDescriptorPath.m_path);
+                                m_currentUsingDescriptor = descriptor;
+                            }
                             break;
                     }
                     m_descriptorPaths.pop_back();
@@ -58,22 +82,22 @@ void AutoTreeGenerationPipeline::Update() {
                     case BehaviourType::GeneralTree:
                         m_iterations = m_currentUsingDescriptor.Get<GeneralTreeParameters>()->m_matureAge;
                         m_prefix =
-                                m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName() +
+                                m_currentDescriptorPath.m_path.filename().stem().string() +
                                 "_";
                         break;
                     case BehaviourType::LSystem:
                         m_prefix =
-                                m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName() +
+                                m_currentDescriptorPath.m_path.filename().stem().string() +
                                 "_";
                         break;
                     case BehaviourType::TreeGraph:
                         m_prefix =
-                                m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName() +
+                                m_currentDescriptorPath.m_path.filename().stem().string() +
                                 "_";
                         break;
                     case BehaviourType::SpaceColonization:
                         m_prefix =
-                                m_currentUsingDescriptor.Get<IPlantDescriptor>()->GetAssetRecord().lock()->GetAssetFileName() +
+                                m_currentDescriptorPath.m_path.filename().stem().string() +
                                 "_";
                         break;
                 }
@@ -160,50 +184,85 @@ void AutoTreeGenerationPipeline::OnInspect() {
         ImGui::Text(("Loaded descriptors: " + std::to_string(m_descriptorPaths.size())).c_str());
         FileUtils::OpenFolder("Collect descriptors", [&](const std::filesystem::path &path) {
             auto &projectManager = ProjectManager::GetInstance();
-            if (std::filesystem::exists(path) && std::filesystem::is_directory(path)) {
-                for (const auto &entry: std::filesystem::recursive_directory_iterator(path)) {
-                    if (!std::filesystem::is_directory(entry.path())) {
-                        auto relativePath = ProjectManager::GetPathRelativeToProject(entry.path());
-                        switch (m_behaviourType) {
-                            case BehaviourType::GeneralTree:
-                                if (entry.path().extension() == ".gtparams") {
-                                    m_descriptorPaths.emplace_back(relativePath);
+            if (ProjectManager::IsInProjectFolder(path)) {
+                if (std::filesystem::exists(path) && std::filesystem::is_directory(path)) {
+                    for (const auto &entry: std::filesystem::recursive_directory_iterator(path)) {
+                        if (!std::filesystem::is_directory(entry.path())) {
+                            auto relativePath = ProjectManager::GetPathRelativeToProject(entry.path());
+                            switch (m_behaviourType) {
+                                case BehaviourType::GeneralTree:
+                                    if (entry.path().extension() == ".gtparams") {
+                                        m_descriptorPaths.push_back({true, relativePath});
+                                        break;
+                                    }
                                     break;
-                                }
-                                break;
-                            case BehaviourType::LSystem:
-                                if (entry.path().extension() == ".lstring") {
-                                    m_descriptorPaths.emplace_back(relativePath);
+                                case BehaviourType::LSystem:
+                                    if (entry.path().extension() == ".lstring") {
+                                        m_descriptorPaths.push_back({true, relativePath});
+                                        break;
+                                    }
                                     break;
-                                }
-                                break;
-                            case BehaviourType::SpaceColonization:
-                                if (entry.path().extension() == ".scparams") {
-                                    m_descriptorPaths.emplace_back(relativePath);
+                                case BehaviourType::SpaceColonization:
+                                    if (entry.path().extension() == ".scparams") {
+                                        m_descriptorPaths.push_back({true, relativePath});
+                                        break;
+                                    }
                                     break;
-                                }
-                                break;
-                            case BehaviourType::TreeGraph:
-                                if (entry.path().extension() == ".treegraph") {
-                                    m_descriptorPaths.emplace_back(relativePath);
+                                case BehaviourType::TreeGraph:
+                                    if (entry.path().extension() == ".treegraph") {
+                                        m_descriptorPaths.push_back({true, relativePath});
+                                        break;
+                                    }
                                     break;
-                                }
-                                break;
+                            }
+                        }
+                    }
+                }
+            } else {
+                if (std::filesystem::exists(path) && std::filesystem::is_directory(path)) {
+                    for (const auto &entry: std::filesystem::recursive_directory_iterator(path)) {
+                        if (!std::filesystem::is_directory(entry.path())) {
+                            switch (m_behaviourType) {
+                                case BehaviourType::GeneralTree:
+                                    if (entry.path().extension() == ".gtparams") {
+                                        m_descriptorPaths.push_back({false, entry.path()});
+                                        break;
+                                    }
+                                    break;
+                                case BehaviourType::LSystem:
+                                    if (entry.path().extension() == ".lstring") {
+                                        m_descriptorPaths.push_back({false, entry.path()});
+                                        break;
+                                    }
+                                    break;
+                                case BehaviourType::SpaceColonization:
+                                    if (entry.path().extension() == ".scparams") {
+                                        m_descriptorPaths.push_back({false, entry.path()});
+                                        break;
+                                    }
+                                    break;
+                                case BehaviourType::TreeGraph:
+                                    if (entry.path().extension() == ".treegraph") {
+                                        m_descriptorPaths.push_back({false, entry.path()});
+                                        break;
+                                    }
+                                    break;
+                            }
                         }
                     }
                 }
             }
 
-        });
-        if(!m_descriptorPaths.empty()){
-            if(ImGui::TreeNodeEx("Loaded descriptors")){
-                for(const auto& i : m_descriptorPaths){
-                    ImGui::Text(i.string().c_str());
+        }, false);
+        if (!m_descriptorPaths.empty()) {
+            if (ImGui::TreeNodeEx("Loaded descriptors")) {
+                for (const auto &i: m_descriptorPaths) {
+                    ImGui::Text((i.m_isInProjectFolder ? "T |" : "F |" + i.m_path.string()).c_str());
                 }
                 ImGui::TreePop();
             }
         }
-        if(ImGui::Button("Clear descriptors")){
+        if (ImGui::Button("Clear descriptors")) {
             m_descriptorPaths.clear();
         }
         if (m_descriptorPaths.empty()) {
