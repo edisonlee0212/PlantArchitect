@@ -3,6 +3,7 @@
 #include <PlantLayer.hpp>
 #include <AutoTreeGenerationPipeline.hpp>
 #include "VoxelGrid.hpp"
+
 #ifdef RAYTRACERFACILITY
 
 #include "RayTracerCamera.hpp"
@@ -12,6 +13,7 @@ using namespace RayTracerFacility;
 #endif
 using namespace PlantArchitect;
 namespace Scripts {
+
 
     class TreeDataCapturePipeline : public IAutoTreeGenerationPipelineBehaviour {
         std::vector<glm::mat4> m_cameraModels;
@@ -23,9 +25,6 @@ namespace Scripts {
         Entity m_ground;
         Entity m_obstacle;
 
-        AssetRef m_obstacleGrid;
-
-        GlobalTransform TransformCamera(const Bound &bound, float turnAngle, float pitchAngle);
 
         void SetUpCamera(AutoTreeGenerationPipeline &pipeline);
 
@@ -42,57 +41,84 @@ namespace Scripts {
 
         void ExportEnvironmentalGrid(AutoTreeGenerationPipeline &pipeline,
                                      const std::filesystem::path &path);
+
     public:
+        AssetRef m_obstacleGrid;
         EntityRef m_volumeEntity;
-        MeshGeneratorSettings m_meshGeneratorSettings;
-        bool m_enableRandomObstacle = false;
-        bool m_renderObstacle = true;
-        bool m_lShapedWall = false;
-        glm::vec2 m_obstacleDistanceRange = glm::vec2(2, 10);
-        glm::vec3 m_wallSize = glm::vec3(2.0f, 5.0f, 20.0f);
-        bool m_randomRotation = true;
-        AssetRef m_branchTexture;
-        BehaviourType m_defaultBehaviourType = BehaviourType::GeneralTree;
-#ifdef RAYTRACERFACILITY
-        RayProperties m_rayProperties = {1, 512};
-#endif
-        AssetRef m_foliagePhyllotaxis;
-        bool m_enableGround = true;
-        bool m_autoAdjustCamera = true;
-        bool m_applyPhyllotaxis = false;
         std::filesystem::path m_currentExportFolder;
-        float m_branchWidth = 0.04f;
-        float m_nodeSize = 0.05f;
+        MeshGeneratorSettings m_meshGeneratorSettings;
+        BehaviourType m_defaultBehaviourType = BehaviourType::GeneralTree;
+
+        struct ObstacleSettings {
+            bool m_enableRandomObstacle = false;
+            bool m_renderObstacle = true;
+            bool m_lShapedWall = false;
+            glm::vec2 m_obstacleDistanceRange = glm::vec2(2, 10);
+            glm::vec3 m_wallSize = glm::vec3(2.0f, 5.0f, 20.0f);
+            bool m_randomRotation = true;
+        } m_obstacleSettings;
+
+        struct AppearanceSettings {
+            AssetRef m_branchTexture;
+
+            AssetRef m_foliagePhyllotaxis;
+            bool m_applyPhyllotaxis = false;
+            float m_branchWidth = 0.04f;
+            float m_nodeSize = 0.05f;
+        } m_appearanceSettings;
+
+        struct EnvironmentSettings {
+            bool m_enableGround = true;
+            float m_lightSize = 0.02f;
+            float m_ambientLightIntensity = 0.15f;
+            float m_envLightIntensity = 1.0f;
+        } m_environmentSettings;
+
+        struct CameraCaptureSettings {
+#ifdef RAYTRACERFACILITY
+            RayProperties m_rayProperties = {1, 512};
+#endif
             glm::vec3 m_focusPoint = glm::vec3(0, 15, 0);
-        int m_pitchAngleStart = 0;
-        int m_pitchAngleStep = 10;
-        int m_pitchAngleEnd = 10;
-        int m_turnAngleStart = 0.0f;
-        int m_turnAngleStep = 360;
-        int m_turnAngleEnd = 360.0f;
-        float m_distance = 80;
-        float m_fov = 60;
-        float m_lightSize = 0.02f;
-        float m_ambientLightIntensity = 0.15f;
-        float m_envLightIntensity = 1.0f;
-        glm::ivec2 m_resolution = glm::ivec2(1024, 1024);
+            bool m_autoAdjustFocusPoint = true;
+            int m_pitchAngleStart = 0;
+            int m_pitchAngleStep = 10;
+            int m_pitchAngleEnd = 10;
+            int m_turnAngleStart = 0.0f;
+            int m_turnAngleStep = 360;
+            int m_turnAngleEnd = 360.0f;
+            float m_distance = 80;
+            float m_fov = 60;
+            glm::ivec2 m_resolution = glm::ivec2(1024, 1024);
+            bool m_useClearColor = true;
+            glm::vec3 m_backgroundColor = glm::vec3(1.0f);
+            float m_cameraDepthMax = 200;
 
-        //Options.
-        bool m_exportTreeIOTrees = false;
-        bool m_exportOBJ = false;
-        bool m_exportCSV = true;
-        bool m_exportEnvironmentalGrid = false;
-        bool m_exportWallPrefab = false;
-        bool m_exportGraph = false;
-        bool m_exportImage = false;
-        bool m_exportDepth = false;
-        bool m_exportMatrices = true;
-        bool m_exportBranchCapture = false;
-        bool m_exportLString = false;
+            void OnInspect();
 
-        bool m_useClearColor = true;
-        glm::vec3 m_backgroundColor = glm::vec3(1.0f);
-        float m_cameraMax = 200;
+            void Serialize(const std::string &name, YAML::Emitter &out);
+
+            void Deserialize(const std::string &name, const YAML::Node &in);
+
+            GlobalTransform GetTransform(bool isCamera, const Bound &bound, float turnAngle, float pitchAngle);
+        } m_cameraSettings, m_pointCloudSettings;
+#ifdef RAYTRACERFACILITY
+        void ScanPointCloudLabeled(const Bound& plantBound, AutoTreeGenerationPipeline &pipeline,
+                                   const std::filesystem::path &savePath);
+#endif
+        struct ExportOptions {
+            bool m_exportTreeIOTrees = false;
+            bool m_exportOBJ = false;
+            bool m_exportCSV = true;
+            bool m_exportEnvironmentalGrid = false;
+            bool m_exportWallPrefab = false;
+            bool m_exportGraph = false;
+            bool m_exportImage = false;
+            bool m_exportDepth = false;
+            bool m_exportMatrices = true;
+            bool m_exportBranchCapture = false;
+            bool m_exportLString = false;
+            bool m_exportPointCloud = false;
+        } m_exportOptions;
 
         void OnStart(AutoTreeGenerationPipeline &pipeline) override;
 

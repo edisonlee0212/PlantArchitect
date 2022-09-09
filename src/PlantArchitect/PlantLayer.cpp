@@ -1352,7 +1352,7 @@ void PlantLayer::ObstacleRemoval() {
                 }
             }
         }
-
+    if(volumes.empty() && obstacleVolumes.empty()) return;
     std::vector<Entity> internodes;
     std::vector<glm::vec3> positions;
     std::vector<bool> obstacleResults;
