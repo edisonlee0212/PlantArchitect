@@ -101,6 +101,11 @@ namespace Scripts {
 
             GlobalTransform GetTransform(bool isCamera, const Bound &bound, float turnAngle, float pitchAngle);
         } m_cameraSettings, m_pointCloudSettings;
+
+        struct PointCloudPointSettings{
+            bool m_color = false;
+            bool m_pointType = true;
+        } m_pointCloudPointSettings;
 #ifdef RAYTRACERFACILITY
         void ScanPointCloudLabeled(const Bound& plantBound, AutoTreeGenerationPipeline &pipeline,
                                    const std::filesystem::path &savePath);
