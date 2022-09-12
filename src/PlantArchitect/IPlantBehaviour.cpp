@@ -2,12 +2,12 @@
 // Created by lllll on 8/27/2021.
 //
 
-#include "IPlantBehaviour.hpp"
-#include "Internode.hpp"
+#include "InternodeModel/IPlantBehaviour.hpp"
+#include "InternodeModel/Internode.hpp"
 #include "Curve.hpp"
-#include "PlantLayer.hpp"
+#include "InternodeLayer.hpp"
 #include "IInternodeFoliage.hpp"
-#include "PlantDataComponents.hpp"
+#include "InternodeModelDataComponents.hpp"
 #include "TransformLayer.hpp"
 #include "Graphics.hpp"
 

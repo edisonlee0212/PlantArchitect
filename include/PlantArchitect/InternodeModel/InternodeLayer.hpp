@@ -2,8 +2,8 @@
 
 #include "Application.hpp"
 #include "plant_architect_export.h"
-#include <VoxelSpace.hpp>
-#include "PlantDataComponents.hpp"
+#include "VoxelSpace.hpp"
+#include "InternodeModelDataComponents.hpp"
 #include "ILayer.hpp"
 #include "FBM.hpp"
 
@@ -49,7 +49,7 @@ namespace PlantArchitect {
 
     class IPlantBehaviour;
 
-    class PLANT_ARCHITECT_API PlantLayer : public ILayer {
+    class PLANT_ARCHITECT_API InternodeLayer : public ILayer {
     public:
         void PreparePhysics(const Entity &entity, const Entity &child,
                             const BranchPhysicsParameters &branchPhysicsParameters);
@@ -167,7 +167,7 @@ namespace PlantArchitect {
     };
 
     template<class T>
-    std::shared_ptr<T> PlantLayer::GetPlantBehaviour() {
+    std::shared_ptr<T> InternodeLayer::GetPlantBehaviour() {
         for (const auto &i: m_plantBehaviours) {
             auto converted = std::dynamic_pointer_cast<T>(i);
             if (converted) return converted;

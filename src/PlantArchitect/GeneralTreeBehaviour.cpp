@@ -3,7 +3,7 @@
 //
 
 #include "GeneralTreeBehaviour.hpp"
-#include "PlantLayer.hpp"
+#include "InternodeLayer.hpp"
 #include <DefaultInternodeResource.hpp>
 #include "EmptyInternodeResource.hpp"
 #include "TransformLayer.hpp"
@@ -832,7 +832,7 @@ void GeneralTreeParameters::Deserialize(const YAML::Node &in) {
 }
 
 Entity GeneralTreeParameters::InstantiateTree() {
-    return Application::GetLayer<PlantLayer>()->GetPlantBehaviour<GeneralTreeBehaviour>()->NewPlant(
+    return Application::GetLayer<InternodeLayer>()->GetPlantBehaviour<GeneralTreeBehaviour>()->NewPlant(
             Application::GetActiveScene(),
             std::dynamic_pointer_cast<GeneralTreeParameters>(m_self.lock()), Transform());
 }
@@ -931,7 +931,7 @@ void TreeGraph::Serialize(YAML::Emitter &out) {
 
 Entity TreeGraph::InstantiateTree() {
     if (!m_root) return {};
-    auto behaviour = Application::GetLayer<PlantLayer>()->GetPlantBehaviour<GeneralTreeBehaviour>();
+    auto behaviour = Application::GetLayer<InternodeLayer>()->GetPlantBehaviour<GeneralTreeBehaviour>();
     auto scene = Application::GetActiveScene();
     Entity rootInternode, rootBranch;
     AssetRef ref;
@@ -970,7 +970,7 @@ Entity TreeGraph::InstantiateTree() {
              }
             );
 
-    Application::GetLayer<PlantLayer>()->Preprocess(scene);
+    Application::GetLayer<InternodeLayer>()->Preprocess(scene);
 
     return root;
 }

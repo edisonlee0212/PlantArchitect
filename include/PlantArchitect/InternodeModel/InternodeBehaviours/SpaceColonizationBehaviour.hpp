@@ -1,7 +1,7 @@
 #pragma once
 
 #include <plant_architect_export.h>
-#include "IPlantBehaviour.hpp"
+#include "InternodeModel/IPlantBehaviour.hpp"
 
 using namespace UniEngine;
 namespace PlantArchitect {

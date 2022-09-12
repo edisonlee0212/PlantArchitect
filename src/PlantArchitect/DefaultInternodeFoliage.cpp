@@ -3,8 +3,8 @@
 //
 
 #include "DefaultInternodeFoliage.hpp"
-#include "Internode.hpp"
-#include "PlantLayer.hpp"
+#include "InternodeModel/Internode.hpp"
+#include "InternodeLayer.hpp"
 
 using namespace PlantArchitect;
 

@@ -2,7 +2,7 @@
 // Created by lllll on 2/26/2022.
 //
 
-#include "Root.hpp"
+#include "InternodeModel/Root.hpp"
 #include "IInternodeFoliage.hpp"
 
 using namespace PlantArchitect;

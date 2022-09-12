@@ -2,7 +2,7 @@
 // Created by lllll on 2/26/2022.
 //
 
-#include "Branch.hpp"
+#include "InternodeModel/Branch.hpp"
 using namespace PlantArchitect;
 
 

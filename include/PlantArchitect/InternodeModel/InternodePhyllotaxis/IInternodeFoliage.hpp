@@ -2,8 +2,8 @@
 
 #include <plant_architect_export.h>
 #include "Application.hpp"
-#include "Internode.hpp"
-#include "PlantLayer.hpp"
+#include "InternodeModel/Internode.hpp"
+#include "InternodeLayer.hpp"
 using namespace UniEngine;
 namespace PlantArchitect {
     class PLANT_ARCHITECT_API IInternodeFoliage : public IAsset {

@@ -1,7 +1,7 @@
-#include <PlantLayer.hpp>
-#include <PlantDataComponents.hpp>
+#include "InternodeModel/InternodeLayer.hpp"
+#include "InternodeModel/InternodeModelDataComponents.hpp"
 #include <RadialBoundingVolume.hpp>
-#include <Internode.hpp>
+#include "InternodeModel/Internode.hpp"
 #include "Graphics.hpp"
 #include "DefaultResources.hpp"
 

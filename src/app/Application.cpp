@@ -21,7 +21,7 @@
 #include <ObjectRotator.hpp>
 #include "GeneralTreeBehaviour.hpp"
 #include "DefaultInternodeResource.hpp"
-#include "Internode.hpp"
+#include "InternodeModel/Internode.hpp"
 #include <SpaceColonizationBehaviour.hpp>
 #include "EmptyInternodeResource.hpp"
 #include "LSystemBehaviour.hpp"
@@ -29,7 +29,7 @@
 #include "DefaultInternodeFoliage.hpp"
 #include "RadialBoundingVolume.hpp"
 #include "TreeDataCapturePipeline.hpp"
-#include "PlantLayer.hpp"
+#include "InternodeLayer.hpp"
 
 using namespace PlantArchitect;
 #ifdef RAYTRACERFACILITY
@@ -54,7 +54,7 @@ int main() {
 #ifdef RAYTRACERFACILITY
     Application::PushLayer<RayTracerLayer>();
 #endif
-    auto internodesLayer = Application::PushLayer<PlantLayer>();
+    auto internodesLayer = Application::PushLayer<InternodeLayer>();
 #pragma region Engine Loop
     Application::Start();
 #pragma endregion

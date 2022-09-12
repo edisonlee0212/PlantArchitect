@@ -3,7 +3,7 @@
 //
 
 #include "LSystemBehaviour.hpp"
-#include "PlantLayer.hpp"
+#include "InternodeLayer.hpp"
 #include "EmptyInternodeResource.hpp"
 #include "TransformLayer.hpp"
 #include "DefaultInternodeFoliage.hpp"
@@ -191,7 +191,7 @@ Entity LSystemBehaviour::NewPlant(const std::shared_ptr<Scene> &scene, const std
         scene->SetDataComponent(endNode, internodeInfo);
     });
 
-    Application::GetLayer<PlantLayer>()->CalculateStatistics(scene);
+    Application::GetLayer<InternodeLayer>()->CalculateStatistics(scene);
     UpdateBranches(scene);
     return root;
 }
@@ -370,6 +370,6 @@ void LSystemString::OnInspect() {
 }
 
 Entity LSystemString::InstantiateTree() {
-    return Application::GetLayer<PlantLayer>()->GetPlantBehaviour<LSystemBehaviour>()->NewPlant(Application::GetActiveScene(),
-            std::dynamic_pointer_cast<LSystemString>(m_self.lock()), Transform());
+    return Application::GetLayer<InternodeLayer>()->GetPlantBehaviour<LSystemBehaviour>()->NewPlant(Application::GetActiveScene(),
+                                                                                                    std::dynamic_pointer_cast<LSystemString>(m_self.lock()), Transform());
 }

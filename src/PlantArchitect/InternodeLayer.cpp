@@ -2,10 +2,10 @@
 //
 // Created by lllll on 8/27/2021.
 //
-#include "PlantLayer.hpp"
-#include <Internode.hpp>
+#include "InternodeLayer.hpp"
+#include "InternodeModel/Internode.hpp"
 #include "EditorLayer.hpp"
-#include "PlantDataComponents.hpp"
+#include "InternodeModelDataComponents.hpp"
 #include "GeneralTreeBehaviour.hpp"
 #include "SpaceColonizationBehaviour.hpp"
 #include "LSystemBehaviour.hpp"
@@ -25,8 +25,8 @@
 #include "MeshVolume.hpp"
 using namespace PlantArchitect;
 
-void PlantLayer::PreparePhysics(const Entity &entity, const Entity &child,
-                                const BranchPhysicsParameters &branchPhysicsParameters) {
+void InternodeLayer::PreparePhysics(const Entity &entity, const Entity &child,
+                                    const BranchPhysicsParameters &branchPhysicsParameters) {
     auto scene = GetScene();
     auto childBranchInfo = scene->GetDataComponent<BranchInfo>(child);
     auto rigidBody = scene->GetOrSetPrivateComponent<RigidBody>(child).lock();
@@ -56,7 +56,7 @@ void PlantLayer::PreparePhysics(const Entity &entity, const Entity &child,
                     branchPhysicsParameters.m_enableAccelerationForDrive);
 }
 
-void PlantLayer::Simulate(int iterations) {
+void InternodeLayer::Simulate(int iterations) {
     auto scene = GetScene();
 
     for (int iteration = 0; iteration < iterations; iteration++) {
@@ -96,7 +96,7 @@ void PlantLayer::Simulate(int iterations) {
     UpdateInternodePointer(m_pointerLength, m_pointerWidth);
 }
 
-void PlantLayer::PreparePhysics() {
+void InternodeLayer::PreparePhysics() {
     auto physicsLayer = Application::GetLayer<PhysicsLayer>();
     if (!physicsLayer) return;
 
@@ -162,7 +162,7 @@ void PlantLayer::PreparePhysics() {
 
 #pragma region Methods
 
-void PlantLayer::OnInspect() {
+void InternodeLayer::OnInspect() {
     auto scene = GetScene();
     if (ImGui::Begin("Internode Manager")) {
         static int iterations = 1;
@@ -601,7 +601,7 @@ void PlantLayer::OnInspect() {
 #pragma endregion
 }
 
-void PlantLayer::OnCreate() {
+void InternodeLayer::OnCreate() {
     ClassRegistry::RegisterDataComponent<InternodeCylinder>("InternodeCylinder");
     ClassRegistry::RegisterDataComponent<InternodeCylinderWidth>("InternodeCylinderWidth");
     ClassRegistry::RegisterDataComponent<InternodePointer>("InternodePointer");
@@ -745,11 +745,11 @@ void PlantLayer::OnCreate() {
 }
 
 
-void PlantLayer::LateUpdate() {
+void InternodeLayer::LateUpdate() {
     UpdateInternodeCamera();
 }
 
-void PlantLayer::UpdateInternodeColors() {
+void InternodeLayer::UpdateInternodeColors() {
     auto editorLayer = Application::GetLayer<EditorLayer>();
     if (!editorLayer) return;
     auto focusingInternode = Entity();
@@ -965,7 +965,7 @@ void PlantLayer::UpdateInternodeColors() {
 
 }
 
-void PlantLayer::UpdateInternodeCylinder() {
+void InternodeLayer::UpdateInternodeCylinder() {
     auto scene = GetScene();
     scene->ForEach<GlobalTransform, InternodeCylinder, InternodeCylinderWidth, InternodeInfo>(
             Jobs::Workers(),
@@ -1002,7 +1002,7 @@ void PlantLayer::UpdateInternodeCylinder() {
             true);
 }
 
-void PlantLayer::UpdateBranchCylinder() {
+void InternodeLayer::UpdateBranchCylinder() {
     auto scene = GetScene();
     scene->ForEach<GlobalTransform, BranchCylinder, BranchCylinderWidth, BranchInfo>(
             Jobs::Workers(),
@@ -1036,12 +1036,12 @@ void PlantLayer::UpdateBranchCylinder() {
             true);
 }
 
-void PlantLayer::UpdateInternodePointer(const float &length, const float &width) {
+void InternodeLayer::UpdateInternodePointer(const float &length, const float &width) {
 
 
 }
 
-void PlantLayer::RenderInternodeCylinders() {
+void InternodeLayer::RenderInternodeCylinders() {
     auto editorLayer = Application::GetLayer<EditorLayer>();
     if (!editorLayer) return;
     std::vector<InternodeCylinder> branchCylinders;
@@ -1060,7 +1060,7 @@ void PlantLayer::RenderInternodeCylinders() {
                 glm::mat4(1.0f), 1.0f);
 }
 
-void PlantLayer::RenderInternodePointers() {
+void InternodeLayer::RenderInternodePointers() {
     auto editorLayer = Application::GetLayer<EditorLayer>();
     if (!editorLayer) return;
     std::vector<InternodePointer> branchPointers;
@@ -1077,7 +1077,7 @@ void PlantLayer::RenderInternodePointers() {
 }
 
 
-void PlantLayer::UpdateInternodeCamera() {
+void InternodeLayer::UpdateInternodeCamera() {
     if (m_rightMouseButtonHold &&
         !Inputs::GetMouseInternal(GLFW_MOUSE_BUTTON_RIGHT,
                                   Windows::GetWindow())) {
@@ -1140,7 +1140,7 @@ static const char *BranchColorModes[]{"None", "Order", "Level", "Water", "Apical
                                       "Proximity", "Inhibitor", "IndexDivider", "IndexRange", "StrahlerNumber",
                                       "ChildCount", "SubTree", "Branchlet"};
 
-void PlantLayer::DrawColorModeSelectionMenu() {
+void InternodeLayer::DrawColorModeSelectionMenu() {
     if (ImGui::TreeNodeEx("Branch Coloring", ImGuiTreeNodeFlags_DefaultOpen)) {
         static int colorModeIndex = 0;
         if (ImGui::Combo("Color mode", &colorModeIndex, BranchColorModes,
@@ -1173,7 +1173,7 @@ void PlantLayer::DrawColorModeSelectionMenu() {
     }
 }
 
-void PlantLayer::CalculateStatistics(const std::shared_ptr<Scene> &scene) {
+void InternodeLayer::CalculateStatistics(const std::shared_ptr<Scene> &scene) {
     for (auto &behaviour: m_plantBehaviours) {
         if (behaviour) {
             std::vector<Entity> currentRoots;
@@ -1235,7 +1235,7 @@ void PlantLayer::CalculateStatistics(const std::shared_ptr<Scene> &scene) {
 
 }
 
-void PlantLayer::FixedUpdate() {
+void InternodeLayer::FixedUpdate() {
     if (Application::IsPlaying()) {
         if (m_applyFBMField) {
             std::vector<Entity> branches;
@@ -1265,7 +1265,7 @@ void PlantLayer::FixedUpdate() {
     }
 }
 
-void PlantLayer::UpdateBranchColors() {
+void InternodeLayer::UpdateBranchColors() {
     auto scene = GetScene();
     scene->ForEach<BranchColor>(Jobs::Workers(),
                                 m_branchesQuery,
@@ -1275,7 +1275,7 @@ void PlantLayer::UpdateBranchColors() {
                                 true);
 }
 
-void PlantLayer::RenderBranchCylinders() {
+void InternodeLayer::RenderBranchCylinders() {
     auto editorLayer = Application::GetLayer<EditorLayer>();
     if (!editorLayer) return;
     std::vector<BranchCylinder> branchCylinders;
@@ -1295,7 +1295,7 @@ void PlantLayer::RenderBranchCylinders() {
                 glm::mat4(1.0f), 1.0f);
 }
 
-void PlantLayer::ObstacleRemoval() {
+void InternodeLayer::ObstacleRemoval() {
     auto scene = Application::GetActiveScene();
 
     std::vector<std::pair<GlobalTransform, std::shared_ptr<IVolume>>> obstacleVolumes;
@@ -1410,7 +1410,7 @@ void PlantLayer::ObstacleRemoval() {
 
 }
 
-void PlantLayer::Preprocess(const std::shared_ptr<Scene> &scene) {
+void InternodeLayer::Preprocess(const std::shared_ptr<Scene> &scene) {
 #pragma region PreProcess
 #pragma region InternodeStatus
     for (auto &behaviour: m_plantBehaviours) {
@@ -1536,7 +1536,7 @@ void PlantLayer::Preprocess(const std::shared_ptr<Scene> &scene) {
     }
 }
 
-void PlantLayer::ColorSubTree(const std::shared_ptr<Scene> &scene, const Entity &entity, int colorIndex) {
+void InternodeLayer::ColorSubTree(const std::shared_ptr<Scene> &scene, const Entity &entity, int colorIndex) {
     if (scene->HasDataComponent<InternodeInfo>(entity)) {
         InternodeColor internodeColor;
         internodeColor.m_value = glm::vec4(m_randomColors[colorIndex], 1.0f);
@@ -1548,7 +1548,7 @@ void PlantLayer::ColorSubTree(const std::shared_ptr<Scene> &scene, const Entity 
     }
 }
 
-void PlantLayer::ColorBranchlet(const std::shared_ptr<Scene> &scene) {
+void InternodeLayer::ColorBranchlet(const std::shared_ptr<Scene> &scene) {
     for (auto &behaviour: m_plantBehaviours) {
         if (behaviour) {
             std::vector<Entity> currentRoots;

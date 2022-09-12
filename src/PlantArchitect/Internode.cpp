@@ -2,8 +2,8 @@
 // Created by lllll on 8/27/2021.
 //
 
-#include "Internode.hpp"
-#include "PlantLayer.hpp"
+#include "InternodeModel/Internode.hpp"
+#include "InternodeLayer.hpp"
 #include "LSystemBehaviour.hpp"
 #include "ProjectManager.hpp"
 

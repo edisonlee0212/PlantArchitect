@@ -2,7 +2,7 @@
 // Created by lllll on 3/25/2022.
 //
 
-#include "IPlantDescriptor.hpp"
+#include "InternodeModel/IPlantDescriptor.hpp"
 #include "IInternodeFoliage.hpp"
 using namespace PlantArchitect;
 void IPlantDescriptor::OnInspect() {

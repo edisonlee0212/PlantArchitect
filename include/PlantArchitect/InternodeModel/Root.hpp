@@ -1,9 +1,9 @@
 #pragma once
 
-#include "InternodeRingSegment.hpp"
-#include <plant_architect_export.h>
-#include <IInternodeResource.hpp>
-#include <PlantDataComponents.hpp>
+#include "RingSegment.hpp"
+#include "plant_architect_export.h"
+#include "InternodeModel/InternodeResources/IInternodeResource.hpp"
+#include "InternodeModelDataComponents.hpp"
 #include "IPlantDescriptor.hpp"
 using namespace UniEngine;
 namespace PlantArchitect {

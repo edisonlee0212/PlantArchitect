@@ -4,7 +4,7 @@
 
 #include "TreeDataCapturePipeline.hpp"
 #include "Entities.hpp"
-#include "PlantLayer.hpp"
+#include "InternodeLayer.hpp"
 #include "ProjectManager.hpp"
 #include "LSystemBehaviour.hpp"
 #include "CubeVolume.hpp"
@@ -143,7 +143,7 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
 #ifdef RAYTRACERFACILITY
     auto camera = scene->GetOrSetPrivateComponent<RayTracerCamera>(pipeline.GetOwner()).lock();
 #endif
-    auto internodeLayer = Application::GetLayer<PlantLayer>();
+    auto internodeLayer = Application::GetLayer<InternodeLayer>();
     auto behaviourType = pipeline.GetBehaviourType();
     Entity rootInternode;
     auto children = scene->GetChildren(pipeline.m_currentGrowingTree);
@@ -422,7 +422,7 @@ void TreeDataCapturePipeline::OnInspect() {
         ImGui::DragFloat("Light Size", &m_environmentSettings.m_lightSize, 0.001f);
         ImGui::DragFloat("Ambient light intensity", &m_environmentSettings.m_ambientLightIntensity, 0.01f);
         ImGui::DragFloat("Environment light intensity", &m_environmentSettings.m_envLightIntensity, 0.01f);
-        if (m_exportOptions.m_exportBranchCapture) Application::GetLayer<PlantLayer>()->DrawColorModeSelectionMenu();
+        if (m_exportOptions.m_exportBranchCapture) Application::GetLayer<InternodeLayer>()->DrawColorModeSelectionMenu();
     }
     if (m_exportOptions.m_exportPointCloud) {
         if (ImGui::TreeNodeEx("Point cloud settings")) {

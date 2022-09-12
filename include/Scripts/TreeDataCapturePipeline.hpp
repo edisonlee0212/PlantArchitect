@@ -1,6 +1,6 @@
 #pragma once
 
-#include <PlantLayer.hpp>
+#include "InternodeModel/InternodeLayer.hpp"
 #include <AutoTreeGenerationPipeline.hpp>
 #include "VoxelGrid.hpp"
 

@@ -1,9 +1,9 @@
-#include <InternodeRingSegment.hpp>
+#include <RingSegment.hpp>
 
 using namespace PlantArchitect;
 
-InternodeRingSegment::InternodeRingSegment(glm::vec3 startPosition, glm::vec3 endPosition, glm::vec3 startAxis,
-                                           glm::vec3 endAxis, float startRadius, float endRadius)
+RingSegment::RingSegment(glm::vec3 startPosition, glm::vec3 endPosition, glm::vec3 startAxis,
+                         glm::vec3 endAxis, float startRadius, float endRadius)
         : m_startPosition(startPosition),
           m_endPosition(endPosition),
           m_startAxis(startAxis),
@@ -12,7 +12,7 @@ InternodeRingSegment::InternodeRingSegment(glm::vec3 startPosition, glm::vec3 en
           m_endRadius(endRadius) {
 }
 
-void InternodeRingSegment::AppendPoints(std::vector<Vertex> &vertices, glm::vec3 &normalDir, int step) {
+void RingSegment::AppendPoints(std::vector<Vertex> &vertices, glm::vec3 &normalDir, int step) {
     std::vector<Vertex> startRing;
     std::vector<Vertex> endRing;
 
@@ -52,7 +52,7 @@ void InternodeRingSegment::AppendPoints(std::vector<Vertex> &vertices, glm::vec3
     vertices.push_back(startRing[0]);
 }
 
-glm::vec3 InternodeRingSegment::GetPoint(glm::vec3 &normalDir, float angle, bool isStart) {
+glm::vec3 RingSegment::GetPoint(glm::vec3 &normalDir, float angle, bool isStart) {
     glm::vec3 direction = glm::cross(normalDir, isStart ? this->m_startAxis : this->m_endAxis);
     direction = glm::rotate(direction, glm::radians(angle), isStart ? this->m_startAxis : this->m_endAxis);
     direction = glm::normalize(direction);
@@ -61,6 +61,6 @@ glm::vec3 InternodeRingSegment::GetPoint(glm::vec3 &normalDir, float angle, bool
     return position;
 }
 
-InternodeRingSegment::InternodeRingSegment() {
+RingSegment::RingSegment() {
 
 }

@@ -52,7 +52,7 @@ namespace PlantArchitect {
     };
 
     class PLANT_ARCHITECT_API IPlantBehaviour {
-        friend class PlantLayer;
+        friend class InternodeLayer;
 
         friend class TreeGraph;
 

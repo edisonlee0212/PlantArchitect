@@ -1,9 +1,9 @@
 #pragma once
 
-#include "InternodeRingSegment.hpp"
-#include <plant_architect_export.h>
-#include <IInternodeResource.hpp>
-#include <PlantDataComponents.hpp>
+#include "RingSegment.hpp"
+#include "plant_architect_export.h"
+#include "InternodeModel/InternodeResources/IInternodeResource.hpp"
+#include "InternodeModelDataComponents.hpp"
 #include "TreeIO.hpp"
 using namespace treeio;
 using namespace UniEngine;
@@ -55,7 +55,7 @@ namespace PlantArchitect {
         /**
          * For mesh generation
          */
-        std::vector<InternodeRingSegment> m_rings;
+        std::vector<RingSegment> m_rings;
     public:
         /**
          * The current root of the internode.

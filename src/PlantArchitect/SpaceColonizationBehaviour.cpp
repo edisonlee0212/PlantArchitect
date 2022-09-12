@@ -5,7 +5,7 @@
 #include "SpaceColonizationBehaviour.hpp"
 #include "EmptyInternodeResource.hpp"
 #include "CubeVolume.hpp"
-#include "PlantLayer.hpp"
+#include "InternodeLayer.hpp"
 #include "TransformLayer.hpp"
 #include "EditorLayer.hpp"
 
@@ -290,7 +290,7 @@ void SpaceColonizationBehaviour::OnMenu() {
             Graphics::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube, renderColor,
                                              displayMatrices, glm::mat4(1.0f), renderSize);
             auto editorLayer = Application::GetLayer<EditorLayer>();
-            auto internodeLayer = Application::GetLayer<PlantLayer>();
+            auto internodeLayer = Application::GetLayer<InternodeLayer>();
             if (editorLayer && internodeLayer) {
                 Graphics::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube,
                                                  internodeLayer->m_visualizationCamera,
@@ -387,7 +387,7 @@ void SpaceColonizationParameters::Deserialize(const YAML::Node &in) {
 }
 
 Entity SpaceColonizationParameters::InstantiateTree() {
-    return Application::GetLayer<PlantLayer>()->GetPlantBehaviour<SpaceColonizationBehaviour>()->NewPlant(Application::GetActiveScene(), std::dynamic_pointer_cast<SpaceColonizationParameters>(m_self.lock()), Transform());
+    return Application::GetLayer<InternodeLayer>()->GetPlantBehaviour<SpaceColonizationBehaviour>()->NewPlant(Application::GetActiveScene(), std::dynamic_pointer_cast<SpaceColonizationParameters>(m_self.lock()), Transform());
 }
 
 void SpaceColonizationParameters::CollectAssetRef(std::vector<AssetRef> &list) {

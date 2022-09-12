@@ -2,7 +2,7 @@
 // Created by lllll on 10/26/2021.
 //
 
-#include "PlantDataComponents.hpp"
+#include "InternodeModelDataComponents.hpp"
 using namespace PlantArchitect;
 
 void InternodeInfo::OnInspect() {

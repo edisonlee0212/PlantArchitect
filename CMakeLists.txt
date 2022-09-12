@@ -76,13 +76,14 @@ if (BUILD_RAY_TRACER_FACILITY)
             ${CMAKE_CURRENT_BINARY_DIR}
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/TreeIO
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/PlantModels
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeResources
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodePhyllotaxis
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/MeshFormation
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/Volumes
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/Utilities
-            include/PlantArchitect/Utilities/quickhull
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/Utilities/quickhull
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeModel
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeModel/InternodeBehaviours
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeModel/InternodeResources
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeModel/InternodePhyllotaxis
             )
     target_link_libraries(PlantArchitect
             RayTracerFacility
@@ -102,13 +103,14 @@ else ()
             ${CMAKE_CURRENT_BINARY_DIR}
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/TreeIO
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/PlantModels
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeResources
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodePhyllotaxis
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/MeshFormation
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/Volumes
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/Utilities
-            include/PlantArchitect/Utilities/quickhull
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/Utilities/quickhull
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeModel
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeModel/InternodeBehaviours
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeModel/InternodeResources
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeModel/InternodePhyllotaxis
             )
     target_link_libraries(PlantArchitect
             uniengine
