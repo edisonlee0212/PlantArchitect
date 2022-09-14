@@ -84,6 +84,7 @@ if (BUILD_RAY_TRACER_FACILITY)
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeModel/InternodeBehaviours
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeModel/InternodeResources
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeModel/InternodePhyllotaxis
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/StrandModel
             )
     target_link_libraries(PlantArchitect
             RayTracerFacility
@@ -111,6 +112,7 @@ else ()
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeModel/InternodeBehaviours
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeModel/InternodeResources
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/InternodeModel/InternodePhyllotaxis
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/StrandModel
             )
     target_link_libraries(PlantArchitect
             uniengine

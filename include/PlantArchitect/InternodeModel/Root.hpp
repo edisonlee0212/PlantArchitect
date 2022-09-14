@@ -2,7 +2,7 @@
 
 #include "RingSegment.hpp"
 #include "plant_architect_export.h"
-#include "InternodeModel/InternodeResources/IInternodeResource.hpp"
+#include "IInternodeResource.hpp"
 #include "InternodeModelDataComponents.hpp"
 #include "IPlantDescriptor.hpp"
 using namespace UniEngine;

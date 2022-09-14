@@ -53,10 +53,13 @@ namespace PlantArchitect {
     public:
         void PreparePhysics(const Entity &entity, const Entity &child,
                             const BranchPhysicsParameters &branchPhysicsParameters);
-        void Preprocess(const std::shared_ptr<Scene>& scene);
 
-        void ColorSubTree(const std::shared_ptr<Scene>& scene, const Entity &entity, int colorIndex);
-        void ColorBranchlet(const std::shared_ptr<Scene>& scene);
+        void Preprocess(const std::shared_ptr<Scene> &scene);
+
+        void ColorSubTree(const std::shared_ptr<Scene> &scene, const Entity &entity, int colorIndex);
+
+        void ColorBranchlet(const std::shared_ptr<Scene> &scene);
+
         BranchPhysicsParameters m_branchPhysicsParameters;
         FBM m_fBMField;
         float m_forceFactor = 1.0f;
@@ -65,8 +68,10 @@ namespace PlantArchitect {
         void DrawColorModeSelectionMenu();
 
         void PreparePhysics();
+
         void ObstacleRemoval();
-        void CalculateStatistics(const std::shared_ptr<Scene>& scene);
+
+        void CalculateStatistics(const std::shared_ptr<Scene> &scene);
 
         /**
          * The EntityQuery for filtering all internodes.
