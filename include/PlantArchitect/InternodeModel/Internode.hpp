@@ -3,7 +3,7 @@
 #include "RingSegment.hpp"
 #include "plant_architect_export.h"
 #include "InternodeModel/InternodeResources/IInternodeResource.hpp"
-#include "InternodeModelDataComponents.hpp"
+#include "DataComponents.hpp"
 #include "TreeIO.hpp"
 using namespace treeio;
 using namespace UniEngine;

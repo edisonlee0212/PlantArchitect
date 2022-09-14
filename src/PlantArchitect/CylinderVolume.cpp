@@ -58,13 +58,13 @@ bool CylinderVolume::InVolume(const GlobalTransform &globalTransform,
 
 void CylinderVolume::Serialize(YAML::Emitter &out) {
     IVolume::Serialize(out);
-    out << YAML::Key << "m_radius" << YAML::Value << m_radius;
+    out << YAML::Key << "m_boundaryRadius" << YAML::Value << m_radius;
     out << YAML::Key << "m_height" << YAML::Value << m_height;
 }
 
 void CylinderVolume::Deserialize(const YAML::Node &in) {
     IVolume::Deserialize(in);
-    m_radius = in["m_radius"].as<float>();
+    m_radius = in["m_boundaryRadius"].as<float>();
     m_height = in["m_height"].as<float>();
 }
 

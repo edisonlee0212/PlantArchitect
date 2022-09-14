@@ -1,5 +1,5 @@
 #include "InternodeModel/InternodeLayer.hpp"
-#include "InternodeModel/InternodeModelDataComponents.hpp"
+#include "DataComponents.hpp"
 #include <RadialBoundingVolume.hpp>
 #include "InternodeModel/Internode.hpp"
 #include "Graphics.hpp"
@@ -489,7 +489,7 @@ void RadialBoundingVolume::CalculateVolume(float maxHeight) {
 
 void RadialBoundingVolume::OnInspect() {
     IVolume::OnInspect();
-    Editor::DragAndDropButton<Internode>(m_rootInternode, "Root");
+    Editor::DragAndDropButton<Internode>(m_rootInternode, "InternodePlant");
     auto scene = GetScene();
     ImGui::Checkbox("Prune Buds", &m_pruneBuds);
     ImGui::ColorEdit4("Display Color", &m_displayColor.x);

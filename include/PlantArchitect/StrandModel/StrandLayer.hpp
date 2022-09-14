@@ -6,6 +6,7 @@
 using namespace UniEngine;
 namespace PlantArchitect {
     class PLANT_ARCHITECT_API StrandLayer : public ILayer {
+        EntityArchetype m_strandIntersectionArchetype;
     public:
         void OnCreate() override;
 

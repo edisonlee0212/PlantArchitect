@@ -24,16 +24,16 @@ LSystemBehaviour::LSystemBehaviour() {
     m_internodesQuery.SetAllFilters(InternodeInfo(), LSystemTag());
 
     m_rootArchetype =
-            Entities::CreateEntityArchetype("L-System Root", RootInfo(), LSystemTag());
+            Entities::CreateEntityArchetype("L-System Root", InternodeRootInfo(), LSystemTag());
     m_rootsQuery = Entities::CreateEntityQuery();
-    m_rootsQuery.SetAllFilters(RootInfo(), LSystemTag());
+    m_rootsQuery.SetAllFilters(InternodeRootInfo(), LSystemTag());
 
     m_branchArchetype =
-            Entities::CreateEntityArchetype("L-System Branch", BranchInfo(),
+            Entities::CreateEntityArchetype("L-System Branch", InternodeBranchInfo(),
                                             LSystemTag(),
-                                            BranchColor(), BranchCylinder(), BranchCylinderWidth());
+                                            InternodeBranchColor(), InternodeBranchCylinder(), InternodeBranchCylinderWidth());
     m_branchesQuery = Entities::CreateEntityQuery();
-    m_branchesQuery.SetAllFilters(BranchInfo(), LSystemTag());
+    m_branchesQuery.SetAllFilters(InternodeBranchInfo(), LSystemTag());
 }
 
 

@@ -2,7 +2,7 @@
 
 #include "plant_architect_export.h"
 #include "Internode.hpp"
-#include "Root.hpp"
+#include "InternodePlant.hpp"
 #include "Branch.hpp"
 #include "Serialization.hpp"
 #include "Graphics.hpp"
@@ -273,14 +273,14 @@ namespace PlantArchitect {
 /**
          * Check if the entity is valid root.
          * @param target Target for check.
-         * @return True if the entity is valid and contains [RootInfo] and [Root], false otherwise.
+         * @return True if the entity is valid and contains [InternodeRootInfo] and [Root], false otherwise.
          */
         bool RootCheck(const std::shared_ptr<Scene> &scene, const Entity &target);
 
         /**
          * Check if the entity is valid branch.
          * @param target Target for check.
-         * @return True if the entity is valid and contains [BranchInfo] and [Branch], false otherwise.
+         * @return True if the entity is valid and contains [InternodeBranchInfo] and [Branch], false otherwise.
          */
         bool BranchCheck(const std::shared_ptr<Scene> &scene, const Entity &target);
 
@@ -463,10 +463,10 @@ namespace PlantArchitect {
         }
         std::lock_guard<std::mutex> lockGuard(m_internodeFactoryLock);
         Entity rootEntity;
-        rootEntity = scene->CreateEntity(m_rootArchetype, "Root");
-        RootInfo rootInfo;
+        rootEntity = scene->CreateEntity(m_rootArchetype, "InternodePlant");
+        InternodeRootInfo rootInfo;
         scene->SetDataComponent(rootEntity, rootInfo);
-        auto root = scene->GetOrSetPrivateComponent<Root>(rootEntity).lock();
+        auto root = scene->GetOrSetPrivateComponent<InternodePlant>(rootEntity).lock();
         root->m_plantDescriptor = descriptor;
         rootInternode = scene->CreateEntity(m_internodeArchetype, "Internode");
         scene->SetParent(rootInternode, rootEntity);
@@ -479,7 +479,7 @@ namespace PlantArchitect {
         auto internode = scene->GetOrSetPrivateComponent<Internode>(rootInternode).lock();
         internode->m_resource = Serialization::ProduceSerializable<T>();
         internode->m_currentRoot = rootEntity;
-        BranchInfo branchInfo;
+        InternodeBranchInfo branchInfo;
         branchInfo.m_endNode = true;
         scene->SetDataComponent(rootBranch, branchInfo);
         auto branch = scene->GetOrSetPrivateComponent<Branch>(rootBranch).lock();

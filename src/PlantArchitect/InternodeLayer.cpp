@@ -5,7 +5,7 @@
 #include "InternodeLayer.hpp"
 #include "InternodeModel/Internode.hpp"
 #include "EditorLayer.hpp"
-#include "InternodeModelDataComponents.hpp"
+#include "DataComponents.hpp"
 #include "GeneralTreeBehaviour.hpp"
 #include "SpaceColonizationBehaviour.hpp"
 #include "LSystemBehaviour.hpp"
@@ -28,7 +28,7 @@ using namespace PlantArchitect;
 void InternodeLayer::PreparePhysics(const Entity &entity, const Entity &child,
                                     const BranchPhysicsParameters &branchPhysicsParameters) {
     auto scene = GetScene();
-    auto childBranchInfo = scene->GetDataComponent<BranchInfo>(child);
+    auto childBranchInfo = scene->GetDataComponent<InternodeBranchInfo>(child);
     auto rigidBody = scene->GetOrSetPrivateComponent<RigidBody>(child).lock();
     rigidBody->SetEnableGravity(false);
     rigidBody->SetDensityAndMassCenter(branchPhysicsParameters.m_density *
@@ -119,7 +119,7 @@ void InternodeLayer::PreparePhysics() {
                         rootRigidBody->SetAngularVelocity(glm::vec3(0.0f));
                         rootRigidBody->SetLinearVelocity(glm::vec3(0.0f));
 
-                        auto childBranchInfo = scene->GetDataComponent<BranchInfo>(child);
+                        auto childBranchInfo = scene->GetDataComponent<InternodeBranchInfo>(child);
                         auto rigidBody = scene->GetOrSetPrivateComponent<RigidBody>(child).lock();
                         rigidBody->SetEnableGravity(false);
                         rigidBody->SetDensityAndMassCenter(m_branchPhysicsParameters.m_density *
@@ -239,7 +239,7 @@ void InternodeLayer::OnInspect() {
                     static std::shared_ptr<IPlantBehaviour> rootBehaviour;
                     static Entity rootEntity = {};
                     static EntityRef branchletCandidateRef[9];
-                    if (Editor::DragAndDropButton(rootEntityRef, "Root")) {
+                    if (Editor::DragAndDropButton(rootEntityRef, "InternodePlant")) {
                         rootEntity = rootEntityRef.Get();
                         bool found = false;
                         for (const auto &behaviour: m_plantBehaviours) {
@@ -606,9 +606,9 @@ void InternodeLayer::OnCreate() {
     ClassRegistry::RegisterDataComponent<InternodeCylinderWidth>("InternodeCylinderWidth");
     ClassRegistry::RegisterDataComponent<InternodePointer>("InternodePointer");
     ClassRegistry::RegisterDataComponent<InternodeColor>("InternodeColor");
-    ClassRegistry::RegisterDataComponent<BranchCylinder>("BranchCylinder");
-    ClassRegistry::RegisterDataComponent<BranchCylinderWidth>("BranchCylinderWidth");
-    ClassRegistry::RegisterDataComponent<BranchColor>("BranchColor");
+    ClassRegistry::RegisterDataComponent<InternodeBranchCylinder>("InternodeBranchCylinder");
+    ClassRegistry::RegisterDataComponent<InternodeBranchCylinderWidth>("InternodeBranchCylinderWidth");
+    ClassRegistry::RegisterDataComponent<InternodeBranchColor>("InternodeBranchColor");
 
     ClassRegistry::RegisterPrivateComponent<IVolume>("IVolume");
     ClassRegistry::RegisterPrivateComponent<CubeVolume>("CubeVolume");
@@ -642,11 +642,11 @@ void InternodeLayer::OnCreate() {
     ClassRegistry::RegisterSerializable<Bud>("LateralBud");
     ClassRegistry::RegisterPrivateComponent<Internode>("Internode");
     ClassRegistry::RegisterPrivateComponent<Branch>("Branch");
-    ClassRegistry::RegisterPrivateComponent<Root>("Root");
+    ClassRegistry::RegisterPrivateComponent<InternodePlant>("InternodePlant");
 
     ClassRegistry::RegisterDataComponent<InternodeInfo>("InternodeInfo");
-    ClassRegistry::RegisterDataComponent<RootInfo>("RootInfo");
-    ClassRegistry::RegisterDataComponent<BranchInfo>("BranchInfo");
+    ClassRegistry::RegisterDataComponent<InternodeRootInfo>("InternodeRootInfo");
+    ClassRegistry::RegisterDataComponent<InternodeBranchInfo>("InternodeBranchInfo");
     ClassRegistry::RegisterDataComponent<InternodeStatistics>("InternodeStatistics");
 
     ClassRegistry::RegisterAsset<DefaultInternodeFoliage>("DefaultInternodeFoliage", {".defaultip"});
@@ -731,7 +731,7 @@ void InternodeLayer::OnCreate() {
     m_internodesQuery = Entities::CreateEntityQuery();
     m_internodesQuery.SetAllFilters(InternodeInfo());
     m_branchesQuery = Entities::CreateEntityQuery();
-    m_branchesQuery.SetAllFilters(BranchInfo());
+    m_branchesQuery.SetAllFilters(InternodeBranchInfo());
 
 #pragma region Internode camera
     m_visualizationCamera =
@@ -1004,11 +1004,11 @@ void InternodeLayer::UpdateInternodeCylinder() {
 
 void InternodeLayer::UpdateBranchCylinder() {
     auto scene = GetScene();
-    scene->ForEach<GlobalTransform, BranchCylinder, BranchCylinderWidth, BranchInfo>(
+    scene->ForEach<GlobalTransform, InternodeBranchCylinder, InternodeBranchCylinderWidth, InternodeBranchInfo>(
             Jobs::Workers(),
             m_branchesQuery,
-            [](int i, Entity entity, GlobalTransform &ltw, BranchCylinder &c,
-               BranchCylinderWidth &branchCylinderWidth, BranchInfo &internodeInfo) {
+            [](int i, Entity entity, GlobalTransform &ltw, InternodeBranchCylinder &c,
+               InternodeBranchCylinderWidth &branchCylinderWidth, InternodeBranchInfo &internodeInfo) {
                 glm::vec3 scale;
                 glm::quat rotation;
                 glm::vec3 translation;
@@ -1267,24 +1267,24 @@ void InternodeLayer::FixedUpdate() {
 
 void InternodeLayer::UpdateBranchColors() {
     auto scene = GetScene();
-    scene->ForEach<BranchColor>(Jobs::Workers(),
-                                m_branchesQuery,
-                                [=](int i, Entity entity, BranchColor &branchRenderColor) {
+    scene->ForEach<InternodeBranchColor>(Jobs::Workers(),
+                                         m_branchesQuery,
+                                         [=](int i, Entity entity, InternodeBranchColor &branchRenderColor) {
                                     branchRenderColor.m_value = glm::vec4(m_branchColor, m_branchTransparency);
                                 },
-                                true);
+                                         true);
 }
 
 void InternodeLayer::RenderBranchCylinders() {
     auto editorLayer = Application::GetLayer<EditorLayer>();
     if (!editorLayer) return;
-    std::vector<BranchCylinder> branchCylinders;
+    std::vector<InternodeBranchCylinder> branchCylinders;
     auto scene = GetScene();
-    scene->GetComponentDataArray<BranchCylinder>(m_branchesQuery,
-                                                 branchCylinders);
-    std::vector<BranchColor> branchColors;
-    scene->GetComponentDataArray<BranchColor>(m_branchesQuery,
-                                              branchColors);
+    scene->GetComponentDataArray<InternodeBranchCylinder>(m_branchesQuery,
+                                                          branchCylinders);
+    std::vector<InternodeBranchColor> branchColors;
+    scene->GetComponentDataArray<InternodeBranchColor>(m_branchesQuery,
+                                                       branchColors);
     if (!branchCylinders.empty())
         Graphics::DrawGizmoMeshInstancedColored(
                 DefaultResources::Primitives::Cylinder, m_visualizationCamera,
@@ -1419,7 +1419,7 @@ void InternodeLayer::Preprocess(const std::shared_ptr<Scene> &scene) {
             scene->GetEntityArray(behaviour->m_rootsQuery, currentRoots);
             for (auto rootEntity: currentRoots) {
                 if (!behaviour->RootCheck(scene, rootEntity)) return;
-                auto root = scene->GetOrSetPrivateComponent<Root>(rootEntity).lock();
+                auto root = scene->GetOrSetPrivateComponent<InternodePlant>(rootEntity).lock();
                 auto center = glm::vec3(0);
                 int amount = 1;
                 auto internodeGlobalTransform = scene->GetDataComponent<GlobalTransform>(

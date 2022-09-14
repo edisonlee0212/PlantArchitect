@@ -22,17 +22,17 @@ SpaceColonizationBehaviour::SpaceColonizationBehaviour() {
     m_internodesQuery.SetAllFilters(InternodeInfo(), SpaceColonizationTag());
 
     m_rootArchetype =
-            Entities::CreateEntityArchetype("Space Colonization Root", RootInfo(),
+            Entities::CreateEntityArchetype("Space Colonization Root", InternodeRootInfo(),
                                             SpaceColonizationTag());
     m_rootsQuery = Entities::CreateEntityQuery();
-    m_rootsQuery.SetAllFilters(RootInfo(), SpaceColonizationTag());
+    m_rootsQuery.SetAllFilters(InternodeRootInfo(), SpaceColonizationTag());
 
     m_branchArchetype =
-            Entities::CreateEntityArchetype("Space Colonization Branch", BranchInfo(),
+            Entities::CreateEntityArchetype("Space Colonization Branch", InternodeBranchInfo(),
                                             SpaceColonizationTag(),
-                                            BranchColor(), BranchCylinder(), BranchCylinderWidth());
+                                            InternodeBranchColor(), InternodeBranchCylinder(), InternodeBranchCylinderWidth());
     m_branchesQuery = Entities::CreateEntityQuery();
-    m_branchesQuery.SetAllFilters(BranchInfo(), SpaceColonizationTag());
+    m_branchesQuery.SetAllFilters(InternodeBranchInfo(), SpaceColonizationTag());
     m_volumes.clear();
 }
 
@@ -49,7 +49,7 @@ void SpaceColonizationBehaviour::Grow(const std::shared_ptr<Scene> &scene, int i
                  auto internode = scene->GetOrSetPrivateComponent<Internode>(entity).lock();
                  auto rootEntity = internode->m_currentRoot.Get();
                  if (!RootCheck(scene, rootEntity)) return;
-                 auto spaceColonizationParameters = scene->GetOrSetPrivateComponent<Root>(rootEntity).lock()->m_plantDescriptor.Get<SpaceColonizationParameters>();
+                 auto spaceColonizationParameters = scene->GetOrSetPrivateComponent<InternodePlant>(rootEntity).lock()->m_plantDescriptor.Get<SpaceColonizationParameters>();
                  glm::vec3 position = globalTransform.GetPosition() +
                                       internodeInfo.m_length *
                                       (globalTransform.GetRotation() * glm::vec3(0, 0, -1));
@@ -94,7 +94,7 @@ void SpaceColonizationBehaviour::Grow(const std::shared_ptr<Scene> &scene, int i
                  auto internode = scene->GetOrSetPrivateComponent<Internode>(entity).lock();
                  auto rootEntity = internode->m_currentRoot.Get();
                  if (!RootCheck(scene, rootEntity)) return;
-                 auto spaceColonizationParameters = scene->GetOrSetPrivateComponent<Root>(rootEntity).lock()->m_plantDescriptor.Get<SpaceColonizationParameters>();;
+                 auto spaceColonizationParameters = scene->GetOrSetPrivateComponent<InternodePlant>(rootEntity).lock()->m_plantDescriptor.Get<SpaceColonizationParameters>();;
                  glm::vec3 position = globalTransform.GetPosition() +
                                       internodeInfo.m_length *
                                       (globalTransform.GetRotation() * glm::vec3(0, 0, -1));
@@ -173,7 +173,7 @@ void SpaceColonizationBehaviour::Grow(const std::shared_ptr<Scene> &scene, int i
                 glm::scale(glm::vec3(1.0f));
         scene->SetDataComponent(newNode, newNodeGlobalTransform);
         auto newInternode = scene->GetOrSetPrivateComponent<Internode>(newNode).lock();
-        auto parameter = scene->GetOrSetPrivateComponent<Root>(newInternode->m_currentRoot.Get()).lock()->m_plantDescriptor.Get<SpaceColonizationParameters>();
+        auto parameter = scene->GetOrSetPrivateComponent<InternodePlant>(newInternode->m_currentRoot.Get()).lock()->m_plantDescriptor.Get<SpaceColonizationParameters>();
         InternodeInfo newInfo;
         newInfo.m_length = glm::gaussRand(parameter->m_internodeLengthMean, parameter->m_internodeLengthVariance);
         newInfo.m_thickness = parameter->m_endNodeThickness;
@@ -206,7 +206,7 @@ void SpaceColonizationBehaviour::Grow(const std::shared_ptr<Scene> &scene, int i
     scene->ForEach<GlobalTransform>(Jobs::Workers(), m_rootsQuery,
                                        [&](int i, Entity entity, GlobalTransform &globalTransform) {
                                            if (!RootCheck(scene, entity)) return;
-                                           auto spaceColonizationParameters = scene->GetOrSetPrivateComponent<Root>(entity).lock()->m_plantDescriptor.Get<SpaceColonizationParameters>();
+                                           auto spaceColonizationParameters = scene->GetOrSetPrivateComponent<InternodePlant>(entity).lock()->m_plantDescriptor.Get<SpaceColonizationParameters>();
                                            scene->ForEachChild(entity, [&](Entity child) {
                                                if (!InternodeCheck(scene, child)) return;
                                                InternodeGraphWalkerEndToRoot(scene, child, [&](Entity parent) {

@@ -34,7 +34,7 @@ void TreeDataCapturePipeline::OnBeforeGrowth(AutoTreeGenerationPipeline &pipelin
         if (scene->HasPrivateComponent<Internode>(i)) rootInternode = i;
     }
     auto internode = scene->GetOrSetPrivateComponent<Internode>(rootInternode).lock();
-    auto root = scene->GetOrSetPrivateComponent<Root>(pipeline.m_currentGrowingTree).lock();
+    auto root = scene->GetOrSetPrivateComponent<InternodePlant>(pipeline.m_currentGrowingTree).lock();
     if (m_appearanceSettings.m_applyPhyllotaxis) {
         root->m_plantDescriptor.Get<IPlantDescriptor>()->m_foliagePhyllotaxis = m_appearanceSettings.m_foliagePhyllotaxis;
         root->m_plantDescriptor.Get<IPlantDescriptor>()->m_branchTexture = m_appearanceSettings.m_branchTexture;

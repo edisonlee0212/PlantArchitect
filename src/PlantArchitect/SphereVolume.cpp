@@ -55,13 +55,13 @@ bool SphereVolume::InVolume(const GlobalTransform &globalTransform,
 
 void SphereVolume::Serialize(YAML::Emitter &out) {
     IVolume::Serialize(out);
-    out << YAML::Key << "m_radius" << YAML::Value
+    out << YAML::Key << "m_boundaryRadius" << YAML::Value
         << m_radius;
 }
 
 void SphereVolume::Deserialize(const YAML::Node &in) {
     IVolume::Deserialize(in);
-    m_radius = in["m_radius"].as<float>();
+    m_radius = in["m_boundaryRadius"].as<float>();
 }
 
 void SphereVolume::OnDestroy() {

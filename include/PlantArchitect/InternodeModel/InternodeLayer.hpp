@@ -3,7 +3,7 @@
 #include "Application.hpp"
 #include "plant_architect_export.h"
 #include "VoxelSpace.hpp"
-#include "InternodeModelDataComponents.hpp"
+#include "DataComponents.hpp"
 #include "ILayer.hpp"
 #include "FBM.hpp"
 

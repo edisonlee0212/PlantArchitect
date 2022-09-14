@@ -7,7 +7,7 @@
 #include "Curve.hpp"
 #include "InternodeLayer.hpp"
 #include "IInternodeFoliage.hpp"
-#include "InternodeModelDataComponents.hpp"
+#include "DataComponents.hpp"
 #include "TransformLayer.hpp"
 #include "Graphics.hpp"
 
@@ -33,7 +33,7 @@ void IPlantBehaviour::UpdateBranches(const std::shared_ptr<Scene> &scene) {
         });
         UpdateBranchHelper(scene, rootBranch, rootInternode);
         {
-            auto branchInfo = scene->GetDataComponent<BranchInfo>(rootBranch);
+            auto branchInfo = scene->GetDataComponent<InternodeBranchInfo>(rootBranch);
             auto branchStartInternodeGT = scene->GetDataComponent<GlobalTransform>(branch->m_internodeChain.front());
             auto branchEndInternodeGT = scene->GetDataComponent<GlobalTransform>(branch->m_internodeChain.back());
             auto branchStartInternodeInfo = scene->GetDataComponent<InternodeInfo>(branch->m_internodeChain.front());
@@ -61,7 +61,7 @@ void IPlantBehaviour::UpdateBranches(const std::shared_ptr<Scene> &scene) {
         }
         BranchGraphWalkerRootToEnd(scene, rootBranch, [&](Entity parent, Entity child) {
             auto branch = scene->GetOrSetPrivateComponent<Branch>(child).lock();
-            auto branchInfo = scene->GetDataComponent<BranchInfo>(child);
+            auto branchInfo = scene->GetDataComponent<InternodeBranchInfo>(child);
             auto branchStartInternodeGT = scene->GetDataComponent<GlobalTransform>(branch->m_internodeChain.front());
             auto branchEndInternodeGT = scene->GetDataComponent<GlobalTransform>(branch->m_internodeChain.back());
             auto branchStartInternodeInfo = scene->GetDataComponent<InternodeInfo>(branch->m_internodeChain.front());
@@ -163,7 +163,7 @@ IPlantBehaviour::GenerateSkinnedMeshes(const std::shared_ptr<Scene> &scene, cons
             auto skinnedMeshRenderer = scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(branchMesh).lock();
             auto material = skinnedMeshRenderer->m_material.Get<Material>();
             skinnedMeshRenderer->SetEnabled(true);
-            auto root = scene->GetOrSetPrivateComponent<Root>(rootEntity).lock();
+            auto root = scene->GetOrSetPrivateComponent<InternodePlant>(rootEntity).lock();
             auto texture = root->m_plantDescriptor.Get<IPlantDescriptor>()->m_branchTexture.Get<Texture2D>();
             if (texture)
                 material->m_albedoTexture = texture;
@@ -214,7 +214,7 @@ IPlantBehaviour::GenerateSkinnedMeshes(const std::shared_ptr<Scene> &scene, cons
             auto skinnedMeshRenderer = scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(foliageMesh).lock();
             auto material = skinnedMeshRenderer->m_material.Get<Material>();
             skinnedMeshRenderer->SetEnabled(true);
-            auto root = scene->GetOrSetPrivateComponent<Root>(rootEntity).lock();
+            auto root = scene->GetOrSetPrivateComponent<InternodePlant>(rootEntity).lock();
             auto foliageModule = root->m_plantDescriptor.Get<IPlantDescriptor>()->m_foliagePhyllotaxis.Get<IInternodeFoliage>();
             if (foliageModule) {
                 auto texture = foliageModule->m_foliageTexture.Get<Texture2D>();
@@ -559,7 +559,7 @@ void MeshGeneratorSettings::Save(const std::string &name, YAML::Emitter &out) {
     out << YAML::Key << "m_enableBranch" << YAML::Value << m_enableBranch;
     out << YAML::Key << "m_smoothness" << YAML::Value << m_smoothness;
     out << YAML::Key << "m_overrideRadius" << YAML::Value << m_overrideRadius;
-    out << YAML::Key << "m_radius" << YAML::Value << m_radius;
+    out << YAML::Key << "m_boundaryRadius" << YAML::Value << m_radius;
     out << YAML::Key << "m_internodeLengthFactor" << YAML::Value << m_internodeLengthFactor;
     out << YAML::Key << "m_overrideVertexColor" << YAML::Value << m_overrideVertexColor;
     out << YAML::Key << "m_vertexColor" << YAML::Value << m_vertexColor;
@@ -576,7 +576,7 @@ void MeshGeneratorSettings::Load(const std::string &name, const YAML::Node &in) 
         if (ms["m_enableBranch"]) m_enableBranch = ms["m_enableBranch"].as<bool>();
         if (ms["m_smoothness"]) m_smoothness = ms["m_smoothness"].as<bool>();
         if (ms["m_overrideRadius"]) m_overrideRadius = ms["m_overrideRadius"].as<bool>();
-        if (ms["m_radius"]) m_radius = ms["m_radius"].as<float>();
+        if (ms["m_boundaryRadius"]) m_radius = ms["m_boundaryRadius"].as<float>();
         if (ms["m_internodeLengthFactor"]) m_internodeLengthFactor = ms["m_internodeLengthFactor"].as<float>();
         if (ms["m_overrideVertexColor"]) m_overrideVertexColor = ms["m_overrideVertexColor"].as<bool>();
         if (ms["m_vertexColor"]) m_vertexColor = ms["m_vertexColor"].as<glm::vec4>();
@@ -633,7 +633,7 @@ Entity IPlantBehaviour::CreateBranchHelper(const std::shared_ptr<Scene> &scene, 
     std::lock_guard<std::mutex> lockGuard(m_branchFactoryLock);
     retVal = scene->CreateEntity(m_branchArchetype, "Branch");
     scene->SetParent(retVal, parent);
-    BranchInfo branchInfo;
+    InternodeBranchInfo branchInfo;
     scene->SetDataComponent(retVal, branchInfo);
     auto parentBranch = scene->GetOrSetPrivateComponent<Branch>(parent).lock();
     auto branch = scene->GetOrSetPrivateComponent<Branch>(retVal).lock();
@@ -696,14 +696,14 @@ bool IPlantBehaviour::InternodeCheck(const std::shared_ptr<Scene> &scene, const 
 
 bool IPlantBehaviour::RootCheck(const std::shared_ptr<Scene> &scene, const Entity &target) {
     return scene->IsEntityValid(target) && scene->IsEntityEnabled(target) &&
-           scene->HasDataComponent<RootInfo>(target) &&
-           scene->HasPrivateComponent<Root>(target) &&
+           scene->HasDataComponent<InternodeRootInfo>(target) &&
+           scene->HasPrivateComponent<InternodePlant>(target) &&
            InternalRootCheck(scene, target);
 }
 
 bool IPlantBehaviour::BranchCheck(const std::shared_ptr<Scene> &scene, const Entity &target) {
     return scene->IsEntityValid(target) && scene->IsEntityEnabled(target) &&
-           scene->HasDataComponent<BranchInfo>(target) &&
+           scene->HasDataComponent<InternodeBranchInfo>(target) &&
            scene->HasPrivateComponent<Branch>(target) &&
            InternalBranchCheck(scene, target);
 }
@@ -716,7 +716,7 @@ void IPlantBehaviour::UpdateBranchHelper(const std::shared_ptr<Scene> &scene, co
     });
     scene->GetOrSetPrivateComponent<Branch>(currentBranch).lock()->m_internodeChain.push_back(currentInternode);
     if (trueChildAmount > 1) {
-        BranchInfo branchInfo;
+        InternodeBranchInfo branchInfo;
         branchInfo.m_endNode = false;
         scene->SetDataComponent(currentBranch, branchInfo);
         scene->ForEachChild(currentInternode, [&](Entity child) {
@@ -933,7 +933,7 @@ IPlantBehaviour::PrepareFoliageMatrices(const std::shared_ptr<Scene> &scene, con
                  if (rootEntity != entity) {
                      rootGlobalTransform = scene->GetDataComponent<GlobalTransform>(rootEntity);
                  }
-                 auto root = scene->GetOrSetPrivateComponent<Root>(rootEntity).lock();
+                 auto root = scene->GetOrSetPrivateComponent<InternodePlant>(rootEntity).lock();
                  auto inverseGlobalTransform = glm::inverse(rootGlobalTransform.m_value);
                  GlobalTransform relativeGlobalTransform;
                  GlobalTransform relativeParentGlobalTransform;

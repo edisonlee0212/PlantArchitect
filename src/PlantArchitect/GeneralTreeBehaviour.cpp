@@ -25,7 +25,7 @@ void GeneralTreeBehaviour::Grow(const std::shared_ptr<Scene> &scene, int iterati
                  auto internode = scene->GetOrSetPrivateComponent<Internode>(entity).lock();
                  auto rootEntity = internode->m_currentRoot.Get();
                  if (!RootCheck(scene, rootEntity)) return;
-                 auto generalTreeParameters = scene->GetOrSetPrivateComponent<Root>(
+                 auto generalTreeParameters = scene->GetOrSetPrivateComponent<InternodePlant>(
                          rootEntity).lock()->m_plantDescriptor.Get<GeneralTreeParameters>();
                  internodeStatus.m_age++;
                  //0. Apply sagging here.
@@ -257,7 +257,7 @@ void GeneralTreeBehaviour::Grow(const std::shared_ptr<Scene> &scene, int iterati
                                                                        [&](Entity child) {
                                                                            if (!InternodeCheck(scene, child))
                                                                                return;
-                                                                           auto generalTreeParameters = scene->GetOrSetPrivateComponent<Root>(
+                                                                           auto generalTreeParameters = scene->GetOrSetPrivateComponent<InternodePlant>(
                                                                                    entity).lock()->m_plantDescriptor.Get<GeneralTreeParameters>();
                                                                            InternodeGraphWalkerEndToRoot(scene, child,
                                                                                                          [&](Entity parent) {
@@ -335,17 +335,17 @@ GeneralTreeBehaviour::GeneralTreeBehaviour() {
     m_internodesQuery.SetAllFilters(InternodeInfo(), GeneralTreeTag());
 
     m_rootArchetype =
-            Entities::CreateEntityArchetype("General Tree Root", RootInfo(),
+            Entities::CreateEntityArchetype("General Tree Root", InternodeRootInfo(),
                                             GeneralTreeTag());
     m_rootsQuery = Entities::CreateEntityQuery();
-    m_rootsQuery.SetAllFilters(RootInfo(), GeneralTreeTag());
+    m_rootsQuery.SetAllFilters(InternodeRootInfo(), GeneralTreeTag());
 
     m_branchArchetype =
-            Entities::CreateEntityArchetype("General Tree Branch", BranchInfo(),
+            Entities::CreateEntityArchetype("General Tree Branch", InternodeBranchInfo(),
                                             GeneralTreeTag(),
-                                            BranchColor(), BranchCylinder(), BranchCylinderWidth());
+                                            InternodeBranchColor(), InternodeBranchCylinder(), InternodeBranchCylinderWidth());
     m_branchesQuery = Entities::CreateEntityQuery();
-    m_branchesQuery.SetAllFilters(BranchInfo(), GeneralTreeTag());
+    m_branchesQuery.SetAllFilters(InternodeBranchInfo(), GeneralTreeTag());
 }
 
 void GeneralTreeBehaviour::OnMenu() {
@@ -391,7 +391,7 @@ GeneralTreeBehaviour::NewPlant(const std::shared_ptr<Scene> &scene,
                                const std::shared_ptr<GeneralTreeParameters> &descriptor, const Transform &transform) {
     Entity rootInternode, rootBranch;
     auto rootEntity = CreateRoot(scene, descriptor, rootInternode, rootBranch);
-    auto root = scene->GetOrSetPrivateComponent<Root>(rootEntity).lock();
+    auto root = scene->GetOrSetPrivateComponent<InternodePlant>(rootEntity).lock();
 
     Transform internodeTransform;
     internodeTransform.m_value =
@@ -424,7 +424,7 @@ void GeneralTreeBehaviour::Preprocess(const std::shared_ptr<Scene> &scene, std::
              [&](int i, Entity entity, Transform &transform
              ) {
                  if (!RootCheck(scene, entity)) return;
-                 auto root = scene->GetOrSetPrivateComponent<Root>(entity).lock();
+                 auto root = scene->GetOrSetPrivateComponent<InternodePlant>(entity).lock();
                  auto generalTreeParameters = root->m_plantDescriptor.Get<GeneralTreeParameters>();
                  scene->ForEachChild(entity,
                                      [&](Entity child) {
@@ -580,7 +580,7 @@ void GeneralTreeBehaviour::Preprocess(const std::shared_ptr<Scene> &scene, std::
                  auto internode = scene->GetOrSetPrivateComponent<Internode>(entity).lock();
                  auto rootEntity = internode->m_currentRoot.Get();
                  if (!RootCheck(scene, rootEntity)) return;
-                 auto root = scene->GetOrSetPrivateComponent<Root>(rootEntity).lock();
+                 auto root = scene->GetOrSetPrivateComponent<InternodePlant>(rootEntity).lock();
                  auto difference =
                          internodeGlobalTransform.GetPosition() - root->m_center;
                  internodeIllumination.m_direction = glm::normalize(difference);
@@ -621,7 +621,7 @@ void GeneralTreeBehaviour::Preprocess(const std::shared_ptr<Scene> &scene, std::
                  auto internode = scene->GetOrSetPrivateComponent<Internode>(entity).lock();
                  auto rootEntity = internode->m_currentRoot.Get();
                  if (!RootCheck(scene, rootEntity)) return;
-                 auto generalTreeParameters = scene->GetOrSetPrivateComponent<Root>(
+                 auto generalTreeParameters = scene->GetOrSetPrivateComponent<InternodePlant>(
                          rootEntity).lock()->m_plantDescriptor.Get<GeneralTreeParameters>();
                  int plantIndex = 0;
                  for (const auto &plant: currentRoots) {

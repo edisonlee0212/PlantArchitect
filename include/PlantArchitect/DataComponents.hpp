@@ -4,10 +4,11 @@
 
 using namespace UniEngine;
 namespace PlantArchitect {
-    struct PLANT_ARCHITECT_API RootInfo : public IDataComponent {
+#pragma region Internode Model
+    struct PLANT_ARCHITECT_API InternodeRootInfo : public IDataComponent {
 
     };
-    struct PLANT_ARCHITECT_API BranchInfo : public IDataComponent {
+    struct PLANT_ARCHITECT_API InternodeBranchInfo : public IDataComponent {
         /**
          * The thickness of the internode
          */
@@ -85,8 +86,6 @@ namespace PlantArchitect {
 
         void OnInspect();
     };
-
-
 #pragma region Debug rendering
 
     struct PLANT_ARCHITECT_API InternodeColor : IDataComponent {
@@ -121,29 +120,35 @@ namespace PlantArchitect {
         }
     };
 
-    struct PLANT_ARCHITECT_API BranchColor : IDataComponent {
+    struct PLANT_ARCHITECT_API InternodeBranchColor : IDataComponent {
         glm::vec4 m_value;
 
         void OnInspect();
     };
 
-    struct PLANT_ARCHITECT_API BranchCylinder : IDataComponent {
+    struct PLANT_ARCHITECT_API InternodeBranchCylinder : IDataComponent {
         glm::mat4 m_value;
 
-        bool operator==(const BranchCylinder &other) const {
+        bool operator==(const InternodeBranchCylinder &other) const {
             return other.m_value == m_value;
         }
     };
 
-    struct PLANT_ARCHITECT_API BranchCylinderWidth : IDataComponent {
+    struct PLANT_ARCHITECT_API InternodeBranchCylinderWidth : IDataComponent {
         float m_value;
 
-        bool operator==(const BranchCylinderWidth &other) const {
+        bool operator==(const InternodeBranchCylinderWidth &other) const {
             return other.m_value == m_value;
         }
 
         void OnInspect();
     };
 
+#pragma endregion
+#pragma endregion
+#pragma region Strand Model
+    struct PLANT_ARCHITECT_API StrandIntersectionInfo : public IDataComponent {
+
+    };
 #pragma endregion
 }

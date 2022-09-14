@@ -2,7 +2,7 @@
 // Created by lllll on 10/26/2021.
 //
 
-#include "InternodeModelDataComponents.hpp"
+#include "DataComponents.hpp"
 using namespace PlantArchitect;
 
 void InternodeInfo::OnInspect() {
@@ -36,15 +36,15 @@ void InternodeCylinderWidth::OnInspect() {
     ImGui::Text(("Value: " + std::to_string(m_value)).c_str());
 }
 
-void BranchColor::OnInspect() {
+void InternodeBranchColor::OnInspect() {
     ImGui::ColorEdit4("Color", &m_value.x);
 }
 
-void BranchCylinderWidth::OnInspect() {
+void InternodeBranchCylinderWidth::OnInspect() {
     ImGui::Text(("Value: " + std::to_string(m_value)).c_str());
 }
 
-void BranchInfo::OnInspect() {
+void InternodeBranchInfo::OnInspect() {
     ImGui::Text(("Thickness: " + std::to_string(m_thickness)).c_str());
     ImGui::Text(("Length: " + std::to_string(m_length)).c_str());
     ImGui::Text(("Is end node: " + std::to_string(m_endNode)).c_str());
