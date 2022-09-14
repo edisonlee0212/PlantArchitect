@@ -27,7 +27,7 @@ namespace PlantArchitect {
         std::vector<std::shared_ptr<StrandKnot>> m_knots;
         std::vector<std::shared_ptr<StrandsIntersection>> m_children;
     public:
-
+        
     };
 
     struct PLANT_ARCHITECT_API StrandsIntersectionRegion{
@@ -45,6 +45,7 @@ namespace PlantArchitect {
         StrandsIntersectionRegion m_rootRegion;
         float m_pointDistance = 0.01f;
     public:
+        void OnCreate() override;
         void OnInspect() override;
         void GenerateStrands(float pointDistance = 0.01f);
     };

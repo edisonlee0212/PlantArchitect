@@ -33,16 +33,17 @@ void StrandPlant::GenerateStrands(float pointDistance) {
 
 void StrandPlant::OnInspect() {
     static bool drawRegion = true;
+    if(m_root) ImGui::Text("Strand count: %d", m_root->m_knots.size());
     if (ImGui::Button("Generate Strands")) GenerateStrands();
     ImGui::Checkbox("Draw Region", &drawRegion);
     if (ImGui::Begin("Region", &drawRegion)) {
-        static glm::vec2 scrolling = glm::vec2(0.0f);
-        static float zoomFactor = 250.0f;
+        static auto scrolling = glm::vec2(0.0f);
+        static float zoomFactor = 1000.0f;
         if (ImGui::Button("Recenter")) {
             scrolling = glm::vec2(0.0f);
         }
-        ImGui::DragFloat("Zoom", &zoomFactor, 1.0f, 1.0f, 2500.0f);
-        zoomFactor = glm::clamp(zoomFactor, 1.0f, 2500.0f);
+        ImGui::DragFloat("Zoom", &zoomFactor, 1.0f, 100.0f, 2500.0f);
+        zoomFactor = glm::clamp(zoomFactor, 100.0f, 2500.0f);
         ImGuiIO &io = ImGui::GetIO();
         ImDrawList *draw_list = ImGui::GetWindowDrawList();
 
@@ -134,7 +135,7 @@ void StrandPlant::OnInspect() {
                                    IM_COL32(255, 255, 0, 255), 2.0f);
             }
 
-            if (glm::distance(points.back(), {mousePosInCanvas.x, mousePosInCanvas.y}) >= 0.1f)
+            if (glm::distance(points.back(), {mousePosInCanvas.x, mousePosInCanvas.y}) >= 10.0f / zoomFactor)
                 points.push_back({mousePosInCanvas.x, mousePosInCanvas.y});
             if (!ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
                 addingLine = false;
@@ -146,6 +147,10 @@ void StrandPlant::OnInspect() {
     }
     ImGui::End();
 
+}
+
+void StrandPlant::OnCreate() {
+    GenerateStrands();
 }
 
 void StrandsIntersectionRegion::Construct(const std::vector<glm::vec2> &points) {
@@ -170,10 +175,10 @@ void StrandsIntersectionRegion::Construct(const std::vector<glm::vec2> &points) 
 
 StrandsIntersectionRegion::StrandsIntersectionRegion() {
     std::vector<glm::vec2> points;
-    points.emplace_back(-0.5f, 0.5f);
-    points.emplace_back(0.5f, 0.5f);
-    points.emplace_back(0.5f, -0.5f);
-    points.emplace_back(-0.5f, -0.5f);
+    points.emplace_back(-0.1f, 0.1f);
+    points.emplace_back(0.1f, 0.1f);
+    points.emplace_back(0.1f, -0.1f);
+    points.emplace_back(-0.1f, -0.1f);
     Construct(points);
 }
 
@@ -183,7 +188,7 @@ bool RayLineIntersect(glm::vec2 rayOrigin, glm::vec2 rayDirection, glm::vec2 poi
     const auto v3 = glm::vec2(-rayDirection.y, rayDirection.x);
 
     float dot = glm::dot(v2, v3);
-    if (abs(dot) < glm::epsilon<float>())
+    if (dot == 0.0f)
         return false;
 
     float t1 = (v2.x * v1.y - v2.y * v1.x) / dot;
