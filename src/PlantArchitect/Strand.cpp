@@ -6,15 +6,76 @@
 #include "DataComponents.hpp"
 
 using namespace PlantArchitect;
+#pragma region Helpers
 
-glm::vec2 GetPosition(const glm::ivec2 &coordinate, float pointDistance) {
-    return glm::vec2(coordinate.x * pointDistance + coordinate.y * pointDistance / 2.0f,
-                     coordinate.y * pointDistance * glm::cos(glm::radians(30.0f)));
+bool RayLineIntersect(glm::vec2 rayOrigin, glm::vec2 rayDirection, glm::vec2 point1, glm::vec2 point2) {
+    const auto v1 = rayOrigin - point1;
+    const auto v2 = point2 - point1;
+    const auto v3 = glm::vec2(-rayDirection.y, rayDirection.x);
+
+    float dot = glm::dot(v2, v3);
+    if (dot == 0.0f)
+        return false;
+
+    float t1 = (v2.x * v1.y - v2.y * v1.x) / dot;
+    float t2 = glm::dot(v1, v3) / dot;
+
+    //!!!!Check t2 >= 0 if we allow intersect on point 1
+    if (t1 >= 0.0f && t2 > 0.0f && 1.0f - t2 >= 0.0f)
+        return true;
+
+    return false;
 }
 
-glm::ivec2 GetCoordinate(const glm::vec2 &position, float pointDistance) {
-    int y = glm::round(position.y / pointDistance / glm::cos(glm::radians(30.0f)));
-    return glm::ivec2(glm::round((position.x - y * pointDistance / 2.0f) / pointDistance), y);
+bool LineLineIntersect(glm::vec2 pa, glm::vec2 pb, glm::vec2 pc, glm::vec2 pd) {
+    const auto v1 = pa - pc;
+    const auto v2 = pd - pc;
+    const auto v3 = glm::vec2(-(pb.y - pa.y), (pb.x - pa.x));
+
+    float dot = glm::dot(v2, v3);
+    if (dot == 0.0f)
+        return false;
+
+    float t1 = (v2.x * v1.y - v2.y * v1.x) / dot;
+    float t2 = glm::dot(v1, v3) / dot;
+
+    if (t1 > 0.0f && t1 < 1.0f && t2 > 0.0f && t2 < 1.0f)
+        return true;
+
+    return false;
+}
+
+bool InBoundary(const std::vector<glm::vec2> &boundary, const glm::vec2 &point) {
+    const auto point2 = glm::vec2(1.0f, 0.0f);
+    const auto point3 = glm::vec2(1.0f, 0.0f);
+    int windingNumber = 0;
+    const auto size = boundary.size();
+    if (size < 3) return false;
+    for (int i = 0; i < size - 1; i++) {
+        if (RayLineIntersect(point, point2, boundary[i], boundary[i + 1]) &&
+            RayLineIntersect(point, point3, boundary[i], boundary[i + 1])) {
+            windingNumber++;
+        }
+    }
+    if (RayLineIntersect(point, point2, boundary[size - 1], boundary[0]) &&
+        RayLineIntersect(point, point3, boundary[size - 1], boundary[0]))
+        windingNumber++;
+    if (windingNumber % 2 == 1) {
+        return true;
+    }
+    return false;
+}
+
+#pragma endregion
+
+glm::vec2 GetPosition(const glm::ivec2 &coordinate) {
+    return glm::vec2(coordinate.x + coordinate.y / 2.0f,
+                     coordinate.y * glm::cos(glm::radians(30.0f)));
+}
+
+glm::ivec2 GetCoordinate(const glm::vec2 &position) {
+    int y = glm::round(position.y / glm::cos(glm::radians(30.0f)));
+    return glm::ivec2(glm::round((position.x - y / 2.0f)), y);
 }
 
 void StrandPlant::GenerateStrands(float pointDistance) {
@@ -66,81 +127,66 @@ Entity StrandPlant::GetRoot() {
 }
 
 void StrandsIntersection::Construct(const std::vector<glm::vec2> &points) {
-    m_regionBoundary = points;
+    auto copiedPoints = points;
     //1. Calculate min/max bound
     auto max = glm::vec2(FLT_MIN);
     auto min = glm::vec2(FLT_MAX);
-    for (const auto &point: m_regionBoundary) {
+    for (const auto &point: copiedPoints) {
         if (max.x < point.x) max.x = point.x;
         if (max.y < point.y) max.y = point.y;
         if (min.x > point.x) min.x = point.x;
         if (min.y > point.y) min.y = point.y;
     }
     auto center = (max + min) / 2.0f;
-    m_boundaryRadius = (max - min) / 2.0f;
+    auto boundaryRadius = (max - min) / 2.0f;
     max -= center;
     min -= center;
-    for (auto &point: m_regionBoundary) {
+    for (auto &point: copiedPoints) {
         point -= center;
     }
+    m_strandKnots.clear();
+    glm::ivec2 sum = glm::ivec2(0);
+    int yRange = glm::ceil(boundaryRadius.y / glm::cos(glm::radians(30.0f)));
+    int xRange = glm::ceil(boundaryRadius.x);
+    for (int i = -xRange; i <= xRange; i++) {
+        for (int j = -yRange; j <= yRange; j++) {
+            glm::ivec2 coordinate;
+            coordinate.y = j;
+            coordinate.x = i - j / 2;
+            if (InBoundary(copiedPoints, GetPosition(coordinate))) {
+                m_strandKnots.push_back(std::make_shared<StrandKnot>());
+                m_strandKnots.back()->m_coordinate = coordinate;
+                sum += coordinate;
+            }
+        }
+    }
+    if (m_strandKnots.empty())return;
+    sum /= m_strandKnots.size();
+    for (auto &knot: m_strandKnots) {
+        knot->m_coordinate -= sum;
+    }
+    CalculateConnectivity();
 }
 
 void StrandsIntersection::OnCreate() {
     std::vector<glm::vec2> points;
-    m_pointDistance = 0.01f;
-    points.emplace_back(-0.1f, 0.1f);
-    points.emplace_back(0.1f, 0.1f);
-    points.emplace_back(0.1f, -0.1f);
-    points.emplace_back(-0.1f, -0.1f);
+    points.emplace_back(-10.0f, 10.0f);
+    points.emplace_back(10.0f, 10.0f);
+    points.emplace_back(10.0f, -10.0f);
+    points.emplace_back(-10.0f, -10.0f);
     Construct(points);
-    FillPoints();
 }
 
-bool RayLineIntersect(glm::vec2 rayOrigin, glm::vec2 rayDirection, glm::vec2 point1, glm::vec2 point2) {
-    const auto v1 = rayOrigin - point1;
-    const auto v2 = point2 - point1;
-    const auto v3 = glm::vec2(-rayDirection.y, rayDirection.x);
-
-    float dot = glm::dot(v2, v3);
-    if (dot == 0.0f)
-        return false;
-
-    float t1 = (v2.x * v1.y - v2.y * v1.x) / dot;
-    float t2 = glm::dot(v1, v3) / dot;
-
-    //!!!!Check t2 >= 0 if we allow intersect on point 1
-    if (t1 >= 0.0f && t2 > 0.0f && 1.0f - t2 >= 0.0f)
-        return true;
-
-    return false;
-}
-
-bool StrandsIntersection::IsInRegion(const glm::vec2 &point) const {
-    const auto point2 = glm::vec2(1.0f);
-    int windingNumber = 0;
-    const auto size = m_regionBoundary.size();
-    if (size < 3) return false;
-    for (int i = 0; i < size - 1; i++) {
-        if (RayLineIntersect(point, point2, m_regionBoundary[i], m_regionBoundary[i + 1])) {
-            windingNumber++;
-        }
-    }
-    if (RayLineIntersect(point, point2, m_regionBoundary[size - 1], m_regionBoundary[0])) windingNumber++;
-    if (windingNumber % 2 == 1) {
-        return true;
-    }
-    return false;
-}
 
 void StrandsIntersection::DisplayIntersection(const std::string &title, bool editable) {
     if (ImGui::Begin(title.c_str())) {
         static auto scrolling = glm::vec2(0.0f);
-        static float zoomFactor = 1000.0f;
+        static float zoomFactor = 10.0f;
         if (ImGui::Button("Recenter")) {
             scrolling = glm::vec2(0.0f);
         }
-        ImGui::DragFloat("Zoom", &zoomFactor, zoomFactor / 100.0f, 100.0f, 5000.0f);
-        zoomFactor = glm::clamp(zoomFactor, 100.0f, 5000.0f);
+        ImGui::DragFloat("Zoom", &zoomFactor, zoomFactor / 100.0f, 1.0f, 50.0f);
+        zoomFactor = glm::clamp(zoomFactor, 1.0f, 50.0f);
         ImGuiIO &io = ImGui::GetIO();
         ImDrawList *draw_list = ImGui::GetWindowDrawList();
 
@@ -199,52 +245,48 @@ void StrandsIntersection::DisplayIntersection(const std::string &title, bool edi
             points.emplace_back(mousePosInCanvas.x, mousePosInCanvas.y);
             addingLine = true;
         }
-        if (!addingLine) {
-            const auto size = m_regionBoundary.size();
-            for (int i = 0; i < size - 1; i++) {
-                draw_list->AddLine(ImVec2(origin.x + m_regionBoundary[i].x * zoomFactor,
-                                          origin.y + m_regionBoundary[i].y * zoomFactor),
-                                   ImVec2(origin.x + m_regionBoundary[i + 1].x * zoomFactor,
-                                          origin.y + m_regionBoundary[i + 1].y * zoomFactor),
-                                   IM_COL32(255, 255, 0, 255), 2.0f);
-            }
-            draw_list->AddLine(ImVec2(origin.x + m_regionBoundary[size - 1].x * zoomFactor,
-                                      origin.y + m_regionBoundary[size - 1].y * zoomFactor),
-                               ImVec2(origin.x + m_regionBoundary[0].x * zoomFactor,
-                                      origin.y + m_regionBoundary[0].y * zoomFactor),
-                               IM_COL32(255, 255, 0, 255), 2.0f);
-
+        {
+            draw_list->AddCircle(origin,
+                                 glm::clamp(0.5f * zoomFactor, 1.0f, 100.0f),
+                                 IM_COL32(255,
+                                          0,
+                                          0, 255));
             for (const auto &knot: m_strandKnots) {
-                auto pointPosition = GetPosition(knot->m_coordinate, m_pointDistance);
+                auto pointPosition = GetPosition(knot->m_coordinate);
                 auto canvasPosition = ImVec2(origin.x + pointPosition.x * zoomFactor,
                                              origin.y + pointPosition.y * zoomFactor);
                 draw_list->AddCircleFilled(canvasPosition,
-                                           glm::clamp(m_pointDistance * 0.4f * zoomFactor, 1.0f, 100.0f),
-                                           IM_COL32(255.0f * knot->m_distanceToBoundary / m_maxDistanceToEnd, 255.0f * knot->m_distanceToBoundary / m_maxDistanceToEnd, 255.0f * knot->m_distanceToBoundary / m_maxDistanceToEnd, 255));
-                if(zoomFactor > 2000) {
-                    auto textCanvasPosition = ImVec2(origin.x + pointPosition.x * zoomFactor - 0.003f * zoomFactor,
-                                                 origin.y + pointPosition.y * zoomFactor - 0.003f * zoomFactor);
+                                           glm::clamp(0.4f * zoomFactor, 1.0f, 100.0f),
+                                           IM_COL32(255.0f * knot->m_distanceToBoundary / m_maxDistanceToBoundary,
+                                                    255.0f * knot->m_distanceToBoundary / m_maxDistanceToBoundary,
+                                                    255.0f * knot->m_distanceToBoundary / m_maxDistanceToBoundary, 255));
+
+                if (zoomFactor > 20) {
+                    auto textCanvasPosition = ImVec2(origin.x + pointPosition.x * zoomFactor - 0.3f * zoomFactor,
+                                                     origin.y + pointPosition.y * zoomFactor - 0.3f * zoomFactor);
                     auto text = std::to_string(knot->m_distanceToBoundary);
-                    draw_list->AddText(0, 0.005f * zoomFactor, textCanvasPosition, IM_COL32(255, 0, 0, 255), text.c_str());
+                    draw_list->AddText(0, 0.5f * zoomFactor, textCanvasPosition, IM_COL32(255, 0, 0, 255),
+                                       text.c_str());
                 }
             }
-
-        } else {
+        }
+        if (addingLine) {
             const auto size = points.size();
             for (int i = 0; i < size - 1; i++) {
                 draw_list->AddLine(ImVec2(origin.x + points[i].x * zoomFactor,
                                           origin.y + points[i].y * zoomFactor),
                                    ImVec2(origin.x + points[i + 1].x * zoomFactor,
                                           origin.y + points[i + 1].y * zoomFactor),
-                                   IM_COL32(255, 255, 0, 255), 2.0f);
+                                   IM_COL32(255, 0, 0, 255), 2.0f);
             }
-
             if (glm::distance(points.back(), {mousePosInCanvas.x, mousePosInCanvas.y}) >= 10.0f / zoomFactor)
                 points.emplace_back(mousePosInCanvas.x, mousePosInCanvas.y);
             if (editable && !ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
                 addingLine = false;
-                Construct(points);
-                FillPoints();
+                if (!CheckBoundary(points)) {
+                    Construct(points);
+
+                }
             }
         }
         draw_list->PopClipRect();
@@ -254,37 +296,16 @@ void StrandsIntersection::DisplayIntersection(const std::string &title, bool edi
 
 void StrandsIntersection::OnInspect() {
     static bool displayRegion = true;
+    ImGui::Text("Knot size: %d", m_strandKnots.size());
+    ImGui::Text("Max distance to boundary: %d", m_maxDistanceToBoundary);
     ImGui::Checkbox("Display Intersection", &displayRegion);
     if (displayRegion) {
         DisplayIntersection("Intersection", false);
     }
 }
 
-void StrandsIntersection::SetPointDistance(float value) {
-    m_pointDistance = value;
-    FillPoints();
-}
-
-void StrandsIntersection::FillPoints() {
-    m_strandKnots.clear();
-    int yRange = glm::ceil(m_boundaryRadius.y / (m_pointDistance * glm::cos(glm::radians(30.0f))));
-    int xRange = glm::ceil(m_boundaryRadius.x / m_pointDistance);
-    for (int i = -xRange; i <= xRange; i++) {
-        for (int j = -yRange; j <= yRange; j++) {
-            glm::ivec2 coordinate;
-            coordinate.y = j;
-            coordinate.x = i - j / 2;
-            if (IsInRegion(GetPosition(coordinate, m_pointDistance))) {
-                m_strandKnots.push_back(std::make_shared<StrandKnot>());
-                m_strandKnots.back()->m_coordinate = coordinate;
-            }
-        }
-    }
-    CalculateConnectivity();
-}
-
 void StrandsIntersection::CalculateConnectivity() {
-    m_maxDistanceToEnd = 0;
+    m_maxDistanceToBoundary = 0;
     std::map<std::pair<int, int>, std::shared_ptr<StrandKnot>> knotsMap;
     for (const auto &knot: m_strandKnots) {
         knot->m_distanceToBoundary = 99999;
@@ -415,6 +436,72 @@ void StrandsIntersection::CalculateConnectivity() {
                 knotDistanceCalculationQueue.push(visitingKnot);
             }
         }
-        if(currentKnot->m_distanceToBoundary > m_maxDistanceToEnd) m_maxDistanceToEnd = currentKnot->m_distanceToBoundary;
+        if (currentKnot->m_distanceToBoundary > m_maxDistanceToBoundary)
+            m_maxDistanceToBoundary = currentKnot->m_distanceToBoundary;
     }
+}
+
+std::vector<std::shared_ptr<StrandKnot>> StrandsIntersection::GetBoundaryKnots() const {
+    std::vector<std::shared_ptr<StrandKnot>> retVal;
+    for (const auto &knot: m_strandKnots) {
+        if (knot->m_distanceToBoundary == 0) {
+            auto walker = knot;
+            if (!knot->m_upLeft.expired() && knot->m_upLeft.lock()->m_distanceToBoundary == 0)
+                walker = knot->m_upLeft.lock();
+            else if (!knot->m_upRight.expired() && knot->m_upRight.lock()->m_distanceToBoundary == 0)
+                walker = knot->m_upRight.lock();
+            else if (!knot->m_right.expired() && knot->m_right.lock()->m_distanceToBoundary == 0)
+                walker = knot->m_right.lock();
+            else if (!knot->m_downRight.expired() && knot->m_downRight.lock()->m_distanceToBoundary == 0)
+                walker = knot->m_downRight.lock();
+            else if (!knot->m_downLeft.expired() && knot->m_downLeft.lock()->m_distanceToBoundary == 0)
+                walker = knot->m_downLeft.lock();
+            else if (!knot->m_left.expired() && knot->m_left.lock()->m_distanceToBoundary == 0)
+                walker = knot->m_left.lock();
+            auto prev = knot;
+            while (walker != knot) {
+                retVal.emplace_back(walker);
+                auto save = walker;
+                if (!walker->m_upLeft.expired() && walker->m_upLeft.lock() != prev &&
+                    walker->m_upLeft.lock()->m_distanceToBoundary == 0)
+                    walker = walker->m_upLeft.lock();
+                else if (!walker->m_upRight.expired() && walker->m_upRight.lock() != prev &&
+                         walker->m_upRight.lock()->m_distanceToBoundary == 0)
+                    walker = walker->m_upRight.lock();
+                else if (!walker->m_right.expired() && walker->m_right.lock() != prev &&
+                         walker->m_right.lock()->m_distanceToBoundary == 0)
+                    walker = walker->m_right.lock();
+                else if (!walker->m_downRight.expired() && walker->m_downRight.lock() != prev &&
+                         walker->m_downRight.lock()->m_distanceToBoundary == 0)
+                    walker = walker->m_downRight.lock();
+                else if (!walker->m_downLeft.expired() && walker->m_downLeft.lock() != prev &&
+                         walker->m_downLeft.lock()->m_distanceToBoundary == 0)
+                    walker = walker->m_downLeft.lock();
+                else if (!walker->m_left.expired() && walker->m_left.lock() != prev &&
+                         walker->m_left.lock()->m_distanceToBoundary == 0)
+                    walker = walker->m_left.lock();
+                prev = save;
+            }
+            retVal.emplace_back(walker);
+            return retVal;
+        }
+    }
+}
+
+void StrandsIntersection::Extract(const glm::vec2 &direction, int numOfKnots,
+                                  std::vector<std::shared_ptr<StrandKnot>> &extractedKnots) {
+
+}
+
+bool StrandsIntersection::CheckBoundary(const std::vector<glm::vec2> &points) {
+    for (int i = 0; i < points.size(); i++) {
+        auto &pa = points[(i == 0 ? points.size() - 1 : i - 1)];
+        auto &pb = points[i];
+        for (int j = 0; j < points.size(); j++) {
+            auto &pc = points[(j == 0 ? points.size() - 1 : j - 1)];
+            auto &pd = points[j];
+            if (LineLineIntersect(pa, pb, pc, pd)) return true;
+        }
+    }
+    return false;
 }
