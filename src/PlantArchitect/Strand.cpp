@@ -180,6 +180,18 @@ void StrandsIntersection::OnCreate() {
 
 void StrandsIntersection::DisplayIntersection(const std::string &title, bool editable) {
     if (ImGui::Begin(title.c_str())) {
+        static float angle = 0.0f;
+        static int numOfKnots = 10;
+        ImGui::DragFloat("Angle", &angle, 1.0f, 0.0f, 360.0f);
+        ImGui::DragInt("Num of points", &numOfKnots, 1, 1, 1000);
+        if(ImGui::Button("Extract")){
+            for(auto& knot : m_strandKnots) knot->m_selected = false;
+            std::vector<std::shared_ptr<StrandKnot>> extraction;
+            Extract(glm::vec2(glm::sin(glm::radians(angle)), glm::cos(glm::radians(angle))), numOfKnots, extraction);
+            for(auto& knot : extraction) knot->m_selected = true;
+        }
+
+
         static auto scrolling = glm::vec2(0.0f);
         static float zoomFactor = 10.0f;
         if (ImGui::Button("Recenter")) {
@@ -246,11 +258,6 @@ void StrandsIntersection::DisplayIntersection(const std::string &title, bool edi
             addingLine = true;
         }
         {
-            draw_list->AddCircle(origin,
-                                 glm::clamp(0.5f * zoomFactor, 1.0f, 100.0f),
-                                 IM_COL32(255,
-                                          0,
-                                          0, 255));
             for (const auto &knot: m_strandKnots) {
                 auto pointPosition = GetPosition(knot->m_coordinate);
                 auto canvasPosition = ImVec2(origin.x + pointPosition.x * zoomFactor,
@@ -260,15 +267,27 @@ void StrandsIntersection::DisplayIntersection(const std::string &title, bool edi
                                            IM_COL32(255.0f * knot->m_distanceToBoundary / m_maxDistanceToBoundary,
                                                     255.0f * knot->m_distanceToBoundary / m_maxDistanceToBoundary,
                                                     255.0f * knot->m_distanceToBoundary / m_maxDistanceToBoundary, 255));
+                if(knot->m_selected){
+                    draw_list->AddCircle(canvasPosition,
+                                         glm::clamp(0.5f * zoomFactor, 1.0f, 100.0f),
+                                         IM_COL32(255,
+                                                  255,
+                                                  0, 128));
+                }
 
                 if (zoomFactor > 20) {
                     auto textCanvasPosition = ImVec2(origin.x + pointPosition.x * zoomFactor - 0.3f * zoomFactor,
                                                      origin.y + pointPosition.y * zoomFactor - 0.3f * zoomFactor);
                     auto text = std::to_string(knot->m_distanceToBoundary);
-                    draw_list->AddText(0, 0.5f * zoomFactor, textCanvasPosition, IM_COL32(255, 0, 0, 255),
+                    draw_list->AddText(nullptr, 0.5f * zoomFactor, textCanvasPosition, IM_COL32(255, 0, 0, 255),
                                        text.c_str());
                 }
             }
+            draw_list->AddCircle(origin,
+                                 glm::clamp(0.5f * zoomFactor, 1.0f, 100.0f),
+                                 IM_COL32(255,
+                                          0,
+                                          0, 255));
         }
         if (addingLine) {
             const auto size = points.size();
@@ -285,7 +304,6 @@ void StrandsIntersection::DisplayIntersection(const std::string &title, bool edi
                 addingLine = false;
                 if (!CheckBoundary(points)) {
                     Construct(points);
-
                 }
             }
         }
@@ -490,7 +508,29 @@ std::vector<std::shared_ptr<StrandKnot>> StrandsIntersection::GetBoundaryKnots()
 
 void StrandsIntersection::Extract(const glm::vec2 &direction, int numOfKnots,
                                   std::vector<std::shared_ptr<StrandKnot>> &extractedKnots) {
-
+    if(numOfKnots >= m_strandKnots.size()) {
+        extractedKnots = m_strandKnots;
+        return;
+    }
+    std::map<float, std::vector<std::shared_ptr<StrandKnot>>> sortedKnots;
+    for(const auto& knot : m_strandKnots){
+        auto position = GetPosition(knot->m_coordinate);
+        auto distance = glm::dot(position, glm::normalize(direction));
+        auto search = sortedKnots.find(distance);
+        if(search == sortedKnots.end()){
+            sortedKnots[distance] = {knot};
+        }else{
+            search->second.emplace_back(knot);
+        }
+    }
+    int i = 0;
+    for(const auto& collection : sortedKnots){
+        for(const auto& knot : collection.second){
+            extractedKnots.emplace_back(knot);
+            i++;
+            if(i == numOfKnots) return;
+        }
+    }
 }
 
 bool StrandsIntersection::CheckBoundary(const std::vector<glm::vec2> &points) {

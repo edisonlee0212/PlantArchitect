@@ -80,8 +80,8 @@ void PlantArchitect::FBM::OnInspect() {
                 matrices[i] = glm::translate(glm::vec3(x, y, z)) * glm::scale(glm::vec3(pointSize));
             }, results);
             for (const auto &i: results) i.wait();
-            Graphics::DrawGizmoRays(color, starts, ends, lineWidth);
-            Graphics::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube, pointColor, matrices);
+            Gizmos::DrawGizmoRays(color, starts, ends, lineWidth);
+            Gizmos::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube, pointColor, matrices);
         } else {
             static float width = 0.3f;
             static float alpha = 0.2f;
@@ -122,7 +122,7 @@ void PlantArchitect::FBM::OnInspect() {
                 }
             }
             */
-            Graphics::DrawGizmoMeshInstancedColored(DefaultResources::Primitives::Cube, colors, matrices);
+            Gizmos::DrawGizmoMeshInstancedColored(DefaultResources::Primitives::Cube, colors, matrices);
         }
     }
 }

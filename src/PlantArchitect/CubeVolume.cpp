@@ -21,7 +21,7 @@ void CubeVolume::OnInspect() {
     ImGui::DragFloat3("Max", &m_minMaxBound.m_max.x, 0.1);
     if (m_displayBounds) {
         const auto globalTransform = GetScene()->GetDataComponent<GlobalTransform>(GetOwner());
-        Graphics::DrawGizmoMesh(
+        Gizmos::DrawGizmoMesh(
                 DefaultResources::Primitives::Cube, glm::vec4(0, 1, 0, 0.2),
                 globalTransform.m_value * glm::translate(m_minMaxBound.Center()) *
                 glm::scale(m_minMaxBound.Size()),

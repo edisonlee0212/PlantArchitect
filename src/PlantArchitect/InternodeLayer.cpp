@@ -191,14 +191,14 @@ void InternodeLayer::OnInspect() {
         if (m_voxelSpace.m_display) {
             auto editorLayer = Application::GetLayer<EditorLayer>();
             if (editorLayer) {
-                Graphics::DrawGizmoMeshInstanced(
+                Gizmos::DrawGizmoMeshInstanced(
                         DefaultResources::Primitives::Cube, m_visualizationCamera,
                         editorLayer->m_sceneCameraPosition,
                         editorLayer->m_sceneCameraRotation,
                         glm::vec4(1, 1, 1, 0.2),
                         m_voxelSpace.m_frozenVoxels);
             }
-            Graphics::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube,
+            Gizmos::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube,
                                              glm::vec4(1, 1, 1, 0.2),
                                              m_voxelSpace.m_frozenVoxels, glm::mat4(1.0f), 1.0f);
         }
@@ -1051,7 +1051,7 @@ void InternodeLayer::RenderInternodeCylinders() {
     scene->GetComponentDataArray<InternodeColor>(m_internodesQuery,
                                                  branchColors);
     if (!branchCylinders.empty())
-        Graphics::DrawGizmoMeshInstancedColored(
+        Gizmos::DrawGizmoMeshInstancedColored(
                 DefaultResources::Primitives::Cylinder, m_visualizationCamera,
                 editorLayer->m_sceneCameraPosition,
                 editorLayer->m_sceneCameraRotation,
@@ -1068,7 +1068,7 @@ void InternodeLayer::RenderInternodePointers() {
     scene->GetComponentDataArray<InternodePointer>(m_internodesQuery,
                                                    branchPointers);
     if (!branchPointers.empty())
-        Graphics::DrawGizmoMeshInstanced(
+        Gizmos::DrawGizmoMeshInstanced(
                 DefaultResources::Primitives::Cylinder, m_visualizationCamera,
                 editorLayer->m_sceneCameraPosition,
                 editorLayer->m_sceneCameraRotation, m_pointerColor,
@@ -1099,12 +1099,10 @@ void InternodeLayer::UpdateInternodeCamera() {
     renderLayer->RenderToCamera(m_visualizationCamera, sceneCameraGT);
 
 #pragma region Internode debug camera
-    Camera::m_cameraInfoBlock.UpdateMatrices(
+    Camera::m_cameraInfoBlock.UploadMatrices(
             editorLayer->m_sceneCamera,
             editorLayer->m_sceneCameraPosition,
             editorLayer->m_sceneCameraRotation);
-    Camera::m_cameraInfoBlock.UploadMatrices(
-            editorLayer->m_sceneCamera);
 #pragma endregion
 
 #pragma region Rendering
@@ -1286,7 +1284,7 @@ void InternodeLayer::RenderBranchCylinders() {
     scene->GetComponentDataArray<InternodeBranchColor>(m_branchesQuery,
                                                        branchColors);
     if (!branchCylinders.empty())
-        Graphics::DrawGizmoMeshInstancedColored(
+        Gizmos::DrawGizmoMeshInstancedColored(
                 DefaultResources::Primitives::Cylinder, m_visualizationCamera,
                 editorLayer->m_sceneCameraPosition,
                 editorLayer->m_sceneCameraRotation,

@@ -621,7 +621,7 @@ IPlantBehaviour::PrepareInternodeForSkeletalAnimation(const std::shared_ptr<Scen
         skinnedMat->m_albedoColor = glm::vec3(0.0f, 1.0f, 0.0f);
         skinnedMat->m_roughness = 1.0f;
         skinnedMat->m_metallic = 0.0f;
-        skinnedMat->m_cullingMode = MaterialCullingMode::Off;
+        skinnedMat->m_drawSettings.m_cullFace = false;
         skinnedMeshRenderer->m_animator = scene->GetOrSetPrivateComponent<Animator>(foliageMesh).lock();
         scene->SetParent(foliageMesh, entity);
     }

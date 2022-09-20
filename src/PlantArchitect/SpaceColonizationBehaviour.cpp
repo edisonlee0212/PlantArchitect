@@ -287,12 +287,12 @@ void SpaceColonizationBehaviour::OnMenu() {
                 }
             }
 
-            Graphics::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube, renderColor,
+            Gizmos::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube, renderColor,
                                              displayMatrices, glm::mat4(1.0f), renderSize);
             auto editorLayer = Application::GetLayer<EditorLayer>();
             auto internodeLayer = Application::GetLayer<InternodeLayer>();
             if (editorLayer && internodeLayer) {
-                Graphics::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube,
+                Gizmos::DrawGizmoMeshInstanced(DefaultResources::Primitives::Cube,
                                                  internodeLayer->m_visualizationCamera,
                                                  editorLayer->m_sceneCameraPosition,
                                                  editorLayer->m_sceneCameraRotation, renderColor,

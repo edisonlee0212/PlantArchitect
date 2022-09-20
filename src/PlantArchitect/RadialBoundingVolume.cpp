@@ -531,7 +531,7 @@ void RadialBoundingVolume::OnInspect() {
                             GenerateMesh();
                     }
 
-                    Graphics::DrawGizmoMesh(
+                    Gizmos::DrawGizmoMesh(
                             m_boundMeshes[i], m_displayColor,
                             scene->GetDataComponent<GlobalTransform>(GetOwner()).m_value);
                     displayLayer = true;
@@ -560,7 +560,7 @@ void RadialBoundingVolume::OnInspect() {
                         });
     if (!displayLayer && m_displayBounds && m_meshGenerated) {
         for (auto &i: m_boundMeshes) {
-            Graphics::DrawGizmoMesh(
+            Gizmos::DrawGizmoMesh(
                     i, m_displayColor,
                     scene->GetDataComponent<GlobalTransform>(GetOwner()).m_value);
         }

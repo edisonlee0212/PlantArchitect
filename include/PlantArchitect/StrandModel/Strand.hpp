@@ -18,6 +18,7 @@ namespace PlantArchitect {
         std::weak_ptr<StrandKnot> m_downLeft;
         std::weak_ptr<StrandKnot> m_left;
 
+        bool m_selected = false;
         int m_distanceToBoundary = 0;
         glm::ivec2 m_coordinate = glm::ivec2(0);
         glm::vec3 m_position = glm::vec3(0.0f);

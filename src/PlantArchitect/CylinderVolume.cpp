@@ -22,7 +22,7 @@ void CylinderVolume::OnInspect() {
     ImGui::DragFloat("Height", &m_height, 0.1);
     if (m_displayBounds) {
         const auto globalTransform = GetScene()->GetDataComponent<GlobalTransform>(GetOwner());
-        Graphics::DrawGizmoMesh(
+        Gizmos::DrawGizmoMesh(
                 DefaultResources::Primitives::Cylinder, glm::vec4(0, 1, 0, 0.2),
                 globalTransform.m_value *
                 glm::scale(glm::vec3(m_radius, m_height, m_radius)),
