@@ -6,11 +6,14 @@
 
 using namespace UniEngine;
 namespace PlantArchitect {
-    class StrandSegment;
+    class Strand;
     class PLANT_ARCHITECT_API StrandKnot {
+    public:
+        std::weak_ptr<Strand> m_strand;
+
         std::weak_ptr<StrandKnot> m_prev;
         std::weak_ptr<StrandKnot> m_next;
-    public:
+
         std::weak_ptr<StrandKnot> m_upLeft;
         std::weak_ptr<StrandKnot> m_upRight;
         std::weak_ptr<StrandKnot> m_right;
@@ -21,16 +24,17 @@ namespace PlantArchitect {
         bool m_selected = false;
         int m_distanceToBoundary = 0;
         glm::ivec2 m_coordinate = glm::ivec2(0);
-        glm::vec3 m_position = glm::vec3(0.0f);
     };
 
     class PLANT_ARCHITECT_API Strand {
-        friend class StrandPlant;
-        friend class StrandsIntersection;
+    public:
         std::weak_ptr<StrandKnot> m_start;
         std::weak_ptr<StrandKnot> m_end;
-    public:
+    };
 
+    struct SplitSettings{
+        int m_knotSize;
+        glm::vec2 m_direction;
     };
 
     class PLANT_ARCHITECT_API StrandsIntersection : public IPrivateComponent{
@@ -39,15 +43,19 @@ namespace PlantArchitect {
 
         bool m_isRoot = false;
         int m_maxDistanceToBoundary = 0;
-        void DisplayIntersection(const std::string& title, bool editable);
+        bool DisplayIntersection(const std::string& title, bool editable);
     public:
+        void CleanChildren() const;
         [[nodiscard]] std::vector<std::shared_ptr<StrandKnot>> GetBoundaryKnots() const;
-        void Extract(const glm::vec2& direction, int numOfKnots, std::vector<std::shared_ptr<StrandKnot>>& extractedKnots);
         void CalculateConnectivity();
         void OnCreate() override;
         void OnInspect() override;
         [[nodiscard]] bool CheckBoundary(const std::vector<glm::vec2>& points);
         void Construct(const std::vector<glm::vec2>& points);
+        void Extract(const std::vector<SplitSettings> &targets,
+                     std::vector<std::vector<std::shared_ptr<StrandKnot>>> &extractedKnots) const;
+        [[nodiscard]] Entity Extend() const;
+        [[nodiscard]] std::vector<Entity> Split(const std::vector<SplitSettings>& targets, const std::function<void(std::vector<std::shared_ptr<StrandKnot>> &srcList, std::vector<std::shared_ptr<StrandKnot>> &dstList)>& extendFunc);
     };
 
     class PLANT_ARCHITECT_API StrandPlant : public IPrivateComponent{
@@ -56,10 +64,6 @@ namespace PlantArchitect {
         [[nodiscard]] Entity GetRoot();
         void OnCreate() override;
         void OnInspect() override;
-        void GenerateStrands(float pointDistance = 0.01f);
+        void GenerateStrands();
     };
-
-
-
-
 }
