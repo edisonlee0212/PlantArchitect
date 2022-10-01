@@ -116,7 +116,7 @@ void RadialBoundingVolume::GenerateMesh() {
                             .m_position = position;
                     vertices[levelStep * totalAngleStep * m_sectorAmount +
                              actualAngleStep]
-                            .m_texCoords = glm::vec2((float) levelStep / (totalLevelStep - 1),
+                            .m_texCoord = glm::vec2((float) levelStep / (totalLevelStep - 1),
                                                      (float) angleStep / (totalAngleStep - 1));
                     vertices[levelStep * totalAngleStep * m_sectorAmount +
                              actualAngleStep]
@@ -128,7 +128,7 @@ void RadialBoundingVolume::GenerateMesh() {
                     vertices[totalLevelStep * m_sectorAmount * totalAngleStep +
                              levelStep * totalAngleStep * m_sectorAmount +
                              actualAngleStep]
-                            .m_texCoords = glm::vec2((float) levelStep / (totalLevelStep - 1),
+                            .m_texCoord = glm::vec2((float) levelStep / (totalLevelStep - 1),
                                                      (float) angleStep / (totalAngleStep - 1));
                     vertices[totalLevelStep * m_sectorAmount * totalAngleStep +
                              levelStep * totalAngleStep * m_sectorAmount +
@@ -140,7 +140,7 @@ void RadialBoundingVolume::GenerateMesh() {
                     glm::vec3(0, currentHeight, 0);
             vertices[vertices.size() - totalLevelStep + levelStep].m_normal =
                     glm::vec3(0, levelStep == 0 ? -1 : 1, 0);
-            vertices[vertices.size() - totalLevelStep + levelStep].m_texCoords =
+            vertices[vertices.size() - totalLevelStep + levelStep].m_texCoord =
                     glm::vec2(0.0f);
         }
         for (int levelStep = 0; levelStep < totalLevelStep - 1; levelStep++) {

@@ -176,8 +176,8 @@ void VoxelGrid::FormMesh(std::vector<Vertex> &vertices, std::vector<glm::uvec3> 
                 archetype.m_tangent = glm::normalize(glm::vec3(
                         matrix *
                         glm::vec4(cubeMesh->UnsafeGetVertices()[i].m_tangent, 0.0f)));
-                archetype.m_texCoords =
-                        cubeMesh->UnsafeGetVertices()[i].m_texCoords;
+                archetype.m_texCoord =
+                        cubeMesh->UnsafeGetVertices()[i].m_texCoord;
                 vertices.push_back(archetype);
             }
             for (auto triangle: cubeTriangles) {

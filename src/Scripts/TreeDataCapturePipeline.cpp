@@ -429,6 +429,8 @@ void TreeDataCapturePipeline::OnInspect() {
             m_pointCloudSettings.OnInspect();
             ImGui::Checkbox("Color", &m_pointCloudPointSettings.m_color);
             ImGui::Checkbox("Type", &m_pointCloudPointSettings.m_pointType);
+            ImGui::DragFloat("Point variance", &m_pointCloudPointSettings.m_variance, 0.1f, 0.0f, 100.0f);
+            ImGui::DragFloat("Point ball rand", &m_pointCloudPointSettings.m_ballRandRadius, 0.1f, 0.0f, 100.0f);
             ImGui::TreePop();
         }
     }
@@ -886,6 +888,9 @@ void TreeDataCapturePipeline::Serialize(YAML::Emitter &out) {
     m_pointCloudSettings.Serialize("m_pointCloudSettings", out);
     out << YAML::Key << "m_pointCloudPointSettings.m_color" << YAML::Value << m_pointCloudPointSettings.m_color;
     out << YAML::Key << "m_pointCloudPointSettings.m_pointType" << YAML::Value << m_pointCloudPointSettings.m_pointType;
+    out << YAML::Key << "m_pointCloudPointSettings.m_variance" << YAML::Value << m_pointCloudPointSettings.m_variance;
+    out << YAML::Key << "m_pointCloudPointSettings.m_ballRandRadius" << YAML::Value << m_pointCloudPointSettings.m_ballRandRadius;
+
 
     out << YAML::Key << "m_currentExportFolder" << YAML::Value << m_currentExportFolder.string();
     m_meshGeneratorSettings.Save("m_meshGeneratorSettings", out);
@@ -937,6 +942,8 @@ void TreeDataCapturePipeline::Deserialize(const YAML::Node &in) {
     m_pointCloudSettings.Deserialize("m_pointCloudSettings", in);
     if (in["m_pointCloudPointSettings.m_color"]) m_pointCloudPointSettings.m_color = in["m_pointCloudPointSettings.m_color"].as<bool>();
     if (in["m_pointCloudPointSettings.m_pointType"]) m_pointCloudPointSettings.m_pointType = in["m_pointCloudPointSettings.m_pointType"].as<bool>();
+    if (in["m_pointCloudPointSettings.m_variance"]) m_pointCloudPointSettings.m_variance = in["m_pointCloudPointSettings.m_variance"].as<float>();
+    if (in["m_pointCloudPointSettings.m_ballRandRadius"]) m_pointCloudPointSettings.m_ballRandRadius = in["m_pointCloudPointSettings.m_ballRandRadius"].as<float>();
 
     if (in["m_obstacleSettings.m_randomRotation"]) m_obstacleSettings.m_randomRotation = in["m_obstacleSettings.m_randomRotation"].as<bool>();
     if (in["m_obstacleSettings.m_lShapedWall"]) m_obstacleSettings.m_lShapedWall = in["m_obstacleSettings.m_lShapedWall"].as<bool>();
@@ -1056,19 +1063,24 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound &plantBound, Aut
                        position.z<(plantBound.m_min.z - 1) || position.x>(plantBound.m_max.x + 1) ||
                        position.z>(plantBound.m_max.z + 1))
             continue;
-        points.push_back(sample.m_end);
+        points.push_back(
+                sample.m_end +
+                glm::vec3(glm::gaussRand(0.0f, m_pointCloudPointSettings.m_variance),
+                          glm::gaussRand(0.0f, m_pointCloudPointSettings.m_variance),
+                          glm::gaussRand(0.0f, m_pointCloudPointSettings.m_variance))
+                + glm::vec3(glm::ballRand(m_pointCloudPointSettings.m_ballRandRadius)));
         if (sample.m_handle == branchMeshRendererHandle) {
-            if(m_pointCloudPointSettings.m_pointType) pointTypes.push_back(0);
-            if(m_pointCloudPointSettings.m_color) colors.emplace_back(0.5, 0.25, 0);
+            if (m_pointCloudPointSettings.m_pointType) pointTypes.push_back(0);
+            if (m_pointCloudPointSettings.m_color) colors.emplace_back(0.5, 0.25, 0);
         } else if (sample.m_handle == foliageMeshRendererHandle) {
-            if(m_pointCloudPointSettings.m_pointType) pointTypes.push_back(1);
-            if(m_pointCloudPointSettings.m_color) colors.emplace_back(0, 1, 0);
+            if (m_pointCloudPointSettings.m_pointType) pointTypes.push_back(1);
+            if (m_pointCloudPointSettings.m_color) colors.emplace_back(0, 1, 0);
         } else if (sample.m_handle == groundMeshRendererHandle) {
-            if(m_pointCloudPointSettings.m_pointType) pointTypes.push_back(2);
-            if(m_pointCloudPointSettings.m_color) colors.emplace_back(1, 1, 1);
+            if (m_pointCloudPointSettings.m_pointType) pointTypes.push_back(2);
+            if (m_pointCloudPointSettings.m_color) colors.emplace_back(1, 1, 1);
         } else {
-            if(m_pointCloudPointSettings.m_pointType) pointTypes.push_back(3);
-            if(m_pointCloudPointSettings.m_color) colors.emplace_back(0, 0, 0);
+            if (m_pointCloudPointSettings.m_pointType) pointTypes.push_back(3);
+            if (m_pointCloudPointSettings.m_color) colors.emplace_back(0, 0, 0);
         }
     }
     std::filebuf fb_binary;
@@ -1088,13 +1100,15 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound &plantBound, Aut
             "vertex", {"x", "z", "y"}, Type::FLOAT32, points.size(),
             reinterpret_cast<uint8_t *>(points.data()), Type::INVALID, 0);
 
-    if(m_pointCloudPointSettings.m_color) cube_file.add_properties_to_element(
-            "color", {"red", "green", "blue"}, Type::FLOAT32, colors.size(),
-            reinterpret_cast<uint8_t *>(colors.data()), Type::INVALID, 0);
+    if (m_pointCloudPointSettings.m_color)
+        cube_file.add_properties_to_element(
+                "color", {"red", "green", "blue"}, Type::FLOAT32, colors.size(),
+                reinterpret_cast<uint8_t *>(colors.data()), Type::INVALID, 0);
 
-    if(m_pointCloudPointSettings.m_pointType) cube_file.add_properties_to_element(
-            "pointType", {"value"}, Type::INT32, pointTypes.size(),
-            reinterpret_cast<uint8_t *>(pointTypes.data()), Type::INVALID, 0);
+    if (m_pointCloudPointSettings.m_pointType)
+        cube_file.add_properties_to_element(
+                "pointType", {"value"}, Type::INT32, pointTypes.size(),
+                reinterpret_cast<uint8_t *>(pointTypes.data()), Type::INVALID, 0);
     // Write a binary file
     cube_file.write(outstream_binary, true);
 }

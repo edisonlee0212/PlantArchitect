@@ -320,8 +320,8 @@ void IPlantBehaviour::FoliageSkinnedMeshGenerator(const std::shared_ptr<Scene> &
                     archetype.m_tangent = glm::normalize(glm::vec3(
                             matrix *
                             glm::vec4(quadMesh->UnsafeGetVertices()[i].m_tangent, 0.0f)));
-                    archetype.m_texCoords =
-                            quadMesh->UnsafeGetVertices()[i].m_texCoords;
+                    archetype.m_texCoord =
+                            quadMesh->UnsafeGetVertices()[i].m_texCoord;
                     archetype.m_bondId = glm::ivec4(branchIndex, -1, -1, -1);
                     archetype.m_weight = glm::vec4(1, 0, 0, 0);
                     archetype.m_bondId2 = glm::ivec4(-1, -1, -1, -1);
@@ -403,7 +403,7 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
 
                 const float x =
                         i < pStep / 2 ? i * textureXStep : (pStep - i) * textureXStep;
-                archetype.m_texCoords = glm::vec2(x, 0.0f);
+                archetype.m_texCoord = glm::vec2(x, 0.0f);
                 vertices.push_back(archetype);
             }
             std::vector<float> angles;
@@ -484,7 +484,7 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
                     const auto x =
                             i < (step / 2) ? i * textureXStep : (step - i) * textureXStep;
                     const auto y = ringIndex % 2 == 0 ? 1.0f : 0.0f;
-                    archetype.m_texCoords = glm::vec2(x, y);
+                    archetype.m_texCoord = glm::vec2(x, y);
                     vertices.push_back(archetype);
                 }
                 if (ringIndex != 0) {
@@ -1045,8 +1045,8 @@ Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const
                 archetype.m_tangent = glm::normalize(glm::vec3(
                         matrix *
                         glm::vec4(sphereMesh->UnsafeGetVertices()[i].m_tangent, 0.0f)));
-                archetype.m_texCoords =
-                        sphereMesh->UnsafeGetVertices()[i].m_texCoords;
+                archetype.m_texCoord =
+                        sphereMesh->UnsafeGetVertices()[i].m_texCoord;
                 vertices.push_back(archetype);
             }
             for (auto triangle: sphereTriangles) {
@@ -1105,8 +1105,8 @@ Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const
                 archetype.m_tangent = glm::normalize(glm::vec3(
                         matrix *
                         glm::vec4(sphereMesh->UnsafeGetVertices()[i].m_tangent, 0.0f)));
-                archetype.m_texCoords =
-                        sphereMesh->UnsafeGetVertices()[i].m_texCoords;
+                archetype.m_texCoord =
+                        sphereMesh->UnsafeGetVertices()[i].m_texCoord;
                 vertices.push_back(archetype);
             }
             for (auto triangle: sphereTriangles) {
@@ -1282,7 +1282,7 @@ void IPlantBehaviour::BranchMeshGenerator(const std::shared_ptr<Scene> &scene, s
             float distanceToEnd = 1;
             const float x =
                     i < pStep / 2 ? i * textureXStep : (pStep - i) * textureXStep;
-            archetype.m_texCoords = glm::vec2(x, 0.0f);
+            archetype.m_texCoord = glm::vec2(x, 0.0f);
             vertices.push_back(archetype);
         }
         std::vector<float> angles;
@@ -1355,7 +1355,7 @@ void IPlantBehaviour::BranchMeshGenerator(const std::shared_ptr<Scene> &scene, s
                 const auto x =
                         i < (step / 2) ? i * textureXStep : (step - i) * textureXStep;
                 const auto y = ringIndex % 2 == 0 ? 1.0f : 0.0f;
-                archetype.m_texCoords = glm::vec2(x, y);
+                archetype.m_texCoord = glm::vec2(x, y);
                 vertices.push_back(archetype);
             }
             if (ringIndex != 0) {
