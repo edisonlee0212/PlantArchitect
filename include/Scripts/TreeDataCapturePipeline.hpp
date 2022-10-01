@@ -105,7 +105,7 @@ namespace Scripts {
         struct PointCloudPointSettings{
             bool m_color = false;
             bool m_pointType = true;
-            float m_variance = 0.0f;
+            float m_variance = 0.15f;
             float m_ballRandRadius = 0.0f;
         } m_pointCloudPointSettings;
 #ifdef RAYTRACERFACILITY
