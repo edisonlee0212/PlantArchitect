@@ -396,21 +396,18 @@ void InternodeLayer::OnInspect() {
                 ImGui::EndMenuBar();
             }
             viewPortSize = ImGui::GetWindowSize();
-            viewPortSize.y -= 20;
-            if (viewPortSize.y < 0)
-                viewPortSize.y = 0;
             m_visualizationCameraResolutionX = viewPortSize.x;
-            m_visualizationCameraResolutionY = viewPortSize.y;
+            m_visualizationCameraResolutionY = viewPortSize.y - 20;
             ImGui::Image(
                     reinterpret_cast<ImTextureID>(
                             m_visualizationCamera->GetTexture()->UnsafeGetGLTexture()->Id()),
-                    viewPortSize, ImVec2(0, 1), ImVec2(1, 0));
+                    ImVec2(viewPortSize.x, viewPortSize.y - 20), ImVec2(0, 1), ImVec2(1, 0));
             glm::vec2 mousePosition = glm::vec2(FLT_MAX, FLT_MIN);
             if (ImGui::IsWindowFocused()) {
                 bool valid = true;
-                mousePosition = Inputs::GetMouseAbsolutePositionInternal(
-                        Windows::GetWindow());
-                mousePosition.y -= 20;
+                auto mp = ImGui::GetMousePos();
+                auto wp = ImGui::GetWindowPos();
+                mousePosition = glm::vec2(mp.x - wp.x, mp.y - wp.y - 20);
                 float xOffset = 0;
                 float yOffset = 0;
                 if (valid) {
@@ -495,11 +492,6 @@ void InternodeLayer::OnInspect() {
 #pragma region Ray selection
                         m_currentFocusingInternode = Entity();
                         std::mutex writeMutex;
-                        auto windowPos = ImGui::GetWindowPos();
-                        auto windowSize = ImGui::GetWindowSize();
-                        mousePosition.x -= windowPos.x;
-                        mousePosition.x -= windowSize.x;
-                        mousePosition.y -= windowPos.y;
                         float minDistance = FLT_MAX;
                         GlobalTransform cameraLtw;
                         cameraLtw.m_value =
