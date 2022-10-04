@@ -45,7 +45,7 @@ namespace PlantArchitect {
     class PLANT_ARCHITECT_API StrandsIntersection : public IPrivateComponent{
         friend class StrandPlant;
         std::vector<std::shared_ptr<StrandKnot>> m_strandKnots;
-        float m_unitDistance = 0.01f;
+        float m_unitDistance = 0.05f;
         bool m_isRoot = false;
         int m_maxDistanceToBoundary = 0;
         bool DisplayIntersection(const std::string& title, bool editable);

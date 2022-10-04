@@ -384,7 +384,7 @@ void StrandPlant::InitializeStrandRenderer() const {
     for(const auto& strand : m_strands){
         strand->BuildStrands(strandsList, points);
     }
-    strandsAsset->SetPoints(strandsList, points);
+    strandsAsset->SetPoints(strandsList, points, Strands::SplineMode::Cubic);
     renderer->m_strands = strandsAsset;
     renderer->m_material = ProjectManager::CreateTemporaryAsset<Material>();
 }
@@ -394,14 +394,27 @@ void Strand::BuildStrands(std::vector<int> &strands, std::vector<StrandPoint> &p
     StrandPoint point;
     auto walker = m_start.lock();
     point.m_position = walker->m_position;
-    point.m_thickness = 0.005f;
+    point.m_thickness = 0.01f;
     points.emplace_back(point);
+    points.emplace_back(point);
+    bool addPhantomPoint = false;
     while(!walker->m_next.expired()){
         walker = walker->m_next.lock();
         point.m_position = walker->m_position;
-        point.m_thickness = 0.005f;
+        point.m_thickness = 0.01f;
+        if(!addPhantomPoint){
+            addPhantomPoint = true;
+            StrandPoint frontPoint;
+            frontPoint = points.at(points.size() - 2);
+            frontPoint.m_position = 2.0f * frontPoint.m_position - point.m_position;
+            points.at(points.size() - 2) = frontPoint;
+        }
         points.emplace_back(point);
     }
+    StrandPoint backPoint;
+    backPoint = points.at(points.size() - 2);
+    backPoint.m_position = 2.0f * points.at(points.size() - 1).m_position - backPoint.m_position;
+    points.emplace_back(backPoint);
 }
 
 void StrandsIntersection::Construct(const std::vector<glm::vec2> &points) {
