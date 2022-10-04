@@ -4,7 +4,7 @@
 
 #include "Strand.hpp"
 #include "DataComponents.hpp"
-
+#include "StrandsRenderer.hpp"
 using namespace PlantArchitect;
 #pragma region Helpers
 #pragma region Geometric
@@ -326,6 +326,7 @@ void StrandPlant::GenerateStrands() {
 
 void StrandPlant::OnInspect() {
     if (ImGui::Button("Generate Strands")) GenerateStrands();
+    if (ImGui::Button("Initialize Renderer")) InitializeStrandRenderer();
     static bool displayRootIntersection = true;
     ImGui::Checkbox("Display root intersection", &displayRootIntersection);
     if (displayRootIntersection) {
@@ -341,7 +342,7 @@ void StrandPlant::OnInspect() {
 void StrandPlant::OnCreate() {
 }
 
-Entity StrandPlant::GetRoot() {
+Entity StrandPlant::GetRoot() const {
     auto scene = GetScene();
     auto self = GetOwner();
     auto children = scene->GetChildren(self);
@@ -364,6 +365,43 @@ Entity StrandPlant::GetRoot() {
         scene->SetParent(retVal, self);
     }
     return retVal;
+}
+
+void StrandPlant::CalculatePosition() const {
+    auto root = GetRoot();
+    auto scene = GetScene();
+    scene->GetOrSetPrivateComponent<StrandsIntersection>(root).lock()->CalculatePosition(scene->GetDataComponent<GlobalTransform>(GetOwner()));
+}
+
+void StrandPlant::InitializeStrandRenderer() const {
+    CalculatePosition();
+    auto scene = GetScene();
+    auto owner = GetOwner();
+    auto renderer = scene->GetOrSetPrivateComponent<StrandsRenderer>(owner).lock();
+    auto strandsAsset = ProjectManager::CreateTemporaryAsset<Strands>();
+    std::vector<int> strandsList;
+    std::vector<StrandPoint> points;
+    for(const auto& strand : m_strands){
+        strand->BuildStrands(strandsList, points);
+    }
+    strandsAsset->SetPoints(strandsList, points);
+    renderer->m_strands = strandsAsset;
+    renderer->m_material = ProjectManager::CreateTemporaryAsset<Material>();
+}
+
+void Strand::BuildStrands(std::vector<int> &strands, std::vector<StrandPoint> &points) {
+    strands.emplace_back(points.size());
+    StrandPoint point;
+    auto walker = m_start.lock();
+    point.m_position = walker->m_position;
+    point.m_thickness = 0.005f;
+    points.emplace_back(point);
+    while(!walker->m_next.expired()){
+        walker = walker->m_next.lock();
+        point.m_position = walker->m_position;
+        point.m_thickness = 0.005f;
+        points.emplace_back(point);
+    }
 }
 
 void StrandsIntersection::Construct(const std::vector<glm::vec2> &points) {
@@ -803,6 +841,30 @@ Entity StrandsIntersection::Extend() const {
     return child;
 }
 
+void StrandsIntersection::CalculatePosition(const GlobalTransform &rootGlobalTransform) const{
+    auto scene = GetScene();
+    auto owner = GetOwner();
+    auto globalTransform = scene->GetDataComponent<GlobalTransform>(owner);
+    GlobalTransform transform;
+    transform.m_value = glm::inverse(rootGlobalTransform.m_value) * globalTransform.m_value;
 
+    auto rotation = transform.GetRotation();
+    auto position = transform.GetPosition();
+
+    auto front = rotation * glm::vec3(0, 0, -1);
+    auto up = rotation * glm::vec3(0, 1, 0);
+    auto left = rotation * glm::vec3(1, 0, 0);
+
+    for(const auto& knot : m_strandKnots){
+        auto surfacePosition = GetPosition(knot->m_coordinate);
+        knot->m_position = position + up * surfacePosition.y * m_unitDistance + left * surfacePosition.x * m_unitDistance;
+    }
+    auto children = scene->GetChildren(owner);
+    for(const auto& child : children){
+        if(scene->HasPrivateComponent<StrandsIntersection>(child)){
+            scene->GetOrSetPrivateComponent<StrandsIntersection>(child).lock()->CalculatePosition(rootGlobalTransform);
+        }
+    }
+}
 
 
