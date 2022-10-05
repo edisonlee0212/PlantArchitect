@@ -7,6 +7,7 @@
 using namespace UniEngine;
 namespace PlantArchitect {
     class Strand;
+
     class PLANT_ARCHITECT_API StrandKnot {
     public:
         std::weak_ptr<Strand> m_strand;
@@ -26,53 +27,75 @@ namespace PlantArchitect {
         glm::ivec2 m_coordinate = glm::ivec2(0);
 
         glm::vec3 m_position;
+        glm::vec3 m_direction;
+        float m_thickness;
+        glm::vec3 m_color = glm::vec3(1.0f);
+
     };
 
     class PLANT_ARCHITECT_API Strand {
     public:
         std::weak_ptr<StrandKnot> m_start;
-        std::weak_ptr<StrandKnot> m_end;
-
         void BuildStrands(std::vector<int> &strands,
                           std::vector<StrandPoint> &points);
     };
 
-    struct SplitSettings{
+    struct SplitSettings {
         int m_knotSize;
         glm::vec2 m_direction;
     };
 
-    class PLANT_ARCHITECT_API StrandsIntersection : public IPrivateComponent{
+    class PLANT_ARCHITECT_API StrandsIntersection {
         friend class StrandPlant;
+
         std::vector<std::shared_ptr<StrandKnot>> m_strandKnots;
-        float m_unitDistance = 0.05f;
+        float m_unitDistance = 0.01f;
         bool m_isRoot = false;
         int m_maxDistanceToBoundary = 0;
-        bool DisplayIntersection(const std::string& title, bool editable);
+
+
+        std::weak_ptr<StrandsIntersection> m_parent;
+        std::vector<std::shared_ptr<StrandsIntersection>> m_children;
     public:
-        void CleanChildren() const;
+        std::string m_name = "New Intersection";
+        Handle m_handle;
+        Transform m_transform;
         [[nodiscard]] std::vector<std::shared_ptr<StrandKnot>> GetBoundaryKnots() const;
         void CalculateConnectivity();
-        void OnCreate() override;
-        void OnInspect() override;
-        [[nodiscard]] bool CheckBoundary(const std::vector<glm::vec2>& points);
-        void Construct(const std::vector<glm::vec2>& points);
-        void Extract(const std::vector<SplitSettings> &targets,
-                     std::vector<std::vector<std::shared_ptr<StrandKnot>>> &extractedKnots) const;
-        [[nodiscard]] Entity Extend() const;
-        [[nodiscard]] std::vector<Entity> Split(const std::vector<SplitSettings>& targets, const std::function<void(std::vector<std::shared_ptr<StrandKnot>> &srcList, std::vector<std::shared_ptr<StrandKnot>> &dstList)>& extendFunc);
+        [[nodiscard]] bool CheckBoundary(const std::vector<glm::vec2> &points);
+        void Construct(const std::vector<glm::vec2> &points);
 
-        void CalculatePosition(const GlobalTransform &rootGlobalTransform) const;
+
+
+        void CalculatePosition(const GlobalTransform &parentGlobalTransform) const;
     };
 
-    class PLANT_ARCHITECT_API StrandPlant : public IPrivateComponent{
+    class PLANT_ARCHITECT_API StrandPlant : public IPrivateComponent {
         std::vector<std::shared_ptr<Strand>> m_strands;
+        std::vector<std::weak_ptr<StrandsIntersection>> m_selectedIntersectionHierarchyList;
+        std::weak_ptr<StrandsIntersection> m_selectedStrandIntersection;
+        bool DrawIntersectionMenu(const std::shared_ptr<StrandsIntersection>& strandIntersection);
+        void SetSelectedIntersection(const std::shared_ptr<StrandsIntersection>& strandIntersection, bool openMenu);
+        bool DisplayIntersection(const std::shared_ptr<StrandsIntersection>& strandIntersection, const std::string &title, bool editable);
+        void DrawIntersectionGui(const std::shared_ptr<StrandsIntersection>& strandIntersection, bool& deleted, const unsigned &hierarchyLevel);
     public:
-        [[nodiscard]] Entity GetRoot() const;
+        std::shared_ptr<StrandsIntersection> m_root;
+
+        void Extract(const std::shared_ptr<StrandsIntersection>& strandIntersection, const std::vector<SplitSettings> &targets,
+                     std::vector<std::vector<std::shared_ptr<StrandKnot>>> &extractedKnots) const;
+        void Extend(const std::shared_ptr<StrandsIntersection>& strandIntersection);
+        void Split(const std::shared_ptr<StrandsIntersection>& strandIntersection, const std::vector<SplitSettings> &targets,
+                   const std::function<void(
+                           std::vector<std::shared_ptr<StrandKnot>> &srcList,
+                           std::vector<std::shared_ptr<StrandKnot>> &dstList
+                   )> &extendFunc);
+
         void OnCreate() override;
+
         void OnInspect() override;
+
         void GenerateStrands();
-        void CalculatePosition() const;
+
         void InitializeStrandRenderer() const;
     };
 }

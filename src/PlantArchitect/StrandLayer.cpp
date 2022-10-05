@@ -10,11 +10,6 @@ using namespace PlantArchitect;
 
 void StrandLayer::OnCreate() {
     ClassRegistry::RegisterPrivateComponent<StrandPlant>("StrandPlant");
-    ClassRegistry::RegisterPrivateComponent<StrandsIntersection>("StrandsIntersection");
-    ClassRegistry::RegisterDataComponent<StrandIntersectionInfo>("StrandIntersectionInfo");
-
-    m_strandIntersectionArchetype =
-            Entities::CreateEntityArchetype("Strand Intersection", StrandIntersectionInfo());
 }
 
 void StrandLayer::OnInspect() {

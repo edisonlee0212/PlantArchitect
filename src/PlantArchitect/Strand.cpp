@@ -5,6 +5,7 @@
 #include "Strand.hpp"
 #include "DataComponents.hpp"
 #include "StrandsRenderer.hpp"
+
 using namespace PlantArchitect;
 #pragma region Helpers
 #pragma region Geometric
@@ -198,26 +199,27 @@ std::vector<glm::ivec2> GenerateCircle(int numOfKnots) {
 #pragma endregion
 #pragma region Knot Operations
 
-void StrandsIntersection::Extract(const std::vector<SplitSettings> &targets,
-             std::vector<std::vector<std::shared_ptr<StrandKnot>>> &extractedKnots) const {
+void StrandPlant::Extract(const std::shared_ptr<StrandsIntersection> &strandIntersection,
+                          const std::vector<SplitSettings> &targets,
+                          std::vector<std::vector<std::shared_ptr<StrandKnot>>> &extractedKnots) const {
     std::vector<bool> selected;
-    selected.resize(m_strandKnots.size());
+    selected.resize(strandIntersection->m_strandKnots.size());
     for (auto &&i: selected) i = false;
-    int remainingKnotSize = m_strandKnots.size();
+    int remainingKnotSize = strandIntersection->m_strandKnots.size();
     for (const auto &target: targets) {
         extractedKnots.emplace_back();
         auto &operatingList = extractedKnots.back();
         operatingList.clear();
         if (target.m_knotSize >= remainingKnotSize) {
-            for (int knotIndex = 0; knotIndex < m_strandKnots.size(); knotIndex++) {
-                if (!selected[knotIndex]) operatingList.emplace_back(m_strandKnots[knotIndex]);
+            for (int knotIndex = 0; knotIndex < strandIntersection->m_strandKnots.size(); knotIndex++) {
+                if (!selected[knotIndex]) operatingList.emplace_back(strandIntersection->m_strandKnots[knotIndex]);
             }
             return;
         }
         std::map<int, std::map<float, std::pair<int, std::shared_ptr<StrandKnot>>>> sortedKnots;
-        for (int knotIndex = 0; knotIndex < m_strandKnots.size(); knotIndex++) {
+        for (int knotIndex = 0; knotIndex < strandIntersection->m_strandKnots.size(); knotIndex++) {
             if (selected[knotIndex]) continue;
-            auto &knot = m_strandKnots[knotIndex];
+            auto &knot = strandIntersection->m_strandKnots[knotIndex];
             auto position = GetPosition(knot->m_coordinate);
             if (position == glm::vec2(0.0f)) continue;
             int angle = glm::degrees(
@@ -235,9 +237,9 @@ void StrandsIntersection::Extract(const std::vector<SplitSettings> &targets,
         auto baseKnotPair = sortedKnots.begin()->second.rbegin()->second;
         std::map<float, std::vector<std::pair<int, std::shared_ptr<StrandKnot>>>> distanceSortedKnots;
         auto basePosition = GetPosition(baseKnotPair.second->m_coordinate);
-        for (int knotIndex = 0; knotIndex < m_strandKnots.size(); knotIndex++) {
+        for (int knotIndex = 0; knotIndex < strandIntersection->m_strandKnots.size(); knotIndex++) {
             if (selected[knotIndex]) continue;
-            auto &knot = m_strandKnots[knotIndex];
+            auto &knot = strandIntersection->m_strandKnots[knotIndex];
             auto position = GetPosition(knot->m_coordinate);
             float distance = glm::distance(position, basePosition);
             auto search = distanceSortedKnots.find(distance);
@@ -249,7 +251,7 @@ void StrandsIntersection::Extract(const std::vector<SplitSettings> &targets,
         }
         bool skip = false;
         for (const auto &collection: distanceSortedKnots) {
-            if(skip) break;
+            if (skip) break;
             for (const auto &knotPair: collection.second) {
                 if (operatingList.size() == target.m_knotSize) {
                     skip = true;
@@ -265,7 +267,8 @@ void StrandsIntersection::Extract(const std::vector<SplitSettings> &targets,
 
 }
 
-void ExtendKnots(std::vector<std::shared_ptr<StrandKnot>> &srcList, std::vector<std::shared_ptr<StrandKnot>> &dstList) {
+void RandomlyMatchKnots(std::vector<std::shared_ptr<StrandKnot>> &srcList,
+                        std::vector<std::shared_ptr<StrandKnot>> &dstList) {
     assert(srcList.size() == dstList.size());
     auto size = srcList.size();
     for (int i = 0; i < size; i++) {
@@ -274,114 +277,128 @@ void ExtendKnots(std::vector<std::shared_ptr<StrandKnot>> &srcList, std::vector<
     }
 }
 
+void MatchKnots(std::vector<std::shared_ptr<StrandKnot>> &srcList, std::vector<std::shared_ptr<StrandKnot>> &dstList) {
+    assert(srcList.size() == dstList.size());
+    auto size = srcList.size();
+
+}
+
 #pragma endregion
 #pragma endregion
 
-std::vector<Entity> StrandsIntersection::Split(const std::vector<SplitSettings> &targets,
-                                const std::function<void(std::vector<std::shared_ptr<StrandKnot>> &srcList,
-                                                         std::vector<std::shared_ptr<StrandKnot>> &dstList)> &extendFunc) {
-    CleanChildren();
+void StrandPlant::Split(const std::shared_ptr<StrandsIntersection> &strandIntersection,
+                        const std::vector<SplitSettings> &targets,
+                        const std::function<void(
+                                std::vector<std::shared_ptr<StrandKnot>> &srcList,
+                                std::vector<std::shared_ptr<StrandKnot>> &dstList)> &extendFunc) {
+    strandIntersection->m_children.clear();
     std::vector<std::vector<std::shared_ptr<StrandKnot>>> splitKnots;
-    Extract(targets, splitKnots);
-    auto owner = GetOwner();
-    auto scene = GetScene();
-    std::vector<Entity> retVal;
+    Extract(strandIntersection, targets, splitKnots);
+    int index = 0;
     for (auto &list: splitKnots) {
-        auto child = scene->CreateEntity("Intersection");
-        scene->AddDataComponent<StrandIntersectionInfo>(child, {});
-        scene->SetParent(child, owner);
-        retVal.push_back(child);
-        auto strandIntersection = scene->GetOrSetPrivateComponent<StrandsIntersection>(child).lock();
-        strandIntersection->m_strandKnots.clear();
+        auto child = std::make_shared<StrandsIntersection>();
+        auto direction = glm::normalize(targets[index].m_direction);
+        child->m_transform.SetPosition(glm::vec3(-direction.x * 0.5f, 1.0f, -direction.y * 0.5f));
+        strandIntersection->m_children.push_back(child);
+        child->m_parent = strandIntersection;
+        child->m_strandKnots.clear();
         auto coordinates = GenerateCircle(list.size());
         for (int i = 0; i < list.size(); i++) {
             auto newKnot = std::make_shared<StrandKnot>();
-            strandIntersection->m_strandKnots.emplace_back(newKnot);
+            child->m_strandKnots.emplace_back(newKnot);
             newKnot->m_coordinate = coordinates[i];
         }
-        extendFunc(list, strandIntersection->m_strandKnots);
-        for(int i = 0; i < list.size(); i++){
-            auto& intersection = strandIntersection->m_strandKnots[i];
-            auto strand = intersection->m_prev.lock()->m_strand;
-            intersection->m_strand = strand;
-            strand.lock()->m_end = intersection;
+        extendFunc(list, child->m_strandKnots);
+        for (int i = 0; i < list.size(); i++) {
+            auto &knot = child->m_strandKnots[i];
+            auto prev = knot->m_prev.lock();
+            auto strand = prev->m_strand;
+            knot->m_color = prev->m_color;
+            knot->m_thickness = prev->m_thickness;
+            knot->m_strand = strand;
         }
-        strandIntersection->CalculateConnectivity();
+        child->CalculateConnectivity();
+        index++;
     }
-    return retVal;
+}
+
+void StrandPlant::Extend(const std::shared_ptr<StrandsIntersection> &strandIntersection) {
+    strandIntersection->m_children.clear();
+    auto child = std::make_shared<StrandsIntersection>();
+    strandIntersection->m_children.push_back(child);
+    child->m_parent = strandIntersection;
+    child->m_strandKnots.clear();
+    for (const auto &i: strandIntersection->m_strandKnots) {
+        auto newKnot = std::make_shared<StrandKnot>();
+        Transform transform;
+        transform.SetPosition(glm::vec3(0, 1, 0));
+        child->m_transform = transform;
+        child->m_strandKnots.emplace_back(newKnot);
+        newKnot->m_coordinate = i->m_coordinate;
+        newKnot->m_prev = i;
+        newKnot->m_color = i->m_color;
+        newKnot->m_thickness = i->m_thickness;
+        i->m_next = newKnot;
+        auto strand = i->m_strand;
+        newKnot->m_strand = strand;
+    }
+    child->CalculateConnectivity();
 }
 
 void StrandPlant::GenerateStrands() {
-    auto scene = GetScene();
+    if (!m_root) return;
     m_strands.clear();
-    auto rootEntity = GetRoot();
-    auto rootIntersection = scene->GetOrSetPrivateComponent<StrandsIntersection>(rootEntity).lock();
-    for (const auto &knot: rootIntersection->m_strandKnots) {
+    for (const auto &knot: m_root->m_strandKnots) {
         auto strand = std::make_shared<Strand>();
-        strand->m_start = strand->m_end = knot;
+        strand->m_start = knot;
         knot->m_strand = strand;
         m_strands.push_back(strand);
     }
 }
 
+
 void StrandPlant::OnInspect() {
     if (ImGui::Button("Generate Strands")) GenerateStrands();
     if (ImGui::Button("Initialize Renderer")) InitializeStrandRenderer();
-    static bool displayRootIntersection = true;
-    ImGui::Checkbox("Display root intersection", &displayRootIntersection);
-    if (displayRootIntersection) {
-        auto scene = GetScene();
-        auto rootEntity = GetRoot();
-        auto rootIntersection = scene->GetOrSetPrivateComponent<StrandsIntersection>(rootEntity).lock();
-        if (rootIntersection->DisplayIntersection("Root Intersection", true)) {
-            GenerateStrands();
+    static bool displayEditor = true;
+    ImGui::Checkbox("Display Strand Tree Editor", &displayEditor);
+    if (displayEditor) {
+        if (m_root) {
+            if (ImGui::Begin("Strand Tree Hierarchy")) {
+                bool deleted = false;
+                DrawIntersectionGui(m_root, deleted, 0);
+                m_selectedIntersectionHierarchyList.clear();
+            }
+            ImGui::End();
         }
     }
+
+
+    static bool displayRegion = true;
+
+    ImGui::Checkbox("Display Intersection", &displayRegion);
+    if (displayRegion && m_root && !m_selectedStrandIntersection.expired()) {
+        DisplayIntersection(m_selectedStrandIntersection.lock(), "Intersection", m_root == m_selectedStrandIntersection.lock());
+    }
+
 }
 
 void StrandPlant::OnCreate() {
-}
-
-Entity StrandPlant::GetRoot() const {
-    auto scene = GetScene();
-    auto self = GetOwner();
-    auto children = scene->GetChildren(self);
-    bool found = false;
-    Entity retVal;
-    for (const auto &child: children) {
-        if (scene->HasPrivateComponent<StrandsIntersection>(child)) {
-            if (found) scene->DeleteEntity(child);
-            else {
-                found = true;
-                retVal = child;
-            }
-        }
-    }
-    if (!found) {
-        retVal = scene->CreateEntity("Root");
-        scene->AddDataComponent<StrandIntersectionInfo>(retVal, StrandIntersectionInfo());
-        auto rootIntersection = scene->GetOrSetPrivateComponent<StrandsIntersection>(retVal).lock();
-        rootIntersection->m_isRoot = true;
-        scene->SetParent(retVal, self);
-    }
-    return retVal;
-}
-
-void StrandPlant::CalculatePosition() const {
-    auto root = GetRoot();
-    auto scene = GetScene();
-    scene->GetOrSetPrivateComponent<StrandsIntersection>(root).lock()->CalculatePosition(scene->GetDataComponent<GlobalTransform>(GetOwner()));
+    m_root = std::make_shared<StrandsIntersection>();
+    m_selectedIntersectionHierarchyList.clear();
+    m_selectedStrandIntersection = m_root;
 }
 
 void StrandPlant::InitializeStrandRenderer() const {
-    CalculatePosition();
+    if (!m_root) return;
+    m_root->CalculatePosition(GlobalTransform());
     auto scene = GetScene();
     auto owner = GetOwner();
     auto renderer = scene->GetOrSetPrivateComponent<StrandsRenderer>(owner).lock();
     auto strandsAsset = ProjectManager::CreateTemporaryAsset<Strands>();
     std::vector<int> strandsList;
     std::vector<StrandPoint> points;
-    for(const auto& strand : m_strands){
+    for (const auto &strand: m_strands) {
         strand->BuildStrands(strandsList, points);
     }
     strandsAsset->SetPoints(strandsList, points, Strands::SplineMode::Cubic);
@@ -389,28 +406,81 @@ void StrandPlant::InitializeStrandRenderer() const {
     renderer->m_material = ProjectManager::CreateTemporaryAsset<Material>();
 }
 
+void StrandPlant::DrawIntersectionGui(const std::shared_ptr<StrandsIntersection> &strandIntersection, bool& deleted,
+                                      const unsigned &hierarchyLevel) {
+    const int index = m_selectedIntersectionHierarchyList.size() - hierarchyLevel - 1;
+    if (!m_selectedIntersectionHierarchyList.empty() && index >= 0 && index < m_selectedIntersectionHierarchyList.size() &&
+            m_selectedIntersectionHierarchyList[index].lock() == strandIntersection) {
+        ImGui::SetNextItemOpen(true);
+    }
+    const bool opened = ImGui::TreeNodeEx("Intersection", ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_NoAutoOpenOnLog |
+    (m_selectedStrandIntersection.lock() == strandIntersection ? ImGuiTreeNodeFlags_Framed : ImGuiTreeNodeFlags_FramePadding));
+    if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+        SetSelectedIntersection(strandIntersection, false);
+    }
+
+
+    deleted = DrawIntersectionMenu(strandIntersection);
+    if (opened && !deleted) {
+        ImGui::TreePush();
+        for(int i = 0; i < strandIntersection->m_children.size(); i++){
+            auto& child = strandIntersection->m_children[i];
+            bool childDeleted = false;
+            DrawIntersectionGui(child, childDeleted, hierarchyLevel + 1);
+            if(childDeleted){
+                strandIntersection->m_children.erase(strandIntersection->m_children.begin() + i);
+                break;
+            }
+        }
+        ImGui::TreePop();
+    }
+
+}
+
 void Strand::BuildStrands(std::vector<int> &strands, std::vector<StrandPoint> &points) {
     strands.emplace_back(points.size());
+    auto frontPointIndex = points.size();
     StrandPoint point;
     auto walker = m_start.lock();
     point.m_position = walker->m_position;
-    point.m_thickness = 0.01f;
+    point.m_thickness = walker->m_thickness;
+    point.m_color = walker->m_color;
     points.emplace_back(point);
     points.emplace_back(point);
-    bool addPhantomPoint = false;
-    while(!walker->m_next.expired()){
+
+    while (!walker->m_next.expired()) {
+        auto startPosition = walker->m_position;
+        auto startDirection = walker->m_direction;
+        auto startThickness = walker->m_thickness;
+        auto startColor = walker->m_color;
         walker = walker->m_next.lock();
-        point.m_position = walker->m_position;
-        point.m_thickness = 0.01f;
-        if(!addPhantomPoint){
-            addPhantomPoint = true;
-            StrandPoint frontPoint;
-            frontPoint = points.at(points.size() - 2);
-            frontPoint.m_position = 2.0f * frontPoint.m_position - point.m_position;
-            points.at(points.size() - 2) = frontPoint;
-        }
+        auto endPosition = walker->m_position;
+        auto endDirection = walker->m_direction;
+        auto endThickness = walker->m_thickness;
+        auto endColor = walker->m_color;
+        auto distance = glm::distance(startPosition, endPosition) * 0.25f;
+
+        point.m_position = startPosition + distance * startDirection;
+        point.m_thickness = glm::mix(startThickness, endThickness, 0.25f);
+        point.m_color = glm::mix(startColor, endColor, 0.25f);
+        points.emplace_back(point);
+
+        point.m_position = endPosition - distance * endDirection;
+        point.m_thickness = glm::mix(startThickness, endThickness, 0.75f);
+        point.m_color = glm::mix(startColor, endColor, 0.75f);
+        points.emplace_back(point);
+
+        point.m_position = endPosition;
+        point.m_thickness = endThickness;
+        point.m_color = endColor;
         points.emplace_back(point);
     }
+
+    StrandPoint frontPoint;
+    frontPoint = points.at(frontPointIndex);
+    frontPoint.m_position = 2.0f * frontPoint.m_position - points.at(frontPointIndex + 1).m_position;
+    points.at(frontPointIndex) = frontPoint;
+
     StrandPoint backPoint;
     backPoint = points.at(points.size() - 2);
     backPoint.m_position = 2.0f * points.at(points.size() - 1).m_position - backPoint.m_position;
@@ -455,31 +525,31 @@ void StrandsIntersection::Construct(const std::vector<glm::vec2> &points) {
     sum /= m_strandKnots.size();
     for (auto &knot: m_strandKnots) {
         knot->m_coordinate -= sum;
+        knot->m_color = glm::linearRand(glm::vec3(0.0f), glm::vec3(1.0f));
     }
     CalculateConnectivity();
 }
 
-void StrandsIntersection::OnCreate() {
-
-}
-
-
-bool StrandsIntersection::DisplayIntersection(const std::string &title, bool editable) {
+bool StrandPlant::DisplayIntersection(const std::shared_ptr<StrandsIntersection> &strandIntersection,
+                                      const std::string &title, bool editable) {
     bool changed = false;
     if (ImGui::Begin(title.c_str())) {
+        ImGui::Text("Knot size: %d", strandIntersection->m_strandKnots.size());
+        ImGui::Text("Max distance to boundary: %d", strandIntersection->m_maxDistanceToBoundary);
         static float angle = 0.0f;
         static int numOfKnots = 200;
         bool needExtract = false;
         if (ImGui::DragFloat("Angle", &angle, 1.0f, -180.0f, 180.0f)) needExtract = true;
-        if (ImGui::DragInt("Num of points", &numOfKnots, 1, 1, m_strandKnots.size())) needExtract = true;
+        if (ImGui::DragInt("Num of points", &numOfKnots, 1, 1, strandIntersection->m_strandKnots.size()))
+            needExtract = true;
         if (needExtract) {
-            for (auto &knot: m_strandKnots) knot->m_selected = false;
+            for (auto &knot: strandIntersection->m_strandKnots) knot->m_selected = false;
             std::vector<std::vector<std::shared_ptr<StrandKnot>>> extraction;
             std::vector<SplitSettings> settings;
             settings.resize(1);
             settings[0].m_direction = glm::vec2(glm::sin(glm::radians(angle)), glm::cos(glm::radians(angle)));
             settings[0].m_knotSize = numOfKnots;
-            Extract(settings, extraction);
+            Extract(strandIntersection, settings, extraction);
             for (auto &knot: extraction[0]) knot->m_selected = true;
         }
         if (ImGui::Button("Split")) {
@@ -488,11 +558,12 @@ bool StrandsIntersection::DisplayIntersection(const std::string &title, bool edi
             settings.resize(2);
             settings[0].m_direction = glm::vec2(glm::sin(glm::radians(angle)), glm::cos(glm::radians(angle)));
             settings[0].m_knotSize = numOfKnots;
-            settings[1].m_direction = glm::vec2(glm::sin(glm::radians(-angle)), glm::cos(glm::radians(-angle)));
-            settings[1].m_knotSize = m_strandKnots.size() - numOfKnots;
-            Split(settings, [&](std::vector<std::shared_ptr<StrandKnot>> &srcList,
-                                std::vector<std::shared_ptr<StrandKnot>> &dstList) {
-                ExtendKnots(srcList, dstList);
+            settings[1].m_direction = glm::vec2(glm::sin(glm::radians(180.0f - angle)),
+                                                glm::cos(glm::radians(180.0f - angle)));
+            settings[1].m_knotSize = strandIntersection->m_strandKnots.size() - numOfKnots;
+            Split(strandIntersection, settings, [&](std::vector<std::shared_ptr<StrandKnot>> &srcList,
+                                                    std::vector<std::shared_ptr<StrandKnot>> &dstList) {
+                RandomlyMatchKnots(srcList, dstList);
             });
         }
         static auto scrolling = glm::vec2(0.0f);
@@ -561,15 +632,18 @@ bool StrandsIntersection::DisplayIntersection(const std::string &title, bool edi
             addingLine = true;
         }
         {
-            for (const auto &knot: m_strandKnots) {
+            for (const auto &knot: strandIntersection->m_strandKnots) {
                 auto pointPosition = GetPosition(knot->m_coordinate);
                 auto canvasPosition = ImVec2(origin.x + pointPosition.x * zoomFactor,
                                              origin.y + pointPosition.y * zoomFactor);
                 draw_list->AddCircleFilled(canvasPosition,
                                            glm::clamp(0.4f * zoomFactor, 1.0f, 100.0f),
-                                           IM_COL32(255.0f * knot->m_distanceToBoundary / m_maxDistanceToBoundary,
-                                                    255.0f * knot->m_distanceToBoundary / m_maxDistanceToBoundary,
-                                                    255.0f * knot->m_distanceToBoundary / m_maxDistanceToBoundary,
+                                           IM_COL32(255.0f * knot->m_distanceToBoundary /
+                                                    strandIntersection->m_maxDistanceToBoundary,
+                                                    255.0f * knot->m_distanceToBoundary /
+                                                    strandIntersection->m_maxDistanceToBoundary,
+                                                    255.0f * knot->m_distanceToBoundary /
+                                                    strandIntersection->m_maxDistanceToBoundary,
                                                     255));
                 if (knot->m_selected) {
                     draw_list->AddCircle(canvasPosition,
@@ -606,8 +680,8 @@ bool StrandsIntersection::DisplayIntersection(const std::string &title, bool edi
                 points.emplace_back(mousePosInCanvas.x, mousePosInCanvas.y);
             if (editable && !ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
                 addingLine = false;
-                if (!CheckBoundary(points)) {
-                    Construct(points);
+                if (!strandIntersection->CheckBoundary(points)) {
+                    strandIntersection->Construct(points);
                     changed = true;
                 }
             }
@@ -618,14 +692,46 @@ bool StrandsIntersection::DisplayIntersection(const std::string &title, bool edi
     return changed;
 }
 
-void StrandsIntersection::OnInspect() {
-    static bool displayRegion = true;
-    ImGui::Text("Knot size: %d", m_strandKnots.size());
-    ImGui::Text("Max distance to boundary: %d", m_maxDistanceToBoundary);
-    ImGui::Checkbox("Display Intersection", &displayRegion);
-    if (displayRegion) {
-        DisplayIntersection("Intersection", false);
+void StrandPlant::SetSelectedIntersection(const std::shared_ptr<StrandsIntersection>& strandIntersection, bool openMenu) {
+    if (strandIntersection == m_selectedStrandIntersection.lock())
+        return;
+    m_selectedIntersectionHierarchyList.clear();
+    if (!strandIntersection) {
+        m_selectedStrandIntersection.reset();
+        return;
     }
+    auto scene = GetScene();
+    m_selectedStrandIntersection = strandIntersection;
+    if (!openMenu)
+        return;
+    auto walker = strandIntersection;
+    while (!walker->m_parent.expired()) {
+        m_selectedIntersectionHierarchyList.push_back(walker);
+        walker = walker->m_parent.lock();
+    }
+}
+
+bool StrandPlant::DrawIntersectionMenu(const std::shared_ptr<StrandsIntersection> &strandIntersection) {
+    bool deleted = false;
+    if (ImGui::BeginPopupContextItem(std::to_string(strandIntersection->m_handle).c_str())) {
+        auto scene = GetScene();
+        ImGui::Text(("Handle: " + std::to_string(strandIntersection->m_handle.GetValue())).c_str());
+        if (ImGui::Button("Delete")) {
+            deleted = true;
+        }
+        const std::string tag = "##StrandIntersection" + std::to_string(strandIntersection->m_handle);
+        if (!deleted && ImGui::BeginMenu(("Rename" + tag).c_str())) {
+            static char newName[256];
+            ImGui::InputText("New name", newName, 256);
+            if (ImGui::Button("Confirm")) {
+                strandIntersection->m_name = newName;
+                memset(newName, 0, 256);
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::EndPopup();
+    }
+    return deleted;
 }
 
 void StrandsIntersection::CalculateConnectivity() {
@@ -826,57 +932,27 @@ bool StrandsIntersection::CheckBoundary(const std::vector<glm::vec2> &points) {
     return false;
 }
 
-void StrandsIntersection::CleanChildren() const {
-    auto scene = GetScene();
-    auto owner = GetOwner();
-    auto children = scene->GetChildren(owner);
-    for(const auto& child : children){
-        if(scene->HasDataComponent<StrandIntersectionInfo>(child)){
-            scene->DeleteEntity(child);
-        }
-    }
-}
+void StrandsIntersection::CalculatePosition(const GlobalTransform &parentGlobalTransform) const {
+    GlobalTransform globalTransform;
+    globalTransform.m_value = parentGlobalTransform.m_value * m_transform.m_value;
 
-Entity StrandsIntersection::Extend() const {
-    auto owner = GetOwner();
-    auto scene = GetScene();
-    auto child = scene->CreateEntity("Intersection");
-    scene->AddDataComponent<StrandIntersectionInfo>(child, {});
-    scene->SetParent(child, owner);
-    auto strandIntersection = scene->GetOrSetPrivateComponent<StrandsIntersection>(child).lock();
-    strandIntersection->m_strandKnots.clear();
-    for(const auto& i : m_strandKnots){
-        auto newKnot = std::make_shared<StrandKnot>();
-        strandIntersection->m_strandKnots.emplace_back(newKnot);
-        newKnot->m_coordinate = i->m_coordinate;
-    }
-    strandIntersection->CalculateConnectivity();
-    return child;
-}
-
-void StrandsIntersection::CalculatePosition(const GlobalTransform &rootGlobalTransform) const{
-    auto scene = GetScene();
-    auto owner = GetOwner();
-    auto globalTransform = scene->GetDataComponent<GlobalTransform>(owner);
-    GlobalTransform transform;
-    transform.m_value = glm::inverse(rootGlobalTransform.m_value) * globalTransform.m_value;
-
-    auto rotation = transform.GetRotation();
-    auto position = transform.GetPosition();
+    auto rotation = globalTransform.GetRotation();
+    auto position = globalTransform.GetPosition();
 
     auto front = rotation * glm::vec3(0, 0, -1);
     auto up = rotation * glm::vec3(0, 1, 0);
     auto left = rotation * glm::vec3(1, 0, 0);
 
-    for(const auto& knot : m_strandKnots){
+    for (const auto &knot: m_strandKnots) {
         auto surfacePosition = GetPosition(knot->m_coordinate);
-        knot->m_position = position + up * surfacePosition.y * m_unitDistance + left * surfacePosition.x * m_unitDistance;
+        knot->m_position =
+                position + front * surfacePosition.y * m_unitDistance + left * surfacePosition.x * m_unitDistance;
+        knot->m_direction = up;
+        knot->m_thickness = m_unitDistance / 3.0f;
     }
-    auto children = scene->GetChildren(owner);
-    for(const auto& child : children){
-        if(scene->HasPrivateComponent<StrandsIntersection>(child)){
-            scene->GetOrSetPrivateComponent<StrandsIntersection>(child).lock()->CalculatePosition(rootGlobalTransform);
-        }
+
+    for (const auto &i: m_children) {
+        i->CalculatePosition(globalTransform);
     }
 }
 
