@@ -1,1 +1,0 @@
-pulli ./indata/pulli/ ./outdata01/pulli/ ./tmp11/pulli/ 0 0 256 256 0.000000

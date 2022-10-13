@@ -378,7 +378,9 @@ void StrandPlant::OnInspect() {
 
     ImGui::Checkbox("Display Intersection", &displayRegion);
     if (displayRegion && m_root && !m_selectedStrandIntersection.expired()) {
-        DisplayIntersection(m_selectedStrandIntersection.lock(), "Intersection", m_root == m_selectedStrandIntersection.lock());
+        if(DisplayIntersection(m_selectedStrandIntersection.lock(), "Intersection", m_root == m_selectedStrandIntersection.lock())){
+            GenerateStrands();
+        }
     }
 
 }
