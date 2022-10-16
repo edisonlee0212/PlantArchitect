@@ -7,7 +7,6 @@
 
 #include <CUDAModule.hpp>
 #include <RayTracerLayer.hpp>
-#include "MLVQRenderer.hpp"
 
 #endif
 

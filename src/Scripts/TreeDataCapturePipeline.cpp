@@ -84,11 +84,11 @@ void TreeDataCapturePipeline::OnBeforeGrowth(AutoTreeGenerationPipeline &pipelin
             if (m_obstacleSettings.m_renderObstacle) {
                 auto obstacleMeshRenderer1 = scene->GetOrSetPrivateComponent<MeshRenderer>(wall1).lock();
                 obstacleMeshRenderer1->m_material = ProjectManager::CreateTemporaryAsset<Material>();
-                obstacleMeshRenderer1->m_material.Get<Material>()->m_albedoColor = glm::vec3(0.7f);
+                obstacleMeshRenderer1->m_material.Get<Material>()->m_materialProperties.m_albedoColor = glm::vec3(0.7f);
                 obstacleMeshRenderer1->m_mesh = DefaultResources::Primitives::Cube;
                 auto obstacleMeshRenderer2 = scene->GetOrSetPrivateComponent<MeshRenderer>(wall2).lock();
                 obstacleMeshRenderer2->m_material = ProjectManager::CreateTemporaryAsset<Material>();
-                obstacleMeshRenderer2->m_material.Get<Material>()->m_albedoColor = glm::vec3(0.7f);
+                obstacleMeshRenderer2->m_material.Get<Material>()->m_materialProperties.m_albedoColor = glm::vec3(0.7f);
                 obstacleMeshRenderer2->m_mesh = DefaultResources::Primitives::Cube;
             }
 
@@ -113,7 +113,7 @@ void TreeDataCapturePipeline::OnBeforeGrowth(AutoTreeGenerationPipeline &pipelin
             if (m_obstacleSettings.m_renderObstacle) {
                 auto obstacleMeshRenderer = scene->GetOrSetPrivateComponent<MeshRenderer>(m_obstacle).lock();
                 obstacleMeshRenderer->m_material = ProjectManager::CreateTemporaryAsset<Material>();
-                obstacleMeshRenderer->m_material.Get<Material>()->m_albedoColor = glm::vec3(0.7f);
+                obstacleMeshRenderer->m_material.Get<Material>()->m_materialProperties.m_albedoColor = glm::vec3(0.7f);
                 obstacleMeshRenderer->m_mesh = DefaultResources::Primitives::Cube;
             }
         }

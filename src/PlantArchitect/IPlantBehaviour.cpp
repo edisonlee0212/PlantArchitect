@@ -167,7 +167,7 @@ IPlantBehaviour::GenerateSkinnedMeshes(const std::shared_ptr<Scene> &scene, cons
             auto texture = root->m_plantDescriptor.Get<IPlantDescriptor>()->m_branchTexture.Get<Texture2D>();
             if (texture)
                 material->m_albedoTexture = texture;
-            material->m_albedoColor = root->m_plantDescriptor.Get<IPlantDescriptor>()->m_branchColor;
+            material->m_materialProperties.m_albedoColor = root->m_plantDescriptor.Get<IPlantDescriptor>()->m_branchColor;
             material->m_vertexColorOnly = settings.m_vertexColorOnly;
             auto internode = scene->GetOrSetPrivateComponent<Internode>(rootInternode).lock();
             const auto plantGlobalTransform =
@@ -221,7 +221,7 @@ IPlantBehaviour::GenerateSkinnedMeshes(const std::shared_ptr<Scene> &scene, cons
                 if (texture)
                     material->m_albedoTexture = texture;
             }
-            material->m_albedoColor = root->m_plantDescriptor.Get<IPlantDescriptor>()->m_foliageColor;
+            material->m_materialProperties.m_albedoColor = root->m_plantDescriptor.Get<IPlantDescriptor>()->m_foliageColor;
             material->m_vertexColorOnly = settings.m_vertexColorOnly;
             const auto plantGlobalTransform =
                     scene->GetDataComponent<GlobalTransform>(rootEntity);
@@ -356,6 +356,8 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
         auto branchGlobalTransform = scene->GetDataComponent<GlobalTransform>(branchEntity);
         auto branch = scene->GetOrSetPrivateComponent<Branch>(branchEntity).lock();
         for (const auto &internodeEntity: branch->m_internodeChain) {
+            bool isOnlyChild = scene->GetChildrenAmount(scene->GetParent(internodeEntity)) == 1;
+            bool hasMultipleChild = scene->GetChildrenAmount(internodeEntity) > 1;
             auto internodeGlobalTransform = scene->GetDataComponent<GlobalTransform>(internodeEntity);
             glm::vec3 newNormalDir;
             if (branchIndex != 0) {
@@ -382,8 +384,7 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
             float angleStep = 360.0f / static_cast<float>(pStep);
             int vertexIndex = vertices.size();
             SkinnedVertex archetype;
-            if (settings.m_overrideVertexColor) archetype.m_color = settings.m_vertexColor;
-            else archetype.m_color = branchColor.m_value;
+
             float textureXStep = 1.0f / pStep * 4.0f;
 
             const auto startPosition = internode->m_rings.at(0).m_startPosition;
@@ -404,6 +405,10 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
                 const float x =
                         i < pStep / 2 ? i * textureXStep : (pStep - i) * textureXStep;
                 archetype.m_texCoord = glm::vec2(x, 0.0f);
+                if(settings.m_markJunctions && !isOnlyChild){
+                    archetype.m_color = glm::vec3(1.0f, 0.0f, 0.0f);
+                }else if (settings.m_overrideVertexColor) archetype.m_color = settings.m_vertexColor;
+                else archetype.m_color = branchColor.m_value;
                 vertices.push_back(archetype);
             }
             std::vector<float> angles;
@@ -485,6 +490,11 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
                             i < (step / 2) ? i * textureXStep : (step - i) * textureXStep;
                     const auto y = ringIndex % 2 == 0 ? 1.0f : 0.0f;
                     archetype.m_texCoord = glm::vec2(x, y);
+                    auto ratio = (float) ringIndex / (ringSize - 1);
+                    if(settings.m_markJunctions && ((ratio <= settings.m_junctionLowerRatio && !isOnlyChild) || (ratio >= 1.0f - settings.m_junctionUpperRatio && hasMultipleChild))){
+                        archetype.m_color = glm::vec3(1.0f, 0.0f, 0.0f);
+                    }else if (settings.m_overrideVertexColor) archetype.m_color = settings.m_vertexColor;
+                    else archetype.m_color = branchColor.m_value;
                     vertices.push_back(archetype);
                 }
                 if (ringIndex != 0) {
@@ -527,6 +537,11 @@ void MeshGeneratorSettings::OnInspect() {
         if (m_overrideRadius) ImGui::DragFloat("Radius", &m_radius);
         ImGui::Checkbox("Override vertex color", &m_overrideVertexColor);
         if (m_overrideVertexColor) ImGui::ColorEdit4("Vertex color", &m_vertexColor.x);
+        ImGui::Checkbox("Mark Junctions", &m_markJunctions);
+        if(m_markJunctions) {
+            ImGui::DragFloat("Junction Lower Ratio", &m_junctionLowerRatio, 0.01f, 0.0f, 0.5f);
+            ImGui::DragFloat("Junction Upper Ratio", &m_junctionUpperRatio, 0.01f, 0.0f, 0.5f);
+        }
         ImGui::TreePop();
     }
 }
@@ -562,6 +577,9 @@ void MeshGeneratorSettings::Save(const std::string &name, YAML::Emitter &out) {
     out << YAML::Key << "m_boundaryRadius" << YAML::Value << m_radius;
     out << YAML::Key << "m_internodeLengthFactor" << YAML::Value << m_internodeLengthFactor;
     out << YAML::Key << "m_overrideVertexColor" << YAML::Value << m_overrideVertexColor;
+    out << YAML::Key << "m_markJunctions" << YAML::Value << m_markJunctions;
+    out << YAML::Key << "m_junctionUpperRatio" << YAML::Value << m_junctionUpperRatio;
+    out << YAML::Key << "m_junctionLowerRatio" << YAML::Value << m_junctionLowerRatio;
     out << YAML::Key << "m_vertexColor" << YAML::Value << m_vertexColor;
     out << YAML::EndMap;
 }
@@ -579,6 +597,9 @@ void MeshGeneratorSettings::Load(const std::string &name, const YAML::Node &in) 
         if (ms["m_boundaryRadius"]) m_radius = ms["m_boundaryRadius"].as<float>();
         if (ms["m_internodeLengthFactor"]) m_internodeLengthFactor = ms["m_internodeLengthFactor"].as<float>();
         if (ms["m_overrideVertexColor"]) m_overrideVertexColor = ms["m_overrideVertexColor"].as<bool>();
+        if (ms["m_markJunctions"]) m_markJunctions = ms["m_markJunctions"].as<bool>();
+        if (ms["m_junctionUpperRatio"]) m_junctionUpperRatio = ms["m_junctionUpperRatio"].as<float>();
+        if (ms["m_junctionLowerRatio"]) m_junctionLowerRatio = ms["m_junctionLowerRatio"].as<float>();
         if (ms["m_vertexColor"]) m_vertexColor = ms["m_vertexColor"].as<glm::vec4>();
     }
 }
@@ -603,9 +624,9 @@ IPlantBehaviour::PrepareInternodeForSkeletalAnimation(const std::shared_ptr<Scen
         auto skinnedMat = ProjectManager::CreateTemporaryAsset<Material>();
         skinnedMat->SetProgram(DefaultResources::GLPrograms::StandardSkinnedProgram);
         skinnedMeshRenderer->m_material = skinnedMat;
-        skinnedMat->m_albedoColor = glm::vec3(40.0f / 255, 15.0f / 255, 0.0f);
-        skinnedMat->m_roughness = 1.0f;
-        skinnedMat->m_metallic = 0.0f;
+        skinnedMat->m_materialProperties.m_albedoColor = glm::vec3(40.0f / 255, 15.0f / 255, 0.0f);
+        skinnedMat->m_materialProperties.m_roughness = 1.0f;
+        skinnedMat->m_materialProperties.m_metallic = 0.0f;
         skinnedMeshRenderer->m_animator = scene->GetOrSetPrivateComponent<Animator>(branchMesh).lock();
         scene->SetParent(branchMesh, entity);
     }
@@ -618,9 +639,9 @@ IPlantBehaviour::PrepareInternodeForSkeletalAnimation(const std::shared_ptr<Scen
         auto skinnedMat = ProjectManager::CreateTemporaryAsset<Material>();
         skinnedMat->SetProgram(DefaultResources::GLPrograms::StandardSkinnedProgram);
         skinnedMeshRenderer->m_material = skinnedMat;
-        skinnedMat->m_albedoColor = glm::vec3(0.0f, 1.0f, 0.0f);
-        skinnedMat->m_roughness = 1.0f;
-        skinnedMat->m_metallic = 0.0f;
+        skinnedMat->m_materialProperties.m_albedoColor = glm::vec3(0.0f, 1.0f, 0.0f);
+        skinnedMat->m_materialProperties.m_roughness = 1.0f;
+        skinnedMat->m_materialProperties.m_metallic = 0.0f;
         skinnedMat->m_drawSettings.m_cullFace = false;
         skinnedMeshRenderer->m_animator = scene->GetOrSetPrivateComponent<Animator>(foliageMesh).lock();
         scene->SetParent(foliageMesh, entity);
@@ -1065,7 +1086,7 @@ Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const
         auto material = ProjectManager::CreateTemporaryAsset<Material>();
         material->SetProgram(DefaultResources::GLPrograms::StandardProgram);
         material->m_vertexColorOnly = false;
-        material->m_albedoColor = subtreeSettings.m_pointColor;
+        material->m_materialProperties.m_albedoColor = subtreeSettings.m_pointColor;
         meshRenderer->m_material = material;
     }
 
@@ -1125,7 +1146,7 @@ Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const
         auto material = ProjectManager::CreateTemporaryAsset<Material>();
         material->SetProgram(DefaultResources::GLPrograms::StandardProgram);
         material->m_vertexColorOnly = false;
-        material->m_albedoColor = subtreeSettings.m_arrowColor;
+        material->m_materialProperties.m_albedoColor = subtreeSettings.m_arrowColor;
         meshRenderer->m_material = material;
     }
     return subtree;
@@ -1271,6 +1292,7 @@ void IPlantBehaviour::BranchMeshGenerator(const std::shared_ptr<Scene> &scene, s
         Vertex archetype;
         if (settings.m_overrideVertexColor) archetype.m_color = settings.m_vertexColor;
         else archetype.m_color = branchColor.m_value;
+
         float textureXStep = 1.0f / pStep * 4.0f;
 
         const auto startPosition = internode->m_rings.at(0).m_startPosition;

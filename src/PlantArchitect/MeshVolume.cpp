@@ -3,7 +3,6 @@
 #include "DefaultResources.hpp"
 #ifdef RAYTRACERFACILITY
 #include "RayTracerLayer.hpp"
-#include <MLVQRenderer.hpp>
 using namespace RayTracerFacility;
 #endif
 using namespace PlantArchitect;

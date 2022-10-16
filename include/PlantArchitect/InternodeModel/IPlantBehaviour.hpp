@@ -13,7 +13,7 @@ namespace PlantArchitect {
 
     struct PLANT_ARCHITECT_API MeshGeneratorSettings {
         float m_resolution = 0.02f;
-        float m_subdivision = 4.0f;
+        float m_subdivision = 16.0f;
         bool m_vertexColorOnly = false;
         bool m_enableFoliage = true;
         bool m_enableBranch = true;
@@ -21,6 +21,9 @@ namespace PlantArchitect {
         bool m_overrideRadius = false;
         float m_radius = 0.01f;
         bool m_overrideVertexColor = false;
+        bool m_markJunctions = true;
+        float m_junctionLowerRatio = 0.4f;
+        float m_junctionUpperRatio = 0.0f;
         glm::vec4 m_vertexColor = glm::vec4(1.0f);
 
         bool m_smoothness = true;
