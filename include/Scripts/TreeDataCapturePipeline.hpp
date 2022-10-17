@@ -107,6 +107,7 @@ namespace Scripts {
             bool m_pointType = true;
             float m_variance = 0.15f;
             float m_ballRandRadius = 0.0f;
+            bool m_junction = false;
         } m_pointCloudPointSettings;
 #ifdef RAYTRACERFACILITY
         void ScanPointCloudLabeled(const Bound& plantBound, AutoTreeGenerationPipeline &pipeline,
