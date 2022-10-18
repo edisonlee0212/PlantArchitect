@@ -13,8 +13,6 @@ using namespace RayTracerFacility;
 #endif
 using namespace PlantArchitect;
 namespace Scripts {
-
-
     class TreeDataCapturePipeline : public IAutoTreeGenerationPipelineBehaviour {
         std::vector<glm::mat4> m_cameraModels;
         std::vector<glm::mat4> m_treeModels;
@@ -24,7 +22,6 @@ namespace Scripts {
         Entity m_prefabEntity;
         Entity m_ground;
         Entity m_obstacle;
-
 
         void SetUpCamera(AutoTreeGenerationPipeline &pipeline);
 
@@ -102,7 +99,7 @@ namespace Scripts {
             GlobalTransform GetTransform(bool isCamera, const Bound &bound, float turnAngle, float pitchAngle);
         } m_cameraSettings, m_pointCloudSettings;
 
-        struct PointCloudPointSettings{
+        struct PointCloudPointSettings {
             bool m_color = false;
             bool m_pointType = true;
             float m_variance = 0.15f;
@@ -110,8 +107,10 @@ namespace Scripts {
             bool m_junction = false;
         } m_pointCloudPointSettings;
 #ifdef RAYTRACERFACILITY
-        void ScanPointCloudLabeled(const Bound& plantBound, AutoTreeGenerationPipeline &pipeline,
+
+        void ScanPointCloudLabeled(const Bound &plantBound, AutoTreeGenerationPipeline &pipeline,
                                    const std::filesystem::path &savePath);
+
 #endif
         struct ExportOptions {
             bool m_exportTreeIOTrees = false;
@@ -120,6 +119,8 @@ namespace Scripts {
             bool m_exportEnvironmentalGrid = false;
             bool m_exportWallPrefab = false;
             bool m_exportGraph = false;
+            bool m_exportMask = false;
+            bool m_exportRBV = false;
             bool m_exportImage = false;
             bool m_exportDepth = false;
             bool m_exportMatrices = true;

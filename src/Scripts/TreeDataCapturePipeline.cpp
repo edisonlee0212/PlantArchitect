@@ -22,7 +22,7 @@ using namespace tinyply;
 
 #include "TransformLayer.hpp"
 #include "DefaultInternodeFoliage.hpp"
-
+#include "RadialBoundingVolume.hpp"
 
 using namespace Scripts;
 
@@ -153,6 +153,8 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
     auto treeIOFolder = m_currentExportFolder;
     auto imagesFolder = m_currentExportFolder / "Image";
     auto objFolder = m_currentExportFolder / "Mesh";
+    auto rbvFolder = m_currentExportFolder / "RBV";
+    auto maskFolder = m_currentExportFolder / "Mask";
     auto depthFolder = m_currentExportFolder / "Depth";
     auto branchFolder = m_currentExportFolder / "Branch";
     auto graphFolder = m_currentExportFolder / "Graph";
@@ -171,9 +173,16 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
     }
 
     if (m_exportOptions.m_exportOBJ || m_exportOptions.m_exportImage || m_exportOptions.m_exportDepth ||
+        m_exportOptions.m_exportMask ||
         m_exportOptions.m_exportBranchCapture || m_exportOptions.m_exportPointCloud) {
         auto settings = m_meshGeneratorSettings;
-        if(m_pointCloudPointSettings.m_junction){
+        if (m_exportOptions.m_exportMask) {
+            settings.m_markJunctions = false;
+            settings.m_vertexColorOnly = true;
+            settings.m_overrideVertexColor = true;
+            settings.m_foliageVertexColor = glm::vec3(0, 1, 0);
+            settings.m_branchVertexColor = glm::vec3(0.5f, 0.3f, 0.0f);
+        } else if (m_pointCloudPointSettings.m_junction) {
             settings.m_markJunctions = true;
             settings.m_vertexColorOnly = true;
         }
@@ -213,13 +222,37 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
         lString->Export(
                 lStringFolder / (pipeline.m_prefix + ".lstring"));
     }
+
+    if (m_exportOptions.m_exportRBV) {
+        std::filesystem::create_directories(rbvFolder);
+        auto rbv = scene->GetOrSetPrivateComponent<RadialBoundingVolume>(pipeline.m_currentGrowingTree).lock();
+        rbv->m_rootInternode = scene->GetOrSetPrivateComponent<Internode>(rootInternode).lock();
+        rbv->CalculateVolume();
+        rbv->GenerateMesh();
+        {
+            const std::string data = rbv->Save();
+            std::ofstream ofs;
+            auto rbvPath = rbvFolder /
+                           (pipeline.m_prefix + "_rbv.txt");
+            ofs.open(rbvPath.string().c_str(),
+                     std::ofstream::out | std::ofstream::trunc);
+            ofs.write(data.c_str(), data.length());
+            ofs.flush();
+            ofs.close();
+        }
+
+        auto objPath = rbvFolder /
+                       (pipeline.m_prefix + "_rbv.obj");
+        rbv->ExportAsObj(objPath.string());
+    }
+
     if (m_exportOptions.m_exportTreeIOTrees) {
         std::filesystem::create_directories(treeIOFolder);
         scene->GetOrSetPrivateComponent<Internode>(rootInternode).lock()->ExportTreeIOTree(
                 treeIOFolder /
                 ("tree" + std::to_string(pipeline.m_descriptorPaths.size() + 1) + ".tree"));
     }
-    if ((m_exportOptions.m_exportImage || m_exportOptions.m_exportDepth || m_exportOptions.m_exportBranchCapture) &&
+    if ((m_exportOptions.m_exportImage || m_exportOptions.m_exportDepth || m_exportOptions.m_exportBranchCapture || m_exportOptions.m_exportMask) &&
         m_exportOptions.m_exportMatrices) {
         for (float turnAngle = m_cameraSettings.m_turnAngleStart;
              turnAngle < m_cameraSettings.m_turnAngleEnd; turnAngle += m_cameraSettings.m_turnAngleStep) {
@@ -265,11 +298,53 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
     }
 
 #ifdef RAYTRACERFACILITY
+    if (m_exportOptions.m_exportMask) {
+        std::filesystem::create_directories(maskFolder);
+        auto cameraEntity = pipeline.GetOwner();
+        auto rayTracerCamera = scene->GetOrSetPrivateComponent<RayTracerCamera>(cameraEntity).lock();
+        rayTracerCamera->SetOutputType(OutputType::Albedo);
+        auto rootChildren = scene->GetChildren(pipeline.m_currentGrowingTree);
+        for (const auto &child: rootChildren) {
+            if (scene->GetEntityName(child) == "FoliageMesh") {
+                scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(child).lock()->m_material.Get<Material>()->m_vertexColorOnly = true;
+            }
+            if (scene->GetEntityName(child) == "BranchMesh") {
+                scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(child).lock()->m_material.Get<Material>()->m_vertexColorOnly = true;
+            }
+        }
+        for (int turnAngle = m_cameraSettings.m_turnAngleStart;
+             turnAngle < m_cameraSettings.m_turnAngleEnd; turnAngle += m_cameraSettings.m_turnAngleStep) {
+            for (int pitchAngle = m_cameraSettings.m_pitchAngleStart;
+                 pitchAngle < m_cameraSettings.m_pitchAngleEnd; pitchAngle += m_cameraSettings.m_pitchAngleStep) {
+                auto anglePrefix = std::to_string(pitchAngle) + "_" +
+                                   std::to_string(turnAngle);
+                auto cameraGlobalTransform = m_cameraSettings.GetTransform(true, plantBound, turnAngle, pitchAngle);
+
+                scene->SetDataComponent(cameraEntity, cameraGlobalTransform);
+                Application::GetLayer<TransformLayer>()->CalculateTransformGraphs(scene);
+                Application::GetLayer<RayTracerLayer>()->UpdateScene();
+                rayTracerCamera->Render(m_cameraSettings.m_rayProperties);
+                rayTracerCamera->m_colorTexture->Export(
+                        maskFolder / (pipeline.m_prefix + "_" + anglePrefix + "_mask.png"));
+            }
+        }
+    }
+
     if (m_exportOptions.m_exportImage) {
         std::filesystem::create_directories(imagesFolder);
         auto cameraEntity = pipeline.GetOwner();
         auto rayTracerCamera = scene->GetOrSetPrivateComponent<RayTracerCamera>(cameraEntity).lock();
         rayTracerCamera->SetOutputType(OutputType::Color);
+        auto rootChildren = scene->GetChildren(pipeline.m_currentGrowingTree);
+        for (const auto &child: rootChildren) {
+            if (scene->GetEntityName(child) == "FoliageMesh") {
+                scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(child).lock()->m_material.Get<Material>()->m_vertexColorOnly = false;
+            }
+            if (scene->GetEntityName(child) == "BranchMesh") {
+                scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(child).lock()->m_material.Get<Material>()->m_vertexColorOnly = false;
+            }
+        }
+
         for (int turnAngle = m_cameraSettings.m_turnAngleStart;
              turnAngle < m_cameraSettings.m_turnAngleEnd; turnAngle += m_cameraSettings.m_turnAngleStep) {
             for (int pitchAngle = m_cameraSettings.m_pitchAngleStart;
@@ -287,6 +362,8 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
             }
         }
     }
+
+
     if (m_exportOptions.m_exportDepth) {
         std::filesystem::create_directories(depthFolder);
         auto cameraEntity = pipeline.GetOwner();
@@ -405,11 +482,13 @@ void TreeDataCapturePipeline::OnInspect() {
             }
             ImGui::Checkbox("Export TreeIO", &m_exportOptions.m_exportTreeIOTrees);
             ImGui::Checkbox("Export OBJ", &m_exportOptions.m_exportOBJ);
+            ImGui::Checkbox("Export RBV", &m_exportOptions.m_exportRBV);
             ImGui::Checkbox("Export Graph", &m_exportOptions.m_exportGraph);
             ImGui::Checkbox("Export CSV", &m_exportOptions.m_exportCSV);
             ImGui::Checkbox("Export LSystemString", &m_exportOptions.m_exportLString);
             ImGui::Text("Rendering:");
             ImGui::Checkbox("Export Depth", &m_exportOptions.m_exportDepth);
+            ImGui::Checkbox("Export Mask", &m_exportOptions.m_exportMask);
             ImGui::Checkbox("Export Image", &m_exportOptions.m_exportImage);
             ImGui::Checkbox("Export Branch Capture", &m_exportOptions.m_exportBranchCapture);
             ImGui::Checkbox("Export PointCloud", &m_exportOptions.m_exportPointCloud);
@@ -895,7 +974,8 @@ void TreeDataCapturePipeline::Serialize(YAML::Emitter &out) {
     out << YAML::Key << "m_pointCloudPointSettings.m_color" << YAML::Value << m_pointCloudPointSettings.m_color;
     out << YAML::Key << "m_pointCloudPointSettings.m_pointType" << YAML::Value << m_pointCloudPointSettings.m_pointType;
     out << YAML::Key << "m_pointCloudPointSettings.m_variance" << YAML::Value << m_pointCloudPointSettings.m_variance;
-    out << YAML::Key << "m_pointCloudPointSettings.m_ballRandRadius" << YAML::Value << m_pointCloudPointSettings.m_ballRandRadius;
+    out << YAML::Key << "m_pointCloudPointSettings.m_ballRandRadius" << YAML::Value
+        << m_pointCloudPointSettings.m_ballRandRadius;
     out << YAML::Key << "m_pointCloudPointSettings.m_junction" << YAML::Value << m_pointCloudPointSettings.m_junction;
 
     out << YAML::Key << "m_currentExportFolder" << YAML::Value << m_currentExportFolder.string();
@@ -932,6 +1012,8 @@ void TreeDataCapturePipeline::Serialize(YAML::Emitter &out) {
     out << YAML::Key << "m_exportOptions.m_exportOBJ" << YAML::Value << m_exportOptions.m_exportOBJ;
     out << YAML::Key << "m_exportOptions.m_exportCSV" << YAML::Value << m_exportOptions.m_exportCSV;
     out << YAML::Key << "m_exportOptions.m_exportGraph" << YAML::Value << m_exportOptions.m_exportGraph;
+    out << YAML::Key << "m_exportOptions.m_exportMask" << YAML::Value << m_exportOptions.m_exportMask;
+    out << YAML::Key << "m_exportOptions.m_exportRBV" << YAML::Value << m_exportOptions.m_exportRBV;
     out << YAML::Key << "m_exportOptions.m_exportImage" << YAML::Value << m_exportOptions.m_exportImage;
     out << YAML::Key << "m_exportOptions.m_exportDepth" << YAML::Value << m_exportOptions.m_exportDepth;
     out << YAML::Key << "m_exportOptions.m_exportMatrices" << YAML::Value << m_exportOptions.m_exportMatrices;
@@ -976,7 +1058,9 @@ void TreeDataCapturePipeline::Deserialize(const YAML::Node &in) {
     if (in["m_exportOptions.m_exportTreeIOTrees"]) m_exportOptions.m_exportTreeIOTrees = in["m_exportOptions.m_exportTreeIOTrees"].as<bool>();
     if (in["m_exportOptions.m_exportOBJ"]) m_exportOptions.m_exportOBJ = in["m_exportOptions.m_exportOBJ"].as<bool>();
     if (in["m_exportOptions.m_exportCSV"]) m_exportOptions.m_exportCSV = in["m_exportOptions.m_exportCSV"].as<bool>();
+    if (in["m_exportOptions.m_exportRBV"]) m_exportOptions.m_exportRBV = in["m_exportOptions.m_exportRBV"].as<bool>();
     if (in["m_exportOptions.m_exportGraph"]) m_exportOptions.m_exportGraph = in["m_exportOptions.m_exportGraph"].as<bool>();
+    if (in["m_exportOptions.m_exportMask"]) m_exportOptions.m_exportMask = in["m_exportOptions.m_exportMask"].as<bool>();
     if (in["m_exportOptions.m_exportImage"]) m_exportOptions.m_exportImage = in["m_exportOptions.m_exportImage"].as<bool>();
     if (in["m_exportOptions.m_exportDepth"]) m_exportOptions.m_exportDepth = in["m_exportOptions.m_exportDepth"].as<bool>();
     if (in["m_exportOptions.m_exportMatrices"]) m_exportOptions.m_exportMatrices = in["m_exportOptions.m_exportMatrices"].as<bool>();
@@ -1090,7 +1174,7 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound &plantBound, Aut
             if (m_pointCloudPointSettings.m_pointType) pointTypes.push_back(3);
             if (m_pointCloudPointSettings.m_color) colors.emplace_back(0, 0, 0);
         }
-        if(m_pointCloudPointSettings.m_junction){
+        if (m_pointCloudPointSettings.m_junction) {
             junction.emplace_back(sample.m_albedo == glm::vec3(1.0, 0.0, 0.0));
         }
     }
@@ -1121,7 +1205,7 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound &plantBound, Aut
                 "pointType", {"value"}, Type::INT32, pointTypes.size(),
                 reinterpret_cast<uint8_t *>(pointTypes.data()), Type::INVALID, 0);
 
-    if(m_pointCloudPointSettings.m_junction){
+    if (m_pointCloudPointSettings.m_junction) {
         cube_file.add_properties_to_element(
                 "junction", {"value"}, Type::INT32, junction.size(),
                 reinterpret_cast<uint8_t *>(junction.data()), Type::INVALID, 0);

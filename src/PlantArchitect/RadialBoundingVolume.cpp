@@ -268,9 +268,11 @@ void RadialBoundingVolume::FormEntity() {
     auto scene = GetScene();
     auto children = scene->GetChildren(GetOwner());
     for (auto &child: children) {
-        scene->DeleteEntity(child);
+        if(scene->GetEntityName(child) == "RBV Geometry") scene->DeleteEntity(child);
     }
     children.clear();
+    auto rbvEntity = scene->CreateEntity("RBV Geometry");
+    scene->SetParent(rbvEntity, GetOwner(), false);
     for (auto i = 0; i < m_boundMeshes.size(); i++) {
         auto slice = scene->CreateEntity("RBV_" + std::to_string(i));
         auto mmc = scene->GetOrSetPrivateComponent<MeshRenderer>(slice).lock();
@@ -279,8 +281,7 @@ void RadialBoundingVolume::FormEntity() {
         mat->SetProgram(DefaultResources::GLPrograms::StandardProgram);
         mmc->m_forwardRendering = false;
         mmc->m_mesh = m_boundMeshes[i];
-
-        scene->SetParent(slice, GetOwner(), false);
+        scene->SetParent(slice, rbvEntity, false);
     }
 }
 
@@ -489,7 +490,7 @@ void RadialBoundingVolume::CalculateVolume(float maxHeight) {
 
 void RadialBoundingVolume::OnInspect() {
     IVolume::OnInspect();
-    Editor::DragAndDropButton<Internode>(m_rootInternode, "InternodePlant");
+    Editor::DragAndDropButton<Internode>(m_rootInternode, "Root Internode");
     auto scene = GetScene();
     ImGui::Checkbox("Prune Buds", &m_pruneBuds);
     ImGui::ColorEdit4("Display Color", &m_displayColor.x);

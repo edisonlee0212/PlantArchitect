@@ -24,7 +24,8 @@ namespace PlantArchitect {
         bool m_markJunctions = true;
         float m_junctionLowerRatio = 0.4f;
         float m_junctionUpperRatio = 0.0f;
-        glm::vec4 m_vertexColor = glm::vec4(1.0f);
+        glm::vec3 m_branchVertexColor = glm::vec3(1.0f);
+        glm::vec3 m_foliageVertexColor = glm::vec3(1.0f);
 
         bool m_smoothness = true;
         float m_internodeLengthFactor = 1.0f;
