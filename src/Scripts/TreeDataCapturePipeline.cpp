@@ -150,7 +150,7 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
     for (const auto &i: children) {
         if (scene->HasPrivateComponent<Internode>(i)) rootInternode = i;
     }
-    auto treeIOFolder = m_currentExportFolder;
+    auto treeIOFolder = m_currentExportFolder / "TreeIO";
     auto imagesFolder = m_currentExportFolder / "Image";
     auto objFolder = m_currentExportFolder / "Mesh";
     auto rbvFolder = m_currentExportFolder / "RBV";
@@ -250,7 +250,7 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
         std::filesystem::create_directories(treeIOFolder);
         scene->GetOrSetPrivateComponent<Internode>(rootInternode).lock()->ExportTreeIOTree(
                 treeIOFolder /
-                ("tree" + std::to_string(pipeline.m_descriptorPaths.size() + 1) + ".tree"));
+                (pipeline.m_prefix + ".tree"));
     }
     if ((m_exportOptions.m_exportImage || m_exportOptions.m_exportDepth || m_exportOptions.m_exportBranchCapture || m_exportOptions.m_exportMask) &&
         m_exportOptions.m_exportMatrices) {
