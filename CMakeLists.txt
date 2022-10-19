@@ -75,6 +75,7 @@ if (BUILD_RAY_TRACER_FACILITY)
             ${TREEIO_INCLUDES}
             ${CMAKE_CURRENT_BINARY_DIR}
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/Orchards
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/TreeIO
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/MeshFormation
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/Volumes
@@ -103,6 +104,7 @@ else ()
             ${TREEIO_INCLUDES}
             ${CMAKE_CURRENT_BINARY_DIR}
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/Orchards
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/TreeIO
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/MeshFormation
             ${CMAKE_CURRENT_SOURCE_DIR}/include/PlantArchitect/Volumes
