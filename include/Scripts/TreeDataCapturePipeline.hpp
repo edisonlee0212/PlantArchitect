@@ -107,10 +107,8 @@ namespace Scripts {
             bool m_junction = false;
         } m_pointCloudPointSettings;
 #ifdef RAYTRACERFACILITY
-
         void ScanPointCloudLabeled(const Bound &plantBound, AutoTreeGenerationPipeline &pipeline,
                                    const std::filesystem::path &savePath);
-
 #endif
         struct ExportOptions {
             bool m_exportTreeIOTrees = false;

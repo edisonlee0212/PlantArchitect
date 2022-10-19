@@ -23,7 +23,6 @@ void Internode::OnCreate() {
 
 }
 
-
 void Internode::DownStreamResource(float deltaTime) {
     if (!m_resource) return;
     auto owner = GetOwner();

@@ -7,11 +7,7 @@
 
 using namespace UniEngine;
 namespace PlantArchitect {
-
-
     class PLANT_ARCHITECT_API Branch : public IPrivateComponent {
-
-
     public:
         std::vector<Entity> m_internodeChain;
 
