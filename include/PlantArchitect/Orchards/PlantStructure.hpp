@@ -13,6 +13,9 @@ namespace Orchards {
         InternodeHandle m_handle = 0;
         BranchHandle m_branchHandle = 0;
 
+        InternodeHandle m_parent = 0;
+        std::vector<InternodeHandle> m_children;
+
         GlobalTransform m_globalTransform;
     public:
         explicit Internode(InternodeHandle handle);
@@ -29,7 +32,6 @@ namespace Orchards {
 
         BranchHandle m_parent = 0;
         std::vector<BranchHandle> m_children;
-
 
         GlobalTransform m_globalTransform;
     public:
@@ -53,10 +55,14 @@ namespace Orchards {
         void RecycleBranch(BranchHandle handle);
 
     public:
-        void SetParent(BranchHandle target, BranchHandle parent);
+        void SetParentBranch(BranchHandle targetHandle, BranchHandle parentHandle);
 
-        void RemoveChild(BranchHandle target, BranchHandle child);
+        void RemoveChildBranch(BranchHandle targetHandle, BranchHandle childHandle);
 
-        InternodeHandle Extend(InternodeHandle target);
+        void SetParentInternode(InternodeHandle targetHandle, InternodeHandle parentHandle);
+
+        void RemoveChildInternode(InternodeHandle targetHandle, InternodeHandle childHandle);
+
+        InternodeHandle Extend(InternodeHandle targetHandle);
     };
 }
