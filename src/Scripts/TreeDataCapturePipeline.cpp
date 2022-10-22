@@ -233,7 +233,7 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
             const std::string data = rbv->Save();
             std::ofstream ofs;
             auto rbvPath = rbvFolder /
-                           (pipeline.m_prefix + "_rbv.txt");
+                           (pipeline.m_prefix + ".rbv");
             ofs.open(rbvPath.string().c_str(),
                      std::ofstream::out | std::ofstream::trunc);
             ofs.write(data.c_str(), data.length());
@@ -242,7 +242,7 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
         }
 
         auto objPath = rbvFolder /
-                       (pipeline.m_prefix + "_rbv.obj");
+                       (pipeline.m_prefix + "_rbv");
         rbv->ExportAsObj(objPath.string());
     }
 
