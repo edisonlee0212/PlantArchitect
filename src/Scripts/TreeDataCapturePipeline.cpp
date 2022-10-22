@@ -248,9 +248,11 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
 
     if (m_exportOptions.m_exportTreeIOTrees) {
         std::filesystem::create_directories(treeIOFolder);
+        auto name = "tree" + std::to_string(pipeline.m_descriptorPaths.size() + 1);
         scene->GetOrSetPrivateComponent<Internode>(rootInternode).lock()->ExportTreeIOTree(
                 treeIOFolder /
                 (pipeline.m_prefix + ".tree"));
+        //m_treeIOPairs.emplace_back(pipeline.m_prefix, name);
     }
     if ((m_exportOptions.m_exportImage || m_exportOptions.m_exportDepth || m_exportOptions.m_exportBranchCapture || m_exportOptions.m_exportMask) &&
         m_exportOptions.m_exportMatrices) {
@@ -845,6 +847,26 @@ void TreeDataCapturePipeline::OnEnd(AutoTreeGenerationPipeline &pipeline) {
         ExportMatrices(m_currentExportFolder /
                        "matrices.yml");
     if (m_environmentSettings.m_enableGround) scene->DeleteEntity(m_ground);
+
+    if(false){
+        auto treeIOFolder = m_currentExportFolder / "TreeIO";
+        std::string data = "";
+        for(const auto& pair : m_treeIOPairs){
+            data += pair.first;
+            data += ",";
+            data += pair.second;
+            data += "\n";
+        }
+        std::ofstream ofs;
+        auto path = treeIOFolder /
+                       ("name_pairings.txt");
+        ofs.open(path.string().c_str(),
+                 std::ofstream::out | std::ofstream::trunc);
+        ofs.write(data.c_str(), data.length());
+        ofs.flush();
+        ofs.close();
+        m_treeIOPairs.clear();
+    }
 }
 
 void TreeDataCapturePipeline::DisableAllExport() {

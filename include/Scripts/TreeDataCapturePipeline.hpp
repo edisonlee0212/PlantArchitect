@@ -39,6 +39,8 @@ namespace Scripts {
         void ExportEnvironmentalGrid(AutoTreeGenerationPipeline &pipeline,
                                      const std::filesystem::path &path);
 
+        std::vector<std::pair<std::string, std::string>> m_treeIOPairs;
+
     public:
         AssetRef m_obstacleGrid;
         EntityRef m_volumeEntity;
