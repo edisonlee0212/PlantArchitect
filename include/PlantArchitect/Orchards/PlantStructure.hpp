@@ -190,7 +190,6 @@ namespace Orchards {
         assert(targetInternode.m_branchHandle < m_branches.size());
         auto &branch = m_branches[targetInternode.m_branchHandle];
         assert(!branch.m_recycled);
-
         auto newInternodeHandle = AllocateInternode();
         SetParentInternode(newInternodeHandle, targetHandle);
         auto& originalInternode = m_internodes[targetHandle];
@@ -216,26 +215,23 @@ namespace Orchards {
     template<typename BranchData, typename InternodeData, typename BudData>
     void Plant<BranchData, InternodeData, BudData>::PruneBranch(int handle) {
         assert(handle != 0);
-        if(m_branches[handle].m_recycled) return;
+        assert(!m_branches[handle].m_recycled);
         auto &branch = m_branches[handle];
         //Remove children
         auto children = branch.m_children;
         for (const auto &child: children) {
             PruneBranch(child);
         }
+        //Detach from parent
+        if (branch.m_parent != -1) DetachChildBranch(branch.m_parent, handle);
         //Remove internodes
         if (!branch.m_internodes.empty()) {
             //Detach first internode from parent.
-            auto &firstInternode = m_internodes[branch.m_internodes.front()];
-            if (firstInternode.m_parent != -1)
-                DetachChildInternode(firstInternode.m_parent, branch.m_internodes.front());
             auto internodes = branch.m_internodes;
             for (const auto &i: internodes) {
                 RecycleInternodeSingle(i);
             }
         }
-        //Detach from parent
-        if (branch.m_parent != -1) DetachChildBranch(branch.m_parent, handle);
         RecycleBranchSingle(handle);
         m_newVersion++;
     }
@@ -243,34 +239,41 @@ namespace Orchards {
     template<typename BranchData, typename InternodeData, typename BudData>
     void Plant<BranchData, InternodeData, BudData>::PruneInternode(int handle) {
         assert(handle != 0);
-        if(m_internodes[handle].m_recycled) return;
+        assert(!m_internodes[handle].m_recycled);
         auto &internode = m_internodes[handle];
-        auto &branch = m_branches[internode.m_branchHandle];
+        auto branchHandle = internode.m_branchHandle;
+        auto &branch = m_branches[branchHandle];
         if (handle == branch.m_internodes[0]) {
             PruneBranch(internode.m_branchHandle);
             return;
         }
         //Collect list of subsequent internodes
         std::vector<InternodeHandle> subsequentInternodes;
-        for (int i = branch.m_internodes.size() - 1; i > 0; i--) {
-            subsequentInternodes.emplace_back(branch.m_internodes[i]);
-            if (branch.m_internodes[i] == handle) break;
+        while(branch.m_internodes.back() != handle){
+            subsequentInternodes.emplace_back(branch.m_internodes.back());
+            branch.m_internodes.pop_back();
         }
-        assert(subsequentInternodes.size() < branch.m_internodes.size());
+        subsequentInternodes.emplace_back(branch.m_internodes.back());
+        branch.m_internodes.pop_back();
+        assert(!branch.m_internodes.empty());
         //Detach from parent
         if (internode.m_parent != -1) DetachChildInternode(internode.m_parent, handle);
         //From end node remove one by one.
+        InternodeHandle prev = -1;
         for (const auto &i: subsequentInternodes) {
             auto children = m_internodes[i].m_children;
             for (const auto &childInternodeHandle: children) {
+                if(childInternodeHandle == prev) continue;
                 auto& child = m_internodes[childInternodeHandle];
-                if(child.m_recycled) continue;
-                auto branchHandle = child.m_branchHandle;
-                if (branchHandle != internode.m_branchHandle) {
-                    PruneBranch(branchHandle);
+                assert(!child.m_recycled);
+                auto childBranchHandle = child.m_branchHandle;
+                if (childBranchHandle != branchHandle) {
+                    PruneBranch(childBranchHandle);
                 }
             }
+            prev = i;
             RecycleInternodeSingle(i);
+
         }
         m_newVersion++;
     }
@@ -357,6 +360,14 @@ namespace Orchards {
         auto &childBranch = m_branches[childHandle];
         assert(!targetBranch.m_recycled);
         assert(!childBranch.m_recycled);
+
+        if(!childBranch.m_internodes.empty()){
+            auto firstInternodeHandle = childBranch.m_internodes[0];
+            auto &firstInternode = m_internodes[firstInternodeHandle];
+            if (firstInternode.m_parent != -1)
+                DetachChildInternode(firstInternode.m_parent, firstInternodeHandle);
+        }
+
         auto &children = targetBranch.m_children;
         for (int i = 0; i < children.size(); i++) {
             if (children[i] == childHandle) {

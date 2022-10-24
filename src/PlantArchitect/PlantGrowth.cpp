@@ -115,18 +115,18 @@ void Orchards::TreeGrowthModel::Grow() {
 #pragma endregion
 #pragma region Growth
     for (const auto &internodeHandle: sortedInternodeList) {
-        auto &internode = m_targetPlant->RefInternode(internodeHandle);
-        auto &internodeData = internode.m_data;
-        if(internode.m_endNode) {
+        //auto &internode = m_targetPlant->RefInternode(internodeHandle);
+        //auto &internodeData = internode.m_data;
+        if(m_targetPlant->RefInternode(internodeHandle).m_endNode) {
             auto newInternodeHandle = m_targetPlant->Extend(internodeHandle);
             auto& newInternode = m_targetPlant->RefInternode(newInternodeHandle);
             newInternode.m_length = 1.0f;
-            newInternode.m_thickness = internode.m_thickness * 0.9f;
-        }else if(internode.m_handle % 3 == 0){
+            newInternode.m_thickness = m_targetPlant->RefInternode(internodeHandle).m_thickness * 0.9f;
+        }else if(m_targetPlant->RefInternode(internodeHandle).m_handle % 3 == 0){
             auto newInternodeHandle = m_targetPlant->Extend(internodeHandle);
             auto& newInternode = m_targetPlant->RefInternode(newInternodeHandle);
             newInternode.m_length = 1.0f;
-            newInternode.m_thickness = internode.m_thickness * 0.9f;
+            newInternode.m_thickness = m_targetPlant->RefInternode(internodeHandle).m_thickness * 0.9f;
         }
     }
 #pragma endregion
