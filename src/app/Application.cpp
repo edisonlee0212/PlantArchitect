@@ -10,32 +10,23 @@
 
 #endif
 
-#include <Editor.hpp>
-#include <Utilities.hpp>
-#include <ProjectManager.hpp>
-#include <PhysicsLayer.hpp>
-#include <PostProcessing.hpp>
-#include <CubeVolume.hpp>
-#include <ClassRegistry.hpp>
-#include <ObjectRotator.hpp>
-#include "GeneralTreeBehaviour.hpp"
-#include "DefaultInternodeResource.hpp"
+#include "ProjectManager.hpp"
+#include "PhysicsLayer.hpp"
+#include "PostProcessing.hpp"
+#include "ClassRegistry.hpp"
+#include "ObjectRotator.hpp"
 #include "InternodeModel/Internode.hpp"
-#include <SpaceColonizationBehaviour.hpp>
-#include "EmptyInternodeResource.hpp"
-#include "LSystemBehaviour.hpp"
 #include "AutoTreeGenerationPipeline.hpp"
-#include "DefaultInternodeFoliage.hpp"
-#include "RadialBoundingVolume.hpp"
 #include "TreeDataCapturePipeline.hpp"
 #include "InternodeLayer.hpp"
 #include "StrandLayer.hpp"
+#include "PlantGrowth.hpp"
 using namespace PlantArchitect;
 #ifdef RAYTRACERFACILITY
 using namespace RayTracerFacility;
 #endif
 using namespace Scripts;
-
+using namespace Orchards;
 void EngineSetup();
 
 
@@ -44,7 +35,12 @@ int main() {
     ClassRegistry::RegisterPrivateComponent<AutoTreeGenerationPipeline>("AutoTreeGenerationPipeline");
     ClassRegistry::RegisterAsset<TreeDataCapturePipeline>("TreeDataCapturePipeline", {".tdcp"});
 
-
+    TreeGrowthModel model;
+    model.m_targetPlant = std::make_shared<Plant<BranchData, InternodeData, BudData>>();
+    for(int i = 0; i < 2; i++){
+        model.Grow();
+    }
+    model.m_targetPlant->PruneInternode(1);
     EngineSetup();
 
     ApplicationConfigs applicationConfigs;
@@ -55,6 +51,9 @@ int main() {
 #endif
     auto internodeLayer = Application::PushLayer<InternodeLayer>();
     auto strandLayer = Application::PushLayer<StrandLayer>();
+
+
+
 #pragma region Engine Loop
     Application::Start();
 #pragma endregion

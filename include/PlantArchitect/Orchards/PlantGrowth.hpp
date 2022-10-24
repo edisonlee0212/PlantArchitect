@@ -1,34 +1,41 @@
 #pragma once
+
 #include "PlantStructure.hpp"
+
 using namespace UniEngine;
 namespace Orchards {
-    enum class BudType{
+    enum class BudType {
         Shoot,
         Leaf,
         Fruit
     };
 
-    struct BudData{
+    struct BudData {
 
     };
 
-    struct InternodeData{
+    struct InternodeData {
         int m_age = 0;
         float m_inhibitor = 0;
-        float m_level = 0;
         glm::quat m_desiredLocalRotation;
         float m_sagging = 0;
 
-        int m_maxDistanceToAnyBranchEnd = 0;
+        float m_maxDistanceToAnyBranchEnd = 0;
         float m_order = 0;
         float m_childTotalBiomass = 0;
 
-        int m_rootDistance = 0;
+        float m_rootDistance = 0;
+
+        float m_elongatingRate = 0.0f;
+
+        float m_apicalControl = 0.0f;
     };
 
-    struct BranchData{
-
+    struct BranchData {
+        int m_level = 0;
+        float m_apicalControlBase;
     };
+
     class TreeGrowthParameters {
     public:
         int m_lateralBudCount;
@@ -50,7 +57,10 @@ namespace Orchards {
 
         glm::vec2 m_endNodeThicknessAndControl;
         float m_lateralBudFlushingProbability;
-        float m_apicalControl;
+        /*
+         * To form significant trunk. Larger than 1 means forming big trunk.
+         */
+        glm::vec2 m_apicalControlBaseDistFactor;
         /**
          * Avoidance multiplier, strength, max avoidance (which will completely stop bud from flushing).
          */
@@ -89,11 +99,13 @@ namespace Orchards {
 
         TreeGrowthParameters();
     };
-    class TreeGrowthModel{
+
+    class PLANT_ARCHITECT_API TreeGrowthModel {
 
     public:
         TreeGrowthParameters m_parameters;
         std::shared_ptr<Plant<BranchData, InternodeData, BudData>> m_targetPlant;
+
         void Grow();
     };
 }

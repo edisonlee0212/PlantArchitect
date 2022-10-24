@@ -14,7 +14,7 @@ namespace Orchards {
         int m_value;
     };
     */
-    enum class BudStatus {
+    enum class PLANT_ARCHITECT_API BudStatus {
         Sleeping,
         Flushed,
         Died
@@ -30,6 +30,11 @@ namespace Orchards {
         Bud();
     };
 
+
+    enum class PLANT_ARCHITECT_API InternodeStatus{
+        Elongating,
+        Grown,
+    };
 
     template<typename InternodeData, typename BudData>
     class Internode {
@@ -85,6 +90,11 @@ namespace Orchards {
         std::queue<InternodeHandle> m_internodePool;
         std::queue<BranchHandle> m_branchPool;
 
+        int m_newVersion = 0;
+        int m_version = -1;
+        std::vector<InternodeHandle> m_sortedInternodeList;
+        std::vector<BranchHandle> m_sortedBranchList;
+
         InternodeHandle AllocateInternode();
 
         void RecycleInternodeSingle(InternodeHandle handle);
@@ -108,9 +118,11 @@ namespace Orchards {
 
         InternodeHandle Extend(InternodeHandle targetHandle);
 
-        std::vector<InternodeHandle> GetSortedInternodeList();
+        const std::vector<InternodeHandle>& GetSortedInternodeList();
 
-        std::vector<BranchHandle> GetSortedBranchList();
+        const std::vector<BranchHandle>& GetSortedBranchList();
+
+        void SortLists();
 
         Plant();
 
@@ -121,43 +133,53 @@ namespace Orchards {
 #pragma region Helper
     template<typename BranchData, typename InternodeData, typename BudData>
     Branch<BranchData> &Plant<BranchData, InternodeData, BudData>::RefBranch(int handle) {
-        assert(handle > 0 && handle < m_branches.size());
+        assert(handle >= 0 && handle < m_branches.size());
         return m_branches[handle];
     }
 
     template<typename BranchData, typename InternodeData, typename BudData>
     Internode<InternodeData, BudData> &Plant<BranchData, InternodeData, BudData>::RefInternode(int handle) {
-        assert(handle > 0 && handle < m_internodes.size());
+        assert(handle >= 0 && handle < m_internodes.size());
         return m_internodes[handle];
-    }
-    template<typename BranchData, typename InternodeData, typename BudData>
-    std::vector<BranchHandle> Plant<BranchData, InternodeData, BudData>::GetSortedBranchList() {
-        std::vector<BranchHandle> sortedBranches;
-        std::queue<BranchHandle> waitList;
-        waitList.push(0);
-        while (!waitList.empty()) {
-            sortedBranches.emplace_back(waitList.front());
-            waitList.pop();
-            for (const auto &i: m_branches[sortedBranches.back()].m_children) {
-                waitList.push(i);
-            }
-        }
-        return sortedBranches;
     }
 
     template<typename BranchData, typename InternodeData, typename BudData>
-    std::vector<InternodeHandle> Plant<BranchData, InternodeData, BudData>::GetSortedInternodeList() {
-        std::vector<InternodeHandle> sortedInternodes;
-        std::queue<InternodeHandle> waitList;
-        waitList.push(0);
-        while (!waitList.empty()) {
-            sortedInternodes.emplace_back(waitList.front());
-            waitList.pop();
-            for (const auto &i: m_internodes[sortedInternodes.back()].m_children) {
-                waitList.push(i);
+    void Plant<BranchData, InternodeData, BudData>::SortLists() {
+        if(m_version == m_newVersion) return;
+        m_version = m_newVersion;
+        m_sortedBranchList.clear();
+        std::queue<BranchHandle> branchWaitList;
+        branchWaitList.push(0);
+        while (!branchWaitList.empty()) {
+            m_sortedBranchList.emplace_back(branchWaitList.front());
+            branchWaitList.pop();
+            for (const auto &i: m_branches[m_sortedBranchList.back()].m_children) {
+                branchWaitList.push(i);
             }
         }
-        return sortedInternodes;
+
+        m_sortedInternodeList.clear();
+        std::queue<InternodeHandle> internodeWaitList;
+        internodeWaitList.push(0);
+        while (!internodeWaitList.empty()) {
+            m_sortedInternodeList.emplace_back(internodeWaitList.front());
+            internodeWaitList.pop();
+            for (const auto &i: m_internodes[m_sortedInternodeList.back()].m_children) {
+                internodeWaitList.push(i);
+            }
+        }
+    }
+
+    template<typename BranchData, typename InternodeData, typename BudData>
+    const std::vector<BranchHandle>& Plant<BranchData, InternodeData, BudData>::GetSortedBranchList() {
+        SortLists();
+        return m_sortedBranchList;
+    }
+
+    template<typename BranchData, typename InternodeData, typename BudData>
+    const std::vector<InternodeHandle>& Plant<BranchData, InternodeData, BudData>::GetSortedInternodeList() {
+        SortLists();
+        return m_sortedInternodeList;
     }
 
     template<typename BranchData, typename InternodeData, typename BudData>
@@ -171,29 +193,30 @@ namespace Orchards {
 
         auto newInternodeHandle = AllocateInternode();
         SetParentInternode(newInternodeHandle, targetHandle);
-        auto &newInternode = m_internodes[targetHandle];
+        auto& originalInternode = m_internodes[targetHandle];
+        auto &newInternode = m_internodes[newInternodeHandle];
 
         //If this internode is end node, we simply add this to current branch.
-        if (targetInternode.m_endNode) {
-            targetInternode.m_endNode = false;
+        if (originalInternode.m_endNode) {
+            originalInternode.m_endNode = false;
             branch.m_internodes.emplace_back(newInternodeHandle);
-            newInternode.m_branchHandle = targetInternode.m_branchHandle;
+            newInternode.m_branchHandle = originalInternode.m_branchHandle;
         } else {
             //If this internode is not the end node, we need to create a new branch from the original branch.
             auto newBranchHandle = AllocateBranch();
             auto &newBranch = m_branches[newBranchHandle];
-            SetParentBranch(newBranchHandle, targetInternode.m_branchHandle);
+            SetParentBranch(newBranchHandle, originalInternode.m_branchHandle);
             newInternode.m_branchHandle = newBranchHandle;
             newBranch.m_internodes.emplace_back(newInternodeHandle);
         }
-
+        m_newVersion++;
         return newInternodeHandle;
     }
 
     template<typename BranchData, typename InternodeData, typename BudData>
     void Plant<BranchData, InternodeData, BudData>::PruneBranch(int handle) {
         assert(handle != 0);
-        assert(!m_branches[handle].m_recycled);
+        if(m_branches[handle].m_recycled) return;
         auto &branch = m_branches[handle];
         //Remove children
         auto children = branch.m_children;
@@ -214,12 +237,13 @@ namespace Orchards {
         //Detach from parent
         if (branch.m_parent != -1) DetachChildBranch(branch.m_parent, handle);
         RecycleBranchSingle(handle);
+        m_newVersion++;
     }
 
     template<typename BranchData, typename InternodeData, typename BudData>
     void Plant<BranchData, InternodeData, BudData>::PruneInternode(int handle) {
         assert(handle != 0);
-        assert(!m_internodes[handle].m_recycled);
+        if(m_internodes[handle].m_recycled) return;
         auto &internode = m_internodes[handle];
         auto &branch = m_branches[internode.m_branchHandle];
         if (handle == branch.m_internodes[0]) {
@@ -239,13 +263,16 @@ namespace Orchards {
         for (const auto &i: subsequentInternodes) {
             auto children = m_internodes[i].m_children;
             for (const auto &childInternodeHandle: children) {
-                auto branchHandle = m_internodes[childInternodeHandle].m_branchHandle;
+                auto& child = m_internodes[childInternodeHandle];
+                if(child.m_recycled) continue;
+                auto branchHandle = child.m_branchHandle;
                 if (branchHandle != internode.m_branchHandle) {
                     PruneBranch(branchHandle);
                 }
             }
             RecycleInternodeSingle(i);
         }
+        m_newVersion++;
     }
 
 #pragma endregion
