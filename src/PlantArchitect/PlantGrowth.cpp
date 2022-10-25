@@ -14,9 +14,14 @@ void ApplyTropism(const glm::vec3 &targetDir, float tropism, glm::vec3 &front, g
         front = glm::normalize(
                 glm::rotate(front, glm::min(maxAngle, rotateAngle), left));
         up = glm::normalize(glm::cross(glm::cross(front, up), front));
-        // up = glm::normalize(glm::rotate(up, glm::min(maxAngle, rotateAngle),
-        // left));
     }
+}
+
+void ApplyTropism(const glm::vec3 &targetDir, float tropism, glm::quat &rotation) {
+    auto front = rotation * glm::vec3(0, 0, -1);
+    auto up = rotation * glm::vec3(0, 1, 0);
+    ApplyTropism(targetDir, tropism, front, up);
+    rotation = glm::quatLookAt(front, up);
 }
 
 void Orchards::TreeGrowthModel::Grow() {
@@ -127,16 +132,28 @@ void Orchards::TreeGrowthModel::Grow() {
             //auto &internode = m_targetPlant->RefInternode(internodeHandle);
             //auto &internodeData = internode.m_data;
             if (m_targetPlant->RefInternode(internodeHandle).m_endNode) {
-                auto newInternodeHandle = m_targetPlant->Extend(internodeHandle);
+                auto newInternodeHandle = m_targetPlant->Extend(internodeHandle, false);
                 auto &newInternode = m_targetPlant->RefInternode(newInternodeHandle);
                 newInternode.m_length = 1.0f;
                 newInternode.m_localRotation = glm::linearRand(glm::vec3(0.0f), glm::vec3(360.0f));
+
+                auto parentGlobalRotation = m_targetPlant->RefInternode(internodeHandle).m_globalRotation;
+                newInternode.m_globalRotation = parentGlobalRotation * newInternode.m_localRotation;
+                ApplyTropism(glm::vec3(0, 1, 0), 0.9, newInternode.m_globalRotation);
+                newInternode.m_localRotation = glm::inverse(parentGlobalRotation) * newInternode.m_globalRotation;
+
                 newInternode.m_thickness = m_targetPlant->RefInternode(internodeHandle).m_thickness * 0.9f;
             } else if (m_targetPlant->RefInternode(internodeHandle).m_handle % 3 == 0) {
-                auto newInternodeHandle = m_targetPlant->Extend(internodeHandle);
+                auto newInternodeHandle = m_targetPlant->Extend(internodeHandle, true);
                 auto &newInternode = m_targetPlant->RefInternode(newInternodeHandle);
                 newInternode.m_length = 1.0f;
                 newInternode.m_localRotation = glm::linearRand(glm::vec3(0.0f), glm::vec3(360.0f));
+
+                auto parentGlobalRotation = m_targetPlant->RefInternode(internodeHandle).m_globalRotation;
+                newInternode.m_globalRotation = parentGlobalRotation * newInternode.m_localRotation;
+                ApplyTropism(glm::vec3(0, 1, 0), 0.9, newInternode.m_globalRotation);
+                newInternode.m_localRotation = glm::inverse(parentGlobalRotation) * newInternode.m_globalRotation;
+
                 newInternode.m_thickness = m_targetPlant->RefInternode(internodeHandle).m_thickness * 0.9f;
             }
         }
@@ -161,7 +178,7 @@ void Orchards::TreeGrowthModel::Grow() {
 }
 
 void Orchards::TreeGrowthModel::Initialize() {
-    m_targetPlant = std::make_shared<Plant<BranchData, InternodeData, BudData>>();
+    m_targetPlant = std::make_shared<Plant<BranchData, InternodeData>>();
     m_initialized = true;
 }
 

@@ -10,10 +10,19 @@ namespace Orchards {
         Fruit
     };
 
-    struct BudData {
-
+    enum class PLANT_ARCHITECT_API BudStatus {
+        Sleeping,
+        Flushed,
+        Died
     };
 
+    class Bud {
+    public:
+        BudStatus m_status = BudStatus::Sleeping;
+        glm::quat m_localRotation = glm::vec3(0.0f);
+
+        Bud();
+    };
     struct InternodeData {
         int m_age = 0;
         float m_inhibitor = 0;
@@ -29,6 +38,11 @@ namespace Orchards {
         float m_elongatingRate = 0.0f;
 
         float m_apicalControl = 0.0f;
+
+        /**
+         * List of buds, first one will always be the apical bud which points forward.
+         */
+        std::vector<Bud> m_buds;
     };
 
     struct BranchData {
@@ -104,7 +118,7 @@ namespace Orchards {
         bool m_initialized = false;
     public:
         TreeGrowthParameters m_parameters;
-        std::shared_ptr<Plant<BranchData, InternodeData, BudData>> m_targetPlant;
+        std::shared_ptr<Plant<BranchData, InternodeData>> m_targetPlant;
         void Initialize();
         void Clear();
         void Grow();
