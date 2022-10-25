@@ -49,26 +49,138 @@ void TreeGrowthModel::CollectInhibitor(InternodeHandle internodeHandle) {
     }
 }
 
-void TreeGrowthModel::GrowInternode(InternodeHandle internodeHandle) {
-    //Internode elongation.
-    if (m_targetPlant->RefInternode(internodeHandle).m_endNode) {
-        auto newInternodeHandle = m_targetPlant->Extend(internodeHandle, false);
-        auto &oldInternode = m_targetPlant->RefInternode(internodeHandle);
-        auto &newInternode = m_targetPlant->RefInternode(newInternodeHandle);
+void TreeGrowthModel::GrowInternode(InternodeHandle internodeHandle, const GrowthNutrients &growthNutrients) {
+    auto &internode = m_targetPlant->RefInternode(internodeHandle);
+    auto &internodeData = internode.m_data;
+    for (auto &bud: internodeData.m_buds) {
+        switch (bud.m_type) {
+            case BudType::Apical: {
+                if (bud.m_status == BudStatus::Dormant) {
+                    if (m_parameters.m_budKillProbabilityApicalLateral.x > glm::linearRand(0.0f, 1.0f)) {
+                        bud.m_status = BudStatus::Died;
+                    } else {
+                        float waterReceived = growthNutrients.m_water * internodeData.m_apicalControl;
+                        internode.m_length += waterReceived * m_parameters.m_growthRate;
+                        if (internode.m_length > m_parameters.m_internodeLength) {
+                            bud.m_status = BudStatus::Flushed;
+                            //Prepare information for new internode.
+                            float extraLength =
+                                    (internode.m_length - m_parameters.m_internodeLength) / m_parameters.m_growthRate;
+                            if(extraLength > m_parameters.m_internodeLength) extraLength = m_parameters.m_internodeLength;
+                            internode.m_length = m_parameters.m_internodeLength;
+                            auto desiredGlobalRotation = internode.m_globalRotation * bud.m_localRotation;
+                            auto desiredGlobalFront = desiredGlobalRotation * glm::vec3(0, 0, -1);
+                            auto desiredGlobalUp = desiredGlobalRotation * glm::vec3(0, 1, 0);
+                            ApplyTropism(m_gravityDirection, m_parameters.m_gravitropism, desiredGlobalFront,
+                                         desiredGlobalUp);
+                            ApplyTropism(internodeData.m_lightDirection, m_parameters.m_phototropism,
+                                         desiredGlobalFront, desiredGlobalUp);
 
-        newInternode.m_length = 1.0f;
-        newInternode.m_localRotation = glm::linearRand(glm::vec3(0.0f), glm::vec3(360.0f));
+                            //Allocate Lateral bud for current internode
+                            float turnAngle = glm::radians(360.0f / m_parameters.m_lateralBudCount);
+                            for (int i = 0; i < m_parameters.m_lateralBudCount; i++) {
+                                internodeData.m_buds.emplace_back();
+                                auto &lateralBud = internodeData.m_buds.back();
+                                lateralBud.m_type = BudType::LateralVegetative;
+                                lateralBud.m_status = BudStatus::Dormant;
+                                auto branchingAngle = glm::gaussRand(m_parameters.m_branchingAngleMeanVariance.x,
+                                                                     m_parameters.m_branchingAngleMeanVariance.y);
+                                lateralBud.m_localRotation = glm::vec3(glm::radians(branchingAngle), 0.0f, i * turnAngle);
+                            }
 
-        newInternode.m_thickness = oldInternode.m_thickness * 0.9f;
-    } else if (m_targetPlant->RefInternode(internodeHandle).m_handle % 3 == 0) {
-        auto newInternodeHandle = m_targetPlant->Extend(internodeHandle, true);
-        auto &newInternode = m_targetPlant->RefInternode(newInternodeHandle);
-        auto &oldInternode = m_targetPlant->RefInternode(internodeHandle);
+                            //Create new internode
+                            auto newInternodeHandle = m_targetPlant->Extend(internodeHandle, false);
+                            auto &oldInternode = m_targetPlant->RefInternode(internodeHandle);
+                            auto &newInternode = m_targetPlant->RefInternode(newInternodeHandle);
+                            newInternode.m_length = extraLength;
+                            newInternode.m_thickness = m_parameters.m_endNodeThicknessAndControl.x;
+                            newInternode.m_localRotation = glm::inverse(oldInternode.m_globalRotation) *
+                                                           glm::quatLookAt(desiredGlobalFront, desiredGlobalUp);
 
-        newInternode.m_length = 1.0f;
-        newInternode.m_localRotation = glm::linearRand(glm::vec3(0.0f), glm::vec3(360.0f));
+                            //Allocate apical bud for new internode
+                            newInternode.m_data.m_buds.emplace_back();
+                            auto &apicalBud = newInternode.m_data.m_buds.back();
+                            apicalBud.m_type = BudType::Apical;
+                            apicalBud.m_status = BudStatus::Dormant;
+                            apicalBud.m_localRotation = glm::vec3(0.0f);
+                            const auto rollAngle = glm::gaussRand(
+                                    m_parameters.m_rollAngleMeanVariance.x,
+                                    m_parameters.m_rollAngleMeanVariance.y);
+                            const auto apicalAngle = glm::gaussRand(
+                                    m_parameters.m_apicalAngleMeanVariance.x,
+                                    m_parameters.m_apicalAngleMeanVariance.y);
+                            apicalBud.m_localRotation = glm::rotate(apicalBud.m_localRotation,
+                                                                    glm::radians(rollAngle),
+                                                                    glm::vec3(0, 1, 0));
+                            apicalBud.m_localRotation = glm::rotate(apicalBud.m_localRotation,
+                                                                    glm::radians(apicalAngle),
+                                                                    apicalBud.m_localRotation * glm::vec3(0, 0, -1));
 
-        newInternode.m_thickness = oldInternode.m_thickness * 0.9f;
+                        }
+                    }
+                    //If apical bud is dormant, then there's no lateral bud at this stage. We should quit anyway.
+                    return;
+                }
+            }
+                break;
+            case BudType::LateralVegetative: {
+                if (bud.m_status == BudStatus::Dormant) {
+                    if (m_parameters.m_budKillProbabilityApicalLateral.y > glm::linearRand(0.0f, 1.0f)) {
+                        bud.m_status = BudStatus::Died;
+                    } else {
+                        bool flush = false;
+                        float flushProbability = m_parameters.m_lateralBudFlushingProbability;
+                        flushProbability /= (1.0f + internodeData.m_inhibitor);
+                        if (flushProbability >= glm::linearRand(0.0f, 1.0f)) {
+                            flush = true;
+                        }
+                        if (flush) {
+                            bud.m_status = BudStatus::Flushed;
+                            //Prepare information for new internode
+                            auto desiredGlobalRotation = internode.m_globalRotation * bud.m_localRotation;
+                            auto desiredGlobalFront = desiredGlobalRotation * glm::vec3(0, 0, -1);
+                            auto desiredGlobalUp = desiredGlobalRotation * glm::vec3(0, 1, 0);
+                            ApplyTropism(m_gravityDirection, m_parameters.m_gravitropism, desiredGlobalFront,
+                                         desiredGlobalUp);
+                            ApplyTropism(internodeData.m_lightDirection, m_parameters.m_phototropism,
+                                         desiredGlobalFront, desiredGlobalUp);
+                            //Create new internode
+                            auto newInternodeHandle = m_targetPlant->Extend(internodeHandle, true);
+                            auto &oldInternode = m_targetPlant->RefInternode(internodeHandle);
+                            auto &newInternode = m_targetPlant->RefInternode(newInternodeHandle);
+                            newInternode.m_length = 0.0f;
+                            newInternode.m_thickness = m_parameters.m_endNodeThicknessAndControl.x;
+                            newInternode.m_localRotation = glm::inverse(oldInternode.m_globalRotation) *
+                                                           glm::quatLookAt(desiredGlobalFront, desiredGlobalUp);
+                            //Allocate apical bud
+                            newInternode.m_data.m_buds.emplace_back();
+                            auto &apicalBud = newInternode.m_data.m_buds.back();
+                            apicalBud.m_type = BudType::Apical;
+                            apicalBud.m_status = BudStatus::Dormant;
+                            apicalBud.m_localRotation = glm::vec3(0.0f);
+                            const auto rollAngle = glm::gaussRand(
+                                    m_parameters.m_rollAngleMeanVariance.x,
+                                    m_parameters.m_rollAngleMeanVariance.y);
+                            const auto apicalAngle = glm::gaussRand(
+                                    m_parameters.m_apicalAngleMeanVariance.x,
+                                    m_parameters.m_apicalAngleMeanVariance.y);
+                            apicalBud.m_localRotation = glm::rotate(apicalBud.m_localRotation,
+                                                                    glm::radians(rollAngle),
+                                                                    glm::vec3(0, 1, 0));
+                            apicalBud.m_localRotation = glm::rotate(apicalBud.m_localRotation,
+                                                                    glm::radians(apicalAngle),
+                                                                    apicalBud.m_localRotation * glm::vec3(0, 0, -1));
+
+                        }
+                    }
+                }
+            }
+                break;
+            case BudType::LateralReproductive: {
+
+            }
+                break;
+        }
     }
 }
 
@@ -98,7 +210,7 @@ void TreeGrowthModel::CalculateSagging(InternodeHandle internodeHandle) {
     }
 }
 
-void TreeGrowthModel::Grow() {
+void TreeGrowthModel::Grow(const GrowthNutrients &growthNutrients) {
     if (!m_initialized) {
         UNIENGINE_ERROR("Not initialized!");
         return;
@@ -117,7 +229,6 @@ void TreeGrowthModel::Grow() {
             auto &internode = m_targetPlant->RefInternode(internodeHandle);
             //Pruning here.
             if (internode.m_recycled) continue;
-            if (internode.m_handle > 10 && glm::linearRand(0, 10) == 0) m_targetPlant->PruneInternode(internodeHandle);
         }
     }
 #pragma endregion
@@ -129,7 +240,7 @@ void TreeGrowthModel::Grow() {
         for (auto it = sortedInternodeList.rbegin(); it != sortedInternodeList.rend(); it++) {
             auto internodeHandle = *it;
             CollectInhibitor(internodeHandle);
-            GrowInternode(internodeHandle);
+            GrowInternode(internodeHandle, growthNutrients);
             CalculateSagging(internodeHandle);
         }
 
@@ -140,6 +251,7 @@ void TreeGrowthModel::Grow() {
     {
         const auto &sortedInternodeList = m_targetPlant->GetSortedInternodeList();
         const auto &sortedBranchList = m_targetPlant->GetSortedBranchList();
+
         for (const auto &internodeHandle: sortedInternodeList) {
             auto &internode = m_targetPlant->RefInternode(internodeHandle);
             auto &internodeData = internode.m_data;
@@ -148,7 +260,7 @@ void TreeGrowthModel::Grow() {
                 internode.m_globalRotation = glm::vec3(0.0f);
 
                 internodeData.m_rootDistance = internode.m_length;
-                internodeData.m_apicalControl = internodeData.m_childTotalBiomass;
+                internodeData.m_apicalControl = 1.0f;
             } else {
                 auto &parentInternode = m_targetPlant->RefInternode(internode.m_parent);
                 internodeData.m_rootDistance = parentInternode.m_data.m_rootDistance + internode.m_length;
@@ -194,6 +306,12 @@ void TreeGrowthModel::Grow() {
 
 void TreeGrowthModel::Initialize() {
     m_targetPlant = std::make_shared<Plant<BranchData, InternodeData>>();
+    auto& firstInternode = m_targetPlant->RefInternode(0);
+    firstInternode.m_data.m_buds.emplace_back();
+    auto& apicalBud = firstInternode.m_data.m_buds.back();
+    apicalBud.m_type = BudType::Apical;
+    apicalBud.m_status = BudStatus::Dormant;
+    apicalBud.m_localRotation = glm::vec3(0);
     m_initialized = true;
 }
 
@@ -210,7 +328,8 @@ TreeGrowthParameters::TreeGrowthParameters() {
     m_apicalAngleMeanVariance = glm::vec2(20, 2);
     m_gravitropism = -0.1f;
     m_phototropism = 0.05f;
-    m_internodeLengthMeanVariance = glm::vec2(1, 0.1);
+    m_internodeLength = 1.0f;
+    m_growthRate = 1.0f;
     m_endNodeThicknessAndControl = glm::vec2(0.01, 0.5);
     m_lateralBudFlushingProbability = 0.3f;
     m_neighborAvoidance = glm::vec3(0.05f, 1, 100);

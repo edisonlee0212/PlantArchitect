@@ -5,23 +5,22 @@
 using namespace UniEngine;
 namespace Orchards {
     enum class BudType {
-        Shoot,
-        Leaf,
-        Fruit
+        Apical,
+        LateralVegetative,
+        LateralReproductive
     };
 
     enum class PLANT_ARCHITECT_API BudStatus {
-        Sleeping,
+        Dormant,
         Flushed,
         Died
     };
 
     class Bud {
     public:
-        BudStatus m_status = BudStatus::Sleeping;
+        BudType m_type = BudType::Apical;
+        BudStatus m_status = BudStatus::Dormant;
         glm::quat m_localRotation = glm::vec3(0.0f);
-
-        Bud();
     };
     struct InternodeData {
         int m_age = 0;
@@ -38,6 +37,9 @@ namespace Orchards {
         float m_elongatingRate = 0.0f;
 
         float m_apicalControl = 0.0f;
+
+        glm::vec3 m_lightDirection = glm::vec3(0, 1, 0);
+        float m_lightIntensity = 1.0f;
 
         /**
          * List of buds, first one will always be the apical bud which points forward.
@@ -66,8 +68,8 @@ namespace Orchards {
         glm::vec2 m_apicalAngleMeanVariance;
         float m_gravitropism;
         float m_phototropism;
-        glm::vec2 m_internodeLengthMeanVariance;
-
+        float m_internodeLength;
+        float m_growthRate;
         glm::vec2 m_endNodeThicknessAndControl;
         float m_lateralBudFlushingProbability;
         /*
@@ -113,17 +115,21 @@ namespace Orchards {
         TreeGrowthParameters();
     };
 
+    struct GrowthNutrients{
+        float m_water = 0.0f;
+    };
+
     class PLANT_ARCHITECT_API TreeGrowthModel {
         bool m_initialized = false;
         void CalculateSagging(InternodeHandle internodeHandle);
         void CollectInhibitor(InternodeHandle internodeHandle);
-        void GrowInternode(InternodeHandle internodeHandle);
+        void GrowInternode(InternodeHandle internodeHandle, const GrowthNutrients& growthNutrients);
     public:
         glm::vec3 m_gravityDirection = glm::vec3(0, -1, 0);
         TreeGrowthParameters m_parameters;
         std::shared_ptr<Plant<BranchData, InternodeData>> m_targetPlant;
         void Initialize();
         void Clear();
-        void Grow();
+        void Grow(const GrowthNutrients& growthNutrients);
     };
 }

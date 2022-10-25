@@ -38,7 +38,7 @@ namespace Orchards {
 
         explicit Internode(InternodeHandle handle);
 
-        float m_length = 1.0f;
+        float m_length = 0.0f;
         float m_thickness = 0.1f;
         glm::quat m_localRotation = glm::vec3(0.0f);
     };

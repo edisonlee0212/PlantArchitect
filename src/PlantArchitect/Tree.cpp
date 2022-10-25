@@ -12,7 +12,7 @@ using namespace Orchards;
 void Tree::OnInspect() {
     static bool debugVisualization;
     if(ImGui::Button("Grow")){
-        m_model.Grow();
+        m_model.Grow({999});
     }
     ImGui::Checkbox("Visualization", &debugVisualization);
     if (debugVisualization) {
