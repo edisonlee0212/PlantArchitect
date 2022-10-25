@@ -46,7 +46,6 @@ namespace Orchards {
     };
 
     struct BranchData {
-        int m_level = 0;
         float m_apicalControlBase = 0;
     };
 
@@ -116,7 +115,11 @@ namespace Orchards {
 
     class PLANT_ARCHITECT_API TreeGrowthModel {
         bool m_initialized = false;
+        void CalculateSagging(InternodeHandle internodeHandle);
+        void CollectInhibitor(InternodeHandle internodeHandle);
+        void GrowInternode(InternodeHandle internodeHandle);
     public:
+        glm::vec3 m_gravityDirection = glm::vec3(0, -1, 0);
         TreeGrowthParameters m_parameters;
         std::shared_ptr<Plant<BranchData, InternodeData>> m_targetPlant;
         void Initialize();
