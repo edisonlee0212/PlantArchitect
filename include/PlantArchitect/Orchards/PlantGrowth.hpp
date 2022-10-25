@@ -25,7 +25,7 @@ namespace Orchards {
     struct InternodeData {
         int m_age = 0;
         float m_inhibitor = 0;
-        glm::quat m_desiredLocalRotation;
+        glm::quat m_desiredLocalRotation = glm::vec3(0.0f);
         float m_sagging = 0;
 
         float m_maxDistanceToAnyBranchEnd = 0;

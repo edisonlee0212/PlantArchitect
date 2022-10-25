@@ -94,7 +94,7 @@ void TreeGrowthModel::GrowInternode(InternodeHandle internodeHandle, const Growt
                             auto &newInternode = m_targetPlant->RefInternode(newInternodeHandle);
                             newInternode.m_length = extraLength;
                             newInternode.m_thickness = m_parameters.m_endNodeThicknessAndControl.x;
-                            newInternode.m_localRotation = glm::inverse(oldInternode.m_globalRotation) *
+                            newInternode.m_localRotation = newInternode.m_data.m_desiredLocalRotation = glm::inverse(oldInternode.m_globalRotation) *
                                                            glm::quatLookAt(desiredGlobalFront, desiredGlobalUp);
 
                             //Allocate apical bud for new internode
@@ -150,7 +150,7 @@ void TreeGrowthModel::GrowInternode(InternodeHandle internodeHandle, const Growt
                             auto &newInternode = m_targetPlant->RefInternode(newInternodeHandle);
                             newInternode.m_length = 0.0f;
                             newInternode.m_thickness = m_parameters.m_endNodeThicknessAndControl.x;
-                            newInternode.m_localRotation = glm::inverse(oldInternode.m_globalRotation) *
+                            newInternode.m_localRotation = newInternode.m_data.m_desiredLocalRotation = glm::inverse(oldInternode.m_globalRotation) *
                                                            glm::quatLookAt(desiredGlobalFront, desiredGlobalUp);
                             //Allocate apical bud
                             newInternode.m_data.m_buds.emplace_back();
@@ -271,7 +271,7 @@ void TreeGrowthModel::Grow(const GrowthNutrients &growthNutrients) {
                                                                                  glm::vec3(0, 0, -1));
 #pragma region Apply Sagging
                 auto parentGlobalRotation = m_targetPlant->RefInternode(internode.m_parent).m_globalRotation;
-                internode.m_globalRotation = parentGlobalRotation * internode.m_localRotation;
+                internode.m_globalRotation = parentGlobalRotation * internodeData.m_desiredLocalRotation;
                 auto front = internode.m_globalRotation * glm::vec3(0, 0, -1);
                 auto up = internode.m_globalRotation * glm::vec3(0, 1, 0);
                 float dotP = glm::abs(glm::dot(front, m_gravityDirection));
