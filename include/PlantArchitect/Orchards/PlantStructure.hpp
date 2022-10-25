@@ -60,8 +60,8 @@ namespace Orchards {
 
         explicit Internode(InternodeHandle handle);
 
-        float m_length = 0.0f;
-        float m_thickness = 0.0f;
+        float m_length = 1.0f;
+        float m_thickness = 0.1f;
         glm::quat m_localRotation = glm::vec3(0.0f);
     };
 
@@ -125,6 +125,8 @@ namespace Orchards {
         void SortLists();
 
         Plant();
+
+        int GetVersion() const;
 
         Internode<InternodeData, BudData> &RefInternode(InternodeHandle handle);
         Branch<BranchData> &RefBranch(BranchHandle handle);
@@ -453,7 +455,10 @@ namespace Orchards {
         return handle;
     }
 
-
+    template<typename BranchData, typename InternodeData, typename BudData>
+    int Plant<BranchData, InternodeData, BudData>::GetVersion() const{
+        return m_version;
+    }
 
 
 #pragma endregion

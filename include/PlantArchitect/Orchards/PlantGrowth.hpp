@@ -33,7 +33,7 @@ namespace Orchards {
 
     struct BranchData {
         int m_level = 0;
-        float m_apicalControlBase;
+        float m_apicalControlBase = 0;
     };
 
     class TreeGrowthParameters {
@@ -101,11 +101,12 @@ namespace Orchards {
     };
 
     class PLANT_ARCHITECT_API TreeGrowthModel {
-
+        bool m_initialized = false;
     public:
         TreeGrowthParameters m_parameters;
         std::shared_ptr<Plant<BranchData, InternodeData, BudData>> m_targetPlant;
-
+        void Initialize();
+        void Clear();
         void Grow();
     };
 }
