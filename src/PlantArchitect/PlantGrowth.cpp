@@ -92,6 +92,7 @@ void TreeGrowthModel::GrowInternode(InternodeHandle internodeHandle, const Growt
                             auto newInternodeHandle = m_targetPlant->Extend(internodeHandle, false);
                             auto &oldInternode = m_targetPlant->RefInternode(internodeHandle);
                             auto &newInternode = m_targetPlant->RefInternode(newInternodeHandle);
+                            newInternode.m_data.Clear();
                             newInternode.m_length = extraLength;
                             newInternode.m_thickness = m_parameters.m_endNodeThicknessAndControl.x;
                             newInternode.m_localRotation = newInternode.m_data.m_desiredLocalRotation = glm::inverse(oldInternode.m_globalRotation) *
@@ -148,6 +149,7 @@ void TreeGrowthModel::GrowInternode(InternodeHandle internodeHandle, const Growt
                             auto newInternodeHandle = m_targetPlant->Extend(internodeHandle, true);
                             auto &oldInternode = m_targetPlant->RefInternode(internodeHandle);
                             auto &newInternode = m_targetPlant->RefInternode(newInternodeHandle);
+                            newInternode.m_data.Clear();
                             newInternode.m_length = 0.0f;
                             newInternode.m_thickness = m_parameters.m_endNodeThicknessAndControl.x;
                             newInternode.m_localRotation = newInternode.m_data.m_desiredLocalRotation = glm::inverse(oldInternode.m_globalRotation) *
@@ -187,12 +189,15 @@ void TreeGrowthModel::GrowInternode(InternodeHandle internodeHandle, const Growt
 void TreeGrowthModel::CalculateSagging(InternodeHandle internodeHandle) {
     auto &internode = m_targetPlant->RefInternode(internodeHandle);
     auto &internodeData = internode.m_data;
+    internodeData.m_childTotalBiomass = 0;
+    internodeData.m_decedentsAmount = 0;
     if (!internode.m_endNode) {
         //If current node is not end node
         float maxDistanceToAnyBranchEnd = 0;
         for (const auto &i: internode.m_children) {
             auto &childInternode = m_targetPlant->RefInternode(i);
-            internodeData.m_childTotalBiomass += childInternode.m_thickness * childInternode.m_length;
+            internodeData.m_childTotalBiomass += childInternode.m_data.m_childTotalBiomass + childInternode.m_thickness * childInternode.m_length;
+            internodeData.m_decedentsAmount += childInternode.m_data.m_decedentsAmount + 1;
             float childMaxDistanceToAnyBranchEnd =
                     childInternode.m_data.m_maxDistanceToAnyBranchEnd + childInternode.m_length;
             maxDistanceToAnyBranchEnd = glm::max(maxDistanceToAnyBranchEnd, childMaxDistanceToAnyBranchEnd);
@@ -288,8 +293,7 @@ void TreeGrowthModel::Grow(const GrowthNutrients &growthNutrients) {
             for (const auto &i: internode.m_children) {
                 auto &childInternode = m_targetPlant->RefInternode(i);
                 auto &childInternodeData = childInternode.m_data;
-                childInternodeData.m_apicalControl = glm::pow(
-                        childInternodeData.m_childTotalBiomass + childInternode.m_length * childInternode.m_thickness,
+                childInternodeData.m_apicalControl = glm::pow(childInternodeData.m_decedentsAmount + 1,
                         apicalControl);
                 totalApicalControl += childInternodeData.m_apicalControl;
             }
@@ -324,8 +328,8 @@ void TreeGrowthModel::Clear() {
 TreeGrowthParameters::TreeGrowthParameters() {
     m_lateralBudCount = 2;
     m_branchingAngleMeanVariance = glm::vec2(30, 3);
-    m_rollAngleMeanVariance = glm::vec2(120, 2);
-    m_apicalAngleMeanVariance = glm::vec2(20, 2);
+    m_rollAngleMeanVariance = glm::vec2(0, 2);
+    m_apicalAngleMeanVariance = glm::vec2(0, 2);
     m_gravitropism = -0.1f;
     m_phototropism = 0.05f;
     m_internodeLength = 1.0f;
@@ -342,4 +346,25 @@ TreeGrowthParameters::TreeGrowthParameters() {
     m_lowBranchPruning = 0.15f;
     m_saggingFactorThicknessReductionMax = glm::vec3(6, 3, 0.5);
     m_matureAge = 30;
+}
+
+void InternodeData::Clear() {
+    m_age = 0;
+    m_inhibitor = 0;
+    m_desiredLocalRotation = glm::vec3(0.0f);
+    m_sagging = 0;
+
+    m_maxDistanceToAnyBranchEnd = 0;
+    m_order = 0;
+    m_childTotalBiomass = 0;
+
+    m_rootDistance = 0;
+
+    m_elongatingRate = 0.0f;
+
+    m_apicalControl = 0.0f;
+    m_decedentsAmount = 0;
+    m_lightDirection = glm::vec3(0, 1, 0);
+    m_lightIntensity = 1.0f;
+    m_buds.clear();
 }

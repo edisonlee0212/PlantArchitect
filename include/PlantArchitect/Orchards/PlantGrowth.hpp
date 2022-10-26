@@ -37,7 +37,7 @@ namespace Orchards {
         float m_elongatingRate = 0.0f;
 
         float m_apicalControl = 0.0f;
-
+        int m_decedentsAmount = 0;
         glm::vec3 m_lightDirection = glm::vec3(0, 1, 0);
         float m_lightIntensity = 1.0f;
 
@@ -45,6 +45,7 @@ namespace Orchards {
          * List of buds, first one will always be the apical bud which points forward.
          */
         std::vector<Bud> m_buds;
+        void Clear();
     };
 
     struct BranchData {
