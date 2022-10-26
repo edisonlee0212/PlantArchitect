@@ -211,12 +211,10 @@ void TreeGrowthModel::CalculateSagging(InternodeHandle internodeHandle) {
 
 void TreeGrowthModel::Grow(const GrowthNutrients &growthNutrients) {
     if (!m_initialized) {
-        UNIENGINE_ERROR("Not initialized!");
         return;
     }
 
     if (!m_targetPlant) {
-        UNIENGINE_ERROR("Plant not exist!");
         return;
     }
 #pragma region Preprocess

@@ -10,7 +10,7 @@ namespace Orchards {
         LateralReproductive
     };
 
-    enum class PLANT_ARCHITECT_API BudStatus {
+    enum class BudStatus {
         Dormant,
         Flushed,
         Died
@@ -120,7 +120,7 @@ namespace Orchards {
         float m_water = 0.0f;
     };
 
-    class PLANT_ARCHITECT_API TreeGrowthModel {
+    class TreeGrowthModel {
         bool m_initialized = false;
         void CalculateSagging(InternodeHandle internodeHandle);
         void CollectInhibitor(InternodeHandle internodeHandle);

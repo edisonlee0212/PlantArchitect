@@ -6,20 +6,6 @@
 #define BranchHandle int
 using namespace UniEngine;
 namespace Orchards {
-    /*
-    struct InternodeHandle {
-        int m_value;
-    };
-    struct BranchHandle {
-        int m_value;
-    };
-    */
-
-    enum class PLANT_ARCHITECT_API InternodeStatus {
-        Elongating,
-        Grown,
-    };
-
     template<typename InternodeData>
     class Internode {
     public:
@@ -313,7 +299,6 @@ namespace Orchards {
                 return;
             }
         }
-        UNIENGINE_ERROR("Children internode not exist!")
     }
 
     template<typename BranchData, typename InternodeData>
@@ -325,15 +310,6 @@ namespace Orchards {
         assert(!targetInternode.m_recycled);
         assert(!parentInternode.m_recycled);
         targetInternode.m_parent = parentHandle;
-#ifdef _DEBUG
-        auto &children = parentInternode.m_children;
-        for (int i = 0; i < children.size(); i++) {
-            if (targetHandle == parentHandle) {
-                UNIENGINE_ERROR("Children internode exists!")
-                return;
-            }
-        }
-#endif
         parentInternode.m_children.emplace_back(targetHandle);
     }
 
@@ -362,7 +338,6 @@ namespace Orchards {
                 return;
             }
         }
-        UNIENGINE_ERROR("Children branch not exist!")
     }
 
     template<typename BranchData, typename InternodeData>
@@ -374,15 +349,6 @@ namespace Orchards {
         assert(!targetBranch.m_recycled);
         assert(!parentBranch.m_recycled);
         targetBranch.m_parent = parentHandle;
-#ifdef _DEBUG
-        auto &children = parentBranch.m_children;
-        for (int i = 0; i < children.size(); i++) {
-            if (targetHandle == parentHandle) {
-                UNIENGINE_ERROR("Children branch exists!")
-                return;
-            }
-        }
-#endif
         parentBranch.m_children.emplace_back(targetHandle);
     }
 
