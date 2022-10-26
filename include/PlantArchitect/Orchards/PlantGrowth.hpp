@@ -49,7 +49,7 @@ namespace Orchards {
     };
 
     struct BranchData {
-        float m_apicalControlBase = 0;
+        int m_order = 0;
     };
 
     class TreeGrowthParameters {

@@ -55,7 +55,13 @@ namespace Orchards {
         BranchHandle m_parent = -1;
         std::vector<BranchHandle> m_children;
 
-        GlobalTransform m_globalTransform = {};
+        glm::vec3 m_globalStartPosition = glm::vec3(0.0f);
+        glm::quat m_globalStartRotation = glm::vec3(0.0f);
+        float m_startThickness = 0.0f;
+
+        glm::vec3 m_globalEndPosition = glm::vec3(0.0f);
+        glm::quat m_globalEndRotation = glm::vec3(0.0f);
+        float m_endThickness = 0.0f;
 
         explicit Branch(BranchHandle handle);
     };
@@ -105,6 +111,8 @@ namespace Orchards {
         Plant();
 
         int GetVersion() const;
+
+        void CalculateBranches();
 
         Internode<InternodeData> &RefInternode(InternodeHandle handle);
         Branch<BranchData> &RefBranch(BranchHandle handle);
@@ -430,6 +438,24 @@ namespace Orchards {
     template<typename BranchData, typename InternodeData>
     int Plant<BranchData, InternodeData>::GetVersion() const{
         return m_version;
+    }
+
+    template<typename BranchData, typename InternodeData>
+    void Plant<BranchData, InternodeData>::CalculateBranches() {
+        const auto &sortedBranchList = GetSortedBranchList();
+        for (const auto &branchHandle: sortedBranchList)
+        {
+            auto& branch = m_branches[branchHandle];
+            auto& firstInternode = m_internodes.front();
+            auto& lastInternode = m_internodes.back();
+            branch.m_startThickness = firstInternode.m_thickness;
+            branch.m_globalStartPosition = firstInternode.m_globalPosition;
+            branch.m_globalStartRotation = firstInternode.m_localRotation;
+
+            branch.m_endThickness = lastInternode.m_thickness;
+            branch.m_globalEndPosition = lastInternode.m_globalPosition + lastInternode.m_length * lastInternode.m_localRotation * glm::vec3(0, 0, -1);
+            branch.m_globalEndRotation = lastInternode.m_globalRotation;
+        }
     }
 
 

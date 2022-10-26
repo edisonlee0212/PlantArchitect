@@ -10,7 +10,7 @@
 using namespace Orchards;
 
 void Tree::OnInspect() {
-    static bool debugVisualization;
+    static bool debugVisualization = true;
     if(ImGui::Button("Grow")){
         m_model.Grow({999});
     }
@@ -21,10 +21,12 @@ void Tree::OnInspect() {
         static std::vector<BranchHandle> sortedBranchList;
         static std::vector<glm::vec4> randomColors;
         if (randomColors.empty()) {
-            for (int i = 0; i < 1000; i++) {
-                randomColors.push_back(glm::vec4(glm::ballRand(1.0f), 1.0f));
+            for (int i = 0; i < 100; i++) {
+                randomColors.emplace_back(glm::ballRand(1.0f), 1.0f);
             }
         }
+        ImGui::Text("Internode count: %d", sortedInternodeList.size());
+        ImGui::Text("Branch count: %d", sortedBranchList.size());
         static std::vector<glm::mat4> matrices;
         static std::vector<glm::vec4> colors;
         static Handle handle;
@@ -59,7 +61,7 @@ void Tree::OnInspect() {
                                 internode.m_thickness,
                                 glm::distance(translation, position2) / 2.0f,
                                 internode.m_thickness));
-                colors[i] = randomColors[internode.m_branchHandle];
+                colors[i] = randomColors[m_model.m_targetPlant->RefBranch(internode.m_branchHandle).m_data.m_order];
             }, results);
             for (auto &i: results) i.wait();
         }
