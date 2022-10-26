@@ -22,6 +22,7 @@
 #include "StrandLayer.hpp"
 #include "PlantGrowth.hpp"
 #include "Tree.hpp"
+#include "Trees.hpp"
 using namespace PlantArchitect;
 #ifdef RAYTRACERFACILITY
 using namespace RayTracerFacility;
@@ -37,7 +38,7 @@ int main() {
     ClassRegistry::RegisterPrivateComponent<AutoTreeGenerationPipeline>("AutoTreeGenerationPipeline");
     ClassRegistry::RegisterAsset<TreeDataCapturePipeline>("TreeDataCapturePipeline", {".tdcp"});
     ClassRegistry::RegisterPrivateComponent<Tree>("Tree");
-
+    ClassRegistry::RegisterPrivateComponent<Trees>("Trees");
     EngineSetup();
 
     ApplicationConfigs applicationConfigs;

@@ -16,7 +16,7 @@ void Tree::OnInspect() {
     }
     ImGui::Checkbox("Visualization", &debugVisualization);
     if (debugVisualization) {
-        int version = -1;
+        static int version = -1;
         static std::vector<InternodeHandle> sortedInternodeList;
         static std::vector<BranchHandle> sortedBranchList;
         static std::vector<glm::vec4> randomColors;
