@@ -75,10 +75,6 @@ namespace Orchards {
          * To form significant trunk. Larger than 1 means forming big trunk.
          */
         glm::vec2 m_apicalControlBaseDistFactor;
-        /**
-         * Avoidance multiplier, strength, max avoidance (which will completely stop bud from flushing).
-         */
-        glm::vec3 m_neighborAvoidance;
 
         /**
         * How much inhibitor will an internode generate.

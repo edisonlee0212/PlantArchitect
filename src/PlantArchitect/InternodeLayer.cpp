@@ -750,8 +750,8 @@ void InternodeLayer::UpdateInternodeColors() {
     if (scene->IsEntityValid(m_currentFocusingInternode.Get())) {
         focusingInternode = m_currentFocusingInternode.Get();
     }
-    if (scene->IsEntityValid(editorLayer->m_selectedEntity)) {
-        selectedEntity = editorLayer->m_selectedEntity;
+    if (scene->IsEntityValid(editorLayer->GetSelectedEntity())) {
+        selectedEntity = editorLayer->GetSelectedEntity();
     }
 
     scene->ForEach<InternodeColor, InternodeInfo>(
@@ -765,7 +765,7 @@ void InternodeLayer::UpdateInternodeColors() {
 
     switch (m_branchColorMode) {
         case BranchColorMode::SubTree: {
-            ColorSubTree(scene, editorLayer->m_selectedEntity, 0);
+            ColorSubTree(scene, selectedEntity, 0);
         }
             break;
         case BranchColorMode::Branchlet: {
