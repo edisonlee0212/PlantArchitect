@@ -187,6 +187,7 @@ void TreeGrowthModel::CalculateSagging(InternodeHandle internodeHandle) {
     if (!internode.m_endNode) {
         //If current node is not end node
         float maxDistanceToAnyBranchEnd = 0;
+        float childThicknessCollection = 0.0f;
         for (const auto &i: internode.m_children) {
             auto &childInternode = m_targetPlant->RefInternode(i);
             internodeData.m_childTotalBiomass +=
@@ -195,6 +196,8 @@ void TreeGrowthModel::CalculateSagging(InternodeHandle internodeHandle) {
             float childMaxDistanceToAnyBranchEnd =
                     childInternode.m_data.m_maxDistanceToAnyBranchEnd + childInternode.m_length;
             maxDistanceToAnyBranchEnd = glm::max(maxDistanceToAnyBranchEnd, childMaxDistanceToAnyBranchEnd);
+
+            childThicknessCollection += glm::pow(childInternode.m_thickness, 1.0f / m_parameters.m_endNodeThicknessAndControl.y);
         }
         internodeData.m_maxDistanceToAnyBranchEnd = maxDistanceToAnyBranchEnd;
         internodeData.m_sagging =
@@ -206,6 +209,7 @@ void TreeGrowthModel::CalculateSagging(InternodeHandle internodeHandle) {
                                 internode.m_thickness /
                                 m_parameters.m_endNodeThicknessAndControl.x,
                                 m_parameters.m_saggingFactorThicknessReductionMax.y));
+        internode.m_thickness = glm::pow(childThicknessCollection, m_parameters.m_endNodeThicknessAndControl.y);
     }
 }
 
@@ -221,10 +225,16 @@ void TreeGrowthModel::Grow(const GrowthNutrients &growthNutrients) {
     m_targetPlant->SortLists();
     {
         const auto &sortedInternodeList = m_targetPlant->GetSortedInternodeList();
+        const auto maxDistance = m_targetPlant->RefInternode(sortedInternodeList.front()).m_data.m_maxDistanceToAnyBranchEnd;
         for (const auto &internodeHandle: sortedInternodeList) {
             auto &internode = m_targetPlant->RefInternode(internodeHandle);
             //Pruning here.
             if (internode.m_recycled) continue;
+            auto &branch = m_targetPlant->RefBranch(internode.m_branchHandle);
+            if(maxDistance > 5 && branch.m_data.m_order != 0 && (maxDistance - internode.m_data.m_maxDistanceToAnyBranchEnd) / maxDistance < m_parameters.m_lowBranchPruning){
+                m_targetPlant->PruneInternode(internodeHandle);
+                continue;
+            }
         }
     }
 #pragma endregion
@@ -339,8 +349,8 @@ void TreeGrowthModel::Clear() {
 TreeGrowthParameters::TreeGrowthParameters() {
     m_lateralBudCount = 2;
     m_branchingAngleMeanVariance = glm::vec2(30, 3);
-    m_rollAngleMeanVariance = glm::vec2(180, 2);
-    m_apicalAngleMeanVariance = glm::vec2(0, 2);
+    m_rollAngleMeanVariance = glm::vec2(120, 2);
+    m_apicalAngleMeanVariance = glm::vec2(20, 2);
     m_gravitropism = -0.1f;
     m_phototropism = 0.05f;
     m_internodeLength = 1.0f;
@@ -366,12 +376,10 @@ void InternodeData::Clear() {
     m_sagging = 0;
 
     m_maxDistanceToAnyBranchEnd = 0;
-    m_order = 0;
+    m_level = 0;
     m_childTotalBiomass = 0;
 
     m_rootDistance = 0;
-
-    m_elongatingRate = 0.0f;
 
     m_apicalControl = 0.0f;
     m_decedentsAmount = 0;

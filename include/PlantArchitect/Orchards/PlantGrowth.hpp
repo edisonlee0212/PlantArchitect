@@ -29,12 +29,10 @@ namespace Orchards {
         float m_sagging = 0;
 
         float m_maxDistanceToAnyBranchEnd = 0;
-        float m_order = 0;
+        float m_level = 0;
         float m_childTotalBiomass = 0;
 
         float m_rootDistance = 0;
-
-        float m_elongatingRate = 0.0f;
 
         float m_apicalControl = 0.0f;
         int m_decedentsAmount = 0;
