@@ -1152,7 +1152,7 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound &plantBound, Aut
     auto scene = pipeline.GetScene();
     std::vector<glm::vec3> points;
     std::vector<glm::vec3> colors;
-    std::vector<int> junction;
+    std::vector<glm::vec3> junction;
     std::vector<int> pointTypes;
     Handle branchMeshRendererHandle, foliageMeshRendererHandle, groundMeshRendererHandle;
     if (scene->IsEntityValid(m_ground) && scene->HasPrivateComponent<MeshRenderer>(m_ground)) {
@@ -1197,7 +1197,7 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound &plantBound, Aut
             if (m_pointCloudPointSettings.m_color) colors.emplace_back(0, 0, 0);
         }
         if (m_pointCloudPointSettings.m_junction) {
-            junction.emplace_back(sample.m_albedo == glm::vec3(1.0, 0.0, 0.0));
+            junction.emplace_back(sample.m_albedo);
         }
     }
     std::filebuf fb_binary;
@@ -1214,7 +1214,7 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound &plantBound, Aut
     */
     PlyFile cube_file;
     cube_file.add_properties_to_element(
-            "vertex", {"x", "z", "y"}, Type::FLOAT32, points.size(),
+            "vertex", {"x", "y", "z"}, Type::FLOAT32, points.size(),
             reinterpret_cast<uint8_t *>(points.data()), Type::INVALID, 0);
 
     if (m_pointCloudPointSettings.m_color)
@@ -1229,7 +1229,7 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound &plantBound, Aut
 
     if (m_pointCloudPointSettings.m_junction) {
         cube_file.add_properties_to_element(
-                "junction", {"value"}, Type::INT32, junction.size(),
+                "junction", {"jx", "jz", "jy"}, Type::FLOAT32, junction.size(),
                 reinterpret_cast<uint8_t *>(junction.data()), Type::INVALID, 0);
     }
 

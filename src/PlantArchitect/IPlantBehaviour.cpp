@@ -405,8 +405,13 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
                 const float x =
                         i < pStep / 2 ? i * textureXStep : (pStep - i) * textureXStep;
                 archetype.m_texCoord = glm::vec2(x, 0.0f);
-                if(settings.m_markJunctions && !isOnlyChild){
-                    archetype.m_color = glm::vec3(1.0f, 0.0f, 0.0f);
+                if(settings.m_markJunctions){
+                    archetype.m_color = glm::normalize(internode->m_rings.at(0).m_startAxis);
+                    if(!isOnlyChild) {
+                        archetype.m_color *= 1.0f;
+                    }else{
+                        archetype.m_color *= 0.5f;
+                    }
                 }else if (settings.m_overrideVertexColor) archetype.m_color = settings.m_branchVertexColor;
                 else archetype.m_color = branchColor.m_value;
                 vertices.push_back(archetype);
@@ -491,8 +496,13 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
                     const auto y = ringIndex % 2 == 0 ? 1.0f : 0.0f;
                     archetype.m_texCoord = glm::vec2(x, y);
                     auto ratio = (float) ringIndex / (ringSize - 1);
-                    if(settings.m_markJunctions && ((ratio <= settings.m_junctionLowerRatio && !isOnlyChild) || (ratio >= 1.0f - settings.m_junctionUpperRatio && hasMultipleChild))){
-                        archetype.m_color = glm::vec3(1.0f, 0.0f, 0.0f);
+                    if(settings.m_markJunctions){
+                        archetype.m_color = glm::normalize(internode->m_rings.at(ringIndex).m_endAxis);
+                        if((ratio <= settings.m_junctionLowerRatio && !isOnlyChild) || (ratio >= 1.0f - settings.m_junctionUpperRatio && hasMultipleChild)) {
+                            archetype.m_color *= 1.0f;
+                        }else{
+                            archetype.m_color *= 0.5f;
+                        }
                     }else if (settings.m_overrideVertexColor) archetype.m_color = settings.m_branchVertexColor;
                     else archetype.m_color = branchColor.m_value;
                     vertices.push_back(archetype);
