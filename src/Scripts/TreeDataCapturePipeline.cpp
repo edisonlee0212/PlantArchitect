@@ -1229,7 +1229,7 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound &plantBound, Aut
 
     if (m_pointCloudPointSettings.m_junction) {
         cube_file.add_properties_to_element(
-                "junction", {"jx", "jz", "jy"}, Type::FLOAT32, junction.size(),
+                "junction", {"jx", "jy", "jz"}, Type::FLOAT32, junction.size(),
                 reinterpret_cast<uint8_t *>(junction.data()), Type::INVALID, 0);
     }
 
