@@ -39,6 +39,9 @@ namespace Scripts {
         void ExportEnvironmentalGrid(AutoTreeGenerationPipeline &pipeline,
                                      const std::filesystem::path &path);
 
+        void ExportJunction(AutoTreeGenerationPipeline &pipeline, const std::shared_ptr<IPlantBehaviour> &behaviour,
+                                     const std::filesystem::path &path);
+
         std::vector<std::pair<std::string, std::string>> m_treeIOPairs;
 
     public:

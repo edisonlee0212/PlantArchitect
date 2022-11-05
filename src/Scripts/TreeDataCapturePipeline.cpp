@@ -163,6 +163,7 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
     auto lStringFolder = m_currentExportFolder / "LSystemString";
     auto wallPrefabFolder = m_currentExportFolder / "WallPrefab";
     auto pointCloudFolder = m_currentExportFolder / "PointCloud";
+    auto junctionFolder = m_currentExportFolder / "Junction";
     if (m_obstacleSettings.m_enableRandomObstacle && m_exportOptions.m_exportWallPrefab) {
         std::filesystem::create_directories(wallPrefabFolder);
         auto exportPath = wallPrefabFolder /
@@ -254,7 +255,8 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
                 (pipeline.m_prefix + ".tree"));
         //m_treeIOPairs.emplace_back(pipeline.m_prefix, name);
     }
-    if ((m_exportOptions.m_exportImage || m_exportOptions.m_exportDepth || m_exportOptions.m_exportBranchCapture || m_exportOptions.m_exportMask) &&
+    if ((m_exportOptions.m_exportImage || m_exportOptions.m_exportDepth || m_exportOptions.m_exportBranchCapture ||
+         m_exportOptions.m_exportMask) &&
         m_exportOptions.m_exportMatrices) {
         for (float turnAngle = m_cameraSettings.m_turnAngleStart;
              turnAngle < m_cameraSettings.m_turnAngleEnd; turnAngle += m_cameraSettings.m_turnAngleStep) {
@@ -308,10 +310,12 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
         auto rootChildren = scene->GetChildren(pipeline.m_currentGrowingTree);
         for (const auto &child: rootChildren) {
             if (scene->GetEntityName(child) == "FoliageMesh") {
-                scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(child).lock()->m_material.Get<Material>()->m_vertexColorOnly = true;
+                scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(
+                        child).lock()->m_material.Get<Material>()->m_vertexColorOnly = true;
             }
             if (scene->GetEntityName(child) == "BranchMesh") {
-                scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(child).lock()->m_material.Get<Material>()->m_vertexColorOnly = true;
+                scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(
+                        child).lock()->m_material.Get<Material>()->m_vertexColorOnly = true;
             }
         }
         for (int turnAngle = m_cameraSettings.m_turnAngleStart;
@@ -340,10 +344,12 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
         auto rootChildren = scene->GetChildren(pipeline.m_currentGrowingTree);
         for (const auto &child: rootChildren) {
             if (scene->GetEntityName(child) == "FoliageMesh") {
-                scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(child).lock()->m_material.Get<Material>()->m_vertexColorOnly = false;
+                scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(
+                        child).lock()->m_material.Get<Material>()->m_vertexColorOnly = false;
             }
             if (scene->GetEntityName(child) == "BranchMesh") {
-                scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(child).lock()->m_material.Get<Material>()->m_vertexColorOnly = false;
+                scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(
+                        child).lock()->m_material.Get<Material>()->m_vertexColorOnly = false;
             }
         }
 
@@ -395,6 +401,10 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline &pipeline
         Application::GetLayer<RayTracerLayer>()->UpdateScene();
         ScanPointCloudLabeled(plantBound, pipeline,
                               pointCloudFolder / (pipeline.m_prefix + ".ply"));
+        if(m_pointCloudPointSettings.m_junction){
+            std::filesystem::create_directories(junctionFolder);
+            ExportJunction(pipeline, behaviour, junctionFolder / (pipeline.m_prefix + ".txt"));
+        }
     }
 
     if (m_exportOptions.m_exportBranchCapture) {
@@ -848,10 +858,10 @@ void TreeDataCapturePipeline::OnEnd(AutoTreeGenerationPipeline &pipeline) {
                        "matrices.yml");
     if (m_environmentSettings.m_enableGround) scene->DeleteEntity(m_ground);
 
-    if(false){
+    if (false) {
         auto treeIOFolder = m_currentExportFolder / "TreeIO";
         std::string data = "";
-        for(const auto& pair : m_treeIOPairs){
+        for (const auto &pair: m_treeIOPairs) {
             data += pair.first;
             data += ",";
             data += pair.second;
@@ -859,7 +869,7 @@ void TreeDataCapturePipeline::OnEnd(AutoTreeGenerationPipeline &pipeline) {
         }
         std::ofstream ofs;
         auto path = treeIOFolder /
-                       ("name_pairings.txt");
+                    ("name_pairings.txt");
         ofs.open(path.string().c_str(),
                  std::ofstream::out | std::ofstream::trunc);
         ofs.write(data.c_str(), data.length());
@@ -1235,6 +1245,59 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound &plantBound, Aut
 
     // Write a binary file
     cube_file.write(outstream_binary, true);
+}
+
+void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline &pipeline,
+                                             const std::shared_ptr<IPlantBehaviour> &behaviour,
+                                             const std::filesystem::path &path) {
+    auto scene = pipeline.GetScene();
+    auto internodeLayer = Application::GetLayer<InternodeLayer>();
+    try {
+        auto directory = path;
+        directory.remove_filename();
+        std::filesystem::create_directories(directory);
+        YAML::Emitter out;
+        out << YAML::BeginMap;
+        std::vector<std::pair<int, std::vector<glm::vec3>>> junctions;
+        std::vector<Entity> internodes;
+        scene->GetEntityArray(internodeLayer->m_internodesQuery, internodes);
+        for(const auto& internode : internodes){
+            auto children = scene->GetChildren(internode);
+            if (children.size() > 1) {
+                junctions.emplace_back();
+                auto& junction = junctions.back();
+                junction.first = internode.GetIndex();
+                junction.second.emplace_back(glm::normalize(scene->GetDataComponent<GlobalTransform>(internode).GetRotation() * glm::vec3(0, 0, -1)));
+                for (const auto &child: children) {
+                    junction.second.emplace_back(glm::normalize(scene->GetDataComponent<GlobalTransform>(child).GetRotation() * glm::vec3(0, 0, -1)));
+                }
+            }
+        }
+
+        out << YAML::Key << "Junctions" << YAML::Value << YAML::BeginSeq;
+        for (const auto &junction: junctions) {
+            out << YAML::BeginMap;
+            out << YAML::Key << "Junction Index" << YAML::Value << junction.first;
+            out << YAML::Key << "Parent dir" << YAML::Value << junction.second.at(0);
+            out << YAML::Key << "Children dir" << YAML::Value << YAML::BeginSeq;
+            for (int i = 1; i < junction.second.size(); i++) {
+                out << YAML::BeginMap;
+                out << YAML::Key << "Direction" << YAML::Value << junction.second.at(i);
+                out << YAML::EndMap;
+            }
+            out << YAML::EndSeq;
+            out << YAML::EndMap;
+        }
+
+        out << YAML::EndSeq;
+        out << YAML::EndMap;
+        std::ofstream fout(path.string());
+        fout << out.c_str();
+        fout.flush();
+    }
+    catch (std::exception e) {
+        UNIENGINE_ERROR("Failed to save!");
+    }
 }
 
 #endif

@@ -365,6 +365,8 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
             } else {
                 newNormalDir = internodeGlobalTransform.GetRotation() *
                                glm::vec3(1.0f, 0.0f, 0.0f);
+                isOnlyChild = true;
+                hasMultipleChild = false;
             }
             const glm::vec3 front =
                     internodeGlobalTransform.GetRotation() *
@@ -408,7 +410,7 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
                 if(settings.m_markJunctions){
                     archetype.m_color = glm::normalize(internode->m_rings.at(0).m_startAxis);
                     if(!isOnlyChild) {
-                        archetype.m_color *= 1.0f;
+                        archetype.m_color *= entities[parentIndex].GetIndex();
                     }else{
                         archetype.m_color *= 0.5f;
                     }
@@ -499,7 +501,7 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
                     if(settings.m_markJunctions){
                         archetype.m_color = glm::normalize(internode->m_rings.at(ringIndex).m_endAxis);
                         if((ratio <= settings.m_junctionLowerRatio && !isOnlyChild) || (ratio >= 1.0f - settings.m_junctionUpperRatio && hasMultipleChild)) {
-                            archetype.m_color *= 1.0f;
+                            archetype.m_color *= entities[parentIndex].GetIndex();
                         }else{
                             archetype.m_color *= 0.5f;
                         }
