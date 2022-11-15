@@ -1250,6 +1250,7 @@ struct JunctionUnitInfo {
     glm::vec3 m_position;
     glm::vec3 m_direction;
     float m_radius;
+    float m_length;
 };
 struct Junction{
     int m_junctionIndex;
@@ -1272,8 +1273,8 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline &pipelin
         std::vector<Entity> internodes;
         scene->GetEntityArray(internodeLayer->m_internodesQuery, internodes);
         for(const auto& internode : internodes){
-            auto children = scene->GetChildren(internode);
-            if (children.size() > 1) {
+            auto childrenSize = scene->GetChildrenAmount(internode);
+            if (childrenSize > 1) {
                 junctions.emplace_back();
                 auto& junction = junctions.back();
                 junction.m_junctionIndex = internode.GetIndex();
@@ -1281,7 +1282,7 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline &pipelin
                 junction.m_root.m_direction = glm::normalize(rootTransform.GetRotation() * glm::vec3(0, 0, -1));
                 junction.m_root.m_position = rootTransform.GetPosition();
                 junction.m_root.m_radius = scene->GetDataComponent<InternodeInfo>(internode).m_thickness;
-                for (const auto &child: children) {
+                for (const auto &child: scene->GetChildren(internode)) {
                     if(!scene->HasDataComponent<InternodeInfo>(child)) continue;
                     auto childTransform = scene->GetDataComponent<GlobalTransform>(child);
                     junction.m_children.emplace_back();
@@ -1300,12 +1301,14 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline &pipelin
             out << YAML::Key << "RD" << YAML::Value << junction.m_root.m_direction;
             out << YAML::Key << "RP" << YAML::Value << junction.m_root.m_position;
             out << YAML::Key << "RR" << YAML::Value << junction.m_root.m_radius;
+            out << YAML::Key << "RL" << YAML::Value << junction.m_root.m_length;
             out << YAML::Key << "C" << YAML::Value << YAML::BeginSeq;
             for (const auto& child : junction.m_children) {
                 out << YAML::BeginMap;
                 out << YAML::Key << "D" << YAML::Value << child.m_direction;
                 out << YAML::Key << "P" << YAML::Value << child.m_position;
                 out << YAML::Key << "R" << YAML::Value << child.m_radius;
+                out << YAML::Key << "L" << YAML::Value << child.m_length;
                 out << YAML::EndMap;
             }
             out << YAML::EndSeq;
