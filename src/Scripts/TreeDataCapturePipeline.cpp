@@ -1187,12 +1187,16 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound &plantBound, Aut
                        position.z<(plantBound.m_min.z - 1) || position.x>(plantBound.m_max.x + 1) ||
                        position.z>(plantBound.m_max.z + 1))
             continue;
+        auto ballRand = glm::vec3(0.0f);
+        if(m_pointCloudPointSettings.m_ballRandRadius > 0.0f){
+            ballRand = glm::ballRand(m_pointCloudPointSettings.m_ballRandRadius);
+        }
         points.push_back(
                 sample.m_end +
                 glm::vec3(glm::gaussRand(0.0f, m_pointCloudPointSettings.m_variance),
                           glm::gaussRand(0.0f, m_pointCloudPointSettings.m_variance),
                           glm::gaussRand(0.0f, m_pointCloudPointSettings.m_variance))
-                + glm::vec3(glm::ballRand(m_pointCloudPointSettings.m_ballRandRadius)));
+                + ballRand);
         if (sample.m_handle == branchMeshRendererHandle) {
             if (m_pointCloudPointSettings.m_pointType) pointTypes.push_back(0);
             if (m_pointCloudPointSettings.m_color) colors.emplace_back(0.5, 0.25, 0);

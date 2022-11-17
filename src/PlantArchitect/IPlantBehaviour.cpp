@@ -366,9 +366,29 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
                 newNormalDir = internodeGlobalTransform.GetRotation() *
                                glm::vec3(1.0f, 0.0f, 0.0f);
             }
-            if(scene->HasDataComponent<InternodeRootInfo>(scene->GetParent(internodeEntity))){
+            if (scene->HasDataComponent<InternodeRootInfo>(scene->GetParent(internodeEntity))) {
                 isOnlyChild = true;
                 hasMultipleChild = false;
+            }
+            bool markJunction = false;
+            if (settings.m_markJunctions) {
+                markJunction = true;
+                if (isOnlyChild) {
+                    auto parent = scene->GetParent(internodeEntity);
+                    scene->ForEachChild(parent, [&](Entity child) {
+                        if (scene->HasDataComponent<InternodeInfo>(child) &&
+                            scene->GetDataComponent<InternodeInfo>(child).m_length < 0.8f) {
+                            markJunction = false;
+                        }
+                    });
+                } else if (hasMultipleChild) {
+                    scene->ForEachChild(internodeEntity, [&](Entity child) {
+                        if (scene->HasDataComponent<InternodeInfo>(child) &&
+                            scene->GetDataComponent<InternodeInfo>(child).m_length < 0.8f) {
+                            markJunction = false;
+                        }
+                    });
+                }
             }
             const glm::vec3 front =
                     internodeGlobalTransform.GetRotation() *
@@ -409,14 +429,14 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
                 const float x =
                         i < pStep / 2 ? i * textureXStep : (pStep - i) * textureXStep;
                 archetype.m_texCoord = glm::vec2(x, 0.0f);
-                if(settings.m_markJunctions){
+                if (markJunction) {
                     archetype.m_color = glm::normalize(internode->m_rings.at(0).m_startAxis);
-                    if(!isOnlyChild) {
+                    if (!isOnlyChild) {
                         archetype.m_color *= scene->GetParent(internodeEntity).GetIndex();
-                    }else{
+                    } else {
                         archetype.m_color *= 0.5f;
                     }
-                }else if (settings.m_overrideVertexColor) archetype.m_color = settings.m_branchVertexColor;
+                } else if (settings.m_overrideVertexColor) archetype.m_color = settings.m_branchVertexColor;
                 else archetype.m_color = branchColor.m_value;
                 vertices.push_back(archetype);
             }
@@ -500,16 +520,16 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
                     const auto y = ringIndex % 2 == 0 ? 1.0f : 0.0f;
                     archetype.m_texCoord = glm::vec2(x, y);
                     auto ratio = (float) ringIndex / (ringSize - 1);
-                    if(settings.m_markJunctions){
+                    if (markJunction) {
                         archetype.m_color = glm::normalize(internode->m_rings.at(ringIndex).m_endAxis);
-                        if(ratio <= settings.m_junctionLowerRatio && !isOnlyChild) {
+                        if (ratio <= settings.m_junctionLowerRatio && !isOnlyChild) {
                             archetype.m_color *= scene->GetParent(internodeEntity).GetIndex();
-                        }else if(ratio >= 1.0f - settings.m_junctionUpperRatio && hasMultipleChild){
+                        } else if (ratio >= 1.0f - settings.m_junctionUpperRatio && hasMultipleChild) {
                             archetype.m_color *= internodeEntity.GetIndex();
-                        }else{
+                        } else {
                             archetype.m_color *= 0.5f;
                         }
-                    }else if (settings.m_overrideVertexColor) archetype.m_color = settings.m_branchVertexColor;
+                    } else if (settings.m_overrideVertexColor) archetype.m_color = settings.m_branchVertexColor;
                     else archetype.m_color = branchColor.m_value;
                     vertices.push_back(archetype);
                 }
@@ -546,7 +566,7 @@ void MeshGeneratorSettings::OnInspect() {
         ImGui::Checkbox("Foliage", &m_enableFoliage);
         ImGui::Checkbox("Branch", &m_enableBranch);
         ImGui::Checkbox("Smoothness", &m_smoothness);
-        if(!m_smoothness){
+        if (!m_smoothness) {
             ImGui::DragFloat("Internode length factor", &m_internodeLengthFactor, 0.001f, 0.0f, 1.0f);
         }
         ImGui::Checkbox("Override radius", &m_overrideRadius);
@@ -557,13 +577,14 @@ void MeshGeneratorSettings::OnInspect() {
             ImGui::ColorEdit3("Foliage vertex color", &m_foliageVertexColor.x);
         }
         ImGui::Checkbox("Mark Junctions", &m_markJunctions);
-        if(m_markJunctions) {
+        if (m_markJunctions) {
             ImGui::DragFloat("Junction Lower Ratio", &m_junctionLowerRatio, 0.01f, 0.0f, 0.5f);
             ImGui::DragFloat("Junction Upper Ratio", &m_junctionUpperRatio, 0.01f, 0.0f, 0.5f);
         }
         ImGui::TreePop();
     }
 }
+
 void SubtreeSettings::OnInspect() {
     if (ImGui::TreeNodeEx("Subtree settings")) {
         ImGui::DragInt("Layer", &m_layer);
@@ -579,11 +600,12 @@ void SubtreeSettings::OnInspect() {
         ImGui::DragFloat("Line radius", &m_lineRadius, 0.001f);
         ImGui::Checkbox("Line smoothness", &m_lineSmoothness);
         ImGui::DragFloat("Line length factor", &m_lineLengthFactor, 0.01f);
-        if(m_enablePoints) ImGui::ColorEdit3("Point color", &m_pointColor.x);
-        if(m_enableLines) ImGui::ColorEdit3("Line color", &m_lineColor.x);
-        if(m_enableArrows) ImGui::ColorEdit3("Arrow color", &m_arrowColor.x);
+        if (m_enablePoints) ImGui::ColorEdit3("Point color", &m_pointColor.x);
+        if (m_enableLines) ImGui::ColorEdit3("Line color", &m_lineColor.x);
+        if (m_enableArrows) ImGui::ColorEdit3("Arrow color", &m_arrowColor.x);
     }
 }
+
 void MeshGeneratorSettings::Save(const std::string &name, YAML::Emitter &out) {
     out << YAML::Key << name << YAML::Value << YAML::BeginMap;
     out << YAML::Key << "m_resolution" << YAML::Value << m_resolution;
@@ -990,9 +1012,11 @@ IPlantBehaviour::PrepareFoliageMatrices(const std::shared_ptr<Scene> &scene, con
                                                          relativeGlobalTransform, relativeParentGlobalTransform);
              });
 }
-Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const Entity &internodeEntity, const SubtreeSettings& subtreeSettings) {
+
+Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const Entity &internodeEntity,
+                                      const SubtreeSettings &subtreeSettings) {
     auto subtree = scene->CreateEntity("Subtree");
-    if(subtreeSettings.m_enableBase){
+    if (subtreeSettings.m_enableBase) {
         MeshGeneratorSettings settings;
         settings.m_resolution = subtreeSettings.m_resolution;
         settings.m_subdivision = subtreeSettings.m_subdivision;
@@ -1001,7 +1025,7 @@ Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const
         std::vector<Entity> subtreeInternodes;
         InternodeCollector(scene, internodeEntity, subtreeInternodes, false, subtreeSettings.m_layer);
 
-        if(!subtreeSettings.m_enableBaseInternode){
+        if (!subtreeSettings.m_enableBaseInternode) {
             subtreeInternodes.erase(subtreeInternodes.begin());
         }
 
@@ -1022,7 +1046,7 @@ Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const
         meshRenderer->m_material = material;
     }
 
-    if(subtreeSettings.m_enableLines){
+    if (subtreeSettings.m_enableLines) {
         MeshGeneratorSettings settings;
         settings.m_resolution = subtreeSettings.m_resolution;
         settings.m_subdivision = subtreeSettings.m_subdivision;
@@ -1054,7 +1078,7 @@ Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const
         meshRenderer->m_material = material;
     }
 
-    if(subtreeSettings.m_enablePoints){
+    if (subtreeSettings.m_enablePoints) {
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
         std::vector<Entity> subtreeInternodes;
@@ -1066,10 +1090,11 @@ Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const
         auto mesh = ProjectManager::CreateTemporaryAsset<Mesh>();
 
         std::vector<glm::mat4> pointMatrices;
-        for(const auto& entity : subtreeInternodes){
+        for (const auto &entity: subtreeInternodes) {
             auto internodeInfo = scene->GetDataComponent<InternodeInfo>(entity);
             GlobalTransform globalTransform = scene->GetDataComponent<GlobalTransform>(entity);
-            globalTransform.SetPosition(globalTransform.GetPosition() + internodeInfo.m_length * (globalTransform.GetRotation() * glm::vec3(0, 0, -1)));
+            globalTransform.SetPosition(globalTransform.GetPosition() +
+                                        internodeInfo.m_length * (globalTransform.GetRotation() * glm::vec3(0, 0, -1)));
             globalTransform.SetScale(glm::vec3(internodeInfo.m_thickness));
             pointMatrices.emplace_back(globalTransform.m_value);
         }
@@ -1111,7 +1136,7 @@ Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const
         meshRenderer->m_material = material;
     }
 
-    if(subtreeSettings.m_enableArrows){
+    if (subtreeSettings.m_enableArrows) {
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
         std::vector<Entity> subtreeInternodes;
@@ -1123,12 +1148,13 @@ Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const
         auto mesh = ProjectManager::CreateTemporaryAsset<Mesh>();
 
         std::vector<glm::mat4> pointMatrices;
-        for(const auto& entity : subtreeInternodes){
+        for (const auto &entity: subtreeInternodes) {
             auto internodeInfo = scene->GetDataComponent<InternodeInfo>(entity);
             GlobalTransform globalTransform = scene->GetDataComponent<GlobalTransform>(entity);
-            glm::vec3 front =  globalTransform.GetRotation() * glm::vec3(0, 0, -1);
+            glm::vec3 front = globalTransform.GetRotation() * glm::vec3(0, 0, -1);
             glm::vec3 up = globalTransform.GetRotation() * glm::vec3(0, 1, 0);
-            globalTransform.SetPosition(globalTransform.GetPosition() + internodeInfo.m_length * subtreeSettings.m_lineLengthFactor * front);
+            globalTransform.SetPosition(globalTransform.GetPosition() +
+                                        internodeInfo.m_length * subtreeSettings.m_lineLengthFactor * front);
             globalTransform.SetScale(glm::vec3(subtreeSettings.m_lineRadius * 2.0f));
             globalTransform.SetRotation(glm::quatLookAt(up, front));
             pointMatrices.emplace_back(globalTransform.m_value);
@@ -1172,6 +1198,7 @@ Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const
     }
     return subtree;
 }
+
 void IPlantBehaviour::PrepareBranchRings(const std::shared_ptr<Scene> &scene, const MeshGeneratorSettings &settings) {
     scene->ForEach<GlobalTransform, Transform,
             InternodeInfo>(Jobs::Workers(),
@@ -1194,7 +1221,9 @@ void IPlantBehaviour::PrepareBranchRings(const std::shared_ptr<Scene> &scene, co
                                        relativeGlobalTransform.GetRotation() * glm::vec3(0, 0, -1);
                                glm::vec3 directionEnd = directionStart;
                                glm::vec3 positionStart = relativeGlobalTransform.GetPosition();
-                               glm::vec3 positionEnd = positionStart + internodeInfo.m_length * settings.m_internodeLengthFactor * directionStart;
+                               glm::vec3 positionEnd = positionStart +
+                                                       internodeInfo.m_length * settings.m_internodeLengthFactor *
+                                                       directionStart;
                                float thicknessStart = internodeInfo.m_thickness;
                                float thicknessEnd = internodeInfo.m_thickness;
                                if (root != entity) {
@@ -1430,7 +1459,7 @@ void IPlantBehaviour::InternodeCollector(const std::shared_ptr<Scene> &scene, co
     if (remainingLayer == 0) return;
     if (scene->IsEntityValid(target) && scene->HasDataComponent<InternodeInfo>(target) &&
         scene->HasPrivateComponent<Internode>(target)) {
-        if(!onlyCollectEnd || remainingLayer == 1) results.push_back(target);
+        if (!onlyCollectEnd || remainingLayer == 1) results.push_back(target);
         scene->ForEachChild(target, [&](Entity child) {
             InternodeCollector(scene, child, results, onlyCollectEnd, remainingLayer - 1);
         });
