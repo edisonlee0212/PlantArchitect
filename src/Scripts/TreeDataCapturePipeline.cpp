@@ -1288,7 +1288,12 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline &pipelin
                 junction.m_root.m_direction = glm::normalize(rootTransform.GetRotation() * glm::vec3(0, 0, -1));
                 junction.m_root.m_position = rootTransform.GetPosition() + junction.m_root.m_direction * rootInfo.m_length;
                 junction.m_root.m_radius = rootInfo.m_thickness;
-                junction.m_startPos = rootTransform.GetPosition();
+                //junction.m_startPos = rootTransform.GetPosition();
+                auto rootInternode = scene->GetOrSetPrivateComponent<Internode>(internode).lock();
+                int rootRingIndex = rootInternode->m_rings.size() * (1.0f - m_meshGeneratorSettings.m_junctionUpperRatio);
+                if(rootRingIndex < 0) rootRingIndex = 0;
+                if(rootRingIndex >= rootInternode->m_rings.size()) rootRingIndex = rootInternode->m_rings.size() - 1;
+                junction.m_startPos = rootInternode->m_rings.at(rootRingIndex).m_startPosition;
                 for (const auto &child: scene->GetChildren(internode)) {
                     if(!scene->HasDataComponent<InternodeInfo>(child)) continue;
                     auto childTransform = scene->GetDataComponent<GlobalTransform>(child);
@@ -1300,7 +1305,13 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline &pipelin
                         break;
                     }
                     childInfo.m_direction = glm::normalize(childTransform.GetRotation() * glm::vec3(0, 0, -1));
-                    childInfo.m_position = childTransform.GetPosition() + childInfo.m_direction * childInternodeInfo.m_length;
+                    //childInfo.m_position = childTransform.GetPosition() + childInfo.m_direction * childInternodeInfo.m_length;
+                    auto childInternode = scene->GetOrSetPrivateComponent<Internode>(child).lock();
+                    int childRingIndex = childInternode->m_rings.size() * m_meshGeneratorSettings.m_junctionLowerRatio;
+                    if(childRingIndex < 0) childRingIndex = 0;
+                    if(childRingIndex >= childInternode->m_rings.size()) childRingIndex = childInternode->m_rings.size() - 1;
+                    childInfo.m_position = childInternode->m_rings.at(childRingIndex).m_endPosition;
+
                     childInfo.m_radius = childInternodeInfo.m_thickness;
                 }
                 if(add) junctions.push_back(junction);

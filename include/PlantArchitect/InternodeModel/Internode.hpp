@@ -5,6 +5,7 @@
 #include "InternodeModel/InternodeResources/IInternodeResource.hpp"
 #include "DataComponents.hpp"
 #include "TreeIO.hpp"
+
 using namespace treeio;
 using namespace UniEngine;
 namespace PlantArchitect {
@@ -35,15 +36,16 @@ namespace PlantArchitect {
     struct LSystemCommand;
 
 
-
     class PLANT_ARCHITECT_API Internode : public IPrivateComponent {
         void ExportLSystemCommandsHelper(int &index, const Entity &target, std::vector<LSystemCommand> &commands);
 
         void CollectInternodesHelper(const Entity &target, std::vector<Entity> &results);
 
-        void ExportTreeIOTreeHelper(ArrayTree& tree, const Entity &target, ArrayTreeT<TreeNodeData, TreeMetaData>::NodeIdT id);
+        void ExportTreeIOTreeHelper(ArrayTree &tree, const Entity &target,
+                                    ArrayTreeT<TreeNodeData, TreeMetaData>::NodeIdT id);
 
         friend class IPlantBehaviour;
+
         /**
          * Normal direction for mesh generation
          */
@@ -52,11 +54,13 @@ namespace PlantArchitect {
          * Subdivision step for mesh generation
          */
         int m_step = 4;
-        /**
-         * For mesh generation
-         */
-        std::vector<RingSegment> m_rings;
+
+
     public:
+        /**
+             * For mesh generation
+             */
+        std::vector<RingSegment> m_rings;
         /**
          * The current root of the internode.
          */
@@ -98,7 +102,9 @@ namespace PlantArchitect {
         void CollectResource(float deltaTime);
 
         void Relink(const std::unordered_map<Handle, Handle> &map, const std::shared_ptr<Scene> &scene) override;
+
         void OnDestroy() override;
+
         /**
          * Down stream the resources.
          * @param deltaTime
