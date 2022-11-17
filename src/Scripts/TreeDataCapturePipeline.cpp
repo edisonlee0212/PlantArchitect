@@ -1293,7 +1293,7 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline &pipelin
                 int rootRingIndex = rootInternode->m_rings.size() * (1.0f - m_meshGeneratorSettings.m_junctionUpperRatio);
                 if(rootRingIndex < 0) rootRingIndex = 0;
                 if(rootRingIndex >= rootInternode->m_rings.size()) rootRingIndex = rootInternode->m_rings.size() - 1;
-                junction.m_startPos = rootInternode->m_rings.at(rootRingIndex).m_startPosition;
+                junction.m_startPos = rootInternode->m_rings.at(rootRingIndex).m_endPosition;
                 for (const auto &child: scene->GetChildren(internode)) {
                     if(!scene->HasDataComponent<InternodeInfo>(child)) continue;
                     auto childTransform = scene->GetDataComponent<GlobalTransform>(child);
@@ -1310,7 +1310,7 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline &pipelin
                     int childRingIndex = childInternode->m_rings.size() * m_meshGeneratorSettings.m_junctionLowerRatio;
                     if(childRingIndex < 0) childRingIndex = 0;
                     if(childRingIndex >= childInternode->m_rings.size()) childRingIndex = childInternode->m_rings.size() - 1;
-                    childInfo.m_position = childInternode->m_rings.at(childRingIndex).m_endPosition;
+                    childInfo.m_position = childInternode->m_rings.at(childRingIndex).m_startPosition;
 
                     childInfo.m_radius = childInternodeInfo.m_thickness;
                 }
