@@ -435,7 +435,7 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
                     if (!isOnlyChild) {
                         archetype.m_color *= scene->GetParent(internodeEntity).GetIndex();
                     } else {
-                        archetype.m_color *= 0.5f;
+                        archetype.m_color *= 0.3f;
                     }
                 } else if (settings.m_overrideVertexColor) archetype.m_color = settings.m_branchVertexColor;
                 else archetype.m_color = branchColor.m_value;
@@ -532,7 +532,7 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
                             colored = true;
                         }
                         if (!colored) {
-                            archetype.m_color *= 0.5f;
+                            archetype.m_color *= 0.3f;
                         }
                     } else if (settings.m_overrideVertexColor) archetype.m_color = settings.m_branchVertexColor;
                     else archetype.m_color = branchColor.m_value;
