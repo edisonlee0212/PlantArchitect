@@ -522,11 +522,16 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
                     auto ratio = (float) ringIndex / (ringSize - 1);
                     if (markJunction) {
                         archetype.m_color = glm::normalize(internode->m_rings.at(ringIndex).m_endAxis);
+                        bool colored = false;
                         if (ratio <= settings.m_junctionLowerRatio && !isOnlyChild) {
                             archetype.m_color *= scene->GetParent(internodeEntity).GetIndex();
-                        } else if (ratio >= 1.0f - settings.m_junctionUpperRatio && hasMultipleChild) {
+                            colored = true;
+                        }
+                        if (ratio >= (1.0f - settings.m_junctionUpperRatio) && hasMultipleChild) {
                             archetype.m_color *= internodeEntity.GetIndex();
-                        } else {
+                            colored = true;
+                        }
+                        if (!colored) {
                             archetype.m_color *= 0.5f;
                         }
                     } else if (settings.m_overrideVertexColor) archetype.m_color = settings.m_branchVertexColor;
