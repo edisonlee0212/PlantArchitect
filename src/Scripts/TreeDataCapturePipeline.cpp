@@ -1163,6 +1163,7 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound &plantBound, Aut
     std::vector<glm::vec3> points;
     std::vector<glm::vec3> colors;
     std::vector<glm::vec3> junction;
+    std::vector<int> junctionIndex;
     std::vector<int> pointTypes;
     Handle branchMeshRendererHandle, foliageMeshRendererHandle, groundMeshRendererHandle;
     if (scene->IsEntityValid(m_ground) && scene->HasPrivateComponent<MeshRenderer>(m_ground)) {
@@ -1211,7 +1212,8 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound &plantBound, Aut
             if (m_pointCloudPointSettings.m_color) colors.emplace_back(0, 0, 0);
         }
         if (m_pointCloudPointSettings.m_junction) {
-            junction.emplace_back(sample.m_albedo);
+            junction.emplace_back(glm::normalize(sample.m_albedo));
+            junctionIndex.emplace_back((int)glm::round(glm::length(sample.m_albedo)));
         }
     }
     std::filebuf fb_binary;
@@ -1245,6 +1247,9 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound &plantBound, Aut
         cube_file.add_properties_to_element(
                 "junction", {"jx", "jy", "jz"}, Type::FLOAT32, junction.size(),
                 reinterpret_cast<uint8_t *>(junction.data()), Type::INVALID, 0);
+        cube_file.add_properties_to_element(
+                "junctionIndex", {"ji"}, Type::INT32, junctionIndex.size(),
+                reinterpret_cast<uint8_t *>(junctionIndex.data()), Type::INVALID, 0);
     }
 
     // Write a binary file

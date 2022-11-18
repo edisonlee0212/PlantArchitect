@@ -372,8 +372,8 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
             }
             bool markJunction = false;
             if (settings.m_markJunctions) {
-                markJunction = true;
-                if (isOnlyChild) {
+                if (!isOnlyChild) {
+                    markJunction = true;
                     auto parent = scene->GetParent(internodeEntity);
                     scene->ForEachChild(parent, [&](Entity child) {
                         if (scene->HasDataComponent<InternodeInfo>(child) &&
@@ -382,6 +382,7 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
                         }
                     });
                 } else if (hasMultipleChild) {
+                    markJunction = true;
                     scene->ForEachChild(internodeEntity, [&](Entity child) {
                         if (scene->HasDataComponent<InternodeInfo>(child) &&
                             scene->GetDataComponent<InternodeInfo>(child).m_length < 0.8f) {
@@ -526,8 +527,7 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
                         if (ratio <= settings.m_junctionLowerRatio && !isOnlyChild) {
                             archetype.m_color *= scene->GetParent(internodeEntity).GetIndex();
                             colored = true;
-                        }
-                        if (ratio >= (1.0f - settings.m_junctionUpperRatio) && hasMultipleChild) {
+                        }else if (ratio >= (1.0f - settings.m_junctionUpperRatio) && hasMultipleChild) {
                             archetype.m_color *= internodeEntity.GetIndex();
                             colored = true;
                         }
