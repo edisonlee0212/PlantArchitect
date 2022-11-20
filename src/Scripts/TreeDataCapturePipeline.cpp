@@ -1299,15 +1299,15 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline &pipelin
                 if(rootRingIndex < 0) rootRingIndex = 0;
                 if(rootRingIndex >= rootInternode->m_rings.size()) rootRingIndex = rootInternode->m_rings.size() - 1;
                 junction.m_startPos = rootInternode->m_rings.at(rootRingIndex).m_endPosition;
+                int validChildCount = 0;
                 for (const auto &child: scene->GetChildren(internode)) {
                     if(!scene->HasDataComponent<InternodeInfo>(child)) continue;
                     auto childTransform = scene->GetDataComponent<GlobalTransform>(child);
                     junction.m_children.emplace_back();
                     auto& childInfo = junction.m_children.back();
                     auto childInternodeInfo = scene->GetDataComponent<InternodeInfo>(child);
-                    if(childInternodeInfo.m_length < 0.8f){
-                        add = false;
-                        break;
+                    if(childInternodeInfo.m_length > 0.3f){
+                        validChildCount++;
                     }
                     childInfo.m_direction = glm::normalize(childTransform.GetRotation() * glm::vec3(0, 0, -1));
                     //childInfo.m_position = childTransform.GetPosition() + childInfo.m_direction * childInternodeInfo.m_length;
@@ -1319,7 +1319,7 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline &pipelin
 
                     childInfo.m_radius = childInternodeInfo.m_thickness;
                 }
-                if(add) junctions.push_back(junction);
+                if(validChildCount > 1) junctions.push_back(junction);
             }
 
         }

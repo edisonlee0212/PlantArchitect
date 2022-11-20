@@ -373,22 +373,24 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
             bool markJunction = false;
             if (settings.m_markJunctions) {
                 if (!isOnlyChild) {
-                    markJunction = true;
                     auto parent = scene->GetParent(internodeEntity);
+                    int validChildCount = 0;
                     scene->ForEachChild(parent, [&](Entity child) {
                         if (scene->HasDataComponent<InternodeInfo>(child) &&
-                            scene->GetDataComponent<InternodeInfo>(child).m_length < 0.8f) {
-                            markJunction = false;
+                            scene->GetDataComponent<InternodeInfo>(child).m_length > 0.3f) {
+                            validChildCount++;
                         }
                     });
+                    if(validChildCount > 1) markJunction = true;
                 } else if (hasMultipleChild) {
-                    markJunction = true;
+                    int validChildCount = 0;
                     scene->ForEachChild(internodeEntity, [&](Entity child) {
                         if (scene->HasDataComponent<InternodeInfo>(child) &&
-                            scene->GetDataComponent<InternodeInfo>(child).m_length < 0.8f) {
-                            markJunction = false;
+                            scene->GetDataComponent<InternodeInfo>(child).m_length > 0.3f) {
+                            validChildCount++;
                         }
                     });
+                    if(validChildCount > 1) markJunction = true;
                 }
             }
             const glm::vec3 front =
