@@ -1312,7 +1312,7 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline &pipelin
                     childInfo.m_direction = glm::normalize(childTransform.GetRotation() * glm::vec3(0, 0, -1));
                     //childInfo.m_position = childTransform.GetPosition() + childInfo.m_direction * childInternodeInfo.m_length;
                     auto childInternode = scene->GetOrSetPrivateComponent<Internode>(child).lock();
-                    int childRingIndex = childInternode->m_rings.size() * m_meshGeneratorSettings.m_junctionLowerRatio;
+                    int childRingIndex = childInternode->m_rings.size() * m_meshGeneratorSettings.m_junctionLowerRatio / childInternodeInfo.m_length;
                     if(childRingIndex < 0) childRingIndex = 0;
                     if(childRingIndex >= childInternode->m_rings.size()) childRingIndex = childInternode->m_rings.size() - 1;
                     childInfo.m_position = childInternode->m_rings.at(childRingIndex).m_startPosition;

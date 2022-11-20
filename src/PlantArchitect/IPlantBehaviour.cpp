@@ -528,7 +528,7 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
                             i < (step / 2) ? i * textureXStep : (step - i) * textureXStep;
                     const auto y = ringIndex % 2 == 0 ? 1.0f : 0.0f;
                     archetype.m_texCoord = glm::vec2(x, y);
-                    auto ratio = (float) ringIndex / (ringSize - 1);
+                    auto ratio = (float) ringIndex / (ringSize - 1) * scene->GetDataComponent<InternodeInfo>(internodeEntity).m_length;
                     if (markJunction) {
                         archetype.m_color = glm::normalize(internode->m_rings.at(ringIndex).m_endAxis);
                         if (ratio <= settings.m_junctionLowerRatio && !isOnlyChild) {
