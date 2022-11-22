@@ -343,7 +343,8 @@ GeneralTreeBehaviour::GeneralTreeBehaviour() {
     m_branchArchetype =
             Entities::CreateEntityArchetype("General Tree Branch", InternodeBranchInfo(),
                                             GeneralTreeTag(),
-                                            InternodeBranchColor(), InternodeBranchCylinder(), InternodeBranchCylinderWidth());
+                                            InternodeBranchColor(), InternodeBranchCylinder(),
+                                            InternodeBranchCylinderWidth());
     m_branchesQuery = Entities::CreateEntityQuery();
     m_branchesQuery.SetAllFilters(InternodeBranchInfo(), GeneralTreeTag());
 }
@@ -861,7 +862,6 @@ void InternodeStatus::OnInspect() {
                  "]").c_str());
 
 
-
 }
 
 void InternodeStatus::CalculateApicalControl(float apicalControl) {
@@ -993,7 +993,71 @@ void TreeGraph::InstantiateChildren(const std::shared_ptr<Scene> &scene,
     }
 }
 
+struct GraphNode {
+    int m_id;
+    int m_parent;
+    glm::vec3 m_position;
+    glm::vec3 m_direction;
+    float m_radius;
+};
+
 void TreeGraph::Deserialize(const YAML::Node &in) {
+    m_saved = true;
+    m_name = GetTitle();
+    int id = 0;
+    std::vector<GraphNode> nodes;
+    while (in[std::to_string(id)]) {
+        auto &inNode = in[std::to_string(id)];
+        nodes.emplace_back();
+        auto &node = nodes.back();
+        node.m_id = id;
+        node.m_parent = inNode["parent"].as<int>();
+        int index = 0;
+        for (const auto &component: inNode["position"]) {
+            node.m_position[index] = component.as<float>();
+            index++;
+        }
+        index = 0;
+        for (const auto &component: inNode["direction"]) {
+            node.m_direction[index] = component.as<float>();
+            index++;
+        }
+        node.m_radius = inNode["radius"].as<float>();
+        id++;
+    }
+    std::unordered_map<int, std::shared_ptr<TreeGraphNode>> previousNodes;
+    m_root = std::make_shared<TreeGraphNode>();
+    m_root->m_start = glm::vec3(0, 0, 0);
+    m_root->m_length = 1.0f;
+    m_root->m_thickness = nodes[0].m_radius;
+    m_root->m_id = 0;
+    m_root->m_parentId = -1;
+    m_root->m_fromApicalBud = true;
+    m_root->m_globalRotation = glm::quatLookAt(glm::vec3(nodes[0].m_direction.y, nodes[0].m_direction.z,
+                                                         nodes[0].m_direction.x),
+                                               nodes[0].m_direction);
+    previousNodes[0] = m_root;
+    for (id = 1; id < nodes.size(); id++) {
+        auto &node = nodes[id];
+        auto parentNodeId = node.m_parent;
+        auto &parentNode = previousNodes[parentNodeId];
+        auto newNode = std::make_shared<TreeGraphNode>();
+        newNode->m_id = id;
+        newNode->m_start = parentNode->m_start + parentNode->m_length *
+                                                 (glm::normalize(parentNode->m_globalRotation) *
+                                                  glm::vec3(0, 0, -1));
+        newNode->m_thickness = node.m_radius;
+        newNode->m_length = 1.0f;
+        newNode->m_parentId = parentNodeId;
+        newNode->m_position = node.m_position;
+        newNode->m_globalRotation = glm::quatLookAt(glm::vec3(node.m_direction.y, node.m_direction.z,
+                                                              node.m_direction.x), node.m_direction);
+        if (parentNode->m_children.empty()) newNode->m_fromApicalBud = true;
+        previousNodes[id] = newNode;
+        parentNode->m_children.push_back(newNode);
+        newNode->m_parent = parentNode;
+    }
+#ifdef OLD_GRAPH
     m_name = in["name"].as<std::string>();
     m_layerSize = in["layersize"].as<int>();
     auto layers = in["layers"];
@@ -1052,6 +1116,8 @@ void TreeGraph::Deserialize(const YAML::Node &in) {
             newNode->m_parent = parentNode;
         }
     }
+#endif
+
 }
 
 void TreeGraph::CollectChild(const std::shared_ptr<TreeGraphNode> &node,
