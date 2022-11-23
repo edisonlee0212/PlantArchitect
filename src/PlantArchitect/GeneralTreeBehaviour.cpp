@@ -999,6 +999,7 @@ struct GraphNode {
     glm::vec3 m_position;
     glm::vec3 m_direction;
     float m_radius;
+    float m_length;
 };
 
 void TreeGraph::Deserialize(const YAML::Node &in) {
@@ -1023,12 +1024,13 @@ void TreeGraph::Deserialize(const YAML::Node &in) {
             index++;
         }
         node.m_radius = inNode["radius"].as<float>();
+        node.m_length = inNode["length"].as<float>();
         id++;
     }
     std::unordered_map<int, std::shared_ptr<TreeGraphNode>> previousNodes;
     m_root = std::make_shared<TreeGraphNode>();
     m_root->m_start = glm::vec3(0, 0, 0);
-    m_root->m_length = 1.0f;
+    m_root->m_length = nodes[0].m_length;
     m_root->m_thickness = nodes[0].m_radius;
     m_root->m_id = 0;
     m_root->m_parentId = -1;
@@ -1047,7 +1049,7 @@ void TreeGraph::Deserialize(const YAML::Node &in) {
                                                  (glm::normalize(parentNode->m_globalRotation) *
                                                   glm::vec3(0, 0, -1));
         newNode->m_thickness = node.m_radius;
-        newNode->m_length = 1.0f;
+        newNode->m_length = node.m_length;
         newNode->m_parentId = parentNodeId;
         newNode->m_position = node.m_position;
         newNode->m_globalRotation = glm::quatLookAt(glm::vec3(node.m_direction.y, node.m_direction.z,
