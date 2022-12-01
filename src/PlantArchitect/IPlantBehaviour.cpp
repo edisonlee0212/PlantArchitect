@@ -579,8 +579,12 @@ void MeshGeneratorSettings::OnInspect() {
         ImGui::Checkbox("Foliage", &m_enableFoliage);
         ImGui::Checkbox("Branch", &m_enableBranch);
         ImGui::Checkbox("Smoothness", &m_smoothness);
-        if (!m_smoothness) {
-            ImGui::DragFloat("Internode length factor", &m_internodeLengthFactor, 0.001f, 0.0f, 1.0f);
+        if (m_smoothness) {
+            ImGui::DragFloat("Base control point ratio", &m_baseControlPointRatio, 0.001f, 0.0f, 1.0f);
+            ImGui::DragFloat("Branch control point ratio", &m_branchControlPointRatio, 0.001f, 0.0f, 1.0f);
+        }
+		else {
+            ImGui::DragFloat("Line length factor", &m_lineLengthFactor, 0.001f, 0.0f, 1.0f);
         }
         ImGui::Checkbox("Override radius", &m_overrideRadius);
         if (m_overrideRadius) ImGui::DragFloat("Radius", &m_radius);
@@ -629,7 +633,9 @@ void MeshGeneratorSettings::Save(const std::string &name, YAML::Emitter &out) {
     out << YAML::Key << "m_smoothness" << YAML::Value << m_smoothness;
     out << YAML::Key << "m_overrideRadius" << YAML::Value << m_overrideRadius;
     out << YAML::Key << "m_boundaryRadius" << YAML::Value << m_radius;
-    out << YAML::Key << "m_internodeLengthFactor" << YAML::Value << m_internodeLengthFactor;
+    out << YAML::Key << "m_baseControlPointRatio" << YAML::Value << m_baseControlPointRatio;
+    out << YAML::Key << "m_branchControlPointRatio" << YAML::Value << m_branchControlPointRatio;
+    out << YAML::Key << "m_lineLengthFactor" << YAML::Value << m_lineLengthFactor;
     out << YAML::Key << "m_overrideVertexColor" << YAML::Value << m_overrideVertexColor;
     out << YAML::Key << "m_markJunctions" << YAML::Value << m_markJunctions;
     out << YAML::Key << "m_junctionUpperRatio" << YAML::Value << m_junctionUpperRatio;
@@ -650,7 +656,9 @@ void MeshGeneratorSettings::Load(const std::string &name, const YAML::Node &in) 
         if (ms["m_smoothness"]) m_smoothness = ms["m_smoothness"].as<bool>();
         if (ms["m_overrideRadius"]) m_overrideRadius = ms["m_overrideRadius"].as<bool>();
         if (ms["m_boundaryRadius"]) m_radius = ms["m_boundaryRadius"].as<float>();
-        if (ms["m_internodeLengthFactor"]) m_internodeLengthFactor = ms["m_internodeLengthFactor"].as<float>();
+        if (ms["m_baseControlPointRatio"]) m_baseControlPointRatio = ms["m_baseControlPointRatio"].as<float>();
+        if (ms["m_branchControlPointRatio"]) m_branchControlPointRatio = ms["m_branchControlPointRatio"].as<float>();
+        if (ms["m_lineLengthFactor"]) m_lineLengthFactor = ms["m_lineLengthFactor"].as<float>();
         if (ms["m_overrideVertexColor"]) m_overrideVertexColor = ms["m_overrideVertexColor"].as<bool>();
         if (ms["m_markJunctions"]) m_markJunctions = ms["m_markJunctions"].as<bool>();
         if (ms["m_junctionUpperRatio"]) m_junctionUpperRatio = ms["m_junctionUpperRatio"].as<float>();
@@ -1068,7 +1076,7 @@ Entity IPlantBehaviour::CreateSubtree(const std::shared_ptr<Scene> &scene, const
         settings.m_smoothness = subtreeSettings.m_lineSmoothness;
         settings.m_overrideRadius = true;
         settings.m_radius = subtreeSettings.m_lineRadius;
-        settings.m_internodeLengthFactor = subtreeSettings.m_lineLengthFactor;
+        settings.m_lineLengthFactor = subtreeSettings.m_lineLengthFactor;
         settings.m_overrideVertexColor = true;
         settings.m_branchVertexColor = glm::vec3(subtreeSettings.m_lineColor);
         std::vector<Entity> subtreeInternodes;
@@ -1235,7 +1243,7 @@ void IPlantBehaviour::PrepareBranchRings(const std::shared_ptr<Scene> &scene, co
                                glm::vec3 directionEnd = directionStart;
                                glm::vec3 positionStart = relativeGlobalTransform.GetPosition();
                                glm::vec3 positionEnd = positionStart +
-                                                       internodeInfo.m_length * settings.m_internodeLengthFactor *
+                                                       internodeInfo.m_length *
                                                        directionStart;
                                float thicknessStart = internodeInfo.m_thickness;
                                float thicknessEnd = internodeInfo.m_thickness;
@@ -1276,9 +1284,9 @@ void IPlantBehaviour::PrepareBranchRings(const std::shared_ptr<Scene> &scene, co
                                BezierCurve curve = BezierCurve(
                                        positionStart,
                                        positionStart +
-                                       (settings.m_smoothness ? internodeInfo.m_length / 3.0f : 0.0f) * directionStart,
+                                       (settings.m_smoothness ? internodeInfo.m_length * settings.m_baseControlPointRatio : 0.0f) * directionStart,
                                        positionEnd -
-                                       (settings.m_smoothness ? internodeInfo.m_length / 3.0f : 0.0f) * directionEnd,
+                                       (settings.m_smoothness ? internodeInfo.m_length * settings.m_branchControlPointRatio : 0.0f) * directionEnd,
                                        positionEnd);
                                float posStep = 1.0f / static_cast<float>(amount);
                                glm::vec3 dirStep = (directionEnd - directionStart) / static_cast<float>(amount);

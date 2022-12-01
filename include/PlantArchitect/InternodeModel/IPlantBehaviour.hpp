@@ -27,8 +27,10 @@ namespace PlantArchitect {
         glm::vec3 m_branchVertexColor = glm::vec3(1.0f);
         glm::vec3 m_foliageVertexColor = glm::vec3(1.0f);
 
+        float m_baseControlPointRatio = 0.6f;
+        float m_branchControlPointRatio = 0.1f;
+        float m_lineLengthFactor = 1.0f;
         bool m_smoothness = true;
-        float m_internodeLengthFactor = 1.0f;
         void OnInspect();
 
         void Save(const std::string &name, YAML::Emitter &out);
