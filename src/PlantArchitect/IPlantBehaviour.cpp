@@ -435,15 +435,12 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
                 if (markJunction) {
                     archetype.m_color = glm::normalize(internode->m_rings.at(0).m_startAxis);
                     if (!isOnlyChild) {
-                        archetype.m_color *= scene->GetParent(internodeEntity).GetIndex();
-                    } else {
-                        archetype.m_color *= 0.3f;
+                        archetype.m_color *= scene->GetParent(internodeEntity).GetIndex() + 1;
                     }
                 } else if (settings.m_overrideVertexColor || settings.m_markJunctions) {
                     archetype.m_color = settings.m_branchVertexColor;
                     if(settings.m_markJunctions){
                         archetype.m_color = glm::normalize(internode->m_rings.at(0).m_startAxis);
-                        archetype.m_color *= 0.3f;
                     }
                 }
                 else archetype.m_color = branchColor.m_value;
@@ -532,15 +529,14 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene> &s
                     if (markJunction) {
                         archetype.m_color = glm::normalize(internode->m_rings.at(ringIndex).m_endAxis);
                         if (ratio <= settings.m_junctionLowerRatio && !isOnlyChild) {
-                            archetype.m_color *= scene->GetParent(internodeEntity).GetIndex();
+                            archetype.m_color *= scene->GetParent(internodeEntity).GetIndex() + 1;
                         }else if (ratio >= (1.0f - settings.m_junctionUpperRatio) && hasMultipleChild) {
-                            archetype.m_color *= internodeEntity.GetIndex();
+                            archetype.m_color *= internodeEntity.GetIndex() + 1;
                         }
                     } else if (settings.m_overrideVertexColor || settings.m_markJunctions) {
                         archetype.m_color = settings.m_branchVertexColor;
                         if(settings.m_markJunctions){
                             archetype.m_color = glm::normalize(internode->m_rings.at(ringIndex).m_endAxis);
-                            archetype.m_color *= 0.3f;
                         }
                     }
                     else archetype.m_color = branchColor.m_value;

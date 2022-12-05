@@ -1213,7 +1213,8 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound &plantBound, Aut
         }
         if (m_pointCloudPointSettings.m_junction) {
             junction.emplace_back(glm::normalize(sample.m_albedo));
-            junctionIndex.emplace_back((int)glm::round(glm::length(sample.m_albedo)));
+            junctionIndex.emplace_back((int)(glm::length(sample.m_albedo) + 0.1f));
+            if (junctionIndex.back() == 1) junctionIndex.back() = 0;
         }
     }
     std::filebuf fb_binary;
@@ -1288,7 +1289,7 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline &pipelin
             if (childrenSize > 1) {
                 bool add = true;
                 Junction junction;
-                junction.m_junctionIndex = internode.GetIndex();
+                junction.m_junctionIndex = internode.GetIndex() + 1;
                 auto rootTransform = scene->GetDataComponent<GlobalTransform>(internode);
                 junction.m_root.m_direction = glm::normalize(rootTransform.GetRotation() * glm::vec3(0, 0, -1));
                 junction.m_root.m_position = rootTransform.GetPosition() + junction.m_root.m_direction * rootInfo.m_length;
