@@ -49,6 +49,7 @@ int main() {
 
 #pragma region Engine Loop
     Application::Start();
+    
 #pragma endregion
     Application::End();
 }
@@ -76,6 +77,6 @@ void EngineSetup() {
         }
 #pragma endregion
 #pragma endregion
-
+        
     });
 }

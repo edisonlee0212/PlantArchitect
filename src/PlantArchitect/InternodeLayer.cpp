@@ -29,6 +29,13 @@ void InternodeLayer::PreparePhysics(const Entity &entity, const Entity &child,
                                     const BranchPhysicsParameters &branchPhysicsParameters) {
     auto scene = GetScene();
     auto childBranchInfo = scene->GetDataComponent<InternodeBranchInfo>(child);
+    if(!scene->HasPrivateComponent<RigidBody>(entity))
+    {
+        scene->RemovePrivateComponent<RigidBody>(child);
+        scene->RemovePrivateComponent<Joint>(child);
+	    return;
+    }
+    if(childBranchInfo.m_thickness < branchPhysicsParameters.m_minimumThickness) return;
     auto rigidBody = scene->GetOrSetPrivateComponent<RigidBody>(child).lock();
     rigidBody->SetEnableGravity(false);
     rigidBody->SetDensityAndMassCenter(branchPhysicsParameters.m_density *
@@ -103,6 +110,7 @@ void InternodeLayer::PreparePhysics() {
     auto scene = GetScene();
     for (auto &behaviour: m_plantBehaviours) {
         if (behaviour) {
+            behaviour->GenerateSkinnedMeshes(scene, m_meshGeneratorSettings, false);
             std::vector<Entity> roots;
             scene->GetEntityArray(behaviour->m_rootsQuery, roots);
             for (const auto &root: roots) {
@@ -205,11 +213,10 @@ void InternodeLayer::OnInspect() {
 
         if (ImGui::TreeNodeEx("Plant Behaviour", ImGuiTreeNodeFlags_DefaultOpen)) {
             if (ImGui::TreeNodeEx("Meshes", ImGuiTreeNodeFlags_DefaultOpen)) {
-                static MeshGeneratorSettings settings;
-                settings.OnInspect();
+                m_meshGeneratorSettings.OnInspect();
                 if (ImGui::Button("Generate mesh for all trees")) {
                     for (const auto &behaviour: m_plantBehaviours) {
-                        behaviour->GenerateSkinnedMeshes(scene, settings);
+                        behaviour->GenerateSkinnedMeshes(scene, m_meshGeneratorSettings);
                     }
                 }
                 if (ImGui::TreeNodeEx("Subtree", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -739,6 +746,7 @@ void InternodeLayer::OnCreate() {
 
 void InternodeLayer::LateUpdate() {
     UpdateInternodeCamera();
+    Application::GetActiveScene()->GetOrCreateSystem<PhysicsSystem>(SystemGroup::SimulationSystemGroup);
 }
 
 void InternodeLayer::UpdateInternodeColors() {
@@ -1579,6 +1587,7 @@ void BranchPhysicsParameters::Serialize(YAML::Emitter &out) {
     out << YAML::Key << "m_jointDriveDampingFactor" << YAML::Value << m_jointDriveDampingFactor;
     out << YAML::Key << "m_jointDriveDampingThicknessFactor" << YAML::Value << m_jointDriveDampingThicknessFactor;
     out << YAML::Key << "m_enableAccelerationForDrive" << YAML::Value << m_enableAccelerationForDrive;
+    out << YAML::Key << "m_minimumThickness" << YAML::Value << m_minimumThickness;
 }
 
 void BranchPhysicsParameters::Deserialize(const YAML::Node &in) {
@@ -1592,6 +1601,7 @@ void BranchPhysicsParameters::Deserialize(const YAML::Node &in) {
     if (in["m_jointDriveDampingFactor"]) m_jointDriveDampingFactor = in["m_jointDriveDampingFactor"].as<float>();
     if (in["m_jointDriveDampingThicknessFactor"]) m_jointDriveDampingThicknessFactor = in["m_jointDriveDampingThicknessFactor"].as<float>();
     if (in["m_enableAccelerationForDrive"]) m_enableAccelerationForDrive = in["m_enableAccelerationForDrive"].as<bool>();
+    if (in["m_minimumThickness"]) m_minimumThickness = in["m_minimumThickness"].as<float>();
 }
 
 void BranchPhysicsParameters::OnInspect() {
@@ -1613,6 +1623,8 @@ void BranchPhysicsParameters::OnInspect() {
         if (ImGui::DragInt("Position solver iteration", &pi, 1, 1, 100)) {
             m_positionSolverIteration = pi;
         }
+
+        ImGui::DragFloat("Minimum thickness", &m_minimumThickness, 0.001f, 0.001f, 100.0f);
         ImGui::TreePop();
     }
 }

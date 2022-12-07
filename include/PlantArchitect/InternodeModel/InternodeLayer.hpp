@@ -6,14 +6,15 @@
 #include "DataComponents.hpp"
 #include "ILayer.hpp"
 #include "FBM.hpp"
+#include "IPlantBehaviour.hpp"
 
 using namespace UniEngine;
 namespace PlantArchitect {
     struct PLANT_ARCHITECT_API BranchPhysicsParameters {
 #pragma region Physics
         float m_density = 1.0f;
-        float m_linearDamping = 4.0f;
-        float m_angularDamping = 4.0f;
+        float m_linearDamping = 8.0f;
+        float m_angularDamping = 8.0f;
         int m_positionSolverIteration = 8;
         int m_velocitySolverIteration = 8;
         float m_jointDriveStiffnessFactor = 3000.0f;
@@ -21,8 +22,8 @@ namespace PlantArchitect {
         float m_jointDriveDampingFactor = 10.0f;
         float m_jointDriveDampingThicknessFactor = 4.0f;
         bool m_enableAccelerationForDrive = true;
+        float m_minimumThickness = 0.1f;
 #pragma endregion
-
         void Serialize(YAML::Emitter &out);
 
         void Deserialize(const YAML::Node &in);
@@ -110,6 +111,8 @@ namespace PlantArchitect {
         void UpdateInternodePointer(const float &length,
                                     const float &width = 0.01f);
 
+        
+        MeshGeneratorSettings m_meshGeneratorSettings;
     private:
         VoxelSpace m_voxelSpace;
 

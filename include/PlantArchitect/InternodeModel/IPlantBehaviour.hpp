@@ -31,7 +31,8 @@ namespace PlantArchitect {
         float m_branchControlPointRatio = 0.6f;
         float m_lineLengthFactor = 1.0f;
         bool m_smoothness = true;
-        void OnInspect();
+
+        void OnInspect ();
 
         void Save(const std::string &name, YAML::Emitter &out);
 
@@ -205,7 +206,7 @@ namespace PlantArchitect {
          * @param entities
          */
         void
-        GenerateSkinnedMeshes(const std::shared_ptr<Scene> &scene, const MeshGeneratorSettings &settings);
+        GenerateSkinnedMeshes(const std::shared_ptr<Scene> &scene, const MeshGeneratorSettings &settings, bool freezeRagDoll = true);
 
 
         /**
