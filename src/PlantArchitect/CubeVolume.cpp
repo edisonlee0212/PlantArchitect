@@ -22,7 +22,7 @@ void CubeVolume::OnInspect() {
     if (m_displayBounds) {
         const auto globalTransform = GetScene()->GetDataComponent<GlobalTransform>(GetOwner());
         Gizmos::DrawGizmoMesh(
-                DefaultResources::Primitives::Cube, glm::vec4(0, 1, 0, 0.2),
+                DefaultResources::Primitives::Cube, glm::vec4(0, 1, 0, 1.0f),
                 globalTransform.m_value * glm::translate(m_minMaxBound.Center()) *
                 glm::scale(m_minMaxBound.Size()),
                 1);

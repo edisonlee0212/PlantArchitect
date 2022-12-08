@@ -7,7 +7,7 @@
 #include "GeneralTreeBehaviour.hpp"
 #include "LSystemBehaviour.hpp"
 #include "SpaceColonizationBehaviour.hpp"
-
+#include "TreeGraph.hpp"
 using namespace Scripts;
 
 std::shared_ptr<IPlantBehaviour> AutoTreeGenerationPipeline::GetBehaviour() {

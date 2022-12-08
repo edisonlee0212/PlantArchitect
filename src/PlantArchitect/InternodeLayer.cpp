@@ -23,6 +23,8 @@
 #include "SphereVolume.hpp"
 #include "CylinderVolume.hpp"
 #include "MeshVolume.hpp"
+#include "PointCloudVolume.hpp"
+#include "TreeGraph.hpp"
 using namespace PlantArchitect;
 
 void InternodeLayer::PreparePhysics(const Entity &entity, const Entity &child,
@@ -614,6 +616,7 @@ void InternodeLayer::OnCreate() {
     ClassRegistry::RegisterPrivateComponent<SphereVolume>("SphereVolume");
     ClassRegistry::RegisterPrivateComponent<CylinderVolume>("CylinderVolume");
     ClassRegistry::RegisterPrivateComponent<MeshVolume>("MeshVolume");
+    ClassRegistry::RegisterPrivateComponent<PointCloudVolume>("PointCloudVolume");
     ClassRegistry::RegisterPrivateComponent<RadialBoundingVolume>("RadialBoundingVolume");
 
 
