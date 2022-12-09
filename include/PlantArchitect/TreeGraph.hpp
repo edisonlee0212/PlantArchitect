@@ -23,10 +23,13 @@ namespace PlantArchitect {
     };
 
     class PLANT_ARCHITECT_API TreeGraph : public IPlantDescriptor {
-        void InstantiateChildren(const std::shared_ptr<Scene>& scene, const std::shared_ptr<IPlantBehaviour>& behaviour, const Entity& parent, const std::shared_ptr<TreeGraphNode>& node) const;
+        void InstantiateChildren(const std::shared_ptr<Scene>& scene, const std::shared_ptr<IPlantBehaviour>& behaviour, const Entity& parent, const std::shared_ptr<TreeGraphNode>& node, float currentLength) const;
 
         void CollectChild(const std::shared_ptr<TreeGraphNode>& node, std::vector<std::vector<std::shared_ptr<TreeGraphNode>>>& graphNodes, int currentLayer) const;
     public:
+        bool m_enableInstantiateLengthLimit = false;
+        float m_instantiateLengthLimit = 8.0f;
+
         std::shared_ptr<TreeGraphNode> m_root;
         std::string m_name;
         int m_layerSize;

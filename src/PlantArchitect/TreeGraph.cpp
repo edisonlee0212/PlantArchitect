@@ -83,7 +83,7 @@ Entity TreeGraph::InstantiateTree() {
     scene->SetDataComponent(rootInternode, rootGlobalTransform);
     scene->SetDataComponent(rootInternode, rootInternodeInfo);
 
-    InstantiateChildren(scene, behaviour, rootInternode, m_root);
+    InstantiateChildren(scene, behaviour, rootInternode, m_root, rootInternodeInfo.m_length);
 
     scene->ForEach<GlobalTransform, Transform, InternodeInfo, InternodeStatus>
         (Jobs::Workers(), behaviour->m_internodesQuery,
@@ -119,10 +119,12 @@ void TreeGraph::CollectAssetRef(std::vector<AssetRef>& list)
 
 void TreeGraph::InstantiateChildren(const std::shared_ptr<Scene>& scene,
                                     const std::shared_ptr<IPlantBehaviour>& behaviour, const Entity& parent,
-                                    const std::shared_ptr<TreeGraphNode>& node) const {
-    for (const auto& childNode : node->m_children) {
+                                    const std::shared_ptr<TreeGraphNode>& node, float currentLength) const {
+    bool childExist = false;
+    int childCount = 0;
+	for (const auto& childNode : node->m_children) {
         auto child = behaviour->CreateInternode(scene, parent);
-        scene->GetOrSetPrivateComponent<Internode>(child).lock()->m_fromApicalBud = childNode->m_fromApicalBud;
+        scene->GetOrSetPrivateComponent<Internode>(child).lock()->m_fromApicalBud = !childExist;
         InternodeInfo internodeInfo;
         internodeInfo.m_thickness = childNode->m_thickness;
         internodeInfo.m_length = childNode->m_length;
@@ -131,7 +133,24 @@ void TreeGraph::InstantiateChildren(const std::shared_ptr<Scene>& scene,
         globalTransform.SetPosition(childNode->m_start);
         scene->SetDataComponent(child, globalTransform);
         scene->SetDataComponent(child, internodeInfo);
-        InstantiateChildren(scene, behaviour, child, childNode);
+
+        if(scene->HasDataComponent<InternodeStatus>(child))
+        {
+            InternodeStatus status;
+            status.m_branchingOrder = childCount;
+            status.m_desiredLocalRotation = glm::inverse(scene->GetDataComponent<GlobalTransform>(parent).GetRotation()) * childNode->m_globalRotation;
+            status.m_branchLength = childNode->m_length;
+            scene->SetDataComponent(child, status);
+        }
+
+        if (!m_enableInstantiateLengthLimit || currentLength + internodeInfo.m_length < m_instantiateLengthLimit) {
+            InstantiateChildren(scene, behaviour, child, childNode, currentLength + internodeInfo.m_length);
+        }
+        childExist = true;
+    }
+    if(childExist)
+    {
+        scene->GetOrSetPrivateComponent<Internode>(parent).lock()->m_apicalBud.m_status = BudStatus::Died;
     }
 }
 
@@ -267,7 +286,10 @@ void TreeGraph::Deserialize(const YAML::Node& in) {
 
 void TreeGraph::OnInspect()
 {
+    ImGui::Checkbox("Length limit", &m_enableInstantiateLengthLimit);
+    ImGui::DragFloat("Length limit", &m_instantiateLengthLimit, 0.1f);
 	IPlantDescriptor::OnInspect();
+
     Editor::DragAndDropButton(m_plantDescriptor, "Parameters",
         { "GeneralTreeParameters", "SpaceColonizationParameters"}, true);
 }

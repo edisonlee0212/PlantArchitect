@@ -1353,6 +1353,19 @@ void InternodeLayer::ObstacleRemoval() {
                 }
             }
         }
+    auto* rbvObstaclesEntities = scene->UnsafeGetPrivateComponentOwnersList<RadialBoundingVolume>();
+    if (rbvObstaclesEntities)
+        for (const auto& i : *rbvObstaclesEntities) {
+            if (scene->IsEntityEnabled(i) && scene->HasPrivateComponent<RadialBoundingVolume>(i)) {
+                auto volume = std::dynamic_pointer_cast<IVolume>(scene->GetOrSetPrivateComponent<RadialBoundingVolume>(i).lock());
+                if (volume->IsEnabled()) {
+                    if (volume->m_asObstacle)
+                        obstacleVolumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
+                    else
+                        volumes.emplace_back(scene->GetDataComponent<GlobalTransform>(i), volume);
+                }
+            }
+        }
     if(volumes.empty() && obstacleVolumes.empty()) return;
     std::vector<Entity> internodes;
     std::vector<glm::vec3> positions;

@@ -4,6 +4,7 @@
 #include "InternodeModel/Internode.hpp"
 #include "Graphics.hpp"
 #include "DefaultResources.hpp"
+#include "PointCloud.hpp"
 
 using namespace PlantArchitect;
 using namespace UniEngine;
@@ -425,6 +426,41 @@ void RadialBoundingVolume::CalculateVolume() {
     CalculateSizes();
 }
 
+void RadialBoundingVolume::CalculateVolume(const std::vector<glm::vec3>& points)
+{
+    ResizeVolumes();
+    m_maxHeight = 0;
+    m_maxRadius = 0;
+    auto scene = GetScene();
+    for (const auto& point : points) {
+        if (point.y > m_maxHeight)
+            m_maxHeight = point.y;
+        const float radius = glm::length(glm::vec2(point.x, point.z));
+        if (radius > m_maxRadius)
+            m_maxRadius = radius;
+    }
+
+    auto positionIndex = 0;
+    for (const auto& point : points) {
+        const auto sliceIndex = SelectSlice(point);
+        const float currentDistance =
+            glm::length(glm::vec2(point.x, point.z));
+        if (currentDistance <= 0.2f) {
+            for (auto& slice : m_layers[sliceIndex.x]) {
+                if (slice.m_maxDistance <
+                    currentDistance + 0.2f)
+                    slice.m_maxDistance = currentDistance + 0.2f;
+            }
+        }
+        else if (m_layers[sliceIndex.x][sliceIndex.y].m_maxDistance <
+            currentDistance)
+            m_layers[sliceIndex.x][sliceIndex.y].m_maxDistance = currentDistance + 0.2f;
+        positionIndex++;
+    }
+    GenerateMesh();
+    CalculateSizes();
+}
+
 void RadialBoundingVolume::CalculateVolume(float maxHeight) {
     auto owner = GetOwner();
     ResizeVolumes();
@@ -559,6 +595,25 @@ void RadialBoundingVolume::OnInspect() {
                         [this](const std::filesystem::path &path) {
                             ExportAsObj(path.string());
                         });
+
+    static AssetRef pointCloud;
+    if (Editor::DragAndDropButton(pointCloud, "Import from Point Cloud",
+        { "PointCloud" }, true))
+    {
+        if (auto pc = pointCloud.Get<PointCloud>())
+        {
+            std::vector<glm::vec3> points;
+            points.resize(pc->m_points.size());
+            for (int i = 0; i < pc->m_points.size(); i++)
+            {
+                auto point = pc->m_points[i] + pc->m_offset;
+                points[i] = glm::vec3(point.z, point.x, point.y);
+            }
+            CalculateVolume(points);
+            pointCloud.Clear();
+        }
+    }
+
     if (!displayLayer && m_displayBounds && m_meshGenerated) {
         for (auto &i: m_boundMeshes) {
             Gizmos::DrawGizmoMesh(

@@ -44,6 +44,7 @@ namespace PlantArchitect {
         std::vector<std::pair<float, std::vector<float>>> m_sizes;
         float m_totalSize = 0;
         void CalculateVolume();
+        void CalculateVolume(const std::vector<glm::vec3>& points);
         PrivateComponentRef m_rootInternode;
         void CalculateVolume(float maxHeight);
 
