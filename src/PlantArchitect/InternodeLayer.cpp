@@ -177,8 +177,16 @@ void InternodeLayer::OnInspect() {
     if (ImGui::Begin("Internode Manager")) {
         static int iterations = 1;
         ImGui::DragInt("Iterations", &iterations);
+        static bool autoGenMeshes = false;
+        ImGui::Checkbox("Auto gen meshes", &autoGenMeshes);
+
         if (ImGui::Button("Simulate")) {
             Simulate(iterations);
+            if (autoGenMeshes) {
+                for (const auto& behaviour : m_plantBehaviours) {
+                    behaviour->GenerateSkinnedMeshes(scene, m_meshGeneratorSettings);
+                }
+            }
         }
         if (ImGui::Button("Prepare physics")) PreparePhysics();
         if (ImGui::TreeNode("Physics")) {
