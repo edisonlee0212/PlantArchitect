@@ -640,43 +640,46 @@ void TreeDataCapturePipeline::ExportGraph(AutoTreeGenerationPipeline& pipeline,
 		directory.remove_filename();
 		std::filesystem::create_directories(directory);
 		YAML::Emitter out;
-		out << YAML::BeginMap;
+		
 		std::vector<std::vector<std::pair<int, Entity>>> internodes;
 		internodes.resize(128);
-		internodes[0].emplace_back(-1, pipeline.m_currentGrowingTrees[treeIndex]);
-		scene->ForEachChild(pipeline.m_currentGrowingTrees[treeIndex], [&](Entity child) {
-			if (!behaviour->InternodeCheck(scene, child)) return;
-		behaviour->InternodeGraphWalkerRootToEnd(scene, child,
-			[&](Entity parent, Entity child) {
-				auto childInternodeInfo = scene->GetDataComponent<InternodeInfo>(
-					child);
-		internodes[childInternodeInfo.m_layer].emplace_back(
-			parent.GetIndex(),
+		scene->ForEachChild(pipeline.m_currentGrowingTrees[treeIndex], [&](Entity root) {
+			if (!behaviour->InternodeCheck(scene, root)) return;
+			internodes[0].emplace_back(-1, root);
+			behaviour->InternodeGraphWalkerRootToEnd(scene, root,
+				[&](Entity parent, Entity child) {
+					auto childInternodeInfo = scene->GetDataComponent<InternodeInfo>(
+						child);
+			internodes[childInternodeInfo.m_layer].emplace_back(
+				parent.GetIndex(),
 			child);
 			});
 			});
-
-		out << YAML::Key << "Layers" << YAML::Value << YAML::BeginSeq;
-		int layerIndex = 0;
-		for (const auto& layer : internodes) {
-			if (layer.empty()) break;
-			out << YAML::BeginMap;
-			out << YAML::Key << "Layer Index" << YAML::Value << layerIndex;
-			out << YAML::Key << "Nodes" << YAML::Value << YAML::BeginSeq;
-			for (const auto& instance : layer) {
-				ExportGraphNode(pipeline, behaviour, out, instance.first, instance.second);
+		out << YAML::BeginMap;
+		{
+			out << YAML::Key << "Layers" << YAML::Value << YAML::BeginSeq;
+			{
+				int layerIndex = 0;
+				for (const auto& layer : internodes) {
+					if (layer.empty()) break;
+					out << YAML::BeginMap;
+					out << YAML::Key << "Layer Index" << YAML::Value << layerIndex;
+					out << YAML::Key << "Nodes" << YAML::Value << YAML::BeginSeq;
+					for (const auto& instance : layer) {
+						ExportGraphNode(pipeline, behaviour, out, instance.first, instance.second);
+					}
+					out << YAML::EndSeq;
+					out << YAML::EndMap;
+					layerIndex++;
+				}
 			}
 			out << YAML::EndSeq;
-			out << YAML::EndMap;
-			layerIndex++;
 		}
-
-
-		out << YAML::EndSeq;
 		out << YAML::EndMap;
 		std::ofstream fout(path.string());
 		fout << out.c_str();
 		fout.flush();
+		fout.close();
 	}
 	catch (std::exception e) {
 		UNIENGINE_ERROR("Failed to save!");
@@ -734,7 +737,6 @@ void TreeDataCapturePipeline::ExportGraphNode(AutoTreeGenerationPipeline& pipeli
 	//out << YAML::Key << "Internode Index" << YAML::Value << internodeInfo.m_index;
 	out << YAML::Key << "Internode Layer" << YAML::Value << internodeInfo.m_layer;
 	out << YAML::EndMap;
-	out << YAML::EndMap;
 }
 
 void TreeDataCapturePipeline::ExportMatrices(const std::filesystem::path& path) {
@@ -768,10 +770,10 @@ TreeDataCapturePipeline::ExportCSV(AutoTreeGenerationPipeline& pipeline,
 		std::string output;
 		std::vector<std::vector<std::pair<int, Entity>>> internodes;
 		internodes.resize(128);
-		scene->ForEachChild(pipeline.m_currentGrowingTrees[treeIndex], [&](Entity child) {
-			if (!behaviour->InternodeCheck(scene, child)) return;
-		internodes[0].emplace_back(-1, child);
-		behaviour->InternodeGraphWalkerRootToEnd(scene, child,
+		scene->ForEachChild(pipeline.m_currentGrowingTrees[treeIndex], [&](Entity root) {
+			if (!behaviour->InternodeCheck(scene, root)) return;
+		internodes[0].emplace_back(-1, root);
+		behaviour->InternodeGraphWalkerRootToEnd(scene, root,
 			[&](Entity parent, Entity child) {
 				auto childInternodeInfo = scene->GetDataComponent<InternodeInfo>(
 					child);
@@ -930,9 +932,9 @@ void TreeDataCapturePipeline::OnStart(AutoTreeGenerationPipeline& pipeline) {
 
 	}
 
-	if(m_enableMultipleTrees)
+	if (m_enableMultipleTrees)
 	{
-		for(const auto& position : m_treePositions)
+		for (const auto& position : m_treePositions)
 		{
 			Transform t;
 			t.SetPosition(position);

@@ -156,8 +156,6 @@ namespace PlantArchitect {
         std::vector<glm::vec3> m_randomColors;
         glm::vec4 m_pointerColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.5f);
 
-        std::vector<Entity> m_entitiesWithRenderer;
-        OpenGLUtils::GLVBO m_internodeColorBuffer;
 
         glm::vec4 m_childCountColors[4] = {glm::vec4(1, 1, 1, 0.5), glm::vec4(0, 0, 1, 1), glm::vec4(0, 1, 0, 1),
                                            glm::vec4(1, 0, 0, 1)};
