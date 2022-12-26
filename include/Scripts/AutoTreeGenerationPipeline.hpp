@@ -30,7 +30,7 @@ namespace Scripts {
     public:
         int m_startIndex = 1;
         std::string m_prefix;
-        Entity m_currentGrowingTree;
+        std::vector<Entity> m_currentGrowingTrees;
         BehaviourType m_behaviourType = BehaviourType::GeneralTree;
         AssetRef m_currentUsingDescriptor;
         bool m_busy = false;
@@ -38,7 +38,7 @@ namespace Scripts {
         int m_generationAmount = 1;
         int m_iterations = 0;
         void UpdateInternodeBehaviour();
-
+        std::vector<Transform> m_transforms;
         DescriptorPath m_currentDescriptorPath;
 
         std::vector<DescriptorPath> m_descriptorPaths;

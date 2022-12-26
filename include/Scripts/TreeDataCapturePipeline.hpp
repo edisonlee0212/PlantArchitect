@@ -31,10 +31,10 @@ namespace Scripts {
                              YAML::Emitter &out, int parentIndex, const Entity &internode);
 
         void ExportGraph(AutoTreeGenerationPipeline &pipeline, const std::shared_ptr<IPlantBehaviour> &behaviour,
-                         const std::filesystem::path &path);
+                         const std::filesystem::path &path, int treeIndex);
 
         void ExportCSV(AutoTreeGenerationPipeline &pipeline, const std::shared_ptr<IPlantBehaviour> &behaviour,
-                       const std::filesystem::path &path);
+                       const std::filesystem::path &path, int treeIndex);
 
         void ExportEnvironmentalGrid(AutoTreeGenerationPipeline &pipeline,
                                      const std::filesystem::path &path);
@@ -45,6 +45,9 @@ namespace Scripts {
         std::vector<std::pair<std::string, std::string>> m_treeIOPairs;
 
     public:
+        bool m_enableMultipleTrees = false;
+        std::vector<glm::vec3> m_treePositions;
+
         AssetRef m_obstacleGrid;
         EntityRef m_volumeEntity;
         std::filesystem::path m_currentExportFolder;
