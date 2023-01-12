@@ -465,12 +465,12 @@ void Strand::BuildStrands(std::vector<int> &strands, std::vector<StrandPoint> &p
         point.m_position = startPosition + distance * startDirection;
         point.m_thickness = glm::mix(startThickness, endThickness, 0.25f);
         point.m_color = glm::mix(startColor, endColor, 0.25f);
-        points.emplace_back(point);
+        //points.emplace_back(point);
 
         point.m_position = endPosition - distance * endDirection;
         point.m_thickness = glm::mix(startThickness, endThickness, 0.75f);
         point.m_color = glm::mix(startColor, endColor, 0.75f);
-        points.emplace_back(point);
+        //points.emplace_back(point);
 
         point.m_position = endPosition;
         point.m_thickness = endThickness;

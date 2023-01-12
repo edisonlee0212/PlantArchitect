@@ -1271,6 +1271,8 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound& plantBound, Aut
 	std::vector<glm::vec3> colors;
 	std::vector<glm::vec3> junction;
 	std::vector<int> junctionIndex;
+	std::vector<glm::vec3> ishape;
+	std::vector<int> ishapeIndex;
 	std::vector<int> pointTypes;
 	std::vector<Handle> branchMeshRendererHandles, foliageMeshRendererHandles, groundMeshRendererHandles;
 	Handle groundMeshRendererHandle;
@@ -1382,6 +1384,12 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound& plantBound, Aut
 	// Write a binary file
 	cube_file.write(outstream_binary, true);
 }
+
+struct IShapeUnitInfo
+{
+	
+};
+
 struct JunctionUnitInfo {
 	glm::vec3 m_position;
 	glm::vec3 m_direction;
@@ -1393,7 +1401,12 @@ struct Junction {
 	glm::vec3 m_startPos;
 	std::vector<JunctionUnitInfo> m_children;
 };
-
+struct IShape {
+	int m_iShapeIndex;
+	JunctionUnitInfo m_root;
+	glm::vec3 m_startPos;
+	std::vector<JunctionUnitInfo> m_children;
+};
 void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipeline,
 	const std::shared_ptr<IPlantBehaviour>& behaviour,
 	const std::filesystem::path& path) {

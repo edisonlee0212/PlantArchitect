@@ -449,11 +449,16 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene>& s
 					if (!isOnlyChild) {
 						archetype.m_color *= scene->GetParent(internodeEntity).GetIndex() + 1;
 					}
+					else
+					{
+						archetype.m_color *= branchEntity.GetIndex() + 1;
+					}
 				}
 				else if (settings.m_overrideVertexColor || settings.m_markJunctions) {
 					archetype.m_color = glm::vec4(settings.m_branchVertexColor, 1.0f);
 					if (settings.m_markJunctions) {
 						archetype.m_color = glm::vec4(glm::normalize(internode->m_rings.at(0).m_startAxis), 1.0f);
+						archetype.m_color *= branchEntity.GetIndex() + 1;
 					}
 				}
 				else archetype.m_color = branchColor.m_value;
@@ -547,12 +552,16 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene>& s
 						}
 						else if (ratio >= (1.0f - settings.m_junctionUpperRatio) && hasMultipleChild) {
 							archetype.m_color *= internodeEntity.GetIndex() + 1;
+						}else
+						{
+							archetype.m_color *= branchEntity.GetIndex() + 1;
 						}
 					}
 					else if (settings.m_overrideVertexColor || settings.m_markJunctions) {
 						archetype.m_color = glm::vec4(settings.m_branchVertexColor, 1.0f);
 						if (settings.m_markJunctions) {
 							archetype.m_color = glm::vec4(glm::normalize(internode->m_rings.at(ringIndex).m_endAxis), 1.0f);
+							archetype.m_color *= branchEntity.GetIndex() + 1;
 						}
 					}
 					else archetype.m_color = branchColor.m_value;
