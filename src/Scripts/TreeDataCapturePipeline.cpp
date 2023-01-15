@@ -10,6 +10,7 @@
 #include "CubeVolume.hpp"
 #include "Prefab.hpp"
 #include <Tinyply.hpp>
+#include <unordered_set>
 
 #ifdef RAYTRACERFACILITY
 
@@ -452,12 +453,10 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline& pipeline
 		}
 		ScanPointCloudLabeled(combinedBound, pipeline,
 			pointCloudFolder / (pipeline.m_prefix + ".ply"));
-		for (int treeIndex = 0; treeIndex < rootInternodes.size(); treeIndex++)
-		{
-			if (m_pointCloudPointSettings.m_junction) {
-				std::filesystem::create_directories(junctionFolder);
-				ExportJunction(pipeline, behaviour, junctionFolder / (pipeline.m_prefix + "[" + std::to_string(treeIndex) + "]" + ".txt"));
-			}
+
+		if (m_pointCloudPointSettings.m_junction) {
+			std::filesystem::create_directories(junctionFolder);
+			ExportJunction(pipeline, behaviour, junctionFolder / (pipeline.m_prefix + ".txt"));
 		}
 	}
 
@@ -640,18 +639,18 @@ void TreeDataCapturePipeline::ExportGraph(AutoTreeGenerationPipeline& pipeline,
 		directory.remove_filename();
 		std::filesystem::create_directories(directory);
 		YAML::Emitter out;
-		
+
 		std::vector<std::vector<std::pair<int, Entity>>> internodes;
 		internodes.resize(128);
 		scene->ForEachChild(pipeline.m_currentGrowingTrees[treeIndex], [&](Entity root) {
 			if (!behaviour->InternodeCheck(scene, root)) return;
-			internodes[0].emplace_back(-1, root);
-			behaviour->InternodeGraphWalkerRootToEnd(scene, root,
-				[&](Entity parent, Entity child) {
-					auto childInternodeInfo = scene->GetDataComponent<InternodeInfo>(
-						child);
-			internodes[childInternodeInfo.m_layer].emplace_back(
-				parent.GetIndex(),
+		internodes[0].emplace_back(-1, root);
+		behaviour->InternodeGraphWalkerRootToEnd(scene, root,
+			[&](Entity parent, Entity child) {
+				auto childInternodeInfo = scene->GetDataComponent<InternodeInfo>(
+					child);
+		internodes[childInternodeInfo.m_layer].emplace_back(
+			parent.GetIndex(),
 			child);
 			});
 			});
@@ -1387,7 +1386,7 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound& plantBound, Aut
 
 struct IShapeUnitInfo
 {
-	
+
 };
 
 struct JunctionUnitInfo {
@@ -1403,9 +1402,9 @@ struct Junction {
 };
 struct IShape {
 	int m_iShapeIndex;
-	JunctionUnitInfo m_root;
-	glm::vec3 m_startPos;
-	std::vector<JunctionUnitInfo> m_children;
+	std::vector<float> m_radius;
+	std::vector<glm::vec3> m_positions;
+
 };
 void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipeline,
 	const std::shared_ptr<IPlantBehaviour>& behaviour,
@@ -1418,17 +1417,28 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipelin
 		std::filesystem::create_directories(directory);
 		YAML::Emitter out;
 		out << YAML::BeginMap;
+
+		std::unordered_set<int> junctionRootIndices;
+		std::unordered_set<int> junctionChildrenIndices;
+		std::unordered_set<int> iShapeIndices;
 		std::vector<Junction> junctions;
+		std::vector<IShape> ishapes;
 		std::vector<Entity> internodes;
+		std::vector<Entity> branches;
+		std::vector<int> rootIndices;
 		scene->GetEntityArray(internodeLayer->m_internodesQuery, internodes);
 		for (const auto& internode : internodes) {
 			auto childrenSize = scene->GetChildrenAmount(internode);
 			auto rootInfo = scene->GetDataComponent<InternodeInfo>(internode);
-
+			if (!scene->HasPrivateComponent<Internode>(scene->GetParent(internode)))
+			{
+				rootIndices.emplace_back(internode.GetIndex() + 1);
+			}
 			if (childrenSize > 1) {
 				bool add = true;
 				Junction junction;
 				junction.m_junctionIndex = internode.GetIndex() + 1;
+				auto treeTransform = scene->GetDataComponent<GlobalTransform>(scene->GetRoot(internode));
 				auto rootTransform = scene->GetDataComponent<GlobalTransform>(internode);
 				junction.m_root.m_direction = glm::normalize(rootTransform.GetRotation() * glm::vec3(0, 0, -1));
 				junction.m_root.m_position = rootTransform.GetPosition() + junction.m_root.m_direction * rootInfo.m_length;
@@ -1442,6 +1452,7 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipelin
 				int validChildCount = 0;
 				for (const auto& child : scene->GetChildren(internode)) {
 					if (!scene->HasDataComponent<InternodeInfo>(child)) continue;
+
 					auto childTransform = scene->GetDataComponent<GlobalTransform>(child);
 					junction.m_children.emplace_back();
 					auto& childInfo = junction.m_children.back();
@@ -1455,14 +1466,85 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipelin
 					int childRingIndex = childInternode->m_rings.size() * m_meshGeneratorSettings.m_junctionLowerRatio / childInternodeInfo.m_length;
 					if (childRingIndex < 0) childRingIndex = 0;
 					if (childRingIndex >= childInternode->m_rings.size()) childRingIndex = childInternode->m_rings.size() - 1;
-					childInfo.m_position = childInternode->m_rings.at(childRingIndex).m_startPosition;
-
-					childInfo.m_radius = childInternodeInfo.m_thickness;
+					childInfo.m_position = treeTransform.GetPosition() + childInternode->m_rings.at(childRingIndex).m_startPosition;
+					childInfo.m_radius = childInternode->m_rings.at(childRingIndex).m_startRadius;
 				}
-				if (validChildCount > 1) junctions.push_back(junction);
+				if (validChildCount > 1) {
+					junctions.push_back(junction);
+					junctionRootIndices.emplace(junction.m_junctionIndex);
+					for (const auto& child : scene->GetChildren(internode)) {
+						if (!scene->HasDataComponent<InternodeInfo>(child)) continue;
+						junctionChildrenIndices.emplace(child.GetIndex() + 1);
+					}
+				}
 			}
 
 		}
+		scene->GetEntityArray(internodeLayer->m_branchesQuery, branches);
+		for (const auto& branchEntity : branches)
+		{
+			auto& iShape = ishapes.emplace_back();
+			iShape.m_iShapeIndex = branchEntity.GetIndex() + 1;
+			iShapeIndices.emplace(iShape.m_iShapeIndex);
+			if (!scene->HasPrivateComponent<Branch>(scene->GetParent(branchEntity)))
+			{
+				rootIndices.emplace_back(branchEntity.GetIndex() + 1);
+			}
+
+			auto branch = scene->GetOrSetPrivateComponent<Branch>(branchEntity).lock();
+			for (const auto& internodeEntity : branch->m_internodeChain)
+			{
+				auto internode = scene->GetOrSetPrivateComponent<Internode>(internodeEntity).lock();
+				auto internodeInfo = scene->GetDataComponent<InternodeInfo>(internodeEntity);
+				auto treeTransform = scene->GetDataComponent<GlobalTransform>(scene->GetRoot(internodeEntity));
+				bool isRoot = false;
+				bool isChild = false;
+				if (junctionRootIndices.find(internodeEntity.GetIndex() + 1) != junctionRootIndices.end())
+				{
+					//Root
+					//Only output previous rings to the start position to last valid ring.
+					isRoot = true;
+				}
+				else if (junctionChildrenIndices.find(internodeEntity.GetIndex() + 1) != junctionChildrenIndices.end())
+				{
+					//Children
+					isChild = true;
+				}
+				int rootRingIndex = internode->m_rings.size() * (1.0f - m_meshGeneratorSettings.m_junctionUpperRatio);
+				if (rootRingIndex < 0) rootRingIndex = 0;
+				if (rootRingIndex >= internode->m_rings.size()) rootRingIndex = internode->m_rings.size() - 1;
+				int childRingIndex = internode->m_rings.size() * m_meshGeneratorSettings.m_junctionLowerRatio / internodeInfo.m_length;
+				if (childRingIndex < 0) childRingIndex = 0;
+				if (childRingIndex >= internode->m_rings.size()) childRingIndex = internode->m_rings.size() - 1;
+				int startIndex = 0;
+				int endIndex = internode->m_rings.size() - 1;
+				if(isChild)
+				{
+					startIndex = childRingIndex;
+				}
+				if(isRoot)
+				{
+					endIndex = rootRingIndex;
+				}
+				iShape.m_radius.emplace_back(internode->m_rings.at(startIndex).m_startRadius);
+				iShape.m_positions.emplace_back(treeTransform.GetPosition() + internode->m_rings.at(startIndex).m_startPosition);
+				for(int i = startIndex; i <= endIndex; i++)
+				{
+					iShape.m_radius.emplace_back(internode->m_rings.at(i).m_endRadius);
+					iShape.m_positions.emplace_back(treeTransform.GetPosition() + internode->m_rings.at(i).m_endPosition);
+				}
+			}
+		}
+		out << YAML::Key << "Possible Root" << YAML::Value << YAML::BeginSeq;
+		for (const auto& i : rootIndices)
+		{
+			if (junctionRootIndices.find(i) != junctionRootIndices.end() || iShapeIndices.find(i) != iShapeIndices.end()) {
+				out << YAML::BeginMap;
+				out << YAML::Key << "I" << YAML::Value << i;
+				out << YAML::EndMap;
+			}
+		}
+		out << YAML::EndSeq;
 
 		out << YAML::Key << "Junctions" << YAML::Value << YAML::BeginSeq;
 		for (const auto& junction : junctions) {
@@ -1485,6 +1567,25 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipelin
 		}
 
 		out << YAML::EndSeq;
+
+		out << YAML::Key << "Branches" << YAML::Value << YAML::BeginSeq;
+		for (const auto& ishape : ishapes)
+		{
+			out << YAML::BeginMap;
+			out << YAML::Key << "I" << YAML::Value << ishape.m_iShapeIndex;
+			out << YAML::Key << "SN" << YAML::Value << YAML::BeginSeq;
+			for (int i = 0; i < ishape.m_radius.size(); i++)
+			{
+				out << YAML::BeginMap;
+				out << YAML::Key << "P" << YAML::Value << ishape.m_positions[i];
+				out << YAML::Key << "R" << YAML::Value << ishape.m_radius[i];
+				out << YAML::EndMap;
+			}
+			out << YAML::EndSeq;
+			out << YAML::EndMap;
+		}
+		out << YAML::EndSeq;
+
 		out << YAML::EndMap;
 		std::ofstream fout(path.string());
 		fout << out.c_str();
