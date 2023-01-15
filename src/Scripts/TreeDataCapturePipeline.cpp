@@ -1404,7 +1404,7 @@ struct IShape {
 	int m_iShapeIndex;
 	std::vector<float> m_radius;
 	std::vector<glm::vec3> m_positions;
-
+	std::vector<glm::vec3> m_directions;
 };
 void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipeline,
 	const std::shared_ptr<IPlantBehaviour>& behaviour,
@@ -1521,17 +1521,22 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipelin
 				if(isChild)
 				{
 					startIndex = childRingIndex;
+					iShape.m_radius.emplace_back(internode->m_rings.at(startIndex).m_startRadius);
+					iShape.m_positions.emplace_back(treeTransform.GetPosition() + internode->m_rings.at(startIndex).m_startPosition);
+					iShape.m_directions.emplace_back(glm::normalize(internode->m_rings.at(startIndex).m_startAxis));
 				}
+				
 				if(isRoot)
 				{
 					endIndex = rootRingIndex;
-				}
-				iShape.m_radius.emplace_back(internode->m_rings.at(startIndex).m_startRadius);
-				iShape.m_positions.emplace_back(treeTransform.GetPosition() + internode->m_rings.at(startIndex).m_startPosition);
-				for(int i = startIndex; i <= endIndex; i++)
+					iShape.m_radius.emplace_back(internode->m_rings.at(endIndex).m_endRadius);
+					iShape.m_positions.emplace_back(treeTransform.GetPosition() + internode->m_rings.at(endIndex).m_endPosition);
+					iShape.m_directions.emplace_back(glm::normalize(internode->m_rings.at(endIndex).m_endAxis));
+				}else
 				{
-					iShape.m_radius.emplace_back(internode->m_rings.at(i).m_endRadius);
-					iShape.m_positions.emplace_back(treeTransform.GetPosition() + internode->m_rings.at(i).m_endPosition);
+					iShape.m_radius.emplace_back(internode->m_rings.back().m_endRadius);
+					iShape.m_positions.emplace_back(treeTransform.GetPosition() + internode->m_rings.back().m_endPosition);
+					iShape.m_directions.emplace_back(glm::normalize(internode->m_rings.back().m_endAxis));
 				}
 			}
 		}
@@ -1577,6 +1582,7 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipelin
 			for (int i = 0; i < ishape.m_radius.size(); i++)
 			{
 				out << YAML::BeginMap;
+				out << YAML::Key << "D" << YAML::Value << ishape.m_directions[i];
 				out << YAML::Key << "P" << YAML::Value << ishape.m_positions[i];
 				out << YAML::Key << "R" << YAML::Value << ishape.m_radius[i];
 				out << YAML::EndMap;
