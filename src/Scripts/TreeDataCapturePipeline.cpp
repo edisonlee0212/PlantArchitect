@@ -1299,7 +1299,7 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound& plantBound, Aut
 		auto& position = sample.m_end;
 		if (position.x<(plantBound.m_min.x - m_pointCloudPointSettings.m_boundingBoxOffset) ||
 			position.z<(plantBound.m_min.z - m_pointCloudPointSettings.m_boundingBoxOffset) || position.x>(plantBound.m_max.x + m_pointCloudPointSettings.m_boundingBoxOffset) ||
-			position.z>(plantBound.m_max.z + m_pointCloudPointSettings.m_boundingBoxOffset))
+			position.z>(plantBound.m_max.z + m_pointCloudPointSettings.m_boundingBoxOffset) || position.y < -0.01f)
 			continue;
 		auto ballRand = glm::vec3(0.0f);
 		if (m_pointCloudPointSettings.m_ballRandRadius > 0.0f) {
