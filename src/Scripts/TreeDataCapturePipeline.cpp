@@ -607,6 +607,7 @@ void TreeDataCapturePipeline::OnInspect() {
 			ImGui::Checkbox("Junction", &m_pointCloudPointSettings.m_junction);
 			ImGui::DragFloat("Point variance", &m_pointCloudPointSettings.m_variance, 0.1f, 0.0f, 100.0f);
 			ImGui::DragFloat("Point ball rand", &m_pointCloudPointSettings.m_ballRandRadius, 0.1f, 0.0f, 100.0f);
+			ImGui::DragFloat("Bounding box offset", &m_pointCloudPointSettings.m_boundingBoxOffset, 0.1f, 0.0f, 100.0f);
 			ImGui::TreePop();
 		}
 	}
@@ -1296,9 +1297,9 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound& plantBound, Aut
 	for (const auto& sample : pcSamples) {
 		if (!sample.m_hit) continue;
 		auto& position = sample.m_end;
-		if (position.x<(plantBound.m_min.x - 1) ||
-			position.z<(plantBound.m_min.z - 1) || position.x>(plantBound.m_max.x + 1) ||
-			position.z>(plantBound.m_max.z + 1))
+		if (position.x<(plantBound.m_min.x - m_pointCloudPointSettings.m_boundingBoxOffset) ||
+			position.z<(plantBound.m_min.z - m_pointCloudPointSettings.m_boundingBoxOffset) || position.x>(plantBound.m_max.x + m_pointCloudPointSettings.m_boundingBoxOffset) ||
+			position.z>(plantBound.m_max.z + m_pointCloudPointSettings.m_boundingBoxOffset))
 			continue;
 		auto ballRand = glm::vec3(0.0f);
 		if (m_pointCloudPointSettings.m_ballRandRadius > 0.0f) {
