@@ -163,6 +163,67 @@ struct GraphNode {
 
 void TreeGraph::Deserialize(const YAML::Node& in) {
     m_saved = true;
+#define OLD_GRAPH
+#ifdef OLD_GRAPH
+    m_name = in["name"].as<std::string>();
+    m_layerSize = in["layersize"].as<int>();
+    auto layers = in["layers"];
+    auto rootLayer = layers["0"];
+    std::unordered_map<int, std::shared_ptr<TreeGraphNode>> previousNodes;
+    m_root = std::make_shared<TreeGraphNode>();
+    m_root->m_start = glm::vec3(0, 0, 0);
+    int rootIndex = 0;
+    auto rootNode = rootLayer["0"];
+    m_root->m_length = rootNode["length"].as<float>();
+    m_root->m_thickness = rootNode["thickness"].as<float>();
+    m_root->m_id = rootNode["id"].as<int>();
+    m_root->m_parentId = -1;
+    m_root->m_fromApicalBud = true;
+    int index = 0;
+    for (const auto& component : rootNode["quat"]) {
+        m_root->m_globalRotation[index] = component.as<float>();
+        index++;
+    }
+    index = 0;
+    for (const auto& component : rootNode["position"]) {
+        m_root->m_position[index] = component.as<float>();
+        index++;
+    }
+    previousNodes[m_root->m_id] = m_root;
+    for (int layerIndex = 1; layerIndex < m_layerSize; layerIndex++) {
+        auto layer = layers[std::to_string(layerIndex)];
+        auto internodeSize = layer["internodesize"].as<int>();
+        for (int nodeIndex = 0; nodeIndex < internodeSize; nodeIndex++) {
+            auto node = layer[std::to_string(nodeIndex)];
+            auto parentNodeId = node["parent"].as<int>();
+            if (parentNodeId == -1) parentNodeId = 0;
+            auto& parentNode = previousNodes[parentNodeId];
+            auto newNode = std::make_shared<TreeGraphNode>();
+            newNode->m_id = node["id"].as<int>();
+            newNode->m_start = parentNode->m_start + parentNode->m_length *
+                (glm::normalize(parentNode->m_globalRotation) *
+                    glm::vec3(0, 0, -1));
+            newNode->m_thickness = node["thickness"].as<float>();
+            newNode->m_length = node["length"].as<float>();
+            newNode->m_parentId = parentNodeId;
+            if (newNode->m_parentId == 0) newNode->m_parentId = -1;
+            index = 0;
+            for (const auto& component : node["quat"]) {
+                newNode->m_globalRotation[index] = component.as<float>();
+                index++;
+            }
+            index = 0;
+            for (const auto& component : node["position"]) {
+                newNode->m_position[index] = component.as<float>();
+                index++;
+            }
+            if (parentNode->m_children.empty()) newNode->m_fromApicalBud = true;
+            previousNodes[newNode->m_id] = newNode;
+            parentNode->m_children.push_back(newNode);
+            newNode->m_parent = parentNode;
+        }
+    }
+#else
     m_name = GetTitle();
     int id = 0;
     std::vector<GraphNode> nodes;
@@ -193,7 +254,7 @@ void TreeGraph::Deserialize(const YAML::Node& in) {
     auto direction = glm::normalize(nodes[0].m_endPosition);
     m_root->m_globalRotation = glm::quatLookAt(direction, glm::vec3(direction.y, direction.z,
         direction.x)
-        );
+    );
     previousNodes[0] = m_root;
     for (id = 1; id < nodes.size(); id++) {
         auto& node = nodes[id];
@@ -214,66 +275,7 @@ void TreeGraph::Deserialize(const YAML::Node& in) {
         previousNodes[id] = newNode;
         parentNode->m_children.push_back(newNode);
         newNode->m_parent = parentNode;
-    }
-#ifdef OLD_GRAPH
-    m_name = in["name"].as<std::string>();
-    m_layerSize = in["layersize"].as<int>();
-    auto layers = in["layers"];
-    auto rootLayer = layers["0"];
-    std::unordered_map<int, std::shared_ptr<TreeGraphNode>> previousNodes;
-    m_root = std::make_shared<TreeGraphNode>();
-    m_root->m_start = glm::vec3(0, 0, 0);
-    int rootIndex = 0;
-    auto rootNode = rootLayer["0"];
-    m_root->m_length = rootNode["length"].as<float>();
-    m_root->m_thickness = rootNode["thickness"].as<float>();
-    m_root->m_id = rootNode["id"].as<int>();
-    m_root->m_parentId = -1;
-    m_root->m_fromApicalBud = true;
-    int index = 0;
-    for (const auto& component : rootNode["quat"]) {
-        m_root->m_globalRotation[index] = component.as<float>();
-        index++;
-    }
-    index = 0;
-    for (const auto& component : rootNode["position"]) {
-        m_root->m_endPosition[index] = component.as<float>();
-        index++;
-    }
-    previousNodes[m_root->m_id] = m_root;
-    for (int layerIndex = 1; layerIndex < m_layerSize; layerIndex++) {
-        auto layer = layers[std::to_string(layerIndex)];
-        auto internodeSize = layer["internodesize"].as<int>();
-        for (int nodeIndex = 0; nodeIndex < internodeSize; nodeIndex++) {
-            auto node = layer[std::to_string(nodeIndex)];
-            auto parentNodeId = node["parent"].as<int>();
-            if (parentNodeId == -1) parentNodeId = 0;
-            auto& parentNode = previousNodes[parentNodeId];
-            auto newNode = std::make_shared<TreeGraphNode>();
-            newNode->m_id = node["id"].as<int>();
-            newNode->m_start = parentNode->m_start + parentNode->m_length *
-                (glm::normalize(parentNode->m_globalRotation) *
-                    glm::vec3(0, 0, -1));
-            newNode->m_thickness = node["thickness"].as<float>();
-            newNode->m_length = node["length"].as<float>();
-            newNode->m_parentId = parentNodeId;
-            if (newNode->m_parentId == 0) newNode->m_parentId = -1;
-            index = 0;
-            for (const auto& component : node["quat"]) {
-                newNode->m_globalRotation[index] = component.as<float>();
-                index++;
             }
-            index = 0;
-            for (const auto& component : node["position"]) {
-                newNode->m_endPosition[index] = component.as<float>();
-                index++;
-            }
-            if (parentNode->m_children.empty()) newNode->m_fromApicalBud = true;
-            previousNodes[newNode->m_id] = newNode;
-            parentNode->m_children.push_back(newNode);
-            newNode->m_parent = parentNode;
-        }
-    }
 #endif
 
 }
