@@ -460,6 +460,10 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene>& s
 						archetype.m_color = glm::vec4(glm::normalize(internode->m_rings.at(0).m_startAxis), 1.0f);
 						archetype.m_color *= branchEntity.GetIndex() + 1;
 					}
+				}else if(settings.m_markInternodeIndex)
+				{
+					archetype.m_color = glm::vec4(glm::normalize(internode->m_rings.at(0).m_startAxis), 1.0f);
+					archetype.m_color *= internodeEntity.GetIndex();
 				}
 				else archetype.m_color = branchColor.m_value;
 				vertices.push_back(archetype);
@@ -564,6 +568,11 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene>& s
 							archetype.m_color *= branchEntity.GetIndex() + 1;
 						}
 					}
+					else if (settings.m_markInternodeIndex)
+					{
+						archetype.m_color = glm::vec4(glm::normalize(internode->m_rings.at(ringIndex).m_endAxis), 1.0f);
+						archetype.m_color *= internodeEntity.GetIndex();
+					}
 					else archetype.m_color = branchColor.m_value;
 					vertices.push_back(archetype);
 				}
@@ -618,6 +627,9 @@ void MeshGeneratorSettings::OnInspect() {
 		if (m_markJunctions) {
 			ImGui::DragFloat("Junction Lower Ratio", &m_junctionLowerRatio, 0.01f, 0.0f, 0.5f);
 			ImGui::DragFloat("Junction Upper Ratio", &m_junctionUpperRatio, 0.01f, 0.0f, 0.5f);
+		}else
+		{
+			ImGui::Checkbox("Mark Internode Index", &m_markInternodeIndex);
 		}
 		ImGui::TreePop();
 	}
@@ -659,6 +671,7 @@ void MeshGeneratorSettings::Save(const std::string& name, YAML::Emitter& out) {
 	out << YAML::Key << "m_lineLengthFactor" << YAML::Value << m_lineLengthFactor;
 	out << YAML::Key << "m_overrideVertexColor" << YAML::Value << m_overrideVertexColor;
 	out << YAML::Key << "m_markJunctions" << YAML::Value << m_markJunctions;
+	out << YAML::Key << "m_markInternodeIndex" << YAML::Value << m_markInternodeIndex;
 	out << YAML::Key << "m_junctionUpperRatio" << YAML::Value << m_junctionUpperRatio;
 	out << YAML::Key << "m_junctionLowerRatio" << YAML::Value << m_junctionLowerRatio;
 	out << YAML::Key << "m_branchVertexColor" << YAML::Value << m_branchVertexColor;
@@ -682,6 +695,7 @@ void MeshGeneratorSettings::Load(const std::string& name, const YAML::Node& in) 
 		if (ms["m_lineLengthFactor"]) m_lineLengthFactor = ms["m_lineLengthFactor"].as<float>();
 		if (ms["m_overrideVertexColor"]) m_overrideVertexColor = ms["m_overrideVertexColor"].as<bool>();
 		if (ms["m_markJunctions"]) m_markJunctions = ms["m_markJunctions"].as<bool>();
+		if (ms["m_markInternodeIndex"]) m_markInternodeIndex = ms["m_markInternodeIndex"].as<bool>();
 		if (ms["m_junctionUpperRatio"]) m_junctionUpperRatio = ms["m_junctionUpperRatio"].as<float>();
 		if (ms["m_junctionLowerRatio"]) m_junctionLowerRatio = ms["m_junctionLowerRatio"].as<float>();
 		if (ms["m_branchVertexColor"]) m_branchVertexColor = ms["m_branchVertexColor"].as<glm::vec3>();
