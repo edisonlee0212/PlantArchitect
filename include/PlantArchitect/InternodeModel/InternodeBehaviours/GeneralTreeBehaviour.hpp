@@ -87,6 +87,8 @@ namespace PlantArchitect {
     struct PLANT_ARCHITECT_API InternodeStatus : public IDataComponent {
         int m_branchingOrder = 0;
         int m_age = 0;
+        int m_treeAge = 0;
+        float m_gravitropism;
         float m_apicalControl = 0;
         float m_inhibitor = 0;
         float m_level = 0;

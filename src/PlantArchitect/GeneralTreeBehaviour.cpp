@@ -624,6 +624,8 @@ void GeneralTreeBehaviour::Preprocess(const std::shared_ptr<Scene> &scene, std::
                  if (!RootCheck(scene, rootEntity)) return;
                  auto generalTreeParameters = scene->GetOrSetPrivateComponent<InternodePlant>(
                          rootEntity).lock()->m_plantDescriptor.Get<GeneralTreeParameters>();
+                 internodeStatus.m_treeAge = generalTreeParameters->m_matureAge;
+                 internodeStatus.m_gravitropism = generalTreeParameters->m_gravitropism;
                  int plantIndex = 0;
                  for (const auto &plant: currentRoots) {
                      if (rootEntity == plant) {
