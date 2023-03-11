@@ -74,9 +74,9 @@ void GeneralTreeBehaviour::Grow(const std::shared_ptr<Scene> &scene, int iterati
                                                                       glm::gaussRand(generalTreeParameters->m_apicalAngleMeanVariance.x,
                                                                                      generalTreeParameters->m_apicalAngleMeanVariance.y)),
                                                               desiredGlobalUp);
-                             ApplyTropism(glm::vec3(0, -1, 0), generalTreeParameters->m_gravitropism,
+                             ApplyTropism(glm::vec3(0, -1, 0), internodeStatus.m_gravitropism,
                                           desiredGlobalFront, desiredGlobalUp);
-                             ApplyTropism(internodeIllumination.m_direction, generalTreeParameters->m_phototropism,
+                             ApplyTropism(internodeIllumination.m_direction, internodeStatus.m_phototropism,
                                           desiredGlobalFront, desiredGlobalUp);
 
                              desiredGlobalRotation = glm::quatLookAt(desiredGlobalFront, desiredGlobalUp);
@@ -147,10 +147,10 @@ void GeneralTreeBehaviour::Grow(const std::shared_ptr<Scene> &scene, int iterati
                                                                           glm::gaussRand(generalTreeParameters->m_apicalAngleMeanVariance.x,
                                                                                          generalTreeParameters->m_apicalAngleMeanVariance.y)),
                                                                   desiredGlobalUp);
-                                 ApplyTropism(glm::vec3(0, -1, 0), generalTreeParameters->m_gravitropism,
+                                 ApplyTropism(glm::vec3(0, -1, 0), internodeStatus.m_gravitropism,
                                               desiredGlobalFront, desiredGlobalUp);
                                  ApplyTropism(internodeIllumination.m_direction,
-                                              generalTreeParameters->m_phototropism, desiredGlobalFront,
+                                     internodeStatus.m_phototropism, desiredGlobalFront,
                                               desiredGlobalUp);
                                  lateralBud.m_flushProbability = flushProbability;
                                  lateralBud.m_newInternodeInfo = InternodeInfo();
@@ -177,6 +177,10 @@ void GeneralTreeBehaviour::Grow(const std::shared_ptr<Scene> &scene, int iterati
             auto internodeStatus = scene->GetDataComponent<InternodeStatus>(entity);
             auto newInternodeEntity = CreateInternode(scene, entity);
             InternodeStatus newInternodeStatus;
+            newInternodeStatus.m_gravitropism = internodeStatus.m_gravitropism;
+            newInternodeStatus.m_treeAge = internodeStatus.m_treeAge;
+            newInternodeStatus.m_phototropism = internodeStatus.m_phototropism;
+
             newInternodeStatus.m_desiredLocalRotation = internode->m_apicalBud.m_newInternodeInfo.m_localRotation;
             newInternodeStatus.m_branchingOrder = 0;
             newInternodeStatus.m_recordedProbability = internode->m_apicalBud.m_flushProbability;
@@ -193,8 +197,13 @@ void GeneralTreeBehaviour::Grow(const std::shared_ptr<Scene> &scene, int iterati
         int branchingOrder = 1;
         for (auto &bud: internode->m_lateralBuds) {
             if (bud.m_status == BudStatus::Flushing) {
+                auto internodeStatus = scene->GetDataComponent<InternodeStatus>(entity);
                 auto newInternodeEntity = CreateInternode(scene, entity);
                 InternodeStatus newInternodeStatus;
+                newInternodeStatus.m_gravitropism = internodeStatus.m_gravitropism;
+                newInternodeStatus.m_treeAge = internodeStatus.m_treeAge;
+                newInternodeStatus.m_phototropism = internodeStatus.m_phototropism;
+
                 newInternodeStatus.m_branchingOrder = branchingOrder;
                 newInternodeStatus.m_desiredLocalRotation = bud.m_newInternodeInfo.m_localRotation;
                 newInternodeStatus.m_branchLength = bud.m_newInternodeInfo.m_length;
@@ -408,8 +417,13 @@ GeneralTreeBehaviour::NewPlant(const std::shared_ptr<Scene> &scene,
     newInfo.m_layer = 0;
     newInfo.m_thickness = descriptor->m_endNodeThicknessAndControl.x;
     scene->SetDataComponent(rootInternode, newInfo);
+    InternodeStatus newStatus;
+    newStatus.m_gravitropism = glm::linearRand(glm::min(descriptor->m_gravitropismMinMax.x, descriptor->m_gravitropismMinMax.y), glm::max(descriptor->m_gravitropismMinMax.x, descriptor->m_gravitropismMinMax.y));
+    root->m_treeAge = newStatus.m_treeAge = glm::linearRand(glm::min(descriptor->m_matureAgeMinMax.x, descriptor->m_matureAgeMinMax.y), glm::max(descriptor->m_matureAgeMinMax.x, descriptor->m_matureAgeMinMax.y));
+    newStatus.m_phototropism = glm::linearRand(glm::min(descriptor->m_phototropismMinMax.x, descriptor->m_phototropismMinMax.y), glm::max(descriptor->m_phototropismMinMax.x, descriptor->m_phototropismMinMax.y));
+    scene->SetDataComponent(rootInternode, newStatus);
 
-    auto internode = scene->GetOrSetPrivateComponent<Internode>(rootInternode).lock();
+	auto internode = scene->GetOrSetPrivateComponent<Internode>(rootInternode).lock();
     internode->m_fromApicalBud = true;
     auto waterFeeder = scene->GetOrSetPrivateComponent<InternodeWaterFeeder>(rootInternode).lock();
     auto branch = scene->GetOrSetPrivateComponent<Branch>(rootBranch).lock();
@@ -624,8 +638,6 @@ void GeneralTreeBehaviour::Preprocess(const std::shared_ptr<Scene> &scene, std::
                  if (!RootCheck(scene, rootEntity)) return;
                  auto generalTreeParameters = scene->GetOrSetPrivateComponent<InternodePlant>(
                          rootEntity).lock()->m_plantDescriptor.Get<GeneralTreeParameters>();
-                 internodeStatus.m_treeAge = generalTreeParameters->m_matureAge;
-                 internodeStatus.m_gravitropism = generalTreeParameters->m_gravitropism;
                  int plantIndex = 0;
                  for (const auto &plant: currentRoots) {
                      if (rootEntity == plant) {
@@ -732,8 +744,8 @@ void GeneralTreeParameters::OnInspect() {
         ImGui::DragFloat2("Branching Angle mean/var", &m_branchingAngleMeanVariance.x, 0.01f);
         ImGui::DragFloat2("Roll Angle mean/var", &m_rollAngleMeanVariance.x, 0.01f);
         ImGui::DragFloat2("Apical Angle mean/var", &m_apicalAngleMeanVariance.x, 0.01f);
-        ImGui::DragFloat("Gravitropism", &m_gravitropism, 0.01f);
-        ImGui::DragFloat("Phototropism", &m_phototropism, 0.01f);
+        ImGui::DragFloat2("Gravitropism Min/Max", &m_gravitropismMinMax.x, 0.01f);
+        ImGui::DragFloat2("Phototropism Min/Max", &m_phototropismMinMax.x, 0.01f);
         ImGui::DragFloat2("Internode length mean/var", &m_internodeLengthMeanVariance.x, 0.01f);
         ImGui::DragFloat2("Thickness min/factor", &m_endNodeThicknessAndControl.x, 0.01f);
         ImGui::TreePop();
@@ -761,7 +773,7 @@ void GeneralTreeParameters::OnInspect() {
         ImGui::DragFloat3("Sagging thickness/reduction/max", &m_saggingFactorThicknessReductionMax.x, 0.01f);
         ImGui::TreePop();
     }
-    ImGui::DragInt("Mature age", &m_matureAge, 1, 0, 1000);
+    ImGui::DragInt2("Mature age Min/Max", &m_matureAgeMinMax.x, 1, 0, 1000);
 
 
 }
@@ -771,8 +783,8 @@ void GeneralTreeParameters::OnCreate() {
     m_branchingAngleMeanVariance = glm::vec2(30, 3);
     m_rollAngleMeanVariance = glm::vec2(120, 2);
     m_apicalAngleMeanVariance = glm::vec2(20, 2);
-    m_gravitropism = -0.1f;
-    m_phototropism = 0.05f;
+    m_gravitropismMinMax = { -0.1f, -0.1f };
+    m_phototropismMinMax = { 0.05f , 0.05f };
     m_internodeLengthMeanVariance = glm::vec2(1, 0.1);
     m_endNodeThicknessAndControl = glm::vec2(0.01, 0.5);
     m_lateralBudFlushingProbability = 0.3f;
@@ -785,7 +797,7 @@ void GeneralTreeParameters::OnCreate() {
     m_randomPruningBaseAgeMax = glm::vec3(-0.1, 0.007, 0.5);
     m_lowBranchPruning = 0.15f;
     m_saggingFactorThicknessReductionMax = glm::vec3(6, 3, 0.5);
-    m_matureAge = 30;
+    m_matureAgeMinMax = { 30 , 30 };
 }
 
 void GeneralTreeParameters::Serialize(YAML::Emitter &out) {
@@ -794,8 +806,8 @@ void GeneralTreeParameters::Serialize(YAML::Emitter &out) {
     out << YAML::Key << "m_branchingAngleMeanVariance" << YAML::Value << m_branchingAngleMeanVariance;
     out << YAML::Key << "m_rollAngleMeanVariance" << YAML::Value << m_rollAngleMeanVariance;
     out << YAML::Key << "m_apicalAngleMeanVariance" << YAML::Value << m_apicalAngleMeanVariance;
-    out << YAML::Key << "m_gravitropism" << YAML::Value << m_gravitropism;
-    out << YAML::Key << "m_phototropism" << YAML::Value << m_phototropism;
+    out << YAML::Key << "m_gravitropismMinMax" << YAML::Value << m_gravitropismMinMax;
+    out << YAML::Key << "m_phototropismMinMax" << YAML::Value << m_phototropismMinMax;
     out << YAML::Key << "m_internodeLengthMeanVariance" << YAML::Value << m_internodeLengthMeanVariance;
     out << YAML::Key << "m_endNodeThicknessAndControl" << YAML::Value << m_endNodeThicknessAndControl;
     out << YAML::Key << "m_lateralBudFlushingProbability" << YAML::Value << m_lateralBudFlushingProbability;
@@ -808,7 +820,7 @@ void GeneralTreeParameters::Serialize(YAML::Emitter &out) {
     out << YAML::Key << "m_randomPruningBaseAgeMax" << YAML::Value << m_randomPruningBaseAgeMax;
     out << YAML::Key << "m_lowBranchPruning" << YAML::Value << m_lowBranchPruning;
     out << YAML::Key << "m_saggingFactorThicknessReductionMax" << YAML::Value << m_saggingFactorThicknessReductionMax;
-    out << YAML::Key << "m_matureAge" << YAML::Value << m_matureAge;
+    out << YAML::Key << "m_matureAgeMinMax" << YAML::Value << m_matureAgeMinMax;
 }
 
 void GeneralTreeParameters::Deserialize(const YAML::Node &in) {
@@ -817,8 +829,10 @@ void GeneralTreeParameters::Deserialize(const YAML::Node &in) {
     if (in["m_branchingAngleMeanVariance"]) m_branchingAngleMeanVariance = in["m_branchingAngleMeanVariance"].as<glm::vec2>();
     if (in["m_rollAngleMeanVariance"]) m_rollAngleMeanVariance = in["m_rollAngleMeanVariance"].as<glm::vec2>();
     if (in["m_apicalAngleMeanVariance"]) m_apicalAngleMeanVariance = in["m_apicalAngleMeanVariance"].as<glm::vec2>();
-    if (in["m_gravitropism"]) m_gravitropism = in["m_gravitropism"].as<float>();
-    if (in["m_phototropism"]) m_phototropism = in["m_phototropism"].as<float>();
+    if (in["m_gravitropismMinMax"]) m_gravitropismMinMax = in["m_gravitropismMinMax"].as<glm::vec2>();
+    if (in["m_gravitropism"]) m_gravitropismMinMax.x = m_gravitropismMinMax.y = in["m_gravitropism"].as<float>();
+    if (in["m_phototropismMinMax"]) m_phototropismMinMax = in["m_phototropismMinMax"].as<glm::vec2>();
+    if (in["m_phototropism"]) m_phototropismMinMax.x = m_phototropismMinMax.y = in["m_phototropism"].as<float>();
     if (in["m_internodeLengthMeanVariance"]) m_internodeLengthMeanVariance = in["m_internodeLengthMeanVariance"].as<glm::vec2>();
     if (in["m_endNodeThicknessAndControl"]) m_endNodeThicknessAndControl = in["m_endNodeThicknessAndControl"].as<glm::vec2>();
     if (in["m_lateralBudFlushingProbability"]) m_lateralBudFlushingProbability = in["m_lateralBudFlushingProbability"].as<float>();
@@ -831,7 +845,8 @@ void GeneralTreeParameters::Deserialize(const YAML::Node &in) {
     if (in["m_randomPruningBaseAgeMax"]) m_randomPruningBaseAgeMax = in["m_randomPruningBaseAgeMax"].as<glm::vec3>();
     if (in["m_lowBranchPruning"]) m_lowBranchPruning = in["m_lowBranchPruning"].as<float>();
     if (in["m_saggingFactorThicknessReductionMax"]) m_saggingFactorThicknessReductionMax = in["m_saggingFactorThicknessReductionMax"].as<glm::vec3>();
-    if (in["m_matureAge"]) m_matureAge = in["m_matureAge"].as<int>();
+    if (in["m_matureAgeMinMax"]) m_matureAgeMinMax = in["m_matureAgeMinMax"].as<glm::ivec2>();
+    if (in["m_matureAge"]) m_matureAgeMinMax.x = m_matureAgeMinMax.y = in["m_matureAge"].as<int>();
 }
 
 Entity GeneralTreeParameters::InstantiateTree() {

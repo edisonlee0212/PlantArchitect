@@ -33,8 +33,8 @@ namespace PlantArchitect {
         * The mean and variance of the angular difference between the growth direction and the direction of the apical bud
         */
         glm::vec2 m_apicalAngleMeanVariance;
-        float m_gravitropism;
-        float m_phototropism;
+        glm::vec2 m_gravitropismMinMax;
+        glm::vec2 m_phototropismMinMax;
         glm::vec2 m_internodeLengthMeanVariance;
 
         glm::vec2 m_endNodeThicknessAndControl;
@@ -74,7 +74,7 @@ namespace PlantArchitect {
          */
         glm::vec3 m_saggingFactorThicknessReductionMax = glm::vec3(0.8f, 1.75f, 1.0f);
 
-        int m_matureAge = 0;
+        glm::ivec2 m_matureAgeMinMax = { 0, 0 };
 
         void OnInspect() override;
         void CollectAssetRef(std::vector<AssetRef> &list) override;
@@ -89,6 +89,7 @@ namespace PlantArchitect {
         int m_age = 0;
         int m_treeAge = 0;
         float m_gravitropism;
+        float m_phototropism;
         float m_apicalControl = 0;
         float m_inhibitor = 0;
         float m_level = 0;

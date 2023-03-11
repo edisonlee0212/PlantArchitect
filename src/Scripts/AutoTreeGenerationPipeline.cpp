@@ -87,7 +87,6 @@ void AutoTreeGenerationPipeline::Update() {
 		case AutoTreeGenerationPipelineStatus::BeforeGrowth:
 			switch (m_behaviourType) {
 			case BehaviourType::GeneralTree:
-				m_iterations = m_currentUsingDescriptor.Get<GeneralTreeParameters>()->m_matureAge;
 				m_prefix =
 					m_currentDescriptorPath.m_path.filename().stem().string() +
 					"_";
@@ -139,6 +138,13 @@ void AutoTreeGenerationPipeline::Update() {
 					break;
 				}
 			}
+
+			switch (m_behaviourType) {
+			case BehaviourType::GeneralTree:
+				m_iterations = scene->GetOrSetPrivateComponent<InternodePlant>(m_currentGrowingTrees.back()).lock()->m_treeAge;
+				break;
+			}
+
 			pipelineBehaviour->OnBeforeGrowth(*this);
 			if (m_status != AutoTreeGenerationPipelineStatus::BeforeGrowth) {
 				for (const auto& tree : m_currentGrowingTrees) {

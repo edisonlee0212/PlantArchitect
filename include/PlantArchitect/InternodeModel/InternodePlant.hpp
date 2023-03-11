@@ -9,6 +9,7 @@ using namespace UniEngine;
 namespace PlantArchitect {
     class PLANT_ARCHITECT_API InternodePlant : public IPrivateComponent {
     public:
+        int m_treeAge = 0;
         AssetRef m_plantDescriptor;
         glm::vec3 m_center = glm::vec3(0.0f);
         void OnInspect() override;
