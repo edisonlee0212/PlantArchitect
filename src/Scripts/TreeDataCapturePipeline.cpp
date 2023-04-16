@@ -1303,7 +1303,7 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound& plantBound, Aut
 	}
 	for (const auto& sample : pcSamples) {
 		if (!sample.m_hit) continue;
-		auto& position = sample.m_end;
+		auto& position = sample.m_hitInfo.m_position;
 		if (position.x<(plantBound.m_min.x - m_pointCloudPointSettings.m_boundingBoxOffset) ||
 			position.z<(plantBound.m_min.z - m_pointCloudPointSettings.m_boundingBoxOffset) || position.x>(plantBound.m_max.x + m_pointCloudPointSettings.m_boundingBoxOffset) ||
 			position.z>(plantBound.m_max.z + m_pointCloudPointSettings.m_boundingBoxOffset) || position.y < -0.01f)
@@ -1313,7 +1313,7 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound& plantBound, Aut
 			ballRand = glm::ballRand(m_pointCloudPointSettings.m_ballRandRadius);
 		}
 		points.push_back(
-			sample.m_end +
+			sample.m_hitInfo.m_position +
 			glm::vec3(glm::gaussRand(0.0f, m_pointCloudPointSettings.m_variance),
 				glm::gaussRand(0.0f, m_pointCloudPointSettings.m_variance),
 				glm::gaussRand(0.0f, m_pointCloudPointSettings.m_variance))
@@ -1347,13 +1347,13 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound& plantBound, Aut
 			if (m_pointCloudPointSettings.m_color) colors.emplace_back(0, 0, 0);
 		}
 		if (m_pointCloudPointSettings.m_junction) {
-			junction.emplace_back(glm::normalize(sample.m_albedo));
-			junctionIndex.emplace_back((int)(glm::length(sample.m_albedo) + 0.1f));
+			junction.emplace_back(glm::normalize(sample.m_hitInfo.m_color));
+			junctionIndex.emplace_back((int)(glm::length(sample.m_hitInfo.m_color) + 0.1f));
 			if (junctionIndex.back() == 1) junctionIndex.back() = 0;
 		}
 		if(m_pointCloudPointSettings.m_internodeIndex)
 		{
-			internodeIndex.emplace_back((int)(glm::length(sample.m_albedo) + 0.1f));
+			internodeIndex.emplace_back((int)(glm::length(sample.m_hitInfo.m_color) + 0.1f));
 		}
 	}
 	std::filebuf fb_binary;

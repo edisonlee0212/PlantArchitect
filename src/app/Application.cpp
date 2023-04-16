@@ -19,7 +19,6 @@
 #include "AutoTreeGenerationPipeline.hpp"
 #include "TreeDataCapturePipeline.hpp"
 #include "InternodeLayer.hpp"
-#include "StrandLayer.hpp"
 
 using namespace PlantArchitect;
 #ifdef RAYTRACERFACILITY
@@ -44,8 +43,6 @@ int main() {
     Application::PushLayer<RayTracerLayer>();
 #endif
     auto internodeLayer = Application::PushLayer<InternodeLayer>();
-    auto strandLayer = Application::PushLayer<StrandLayer>();
-
 
 #pragma region Engine Loop
     Application::Start();
