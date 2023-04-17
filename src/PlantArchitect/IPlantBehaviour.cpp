@@ -382,7 +382,6 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene>& s
 				hasMultipleChild = false;
 			}
 			bool markJunction = false;
-			if (settings.m_markJunctions) {
 				if (!isOnlyChild) {
 					auto parent = scene->GetParent(internodeEntity);
 					int validChildCount = 0;
@@ -404,7 +403,7 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene>& s
 						});
 					if (validChildCount > 1) markJunction = true;
 				}
-			}
+			
 			const glm::vec3 front =
 				internodeGlobalTransform.GetRotation() *
 				glm::vec3(0.0f, 0.0f, -1.0f);
@@ -444,28 +443,23 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene>& s
 				const float x =
 					i < pStep / 2 ? i * textureXStep : (pStep - i) * textureXStep;
 				archetype.m_texCoord = glm::vec2(x, 0.0f);
-				if (markJunction) {
-					archetype.m_color = glm::vec4(glm::normalize(internode->m_rings.at(0).m_startAxis), 1.0f);
-					if (!isOnlyChild) {
-						archetype.m_color *= scene->GetParent(internodeEntity).GetIndex() + 1;
-					}
-					else
-					{
-						archetype.m_color *= branchEntity.GetIndex() + 1;
-					}
-				}
-				else if (settings.m_overrideVertexColor || settings.m_markJunctions) {
-					archetype.m_color = glm::vec4(settings.m_branchVertexColor, 1.0f);
-					if (settings.m_markJunctions) {
-						archetype.m_color = glm::vec4(glm::normalize(internode->m_rings.at(0).m_startAxis), 1.0f);
-						archetype.m_color *= branchEntity.GetIndex() + 1;
-					}
-				}else if(settings.m_markInternodeIndex)
+				if (settings.m_growthDirection)
 				{
 					archetype.m_color = glm::vec4(glm::normalize(internode->m_rings.at(0).m_startAxis), 1.0f);
-					archetype.m_color *= internodeEntity.GetIndex();
 				}
-				else archetype.m_color = branchColor.m_value;
+				else if (settings.m_overrideVertexColor)
+				{
+					archetype.m_color = glm::vec4(settings.m_branchVertexColor, 1.0f);
+				}else
+				{
+					archetype.m_color = branchColor.m_value;
+				}
+				archetype.m_positionPadding = -2;
+				if (markJunction && !isOnlyChild) {
+					archetype.m_positionPadding = scene->GetParent(internodeEntity).GetIndex();
+				}
+				archetype.m_normalPadding = internodeEntity.GetIndex();
+				archetype.m_tangentPadding = branchEntity.GetIndex();
 				vertices.push_back(archetype);
 			}
 			std::vector<float> angles;
@@ -549,31 +543,30 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene>& s
 					const auto y = ringIndex % 2 == 0 ? 1.0f : 0.0f;
 					archetype.m_texCoord = glm::vec2(x, y);
 					auto ratio = (float)ringIndex / (ringSize - 1) * scene->GetDataComponent<InternodeInfo>(internodeEntity).m_length;
-					if (markJunction) {
-						archetype.m_color = glm::vec4(glm::normalize(internode->m_rings.at(ringIndex).m_endAxis), 1.0f);
-						if (ratio <= settings.m_junctionLowerRatio && !isOnlyChild) {
-							archetype.m_color *= scene->GetParent(internodeEntity).GetIndex() + 1;
-						}
-						else if (ratio >= (1.0f - settings.m_junctionUpperRatio) && hasMultipleChild) {
-							archetype.m_color *= internodeEntity.GetIndex() + 1;
-						}else
-						{
-							archetype.m_color *= branchEntity.GetIndex() + 1;
-						}
-					}
-					else if (settings.m_overrideVertexColor || settings.m_markJunctions) {
-						archetype.m_color = glm::vec4(settings.m_branchVertexColor, 1.0f);
-						if (settings.m_markJunctions) {
-							archetype.m_color = glm::vec4(glm::normalize(internode->m_rings.at(ringIndex).m_endAxis), 1.0f);
-							archetype.m_color *= branchEntity.GetIndex() + 1;
-						}
-					}
-					else if (settings.m_markInternodeIndex)
+
+					if (settings.m_growthDirection)
 					{
-						archetype.m_color = glm::vec4(glm::normalize(internode->m_rings.at(ringIndex).m_endAxis), 1.0f);
-						archetype.m_color *= internodeEntity.GetIndex();
+						archetype.m_color = glm::vec4(glm::normalize(internode->m_rings.at(0).m_endAxis), 1.0f);
 					}
-					else archetype.m_color = branchColor.m_value;
+					else if (settings.m_overrideVertexColor)
+					{
+						archetype.m_color = glm::vec4(settings.m_branchVertexColor, 1.0f);
+					}
+					else
+					{
+						archetype.m_color = branchColor.m_value;
+					}
+					archetype.m_positionPadding = -2;
+					if (markJunction) {
+						if (ratio <= settings.m_junctionLowerRatio && !isOnlyChild) {
+							archetype.m_positionPadding = scene->GetParent(internodeEntity).GetIndex();
+						}
+						else if (ratio >= 1.0f - settings.m_junctionUpperRatio && hasMultipleChild) {
+							archetype.m_positionPadding = internodeEntity.GetIndex();
+						}
+					}
+					archetype.m_normalPadding = internodeEntity.GetIndex();
+					archetype.m_tangentPadding = branchEntity.GetIndex();
 					vertices.push_back(archetype);
 				}
 				if (ringIndex != 0) {
@@ -618,19 +611,16 @@ void MeshGeneratorSettings::OnInspect() {
 		}
 		ImGui::Checkbox("Override radius", &m_overrideRadius);
 		if (m_overrideRadius) ImGui::DragFloat("Radius", &m_radius);
+
+		ImGui::Checkbox("Growth direction", &m_growthDirection);
 		ImGui::Checkbox("Override vertex color", &m_overrideVertexColor);
 		if (m_overrideVertexColor) {
 			ImGui::ColorEdit3("Branch vertex color", &m_branchVertexColor.x);
 			ImGui::ColorEdit3("Foliage vertex color", &m_foliageVertexColor.x);
 		}
-		ImGui::Checkbox("Mark Junctions", &m_markJunctions);
-		if (m_markJunctions) {
-			ImGui::DragFloat("Junction Lower Ratio", &m_junctionLowerRatio, 0.01f, 0.0f, 0.5f);
-			ImGui::DragFloat("Junction Upper Ratio", &m_junctionUpperRatio, 0.01f, 0.0f, 0.5f);
-		}else
-		{
-			ImGui::Checkbox("Mark Internode Index", &m_markInternodeIndex);
-		}
+		ImGui::DragFloat("Junction Lower Ratio", &m_junctionLowerRatio, 0.01f, 0.0f, 0.5f);
+		ImGui::DragFloat("Junction Upper Ratio", &m_junctionUpperRatio, 0.01f, 0.0f, 0.5f);
+		
 		ImGui::TreePop();
 	}
 }
@@ -665,13 +655,12 @@ void MeshGeneratorSettings::Save(const std::string& name, YAML::Emitter& out) {
 	out << YAML::Key << "m_enableBranch" << YAML::Value << m_enableBranch;
 	out << YAML::Key << "m_smoothness" << YAML::Value << m_smoothness;
 	out << YAML::Key << "m_overrideRadius" << YAML::Value << m_overrideRadius;
+	out << YAML::Key << "m_growthDirection" << YAML::Value << m_growthDirection;
 	out << YAML::Key << "m_boundaryRadius" << YAML::Value << m_radius;
 	out << YAML::Key << "m_baseControlPointRatio" << YAML::Value << m_baseControlPointRatio;
 	out << YAML::Key << "m_branchControlPointRatio" << YAML::Value << m_branchControlPointRatio;
 	out << YAML::Key << "m_lineLengthFactor" << YAML::Value << m_lineLengthFactor;
 	out << YAML::Key << "m_overrideVertexColor" << YAML::Value << m_overrideVertexColor;
-	out << YAML::Key << "m_markJunctions" << YAML::Value << m_markJunctions;
-	out << YAML::Key << "m_markInternodeIndex" << YAML::Value << m_markInternodeIndex;
 	out << YAML::Key << "m_junctionUpperRatio" << YAML::Value << m_junctionUpperRatio;
 	out << YAML::Key << "m_junctionLowerRatio" << YAML::Value << m_junctionLowerRatio;
 	out << YAML::Key << "m_branchVertexColor" << YAML::Value << m_branchVertexColor;
@@ -689,13 +678,12 @@ void MeshGeneratorSettings::Load(const std::string& name, const YAML::Node& in) 
 		if (ms["m_enableBranch"]) m_enableBranch = ms["m_enableBranch"].as<bool>();
 		if (ms["m_smoothness"]) m_smoothness = ms["m_smoothness"].as<bool>();
 		if (ms["m_overrideRadius"]) m_overrideRadius = ms["m_overrideRadius"].as<bool>();
+		if (ms["m_growthDirection"]) m_growthDirection = ms["m_growthDirection"].as<bool>();
 		if (ms["m_boundaryRadius"]) m_radius = ms["m_boundaryRadius"].as<float>();
 		if (ms["m_baseControlPointRatio"]) m_baseControlPointRatio = ms["m_baseControlPointRatio"].as<float>();
 		if (ms["m_branchControlPointRatio"]) m_branchControlPointRatio = ms["m_branchControlPointRatio"].as<float>();
 		if (ms["m_lineLengthFactor"]) m_lineLengthFactor = ms["m_lineLengthFactor"].as<float>();
 		if (ms["m_overrideVertexColor"]) m_overrideVertexColor = ms["m_overrideVertexColor"].as<bool>();
-		if (ms["m_markJunctions"]) m_markJunctions = ms["m_markJunctions"].as<bool>();
-		if (ms["m_markInternodeIndex"]) m_markInternodeIndex = ms["m_markInternodeIndex"].as<bool>();
 		if (ms["m_junctionUpperRatio"]) m_junctionUpperRatio = ms["m_junctionUpperRatio"].as<float>();
 		if (ms["m_junctionLowerRatio"]) m_junctionLowerRatio = ms["m_junctionLowerRatio"].as<float>();
 		if (ms["m_branchVertexColor"]) m_branchVertexColor = ms["m_branchVertexColor"].as<glm::vec3>();

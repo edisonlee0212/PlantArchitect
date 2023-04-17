@@ -20,9 +20,8 @@ namespace PlantArchitect {
 
         bool m_overrideRadius = false;
         float m_radius = 0.01f;
+        bool m_growthDirection = true;
         bool m_overrideVertexColor = false;
-        bool m_markJunctions = true;
-        bool m_markInternodeIndex = false;
         float m_junctionLowerRatio = 0.4f;
         float m_junctionUpperRatio = 0.0f;
         glm::vec3 m_branchVertexColor = glm::vec3(1.0f);

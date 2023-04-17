@@ -184,14 +184,14 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline& pipeline
 		m_exportOptions.m_exportBranchCapture || m_exportOptions.m_exportPointCloud) {
 		auto settings = m_meshGeneratorSettings;
 		if (m_exportOptions.m_exportMask) {
-			settings.m_markJunctions = false;
+			settings.m_growthDirection = false;
 			settings.m_vertexColorOnly = true;
 			settings.m_overrideVertexColor = true;
 			settings.m_foliageVertexColor = glm::vec3(0, 1, 0);
 			settings.m_branchVertexColor = glm::vec3(0.5f, 0.3f, 0.0f);
 		}
-		else if (m_pointCloudPointSettings.m_junction) {
-			settings.m_markJunctions = true;
+		else if (m_pointCloudPointSettings.m_junctionIndex) {
+			settings.m_growthDirection = true;
 			settings.m_vertexColorOnly = true;
 		}
 		behaviour->GenerateSkinnedMeshes(scene, settings);
@@ -454,7 +454,7 @@ void TreeDataCapturePipeline::OnAfterGrowth(AutoTreeGenerationPipeline& pipeline
 		ScanPointCloudLabeled(combinedBound, pipeline,
 			pointCloudFolder / (pipeline.m_prefix + ".ply"));
 
-		if (m_pointCloudPointSettings.m_junction) {
+		if (m_pointCloudPointSettings.m_junctionIndex) {
 			std::filesystem::create_directories(junctionFolder);
 			ExportJunction(pipeline, behaviour, junctionFolder / (pipeline.m_prefix + ".txt"));
 		}
@@ -602,10 +602,12 @@ void TreeDataCapturePipeline::OnInspect() {
 	if (m_exportOptions.m_exportPointCloud) {
 		if (ImGui::TreeNodeEx("Point cloud settings")) {
 			m_pointCloudSettings.OnInspect();
-			ImGui::Checkbox("Color", &m_pointCloudPointSettings.m_color);
 			ImGui::Checkbox("Type", &m_pointCloudPointSettings.m_pointType);
-			ImGui::Checkbox("Junction", &m_pointCloudPointSettings.m_junction);
+
+			ImGui::Checkbox("Growth Direction", &m_pointCloudPointSettings.m_growthDirection);
+			ImGui::Checkbox("Junction Index", &m_pointCloudPointSettings.m_junctionIndex);
 			ImGui::Checkbox("Internode Index", &m_pointCloudPointSettings.m_internodeIndex);
+			ImGui::Checkbox("Branch Index", &m_pointCloudPointSettings.m_branchIndex);
 			ImGui::DragFloat("Point variance", &m_pointCloudPointSettings.m_variance, 0.1f, 0.0f, 100.0f);
 			ImGui::DragFloat("Point ball rand", &m_pointCloudPointSettings.m_ballRandRadius, 0.1f, 0.0f, 100.0f);
 			ImGui::DragFloat("Bounding box offset", &m_pointCloudPointSettings.m_boundingBoxOffset, 0.1f, 0.0f, 100.0f);
@@ -1102,12 +1104,11 @@ void TreeDataCapturePipeline::Serialize(YAML::Emitter& out) {
 	m_obstacleGrid.Save("m_obstacleGrid", out);
 	m_cameraSettings.Serialize("m_cameraSettings", out);
 	m_pointCloudSettings.Serialize("m_pointCloudSettings", out);
-	out << YAML::Key << "m_pointCloudPointSettings.m_color" << YAML::Value << m_pointCloudPointSettings.m_color;
 	out << YAML::Key << "m_pointCloudPointSettings.m_pointType" << YAML::Value << m_pointCloudPointSettings.m_pointType;
 	out << YAML::Key << "m_pointCloudPointSettings.m_variance" << YAML::Value << m_pointCloudPointSettings.m_variance;
 	out << YAML::Key << "m_pointCloudPointSettings.m_ballRandRadius" << YAML::Value
 		<< m_pointCloudPointSettings.m_ballRandRadius;
-	out << YAML::Key << "m_pointCloudPointSettings.m_junction" << YAML::Value << m_pointCloudPointSettings.m_junction;
+	out << YAML::Key << "m_pointCloudPointSettings.m_junctionIndex" << YAML::Value << m_pointCloudPointSettings.m_junctionIndex;
 	out << YAML::Key << "m_pointCloudPointSettings.m_internodeIndex" << YAML::Value << m_pointCloudPointSettings.m_internodeIndex;
 	out << YAML::Key << "m_currentExportFolder" << YAML::Value << m_currentExportFolder.string();
 	m_meshGeneratorSettings.Save("m_meshGeneratorSettings", out);
@@ -1165,11 +1166,10 @@ void TreeDataCapturePipeline::Deserialize(const YAML::Node& in) {
 	m_meshGeneratorSettings.Load("m_meshGeneratorSettings", in);
 	m_cameraSettings.Deserialize("m_cameraSettings", in);
 	m_pointCloudSettings.Deserialize("m_pointCloudSettings", in);
-	if (in["m_pointCloudPointSettings.m_color"]) m_pointCloudPointSettings.m_color = in["m_pointCloudPointSettings.m_color"].as<bool>();
 	if (in["m_pointCloudPointSettings.m_pointType"]) m_pointCloudPointSettings.m_pointType = in["m_pointCloudPointSettings.m_pointType"].as<bool>();
 	if (in["m_pointCloudPointSettings.m_variance"]) m_pointCloudPointSettings.m_variance = in["m_pointCloudPointSettings.m_variance"].as<float>();
 	if (in["m_pointCloudPointSettings.m_ballRandRadius"]) m_pointCloudPointSettings.m_ballRandRadius = in["m_pointCloudPointSettings.m_ballRandRadius"].as<float>();
-	if (in["m_pointCloudPointSettings.m_junction"]) m_pointCloudPointSettings.m_junction = in["m_pointCloudPointSettings.m_junction"].as<bool>();
+	if (in["m_pointCloudPointSettings.m_junctionIndex"]) m_pointCloudPointSettings.m_junctionIndex = in["m_pointCloudPointSettings.m_junctionIndex"].as<bool>();
 	if (in["m_pointCloudPointSettings.m_internodeIndex"]) m_pointCloudPointSettings.m_internodeIndex = in["m_pointCloudPointSettings.m_internodeIndex"].as<bool>();
 
 	if (in["m_obstacleSettings.m_randomRotation"]) m_obstacleSettings.m_randomRotation = in["m_obstacleSettings.m_randomRotation"].as<bool>();
@@ -1274,14 +1274,14 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound& plantBound, Aut
 		pcSamples);
 	auto scene = pipeline.GetScene();
 	std::vector<glm::vec3> points;
-	std::vector<glm::vec3> colors;
-	std::vector<glm::vec3> junction;
+	std::vector<glm::vec3> growthDirection;
 	std::vector<int> junctionIndex;
 	std::vector<int> internodeIndex;
+	std::vector<int> branchIndex;
 	std::vector<glm::vec3> ishape;
 	std::vector<int> ishapeIndex;
 	std::vector<int> pointTypes;
-	std::vector<Handle> branchMeshRendererHandles, foliageMeshRendererHandles, groundMeshRendererHandles;
+	std::set<Handle> branchMeshRendererHandles, foliageMeshRendererHandles;
 	Handle groundMeshRendererHandle;
 	if (scene->IsEntityValid(m_ground) && scene->HasPrivateComponent<MeshRenderer>(m_ground)) {
 		groundMeshRendererHandle = scene->GetOrSetPrivateComponent<MeshRenderer>(m_ground).lock()->GetHandle();
@@ -1290,12 +1290,12 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound& plantBound, Aut
 		if (scene->IsEntityValid(tree)) {
 			scene->ForEachChild(tree, [&](Entity child) {
 				if (scene->GetEntityName(child) == "BranchMesh" && scene->HasPrivateComponent<SkinnedMeshRenderer>(child)) {
-					branchMeshRendererHandles.emplace_back(scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(
+					branchMeshRendererHandles.insert(scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(
 						child).lock()->GetHandle());
 				}
 				else if (scene->GetEntityName(child) == "FoliageMesh" &&
 					scene->HasPrivateComponent<SkinnedMeshRenderer>(child)) {
-					foliageMeshRendererHandles.emplace_back(scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(
+					foliageMeshRendererHandles.insert(scene->GetOrSetPrivateComponent<SkinnedMeshRenderer>(
 						child).lock()->GetHandle());
 				}
 				});
@@ -1318,42 +1318,34 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound& plantBound, Aut
 				glm::gaussRand(0.0f, m_pointCloudPointSettings.m_variance),
 				glm::gaussRand(0.0f, m_pointCloudPointSettings.m_variance))
 			+ ballRand);
-		bool found = false;
-		if (!found)for (const auto& i : branchMeshRendererHandles)
+		if(branchMeshRendererHandles.find(sample.m_handle) != branchMeshRendererHandles.end())
 		{
-			if (sample.m_handle == i) {
-				if (m_pointCloudPointSettings.m_pointType) pointTypes.push_back(0);
-				if (m_pointCloudPointSettings.m_color) colors.emplace_back(0.5, 0.25, 0);
-				found = true;
-				break;
-			}
+			if (m_pointCloudPointSettings.m_pointType) pointTypes.push_back(0);
 		}
-		if (!found)for (const auto& i : foliageMeshRendererHandles)
+		else if (foliageMeshRendererHandles.find(sample.m_handle) != foliageMeshRendererHandles.end())
 		{
-			if (sample.m_handle == i) {
-				if (m_pointCloudPointSettings.m_pointType) pointTypes.push_back(1);
-				if (m_pointCloudPointSettings.m_color) colors.emplace_back(0, 1, 0);
-				found = true;
-				break;
-			}
+			if (m_pointCloudPointSettings.m_pointType) pointTypes.push_back(1);
 		}
-		if (!found && sample.m_handle == groundMeshRendererHandle) {
+		else if(sample.m_handle == groundMeshRendererHandle) {
 			if (m_pointCloudPointSettings.m_pointType) pointTypes.push_back(2);
-			if (m_pointCloudPointSettings.m_color) colors.emplace_back(1, 1, 1);
-			found = true;
-		}
-		if (!found) {
+		}else{
 			if (m_pointCloudPointSettings.m_pointType) pointTypes.push_back(3);
-			if (m_pointCloudPointSettings.m_color) colors.emplace_back(0, 0, 0);
 		}
-		if (m_pointCloudPointSettings.m_junction) {
-			junction.emplace_back(glm::normalize(sample.m_hitInfo.m_color));
-			junctionIndex.emplace_back((int)(glm::length(sample.m_hitInfo.m_color) + 0.1f));
-			if (junctionIndex.back() == 1) junctionIndex.back() = 0;
+		if(m_pointCloudPointSettings.m_growthDirection)
+		{
+			growthDirection.emplace_back(glm::normalize(sample.m_hitInfo.m_color));
+		}
+		if (m_pointCloudPointSettings.m_junctionIndex) {
+			
+			junctionIndex.emplace_back((int)(sample.m_hitInfo.m_data.x + 0.1f));
 		}
 		if(m_pointCloudPointSettings.m_internodeIndex)
 		{
-			internodeIndex.emplace_back((int)(glm::length(sample.m_hitInfo.m_color) + 0.1f));
+			internodeIndex.emplace_back((int)(sample.m_hitInfo.m_data.y + 0.1f));
+		}
+		if (m_pointCloudPointSettings.m_branchIndex)
+		{
+			branchIndex.emplace_back((int)(sample.m_hitInfo.m_data.z + 0.1f));
 		}
 	}
 	std::filebuf fb_binary;
@@ -1373,20 +1365,17 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound& plantBound, Aut
 		"vertex", { "x", "y", "z" }, Type::FLOAT32, points.size(),
 		reinterpret_cast<uint8_t*>(points.data()), Type::INVALID, 0);
 
-	if (m_pointCloudPointSettings.m_color)
-		cube_file.add_properties_to_element(
-			"color", { "red", "green", "blue" }, Type::FLOAT32, colors.size(),
-			reinterpret_cast<uint8_t*>(colors.data()), Type::INVALID, 0);
-
 	if (m_pointCloudPointSettings.m_pointType)
 		cube_file.add_properties_to_element(
 			"pointType", { "value" }, Type::INT32, pointTypes.size(),
 			reinterpret_cast<uint8_t*>(pointTypes.data()), Type::INVALID, 0);
-
-	if (m_pointCloudPointSettings.m_junction) {
+	if(m_pointCloudPointSettings.m_growthDirection)
+	{
 		cube_file.add_properties_to_element(
-			"junction", { "jx", "jy", "jz" }, Type::FLOAT32, junction.size(),
-			reinterpret_cast<uint8_t*>(junction.data()), Type::INVALID, 0);
+			"growthDirection", { "gx", "gy", "gz" }, Type::FLOAT32, growthDirection.size(),
+			reinterpret_cast<uint8_t*>(growthDirection.data()), Type::INVALID, 0);
+	}
+	if (m_pointCloudPointSettings.m_junctionIndex) {
 		cube_file.add_properties_to_element(
 			"junctionIndex", { "ji" }, Type::INT32, junctionIndex.size(),
 			reinterpret_cast<uint8_t*>(junctionIndex.data()), Type::INVALID, 0);
@@ -1394,8 +1383,14 @@ void TreeDataCapturePipeline::ScanPointCloudLabeled(const Bound& plantBound, Aut
 	if (m_pointCloudPointSettings.m_internodeIndex)
 	{
 		cube_file.add_properties_to_element(
-			"internodeIndex", { "index" }, Type::INT32, internodeIndex.size(),
+			"internodeIndex", { "ii" }, Type::INT32, internodeIndex.size(),
 			reinterpret_cast<uint8_t*>(internodeIndex.data()), Type::INVALID, 0);
+	}
+	if (m_pointCloudPointSettings.m_branchIndex)
+	{
+		cube_file.add_properties_to_element(
+			"branchIndex", { "bi" }, Type::INT32, branchIndex.size(),
+			reinterpret_cast<uint8_t*>(branchIndex.data()), Type::INVALID, 0);
 	}
 	// Write a binary file
 	cube_file.write(outstream_binary, true);
@@ -1449,12 +1444,12 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipelin
 			auto rootInfo = scene->GetDataComponent<InternodeInfo>(internode);
 			if (!scene->HasPrivateComponent<Internode>(scene->GetParent(internode)))
 			{
-				rootIndices.emplace_back(internode.GetIndex() + 1);
+				rootIndices.emplace_back(internode.GetIndex());
 			}
 			if (childrenSize > 1) {
 				bool add = true;
 				Junction junction;
-				junction.m_junctionIndex = internode.GetIndex() + 1;
+				junction.m_junctionIndex = internode.GetIndex();
 				auto treeTransform = scene->GetDataComponent<GlobalTransform>(scene->GetRoot(internode));
 				auto rootTransform = scene->GetDataComponent<GlobalTransform>(internode);
 				junction.m_root.m_direction = glm::normalize(rootTransform.GetRotation() * glm::vec3(0, 0, -1));
@@ -1491,7 +1486,7 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipelin
 					junctionRootIndices.emplace(junction.m_junctionIndex);
 					for (const auto& child : scene->GetChildren(internode)) {
 						if (!scene->HasDataComponent<InternodeInfo>(child)) continue;
-						junctionChildrenIndices.emplace(child.GetIndex() + 1);
+						junctionChildrenIndices.emplace(child.GetIndex());
 					}
 				}
 			}
@@ -1501,11 +1496,11 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipelin
 		for (const auto& branchEntity : branches)
 		{
 			auto& iShape = ishapes.emplace_back();
-			iShape.m_iShapeIndex = branchEntity.GetIndex() + 1;
+			iShape.m_iShapeIndex = branchEntity.GetIndex();
 			iShapeIndices.emplace(iShape.m_iShapeIndex);
 			if (!scene->HasPrivateComponent<Branch>(scene->GetParent(branchEntity)))
 			{
-				rootIndices.emplace_back(branchEntity.GetIndex() + 1);
+				rootIndices.emplace_back(branchEntity.GetIndex());
 			}
 
 			auto branch = scene->GetOrSetPrivateComponent<Branch>(branchEntity).lock();
@@ -1516,13 +1511,13 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipelin
 				auto treeTransform = scene->GetDataComponent<GlobalTransform>(scene->GetRoot(internodeEntity));
 				bool isRoot = false;
 				bool isChild = false;
-				if (junctionRootIndices.find(internodeEntity.GetIndex() + 1) != junctionRootIndices.end())
+				if (junctionRootIndices.find(internodeEntity.GetIndex()) != junctionRootIndices.end())
 				{
 					//Root
 					//Only output previous rings to the start position to last valid ring.
 					isRoot = true;
 				}
-				else if (junctionChildrenIndices.find(internodeEntity.GetIndex() + 1) != junctionChildrenIndices.end())
+				else if (junctionChildrenIndices.find(internodeEntity.GetIndex()) != junctionChildrenIndices.end())
 				{
 					//Children
 					isChild = true;
