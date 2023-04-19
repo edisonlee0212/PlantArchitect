@@ -21,14 +21,6 @@ if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
             "Debug" "Release")
 endif ()
 
-# ------------------------------------------------------------------
-# 3rd Party libraries
-# ------------------------------------------------------------------
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdParty)
-
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-
 set(CMAKE_CXX_STANDARD 17)
 if (WIN32)
     # Compiler settings for Windows platform
@@ -41,6 +33,35 @@ elseif (UNIX AND NOT APPLE)
     endif ()
 elseif (APPLE)
 endif ()
+
+# ------------------------------------------------------------------
+# 3rd Party libraries
+# ------------------------------------------------------------------
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdParty)
+
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
+set(UNIENGINE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../UniEngine)
+if(BUILD_RAY_TRACER_FACILITY) 
+    set(RAYTRACERFACILITY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../RayTracerFacility)
+endif()
+
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+if (NOT TARGET uniengine)
+    add_subdirectory(${UNIENGINE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/UniEngine)
+endif ()
+if(BUILD_RAY_TRACER_FACILITY) 
+    if (NOT TARGET RayTracerFacility)
+        add_subdirectory(${RAYTRACERFACILITY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/RayTracerFacility)
+    endif ()
+endif()
+
+include_directories(${UNIENGINE_INCLUDES})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
+
 # ------------------------------------------------------------------
 # PlantArchitect
 # ------------------------------------------------------------------
