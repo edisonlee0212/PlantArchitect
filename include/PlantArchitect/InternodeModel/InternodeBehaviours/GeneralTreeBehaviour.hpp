@@ -76,6 +76,13 @@ namespace PlantArchitect {
 
         glm::ivec2 m_matureAgeMinMax = { 0, 0 };
 
+
+        float m_segmentLength = 0.04f;
+        float m_apicalAngleVariance = 2.5f;
+        float m_branchingAngle = 30.f;
+        float m_thickness = 0.002f;
+        float m_minNodeThicknessRequirement = 0.05f;
+        int m_segmentSize = 1;
         void OnInspect() override;
         void CollectAssetRef(std::vector<AssetRef> &list) override;
         void OnCreate() override;

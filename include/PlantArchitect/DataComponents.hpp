@@ -75,6 +75,7 @@ namespace PlantArchitect {
         bool m_heaviestChild = false;
 
         bool m_display = true;
+
         void OnInspect();
     };
 

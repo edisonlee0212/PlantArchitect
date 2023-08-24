@@ -1,3 +1,4 @@
+#include "IPlantBehaviour.hpp"
 //
 // Created by lllll on 8/27/2021.
 //
@@ -164,8 +165,8 @@ IPlantBehaviour::GenerateSkinnedMeshes(const std::shared_ptr<Scene>& scene, cons
 			if (InternodeCheck(scene, child)) rootInternode = child;
 			else if (BranchCheck(scene, child)) rootBranch = child;
 		}
-		Entity branchMesh, foliageMesh;
-		PrepareInternodeForSkeletalAnimation(scene, rootEntity, branchMesh, foliageMesh, settings);
+		Entity branchMesh, twigStrands, foliageMesh;
+		PrepareInternodeForSkeletalAnimation(scene, rootEntity, branchMesh, twigStrands, foliageMesh, settings);
 		if (settings.m_enableBranch) {
 #pragma region Branch mesh
 			auto animator = scene->GetOrSetPrivateComponent<Animator>(branchMesh).lock();
@@ -205,6 +206,8 @@ IPlantBehaviour::GenerateSkinnedMeshes(const std::shared_ptr<Scene>& scene, cons
 			BranchSkinnedMeshGenerator(scene, boundEntitiesLists[plantIndex],
 				parentIndicesLists[plantIndex],
 				skinnedVertices, skinnedIndices, settings);
+
+
 			if (!skinnedVertices.empty()) {
 				auto skinnedMesh = ProjectManager::CreateTemporaryAsset<SkinnedMesh>();
 				skinnedMesh->SetVertices(
@@ -216,6 +219,31 @@ IPlantBehaviour::GenerateSkinnedMeshes(const std::shared_ptr<Scene>& scene, cons
 				skinnedMeshRenderer->m_ragDollFreeze = freezeRagDoll;
 			}
 #pragma endregion
+		}
+
+		if(settings.m_enableTwigs)
+		{
+			std::vector<glm::uint> twigSegments;
+			std::vector<StrandPoint> twigPoints;
+			TwigStrandsGenerator(scene, boundEntitiesLists[plantIndex],
+				parentIndicesLists[plantIndex],
+				twigSegments, twigPoints, settings);
+
+			if(!twigPoints.empty() && !twigSegments.empty())
+			{
+				auto strandRenderer = scene->GetOrSetPrivateComponent<StrandsRenderer>(twigStrands).lock();
+				auto strands = strandRenderer->m_strands.Get<Strands>();
+				strands->SetSegments(3, twigSegments, twigPoints);
+				
+				auto material = strandRenderer->m_material.Get<Material>();
+				strandRenderer->SetEnabled(true);
+				auto root = scene->GetOrSetPrivateComponent<InternodePlant>(rootEntity).lock();
+				auto texture = root->m_plantDescriptor.Get<IPlantDescriptor>()->m_branchTexture.Get<Texture2D>();
+				if (texture)
+					material->m_albedoTexture = texture;
+				material->m_materialProperties.m_albedoColor = root->m_plantDescriptor.Get<IPlantDescriptor>()->m_branchColor;
+				material->m_vertexColorOnly = settings.m_vertexColorOnly;
+			}
 		}
 		if (settings.m_enableFoliage) {
 #pragma region Foliage mesh
@@ -594,6 +622,66 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene>& s
 	}
 }
 
+void PlantArchitect::IPlantBehaviour::TwigStrandsGenerator(const std::shared_ptr<Scene>& scene, std::vector<Entity>& entities, std::vector<int>& parentIndices, 
+	std::vector<glm::uint>& twigSegments, std::vector<StrandPoint>& twigPoints, const MeshGeneratorSettings& settings)
+{
+	int parentStep = -1;
+	int twigIndex = 0;
+	for (int branchIndex = 0; branchIndex < entities.size();
+		branchIndex++) {
+		int parentIndex = 0;
+		if (branchIndex != 0) parentIndex = parentIndices[branchIndex];
+		auto& branchEntity = entities[branchIndex];
+		auto branchGlobalTransform = scene->GetDataComponent<GlobalTransform>(branchEntity);
+		auto branch = scene->GetOrSetPrivateComponent<Branch>(branchEntity).lock();
+		for (const auto& internodeEntity : branch->m_internodeChain) {
+			bool isOnlyChild = scene->GetChildrenAmount(scene->GetParent(internodeEntity)) == 1;
+			bool hasMultipleChild = scene->GetChildrenAmount(internodeEntity) > 1;
+			auto internodeGlobalTransform = scene->GetDataComponent<GlobalTransform>(internodeEntity);
+			auto internode = scene->GetOrSetPrivateComponent<Internode>(internodeEntity).lock();
+			auto internodeInfo = scene->GetDataComponent<InternodeInfo>(internodeEntity);
+
+			if (internode->m_twigAnchors.empty()) continue;
+			twigPoints.resize(twigPoints.size() + 8);
+			twigSegments.resize(twigSegments.size() + 5);
+			auto& p0 = twigPoints[twigIndex * 8];
+			auto& p1 = twigPoints[twigIndex * 8 + 1];
+			auto& p2 = twigPoints[twigIndex * 8 + 2];
+			auto& p3 = twigPoints[twigIndex * 8 + 3];
+			auto& p4 = twigPoints[twigIndex * 8 + 4];
+			auto& p5 = twigPoints[twigIndex * 8 + 5];
+			auto& p6 = twigPoints[twigIndex * 8 + 6];
+			auto& p7 = twigPoints[twigIndex * 8 + 7];
+
+			p0.m_position = internodeGlobalTransform.GetPosition() * 2.0f - glm::vec3(internode->m_twigAnchors[0]);
+			p1.m_position = internodeGlobalTransform.GetPosition();
+			p2.m_position = glm::vec3(internode->m_twigAnchors[0]);
+			p3.m_position = glm::vec3(internode->m_twigAnchors[1]);
+			p4.m_position = glm::vec3(internode->m_twigAnchors[2]);
+			p5.m_position = glm::vec3(internode->m_twigAnchors[3]);
+			p6.m_position = glm::vec3(internode->m_twigAnchors[4]);
+			p7.m_position = glm::vec3(internode->m_twigAnchors[4]) * 2.0f - glm::vec3(internode->m_twigAnchors[3]);
+
+			p0.m_thickness = internodeInfo.m_thickness;
+			p1.m_thickness = internode->m_twigAnchors[0].w;
+			p2.m_thickness = internode->m_twigAnchors[0].w;
+			p3.m_thickness = internode->m_twigAnchors[1].w;
+			p4.m_thickness = internode->m_twigAnchors[2].w;
+			p5.m_thickness = internode->m_twigAnchors[3].w;
+			p6.m_thickness = internode->m_twigAnchors[4].w;
+			p7.m_thickness = internode->m_twigAnchors[4].w;
+
+			twigSegments[twigIndex * 5] = twigIndex * 8;
+			twigSegments[twigIndex * 5 + 1] = twigIndex * 8 + 1;
+			twigSegments[twigIndex * 5 + 2] = twigIndex * 8 + 2;
+			twigSegments[twigIndex * 5 + 3] = twigIndex * 8 + 3;
+			twigSegments[twigIndex * 5 + 4] = twigIndex * 8 + 4;
+
+			twigIndex++;
+		}
+	}
+}
+
 void MeshGeneratorSettings::OnInspect() {
 	if (ImGui::TreeNodeEx("Mesh Generator settings")) {
 		ImGui::DragFloat("Resolution", &m_resolution, 0.001f);
@@ -601,6 +689,7 @@ void MeshGeneratorSettings::OnInspect() {
 		ImGui::Checkbox("Vertex color only", &m_vertexColorOnly);
 		ImGui::Checkbox("Foliage", &m_enableFoliage);
 		ImGui::Checkbox("Branch", &m_enableBranch);
+		ImGui::Checkbox("Twigs", &m_enableTwigs);
 		ImGui::Checkbox("Smoothness", &m_smoothness);
 		if (m_smoothness) {
 			ImGui::DragFloat("Base control point ratio", &m_baseControlPointRatio, 0.001f, 0.0f, 1.0f);
@@ -653,6 +742,7 @@ void MeshGeneratorSettings::Save(const std::string& name, YAML::Emitter& out) {
 	out << YAML::Key << "m_vertexColorOnly" << YAML::Value << m_vertexColorOnly;
 	out << YAML::Key << "m_enableFoliage" << YAML::Value << m_enableFoliage;
 	out << YAML::Key << "m_enableBranch" << YAML::Value << m_enableBranch;
+	out << YAML::Key << "m_enableTwigs" << YAML::Value << m_enableTwigs;
 	out << YAML::Key << "m_smoothness" << YAML::Value << m_smoothness;
 	out << YAML::Key << "m_overrideRadius" << YAML::Value << m_overrideRadius;
 	out << YAML::Key << "m_growthDirection" << YAML::Value << m_growthDirection;
@@ -676,6 +766,7 @@ void MeshGeneratorSettings::Load(const std::string& name, const YAML::Node& in) 
 		if (ms["m_vertexColorOnly"]) m_vertexColorOnly = ms["m_vertexColorOnly"].as<bool>();
 		if (ms["m_enableFoliage"]) m_enableFoliage = ms["m_enableFoliage"].as<bool>();
 		if (ms["m_enableBranch"]) m_enableBranch = ms["m_enableBranch"].as<bool>();
+		if (ms["m_enableTwigs"]) m_enableTwigs = ms["m_enableTwigs"].as<bool>();
 		if (ms["m_smoothness"]) m_smoothness = ms["m_smoothness"].as<bool>();
 		if (ms["m_overrideRadius"]) m_overrideRadius = ms["m_overrideRadius"].as<bool>();
 		if (ms["m_growthDirection"]) m_growthDirection = ms["m_growthDirection"].as<bool>();
@@ -693,11 +784,11 @@ void MeshGeneratorSettings::Load(const std::string& name, const YAML::Node& in) 
 
 void
 IPlantBehaviour::PrepareInternodeForSkeletalAnimation(const std::shared_ptr<Scene>& scene, const Entity& entity,
-	Entity& branchMesh, Entity& foliageMesh,
+	Entity& branchMesh, Entity& twigStrands, Entity& foliageMesh,
 	const MeshGeneratorSettings& settings) {
 	auto children = scene->GetChildren(entity);
 	for (const auto& child : children) {
-		if (scene->GetEntityName(child) == "BranchMesh" || scene->GetEntityName(child) == "FoliageMesh") {
+		if (scene->GetEntityName(child) == "BranchMesh" || scene->GetEntityName(child) == "TwigStrands" || scene->GetEntityName(child) == "FoliageMesh") {
 			scene->DeleteEntity(child);
 		}
 	}
@@ -716,6 +807,21 @@ IPlantBehaviour::PrepareInternodeForSkeletalAnimation(const std::shared_ptr<Scen
 		skinnedMat->m_materialProperties.m_metallic = 0.0f;
 		skinnedMeshRenderer->m_animator = scene->GetOrSetPrivateComponent<Animator>(branchMesh).lock();
 		scene->SetParent(branchMesh, entity);
+	}
+
+	if (settings.m_enableTwigs) {
+		if (twigStrands.GetIndex() == 0) twigStrands = scene->CreateEntity("TwigStrands");
+		auto animator = scene->GetOrSetPrivateComponent<Animator>(twigStrands).lock();
+		auto strandsRenderer =
+			scene->GetOrSetPrivateComponent<StrandsRenderer>(twigStrands).lock();
+		strandsRenderer->m_strands = ProjectManager::CreateTemporaryAsset<Strands>();
+		auto strandsMat = ProjectManager::CreateTemporaryAsset<Material>();
+		strandsMat->SetProgram(DefaultResources::GLPrograms::StandardSkinnedProgram);
+		strandsRenderer->m_material = strandsMat;
+		strandsMat->m_materialProperties.m_albedoColor = glm::vec3(40.0f / 255, 15.0f / 255, 0.0f);
+		strandsMat->m_materialProperties.m_roughness = 1.0f;
+		strandsMat->m_materialProperties.m_metallic = 0.0f;
+		scene->SetParent(twigStrands, entity);
 	}
 	if (settings.m_enableFoliage) {
 		if (foliageMesh.GetIndex() == 0) foliageMesh = scene->CreateEntity("FoliageMesh");

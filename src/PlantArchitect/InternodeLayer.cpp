@@ -95,6 +95,7 @@ void InternodeLayer::Simulate(int iterations) {
         for (auto &i: m_plantBehaviours) {
             Preprocess(scene);
             if (i) i->Grow(scene, iteration);
+            Postprocess(scene);
         }
         ObstacleRemoval();
     }
@@ -1433,8 +1434,6 @@ void InternodeLayer::ObstacleRemoval() {
 }
 
 void InternodeLayer::Preprocess(const std::shared_ptr<Scene> &scene) {
-#pragma region PreProcess
-#pragma region InternodeStatus
     for (auto &behaviour: m_plantBehaviours) {
         if (behaviour) {
             std::vector<Entity> currentRoots;
@@ -1558,6 +1557,67 @@ void InternodeLayer::Preprocess(const std::shared_ptr<Scene> &scene) {
     }
 }
 
+void InternodeLayer::Postprocess(const std::shared_ptr<Scene>& scene)
+{
+    for (auto& behaviour : m_plantBehaviours) {
+        if (behaviour) {
+            std::vector<Entity> currentRoots;
+            scene->GetEntityArray(behaviour->m_rootsQuery, currentRoots);
+            for (auto rootEntity : currentRoots) {
+                if (!behaviour->RootCheck(scene, rootEntity)) return;
+                auto root = scene->GetOrSetPrivateComponent<InternodePlant>(rootEntity).lock();
+                auto plantDescriptor = root->m_plantDescriptor.Get<GeneralTreeParameters>();
+                scene->ForEachChild(rootEntity, [&](Entity child) {
+                    if (!behaviour->InternodeCheck(scene, child)) return;
+                    behaviour->InternodeGraphWalker(scene, child,
+                        [&](Entity parent, Entity child) {
+                            auto internode = scene->GetOrSetPrivateComponent<Internode>(child).lock();
+                            auto childInternodeInfo = scene->GetDataComponent<InternodeInfo>(
+                                child);
+                            auto childGlobalTransform = scene->GetDataComponent<GlobalTransform>(child);
+                            if (childInternodeInfo.m_thickness < plantDescriptor->m_minNodeThicknessRequirement && child.GetIndex() % plantDescriptor->m_segmentSize == 0)
+                            {
+                                if (internode->m_twigAnchors.empty())
+                                {
+                                    internode->m_twigAnchors.resize(5);
+                                    auto desiredGlobalRotation = childGlobalTransform.GetRotation() * glm::quat(glm::vec3(
+                                        glm::radians(plantDescriptor->m_branchingAngle), 0.0f,
+                                        glm::radians(glm::radians(
+                                            glm::gaussRand(plantDescriptor->m_rollAngleMeanVariance.x,
+                                                plantDescriptor->m_rollAngleMeanVariance.y)))));
+
+                                    glm::vec3 positionWalker = childGlobalTransform.GetPosition();
+                                    for (int i = 0; i < 5; i++)
+                                    {
+                                        auto front = desiredGlobalRotation * glm::vec3(0, 0, -1);
+                                        positionWalker = positionWalker + front * plantDescriptor->m_segmentLength;
+                                        internode->m_twigAnchors[i] = glm::vec4(positionWalker, plantDescriptor->m_thickness);
+                                        desiredGlobalRotation = childGlobalTransform.GetRotation() * glm::quat(glm::vec3(
+                                            glm::radians(glm::gaussRand(0.f, plantDescriptor->m_apicalAngleVariance) + plantDescriptor->m_branchingAngle), 0.0f,
+                                            glm::radians(glm::linearRand(0.0f, 360.0f))));
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                internode->m_twigAnchors.clear();
+                            }
+                        },
+                        [&](Entity parent) {
+                            auto parentInternodeInfo = scene->GetDataComponent<InternodeInfo>(
+                                parent);
+
+                            scene->SetDataComponent(parent,
+                                parentInternodeInfo);
+                        },
+                        [&](Entity endNode) {});
+
+                    });
+            };
+        }
+    }
+}
+
 void InternodeLayer::ColorSubTree(const std::shared_ptr<Scene> &scene, const Entity &entity, int colorIndex) {
     if (scene->HasDataComponent<InternodeInfo>(entity)) {
         InternodeColor internodeColor;
@@ -1596,11 +1656,7 @@ void InternodeLayer::ColorBranchlet(const std::shared_ptr<Scene> &scene) {
         }
     }
 }
-
-
-#pragma endregion
-
-void BranchPhysicsParameters::Serialize(YAML::Emitter &out) {
+void BranchPhysicsParameters::Serialize(YAML::Emitter& out) {
     out << YAML::Key << "m_density" << YAML::Value << m_density;
     out << YAML::Key << "m_linearDamping" << YAML::Value << m_linearDamping;
     out << YAML::Key << "m_angularDamping" << YAML::Value << m_angularDamping;
@@ -1614,7 +1670,7 @@ void BranchPhysicsParameters::Serialize(YAML::Emitter &out) {
     out << YAML::Key << "m_minimumThickness" << YAML::Value << m_minimumThickness;
 }
 
-void BranchPhysicsParameters::Deserialize(const YAML::Node &in) {
+void BranchPhysicsParameters::Deserialize(const YAML::Node& in) {
     if (in["m_density"]) m_density = in["m_density"].as<float>();
     if (in["m_linearDamping"]) m_linearDamping = in["m_linearDamping"].as<float>();
     if (in["m_angularDamping"]) m_angularDamping = in["m_angularDamping"].as<float>();
@@ -1632,11 +1688,11 @@ void BranchPhysicsParameters::OnInspect() {
     if (ImGui::TreeNodeEx("Physics Parameters")) {
         ImGui::DragFloat("Internode Density", &m_density, 0.1f, 0.01f, 1000.0f);
         ImGui::DragFloat2("RigidBody Damping", &m_linearDamping, 0.1f, 0.01f,
-                          1000.0f);
+            1000.0f);
         ImGui::DragFloat2("Drive Stiffness", &m_jointDriveStiffnessFactor, 0.1f,
-                          0.01f, 1000000.0f);
+            0.01f, 1000000.0f);
         ImGui::DragFloat2("Drive Damping", &m_jointDriveDampingFactor, 0.1f, 0.01f,
-                          1000000.0f);
+            1000000.0f);
         ImGui::Checkbox("Use acceleration", &m_enableAccelerationForDrive);
 
         int pi = m_positionSolverIteration;
@@ -1652,3 +1708,6 @@ void BranchPhysicsParameters::OnInspect() {
         ImGui::TreePop();
     }
 }
+
+#pragma endregion
+

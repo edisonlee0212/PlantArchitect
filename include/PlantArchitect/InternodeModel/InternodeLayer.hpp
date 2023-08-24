@@ -56,6 +56,7 @@ namespace PlantArchitect {
                             const BranchPhysicsParameters &branchPhysicsParameters);
 
         void Preprocess(const std::shared_ptr<Scene> &scene);
+        void Postprocess(const std::shared_ptr<Scene>& scene);
 
         void ColorSubTree(const std::shared_ptr<Scene> &scene, const Entity &entity, int colorIndex);
 

@@ -57,6 +57,7 @@ namespace PlantArchitect {
 
 
     public:
+        std::vector<glm::vec4> m_twigAnchors;
         /**
              * For mesh generation
              */

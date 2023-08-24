@@ -17,7 +17,7 @@ namespace PlantArchitect {
         bool m_vertexColorOnly = false;
         bool m_enableFoliage = true;
         bool m_enableBranch = true;
-
+        bool m_enableTwigs = true;
         bool m_overrideRadius = false;
         float m_radius = 0.01f;
         bool m_growthDirection = true;
@@ -134,6 +134,12 @@ namespace PlantArchitect {
                                         std::vector<unsigned> &indices,
                                         const MeshGeneratorSettings &settings);
 
+        void TwigStrandsGenerator(const std::shared_ptr<Scene>& scene, std::vector<Entity>& entities,
+            std::vector<int>& parentIndices,
+            std::vector<glm::uint>& strands,
+            std::vector<StrandPoint>& points,
+            const MeshGeneratorSettings& settings);
+
         void BranchMeshGenerator(const std::shared_ptr<Scene> &scene, std::vector<Entity> &internodeEntitites,
                                  std::vector<Vertex> &vertices,
                                  std::vector<unsigned> &indices,
@@ -146,7 +152,7 @@ namespace PlantArchitect {
                                          const MeshGeneratorSettings &settings);
 
         void PrepareInternodeForSkeletalAnimation(const std::shared_ptr<Scene> &scene, const Entity &entity,
-                                                  Entity &branchMesh, Entity &foliageMesh,
+            Entity& branchMesh, Entity& twigStrands, Entity &foliageMesh,
                                                   const MeshGeneratorSettings &settings);
 
 #pragma endregion
