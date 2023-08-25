@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Curve.hpp"
 #include "RingSegment.hpp"
 #include "plant_architect_export.h"
 #include "InternodeModel/InternodeResources/IInternodeResource.hpp"
@@ -57,7 +58,9 @@ namespace PlantArchitect {
 
 
     public:
-        std::vector<glm::vec4> m_twigAnchors;
+        BezierCurve m_curve;
+
+        std::vector<std::vector<glm::vec4>> m_twigs;
         /**
              * For mesh generation
              */

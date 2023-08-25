@@ -625,59 +625,67 @@ void IPlantBehaviour::BranchSkinnedMeshGenerator(const std::shared_ptr<Scene>& s
 void PlantArchitect::IPlantBehaviour::TwigStrandsGenerator(const std::shared_ptr<Scene>& scene, std::vector<Entity>& entities, std::vector<int>& parentIndices, 
 	std::vector<glm::uint>& twigSegments, std::vector<StrandPoint>& twigPoints, const MeshGeneratorSettings& settings)
 {
-	int parentStep = -1;
-	int twigIndex = 0;
 	for (int branchIndex = 0; branchIndex < entities.size();
 		branchIndex++) {
-		int parentIndex = 0;
-		if (branchIndex != 0) parentIndex = parentIndices[branchIndex];
 		auto& branchEntity = entities[branchIndex];
-		auto branchGlobalTransform = scene->GetDataComponent<GlobalTransform>(branchEntity);
 		auto branch = scene->GetOrSetPrivateComponent<Branch>(branchEntity).lock();
 		for (const auto& internodeEntity : branch->m_internodeChain) {
-			bool isOnlyChild = scene->GetChildrenAmount(scene->GetParent(internodeEntity)) == 1;
-			bool hasMultipleChild = scene->GetChildrenAmount(internodeEntity) > 1;
 			auto internodeGlobalTransform = scene->GetDataComponent<GlobalTransform>(internodeEntity);
 			auto internode = scene->GetOrSetPrivateComponent<Internode>(internodeEntity).lock();
 			auto internodeInfo = scene->GetDataComponent<InternodeInfo>(internodeEntity);
 
-			if (internode->m_twigAnchors.empty()) continue;
-			twigPoints.resize(twigPoints.size() + 8);
-			twigSegments.resize(twigSegments.size() + 5);
-			auto& p0 = twigPoints[twigIndex * 8];
-			auto& p1 = twigPoints[twigIndex * 8 + 1];
-			auto& p2 = twigPoints[twigIndex * 8 + 2];
-			auto& p3 = twigPoints[twigIndex * 8 + 3];
-			auto& p4 = twigPoints[twigIndex * 8 + 4];
-			auto& p5 = twigPoints[twigIndex * 8 + 5];
-			auto& p6 = twigPoints[twigIndex * 8 + 6];
-			auto& p7 = twigPoints[twigIndex * 8 + 7];
+			if (internodeInfo.m_thickness < settings.m_minNodeThicknessRequirement)
+			{
+				int twigCount = internodeInfo.m_length / settings.m_twigUnitLength;
+				internode->m_twigs.resize(twigCount);
 
-			p0.m_position = internodeGlobalTransform.GetPosition() * 2.0f - glm::vec3(internode->m_twigAnchors[0]);
-			p1.m_position = internodeGlobalTransform.GetPosition();
-			p2.m_position = glm::vec3(internode->m_twigAnchors[0]);
-			p3.m_position = glm::vec3(internode->m_twigAnchors[1]);
-			p4.m_position = glm::vec3(internode->m_twigAnchors[2]);
-			p5.m_position = glm::vec3(internode->m_twigAnchors[3]);
-			p6.m_position = glm::vec3(internode->m_twigAnchors[4]);
-			p7.m_position = glm::vec3(internode->m_twigAnchors[4]) * 2.0f - glm::vec3(internode->m_twigAnchors[3]);
+				auto desiredGlobalRotation = internodeGlobalTransform.GetRotation() * glm::quat(glm::vec3(
+					glm::radians(settings.m_branchingAngle), 0.0f,
+					glm::radians(glm::radians(
+						glm::linearRand(0.0f,
+							360.0f)))));
+				for (int twigIndex = 0; twigIndex < twigCount; twigIndex++) {
+					glm::vec3 positionWalker = internode->m_curve.GetPoint(static_cast<float>(twigIndex) / twigCount);
+					internode->m_twigs[twigIndex].resize(settings.m_segmentSize);
+					const float rollAngle = glm::radians(glm::linearRand(0.0f, 360.0f));
+					for (int twigPointIndex = 0; twigPointIndex < settings.m_segmentSize; twigPointIndex++)
+					{
+						internode->m_twigs[twigIndex][twigPointIndex] = glm::vec4(positionWalker, settings.m_thickness);
+						desiredGlobalRotation = internodeGlobalTransform.GetRotation() * glm::quat(glm::vec3(
+							glm::radians(glm::gaussRand(0.f, settings.m_apicalAngleVariance) + settings.m_branchingAngle), 0.0f,
+							rollAngle));
 
-			p0.m_thickness = internodeInfo.m_thickness;
-			p1.m_thickness = internode->m_twigAnchors[0].w;
-			p2.m_thickness = internode->m_twigAnchors[0].w;
-			p3.m_thickness = internode->m_twigAnchors[1].w;
-			p4.m_thickness = internode->m_twigAnchors[2].w;
-			p5.m_thickness = internode->m_twigAnchors[3].w;
-			p6.m_thickness = internode->m_twigAnchors[4].w;
-			p7.m_thickness = internode->m_twigAnchors[4].w;
+						auto twigFront = desiredGlobalRotation * glm::vec3(0, 0, -1);
+						positionWalker = positionWalker + twigFront * settings.m_segmentLength;
+					}
+				}
 
-			twigSegments[twigIndex * 5] = twigIndex * 8;
-			twigSegments[twigIndex * 5 + 1] = twigIndex * 8 + 1;
-			twigSegments[twigIndex * 5 + 2] = twigIndex * 8 + 2;
-			twigSegments[twigIndex * 5 + 3] = twigIndex * 8 + 3;
-			twigSegments[twigIndex * 5 + 4] = twigIndex * 8 + 4;
+			}
 
-			twigIndex++;
+			for (const auto& twig : internode->m_twigs) {
+				const auto twigSegmentSize = twig.size();
+				const auto twigControlPointSize = twig.size() + 3;
+				const auto totalTwigPointSize = twigPoints.size();
+				const auto totalTwigSegmentSize = twigSegments.size();
+				twigPoints.resize(totalTwigPointSize + twigControlPointSize);
+				twigSegments.resize(totalTwigSegmentSize + twigSegmentSize);
+
+				for (int i = 0; i < twigControlPointSize; i++) {
+					auto& p = twigPoints[totalTwigPointSize + i];
+					p.m_position = glm::vec3(twig[glm::clamp(i - 2, 0, static_cast<int>(twigSegmentSize - 1))]);
+					p.m_thickness = twig[glm::clamp(i - 2, 0, static_cast<int>(twigSegmentSize - 1))].w;
+				}
+				twigPoints[totalTwigPointSize].m_position = glm::vec3(twig[0]) * 2.0f - glm::vec3(twig[1]);
+				twigPoints[totalTwigPointSize].m_thickness = twig[0].w * 2.0f - twig[1].w;
+
+				twigPoints[totalTwigPointSize + twigControlPointSize - 1].m_position = glm::vec3(twig[twigSegmentSize - 1]) * 2.0f - glm::vec3(twig[twigSegmentSize - 2]);
+				twigPoints[totalTwigPointSize + twigControlPointSize - 1].m_thickness = twig[twigSegmentSize - 1].w * 2.0f -twig[twigSegmentSize - 2].w;
+
+
+				for (int i = 0; i < twigSegmentSize; i++) {
+					twigSegments[totalTwigSegmentSize + i] = totalTwigPointSize + i;
+				}
+			}
 		}
 	}
 }
@@ -1415,7 +1423,7 @@ void IPlantBehaviour::PrepareBranchRings(const std::shared_ptr<Scene>& scene, co
 		internodeInfo.m_length * settings.m_subdivision);
 	if (amount % 2 != 0)
 		amount++;
-	BezierCurve curve = BezierCurve(
+	internode->m_curve = BezierCurve(
 		positionStart,
 		positionStart +
 		(settings.m_smoothness ? internodeInfo.m_length * settings.m_baseControlPointRatio : 0.0f) * directionStart,
@@ -1432,14 +1440,14 @@ void IPlantBehaviour::PrepareBranchRings(const std::shared_ptr<Scene>& scene, co
 		float endThickness = static_cast<float>(i) * radiusStep;
 		if (settings.m_smoothness) {
 			internode->m_rings.emplace_back(
-				curve.GetPoint(posStep * (i - 1)), curve.GetPoint(posStep * i),
+				internode->m_curve.GetPoint(posStep * (i - 1)), internode->m_curve.GetPoint(posStep * i),
 				directionStart + static_cast<float>(i - 1) * dirStep,
 				directionStart + static_cast<float>(i) * dirStep,
 				thicknessStart + startThickness, thicknessStart + endThickness);
 		}
 		else {
 			internode->m_rings.emplace_back(
-				curve.GetPoint(posStep * (i - 1)), curve.GetPoint(posStep * i),
+				internode->m_curve.GetPoint(posStep * (i - 1)), internode->m_curve.GetPoint(posStep * i),
 				directionEnd,
 				directionEnd,
 				thicknessStart + startThickness, thicknessStart + endThickness);
@@ -1447,7 +1455,7 @@ void IPlantBehaviour::PrepareBranchRings(const std::shared_ptr<Scene>& scene, co
 	}
 	if (amount > 1)
 		internode->m_rings.emplace_back(
-			curve.GetPoint(1.0f - posStep), positionEnd, directionEnd - dirStep,
+			internode->m_curve.GetPoint(1.0f - posStep), positionEnd, directionEnd - dirStep,
 			directionEnd,
 			thicknessEnd - radiusStep,
 			thicknessEnd);

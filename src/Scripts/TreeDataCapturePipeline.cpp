@@ -1408,12 +1408,14 @@ struct JunctionUnitInfo {
 };
 struct Junction {
 	int m_junctionIndex;
+	int m_twigSize = 0;
 	JunctionUnitInfo m_root;
 	glm::vec3 m_startPos;
 	std::vector<JunctionUnitInfo> m_children;
 };
 struct IShape {
 	int m_iShapeIndex;
+	int m_twigSize = 0;
 	std::vector<float> m_radius;
 	std::vector<glm::vec3> m_positions;
 	std::vector<glm::vec3> m_directions;
@@ -1435,36 +1437,38 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipelin
 		std::unordered_set<int> iShapeIndices;
 		std::vector<Junction> junctions;
 		std::vector<IShape> ishapes;
-		std::vector<Entity> internodes;
+		std::vector<Entity> internodeEntities;
 		std::vector<Entity> branches;
 		std::vector<int> rootIndices;
-		scene->GetEntityArray(internodeLayer->m_internodesQuery, internodes);
-		for (const auto& internode : internodes) {
-			auto childrenSize = scene->GetChildrenAmount(internode);
-			auto rootInfo = scene->GetDataComponent<InternodeInfo>(internode);
-			if (!scene->HasPrivateComponent<Internode>(scene->GetParent(internode)))
+		scene->GetEntityArray(internodeLayer->m_internodesQuery, internodeEntities);
+		for (const auto& internodeEntity : internodeEntities) {
+			auto childrenSize = scene->GetChildrenAmount(internodeEntity);
+			auto rootInfo = scene->GetDataComponent<InternodeInfo>(internodeEntity);
+			if (!scene->HasPrivateComponent<Internode>(scene->GetParent(internodeEntity)))
 			{
-				rootIndices.emplace_back(internode.GetIndex());
+				rootIndices.emplace_back(internodeEntity.GetIndex());
 			}
 			if (childrenSize > 1) {
 				bool add = true;
 				Junction junction;
-				junction.m_junctionIndex = internode.GetIndex();
-				auto treeTransform = scene->GetDataComponent<GlobalTransform>(scene->GetRoot(internode));
-				auto rootTransform = scene->GetDataComponent<GlobalTransform>(internode);
+				junction.m_junctionIndex = internodeEntity.GetIndex();
+				auto treeTransform = scene->GetDataComponent<GlobalTransform>(scene->GetRoot(internodeEntity));
+				auto rootTransform = scene->GetDataComponent<GlobalTransform>(internodeEntity);
 				junction.m_root.m_direction = glm::normalize(rootTransform.GetRotation() * glm::vec3(0, 0, -1));
 				junction.m_root.m_position = rootTransform.GetPosition() + junction.m_root.m_direction * rootInfo.m_length;
 				junction.m_root.m_radius = rootInfo.m_thickness;
 				//junction.m_startPos = rootTransform.GetPosition();
-				auto rootInternode = scene->GetOrSetPrivateComponent<Internode>(internode).lock();
+				auto rootInternode = scene->GetOrSetPrivateComponent<Internode>(internodeEntity).lock();
 				int rootRingIndex = rootInternode->m_rings.size() * (1.0f - m_meshGeneratorSettings.m_junctionUpperRatio);
 				if (rootRingIndex < 0) rootRingIndex = 0;
 				if (rootRingIndex >= rootInternode->m_rings.size()) rootRingIndex = rootInternode->m_rings.size() - 1;
 				junction.m_startPos = rootInternode->m_rings.at(rootRingIndex).m_endPosition;
 				int validChildCount = 0;
-				for (const auto& child : scene->GetChildren(internode)) {
+				junction.m_twigSize = 0;
+				for (const auto& child : scene->GetChildren(internodeEntity)) {
 					if (!scene->HasDataComponent<InternodeInfo>(child)) continue;
-
+					auto internode = scene->GetOrSetPrivateComponent<Internode>(child).lock();
+					
 					auto childTransform = scene->GetDataComponent<GlobalTransform>(child);
 					junction.m_children.emplace_back();
 					auto& childInfo = junction.m_children.back();
@@ -1472,6 +1476,7 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipelin
 					if (childInternodeInfo.m_length > 0.3f) {
 						validChildCount++;
 					}
+					junction.m_twigSize += internode->m_twigs.size();
 					childInfo.m_direction = glm::normalize(childTransform.GetRotation() * glm::vec3(0, 0, -1));
 					//childInfo.m_position = childTransform.GetPosition() + childInfo.m_direction * childInternodeInfo.m_length;
 					auto childInternode = scene->GetOrSetPrivateComponent<Internode>(child).lock();
@@ -1480,11 +1485,13 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipelin
 					if (childRingIndex >= childInternode->m_rings.size()) childRingIndex = childInternode->m_rings.size() - 1;
 					childInfo.m_position = treeTransform.GetPosition() + childInternode->m_rings.at(childRingIndex).m_startPosition;
 					childInfo.m_radius = childInternode->m_rings.at(childRingIndex).m_startRadius;
+
 				}
+				junction.m_twigSize /= validChildCount;
 				if (validChildCount > 1) {
 					junctions.push_back(junction);
 					junctionRootIndices.emplace(junction.m_junctionIndex);
-					for (const auto& child : scene->GetChildren(internode)) {
+					for (const auto& child : scene->GetChildren(internodeEntity)) {
 						if (!scene->HasDataComponent<InternodeInfo>(child)) continue;
 						junctionChildrenIndices.emplace(child.GetIndex());
 					}
@@ -1504,9 +1511,12 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipelin
 			}
 
 			auto branch = scene->GetOrSetPrivateComponent<Branch>(branchEntity).lock();
+			iShape.m_twigSize = 0;
+			int validInternodeSize = 0;
 			for (const auto& internodeEntity : branch->m_internodeChain)
 			{
 				auto internode = scene->GetOrSetPrivateComponent<Internode>(internodeEntity).lock();
+				
 				auto internodeInfo = scene->GetDataComponent<InternodeInfo>(internodeEntity);
 				auto treeTransform = scene->GetDataComponent<GlobalTransform>(scene->GetRoot(internodeEntity));
 				bool isRoot = false;
@@ -1522,6 +1532,8 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipelin
 					//Children
 					isChild = true;
 				}
+				validInternodeSize++;
+				iShape.m_twigSize += internode->m_twigs.size();
 				int rootRingIndex = internode->m_rings.size() * (1.0f - m_meshGeneratorSettings.m_junctionUpperRatio);
 				if (rootRingIndex < 0) rootRingIndex = 0;
 				if (rootRingIndex >= internode->m_rings.size()) rootRingIndex = internode->m_rings.size() - 1;
@@ -1551,6 +1563,7 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipelin
 					iShape.m_directions.emplace_back(glm::normalize(internode->m_rings.back().m_endAxis));
 				}
 			}
+			iShape.m_twigSize /= validInternodeSize;
 		}
 		out << YAML::Key << "Possible Root" << YAML::Value << YAML::BeginSeq;
 		for (const auto& i : rootIndices)
@@ -1567,6 +1580,7 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipelin
 		for (const auto& junction : junctions) {
 			out << YAML::BeginMap;
 			out << YAML::Key << "I" << YAML::Value << junction.m_junctionIndex;
+			out << YAML::Key << "TS" << YAML::Value << junction.m_twigSize;
 			out << YAML::Key << "RD" << YAML::Value << junction.m_root.m_direction;
 			out << YAML::Key << "RP" << YAML::Value << junction.m_root.m_position;
 			out << YAML::Key << "RR" << YAML::Value << junction.m_root.m_radius;
@@ -1590,6 +1604,7 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipelin
 		{
 			out << YAML::BeginMap;
 			out << YAML::Key << "I" << YAML::Value << ishape.m_iShapeIndex;
+			out << YAML::Key << "TS" << YAML::Value << ishape.m_twigSize;
 			out << YAML::Key << "SN" << YAML::Value << YAML::BeginSeq;
 			for (int i = 0; i < ishape.m_radius.size(); i++)
 			{

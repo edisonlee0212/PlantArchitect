@@ -16,6 +16,7 @@ namespace PlantArchitect {
 
     class PLANT_ARCHITECT_API BezierCurve : public Curve {
     public:
+        BezierCurve() = default;
         BezierCurve(glm::vec3 cp0, glm::vec3 cp1, glm::vec3 cp2, glm::vec3 cp3);
 
         [[nodiscard]] glm::vec3 GetPoint(float t) const override;
