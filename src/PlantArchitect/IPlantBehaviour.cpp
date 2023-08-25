@@ -634,7 +634,7 @@ void PlantArchitect::IPlantBehaviour::TwigStrandsGenerator(const std::shared_ptr
 			auto internode = scene->GetOrSetPrivateComponent<Internode>(internodeEntity).lock();
 			auto internodeInfo = scene->GetDataComponent<InternodeInfo>(internodeEntity);
 
-			if (internodeInfo.m_thickness < settings.m_minNodeThicknessRequirement)
+			if (internodeInfo.m_thickness > settings.m_minNodeThicknessRequirement)
 			{
 				int twigCount = internodeInfo.m_length / settings.m_twigUnitLength;
 				internode->m_twigs.resize(twigCount);
@@ -717,7 +717,19 @@ void MeshGeneratorSettings::OnInspect() {
 		}
 		ImGui::DragFloat("Junction Lower Ratio", &m_junctionLowerRatio, 0.01f, 0.0f, 0.5f);
 		ImGui::DragFloat("Junction Upper Ratio", &m_junctionUpperRatio, 0.01f, 0.0f, 0.5f);
-		
+
+
+		if(ImGui::TreeNodeEx("Twig settings", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			ImGui::DragFloat("Segment length", &m_segmentLength, 0.001f, 0.0f, 1.0f);
+			ImGui::DragFloat("Apical angle variance", &m_apicalAngleVariance, 0.01f, 0.0f, 10.0f);
+			ImGui::DragFloat("Branching angle", &m_branchingAngle, 0.01f, 0.0f, 180.0f);
+			ImGui::DragFloat("Twig thickness", &m_thickness, 0.001f, 0.0f, 1.0f);
+			ImGui::DragFloat("Thickness requirement", &m_minNodeThicknessRequirement, 0.001f, 0.0f, 5.0f);
+			ImGui::DragInt("Segment Size", &m_segmentSize, 1, 2, 10);
+			ImGui::DragFloat("Distance between twigs", &m_twigUnitLength, 0.001f, 0.0f, 1.0f);
+			ImGui::TreePop();
+		}
 		ImGui::TreePop();
 	}
 }
@@ -763,6 +775,14 @@ void MeshGeneratorSettings::Save(const std::string& name, YAML::Emitter& out) {
 	out << YAML::Key << "m_junctionLowerRatio" << YAML::Value << m_junctionLowerRatio;
 	out << YAML::Key << "m_branchVertexColor" << YAML::Value << m_branchVertexColor;
 	out << YAML::Key << "m_foliageVertexColor" << YAML::Value << m_foliageVertexColor;
+
+	out << YAML::Key << "m_segmentLength" << YAML::Value << m_segmentLength;
+	out << YAML::Key << "m_apicalAngleVariance" << YAML::Value << m_apicalAngleVariance;
+	out << YAML::Key << "m_branchingAngle" << YAML::Value << m_branchingAngle;
+	out << YAML::Key << "m_thickness" << YAML::Value << m_thickness;
+	out << YAML::Key << "m_minNodeThicknessRequirement" << YAML::Value << m_minNodeThicknessRequirement;
+	out << YAML::Key << "m_segmentSize" << YAML::Value << m_segmentSize;
+	out << YAML::Key << "m_twigUnitLength" << YAML::Value << m_twigUnitLength;
 	out << YAML::EndMap;
 }
 
@@ -787,6 +807,14 @@ void MeshGeneratorSettings::Load(const std::string& name, const YAML::Node& in) 
 		if (ms["m_junctionLowerRatio"]) m_junctionLowerRatio = ms["m_junctionLowerRatio"].as<float>();
 		if (ms["m_branchVertexColor"]) m_branchVertexColor = ms["m_branchVertexColor"].as<glm::vec3>();
 		if (ms["m_foliageVertexColor"]) m_foliageVertexColor = ms["m_foliageVertexColor"].as<glm::vec3>();
+
+		if (ms["m_segmentLength"]) m_segmentLength = ms["m_segmentLength"].as<float>();
+		if (ms["m_apicalAngleVariance"]) m_apicalAngleVariance = ms["m_apicalAngleVariance"].as<float>();
+		if (ms["m_branchingAngle"]) m_branchingAngle = ms["m_branchingAngle"].as<float>();
+		if (ms["m_thickness"]) m_thickness = ms["m_thickness"].as<float>();
+		if (ms["m_minNodeThicknessRequirement"]) m_minNodeThicknessRequirement = ms["m_minNodeThicknessRequirement"].as<float>();
+		if (ms["m_segmentSize"]) m_segmentSize = ms["m_segmentSize"].as<int>();
+		if (ms["m_twigUnitLength"]) m_twigUnitLength = ms["m_twigUnitLength"].as<float>();
 	}
 }
 

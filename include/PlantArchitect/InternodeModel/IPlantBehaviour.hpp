@@ -33,14 +33,14 @@ namespace PlantArchitect {
         bool m_smoothness = true;
 
         float m_segmentLength = 0.05f;
-        float m_apicalAngleVariance = 0.1f;
+        float m_apicalAngleVariance = 1.0f;
         float m_branchingAngle = 50.f;
         float m_thickness = 0.005f;
-        float m_minNodeThicknessRequirement = 0.05f;
+        float m_minNodeThicknessRequirement = 0.2f;
         int m_segmentSize = 5;
         float m_twigUnitLength = 0.1f;
 
-        void OnInspect ();
+        void OnInspect();
 
         void Save(const std::string &name, YAML::Emitter &out);
 
