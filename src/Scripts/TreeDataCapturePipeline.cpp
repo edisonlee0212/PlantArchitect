@@ -1487,7 +1487,7 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipelin
 					childInfo.m_radius = childInternode->m_rings.at(childRingIndex).m_startRadius;
 
 				}
-				junction.m_twigSize /= validChildCount;
+				if(validChildCount != 0) junction.m_twigSize /= validChildCount;
 				if (validChildCount > 1) {
 					junctions.push_back(junction);
 					junctionRootIndices.emplace(junction.m_junctionIndex);
@@ -1563,7 +1563,7 @@ void TreeDataCapturePipeline::ExportJunction(AutoTreeGenerationPipeline& pipelin
 					iShape.m_directions.emplace_back(glm::normalize(internode->m_rings.back().m_endAxis));
 				}
 			}
-			iShape.m_twigSize /= validInternodeSize;
+			if (validInternodeSize != 0) iShape.m_twigSize /= validInternodeSize;
 		}
 		out << YAML::Key << "Possible Root" << YAML::Value << YAML::BeginSeq;
 		for (const auto& i : rootIndices)
